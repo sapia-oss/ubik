@@ -1,0 +1,113 @@
+<sapia:page title="Multiplex Transport" xmlns:sapia="http://www.sapia-oss.org/2003/XSL/Transform">
+  <sapia:refreshMenu page="../leftmenu.html" />
+  <sapia:sect1 title="Multiplex Transport">
+    <sapia:section>
+      <sapia:path name="home" href="../../../home.html" />
+      <sapia:path name="projects" />
+      <sapia:path name="ubik" href="../home.html" />
+      <sapia:path name="mplex" />
+    </sapia:section>  
+  
+    <toc/>
+    <sapia:sect-desc>
+      <p>The multiplex transport provider is, as of now, Ubik's default provider implementation.
+      The provider uses a multiplexed socket to receive incoming remote method calls (RMCs) based on
+      Ubik's command protocol, as well as (potentially) other types of requests - following
+      different protocols wired through the same socket. More clearly, this simply means: a 
+      Ubik server running "on" this provider can handle Ubik RMCs as well as other types
+      of requests on the same socket.</p>
+    </sapia:sect-desc>
+    
+    <sapia:sect2 title="Design">
+      <p>The above is made possible through an acceptor/connector scheme: a single socket
+      server (based on the <sapia:class>java.net.ServerSocket</sapia:class> class) will be
+      started on a given port. This transport uses a special <sapia:class>ServerSocket</sapia:class>
+      implementation to do so: the <sapia:class link="../api/org/sapia/ubik/net/mplex/MultiplexServerSocket.html">MultiplexServerSocket</sapia:class>
+      class (see the Javadoc, the class' inner workings are exhaustively described). To make a long story short:
+      acceptor threads pick up incoming requests and add them to an internal queue; selector threads process the 
+      incoming requests; each request is processed by one selector thread; multiple selectors can act on the
+      request queue concurrently. For its "current" request, a selector goes through an internal list of connectors
+      (instances of <sapia:class link="../api/org/sapia/ubik/net/mplex/MultiplexSocketConnector.html">MultiplexSocketConnector</sapia:class>), 
+      determining with the help of an application-specified <sapia:class link="../api/org/sapia/ubik/net/mplex/StreamSelector.html">StreamSelector</sapia:class>
+      which connector can handle the current request. If a connector is found, the request is dispatched to it; if not, it is handed over  
+      to the built-in, default connector - which, in our case, is Ubik's.</p>
+      
+      <p>In the case of its own request handling, this transport provider keeps a configurable number of server threads to process the
+      requests given to it by its connector. Server threads block on the connector until a request is available; when that occurs, the connector (which actually acts
+      in the context of the selector thread) wakes up a server thread and dispatches the request to it.</p>
+      
+      <sapia:note>What you've just read implies that you can implement your own connectors and register them with this transport provider.
+      This would permit you to receive requests on the same server (port) as Ubik's.</sapia:note>
+      
+      <p><b>The key to performance is to find the proper balance between acceptor, selector, and server threads</b>; by default, the Mplex transport provider
+      has one acceptor thread, one selector thread, and five server threads. This might very well not be optimal, and you should not judge Ubik's performance by these
+      default settings. Typically, there should be more server threads than threads of the other types.</p>
+    </sapia:sect2>
+    
+    <sapia:sect2 title="Usage">
+    
+      <sapia:sect3 title="Exporting an Object">
+        <p>When you use the <sapia:class link="../api/org/sapia/ubik/rmi/server/Hub.html">Hub</sapia:class>'s <sapia:command>export(Object o)</sapia:command>
+        or <sapia:command>export(Object o, int port)</sapia:command> methods, Ubik uses the Mplex provider to start a server on a dynamic port, or on the user-specified
+        port. From then on, the object that you export can potentially receive remote method calls</p>
+      </sapia:sect3>
+      <sapia:sect3 title="Configuration">
+        <p>As was mentioned, you can set (and it is suggested that you do so) the number of acceptor, selector and servers threads using the following system
+	   properties - and prior to exporting any objects:</p>
+        <ul>
+	  <li>ubik.rmi.transport.mplex.acceptor-threads</li>
+	  <li>ubik.rmi.transport.mplex.selector-threads</li>
+	  <li>ubik.rmi.transport.socket.max-threads</li>	  
+	</ul>
+	<p>If you export an object using the hub's <sapia:command>export(Object o, Properties props)</sapia:command> and you target this provider,
+	you can specify the above-mentioned configuration properties as part of the given <sapia:class>Properties</sapia:class> argument; and you 
+	<b>must</b> specify the "type" identifier of this provider, with the following property (also in the properties passed in):</p>
+	<ul>
+	  <li>ubik.rmi.transport.mplex.acceptor-threads (the property's value must be: <sapia:command>tcp/socket</sapia:command>).</li>
+	</ul>
+	<sapia:note>
+	  When you bind an object to Ubik's JNDI implementation, and that object is not a stub corresponding to an already exported object, the
+	  JNDI implementation will export that object automatically, using this transport provider (since it is the default).
+	</sapia:note>
+      </sapia:sect3>
+      
+      <sapia:sect3 title="Multiplexing">
+        <p>As was explained, you can leverage a single Ubik server over multiple connectors. To do so, you need to:</p>
+	<ul>
+	  <li>Implement a <sapia:class>StreamSelector</sapia:class>;</li>
+          <li>call the <sapia:class>createSocketConnector(StreamSelector)</sapia:class> on this provider;</li>
+	  <li>the above method returns a <sapia:class>MultiplexSocketConnector</sapia:class> that you use to process incoming requests (this in fact allows
+	  implementing a server on top of a connector...);</li>
+	  <li>since most server implementations are based on the <sapia:class>java.net.ServerSocket</sapia:class> class, a connector is not very handy to adapt
+	  an existing server implementation to Ubik's multiplexing; therefore, we have adapted connectors to the <sapia:class>ServerSocket</sapia:class>
+	  class, with a <sapia:class link="../api/org/sapia/ubik/net/mplex/ServerSocketAdapter.html">ServerSocketAdapter</sapia:class>.</li>
+	</ul>
+	<p>The code below illustrates the above steps:</p>
+<sapia:code>
+import java.net.ServerSocket;
+import org.sapia.ubik.net.mplex.ServerSocketAdapter;
+import org.sapia.ubik.rmi.server.transport.TransportManager;
+import org.sapia.ubik.rmi.server.transport.socket
+  .MultiplexSocketTransportProvider;
+  
+...
+
+  // export has already taken place...
+  MultiplexSocketTransportProvider provider = 
+    (MultiplexSocketTransportProvider)TransportManager.getProviderFor(
+       MultiplexSocketTransportProvider.TRANSPORT_TYPE);
+       
+  MultiplexSocketConnector connector = 
+    provider.createSocketConnector(new MyStreamSelector());
+
+  ServerSocket socket = new ServerSocketAdapter(connector);
+  MyServer server = new MyServer(socket);
+  server.start();
+...
+</sapia:code>
+      </sapia:sect3>
+    </sapia:sect2>
+    
+  </sapia:sect1>
+
+</sapia:page>
