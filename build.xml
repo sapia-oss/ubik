@@ -1,0 +1,430 @@
+<project name="ubik" default="build" basedir="." xmlns:savant="inversoft:savant">
+  <property name="project.javaDir"            value="${basedir}/java"/>
+  <property name="project.siteDir"            value="${basedir}/site"/>  
+  <property name="project.savantDir"          value="${basedir}/savant"/>
+  <property name="project.sourceDir"          value="${project.javaDir}/src"/>
+  <property name="project.testDir"            value="${project.javaDir}/test"/>
+  <property name="project.classesDir"         value="${project.javaDir}/classes"/>
+  <property name="project.docDir"             value="${basedir}/doc"/>
+  <property name="project.javadocDir"         value="${project.siteDir}/html/api"/>
+  <property name="project.umldocDir"          value="${project.docDir}/uml"/>
+  <property name="project.libraryDir"         value="${basedir}/lib"/>
+  <property name="project.binDir"             value="${basedir}/bin"/>
+  <property name="project.distributionDir"    value="${basedir}/dist"/>
+  <property name="project.distributionName"   value="sapia_ubik"/>
+  <property name="project.testResultDir"      value="${basedir}/testResult"/>
+  <property name="project.packagePath"        value="org/sapia/ubik"/>
+  <property name="project.packageName"        value="org.sapia.ubik"/>
+  <property name="project.testPattern"        value="**/*Test.class"/>
+  
+  <typedef resource="com/inversoft/savant/ant/antlib.xml" uri="inversoft:savant">
+    <classpath>
+      <fileset dir="${project.savantDir}">
+        <include name="verge*.jar"/>
+      </fileset>
+    </classpath>
+  </typedef>    
+
+  <!-- Savant stuff -->  
+  <path id="build-lib-classpath">
+     <fileset dir="${project.savantDir}" includes="*.jar"/>
+  </path>
+
+  <!-- Defines the classpath for the main tasks -->
+  <path id="lib-classpath">
+      <fileset dir="${project.libraryDir}">
+          <include name="**/*.jar" />
+      </fileset>
+  </path>
+  
+  <!-- Defines the classpath for the test tasks -->
+  <path id="test-classpath">
+      <path refid="lib-classpath" />
+      <path refid="build-lib-classpath" />
+      <pathelement location="${project.classesDir}" />
+  </path>    
+
+  <!-- Initializes this build by creating the needed directories -->
+  <target name="init">
+      <echo message="Initializing..." />
+      <mkdir dir="${project.javaDir}" />
+      <mkdir dir="${project.siteDir}/html/api" />      
+      <mkdir dir="${project.sourceDir}" />
+      <mkdir dir="${project.testDir}" />
+      <mkdir dir="${project.classesDir}" />
+      <mkdir dir="${project.docDir}" />
+      <mkdir dir="${project.javadocDir}" />
+      <mkdir dir="${project.umldocDir}" />
+      <mkdir dir="${project.libraryDir}" />
+      <mkdir dir="${project.binDir}" />
+      <mkdir dir="${project.testResultDir}" />
+      <mkdir dir="${project.distributionDir}" />
+  </target>
+
+  <!-- Downloads dependencies -->
+  <target name="get-libs">
+    <ant antfile="${project.savantDir}/dependencies.xml" inheritAll="yes" inheritRefs="yes" target="do-get-libs" />
+  </target>      
+
+  <!-- Removes all the classes from the ${project.classesDir} directory -->
+  <target name="clean-classes">
+      <echo message="Cleaning classes..." />
+      <delete includeEmptyDirs="true">
+          <fileset dir="${project.classesDir}" includes="**/*" />
+      </delete>
+  </target>
+
+
+  <!-- Compiles all the files of the ${project.sourceDir} and ${project.testDir} directories -->
+  <target name="compile">
+    <javac destdir="${project.classesDir}" debug="true" classpathref="lib-classpath" excludes="**/CVS/**/*.java">
+        <src path="${project.sourceDir}" />
+        <src path="${project.testDir}" />
+    </javac>
+
+    <rmic verify="true" stubversion="1.2" base="${project.classesDir}"
+          sourcebase="${project.sourceDir}" classpathref="lib-classpath" 
+          includes="**/JdkFoo.class,**/JdkBar.class" />
+
+
+    <copy todir="${project.classesDir}/${project.packagePath}">
+        <fileset dir="${project.sourceDir}/${project.packagePath}" excludes="**/*.java" />
+    </copy>
+  </target>
+
+
+  <!-- Executes the jUnit test cases of the ${project.testDir} directory -->
+  <target name="test">
+    <echo message="${java.class.path}"/>
+    <junit fork="yes">
+        <classpath>
+            <path refid="test-classpath" />
+        </classpath>
+        <formatter type="plain" usefile="false"/>
+        <formatter type="xml"/>
+        <batchtest haltonfailure="yes" todir="${project.testResultDir}">
+            <fileset dir="${project.classesDir}" 
+                     includes="${project.packagePath}/${project.testPattern}"
+                     excludes="${project.packagePath}/**/test/integration/**/*"/>
+        </batchtest>
+    </junit>
+  </target>
+  
+  <!-- Executes the jUnit test cases of the ${project.testDir} directory 
+       that are part of the integration test package -->
+  <target name="test-intg">
+    <echo message="${java.class.path}"/>
+    <junit fork="yes">
+        <classpath>
+            <path refid="test-classpath" />
+        </classpath>
+        <formatter type="plain" usefile="false"/>
+        <formatter type="xml"/>
+        <batchtest haltonfailure="yes" todir="${project.testResultDir}">
+            <fileset dir="${project.classesDir}" 
+                     includes="${project.packagePath}/**/test/integration/${project.testPattern}"/>
+        </batchtest>
+    </junit>
+  </target>  
+
+
+  <!-- Builds the distribution of this project -->
+  <target name="dist">
+      <jar jarfile="${project.distributionDir}/${project.distributionName}.jar">
+        <fileset dir="${project.classesDir}">
+          <exclude name="**/CVS/*.*"/>
+          <exclude name="**/test/*.*"/>
+          <exclude name="**/examples/**"/>
+        </fileset>
+        <fileset dir="${basedir}">
+          <include name="*.txt"/>
+        </fileset>        
+
+        <manifest>
+          <attribute name="Main-Class" value="version"/>
+          <attribute name="Built-By" value="Sapia OSS (http://www.sapia-oss.org)"/>
+          <section name="org/sapia/ubik">
+            <attribute name="Implementation-Title" value="Sapia Ubik"/>
+            <attribute name="Implementation-Version" value="${sapia.build.release.no}"/>
+            <attribute name="Implementation-Vendor" value="Sapia OSS (http://www.sapia-oss.org)"/>
+          </section>
+        </manifest>
+      </jar>
+
+     <jar jarfile="${project.distributionDir}/${project.distributionName}_src.jar">
+        <fileset dir="${project.classesDir}">
+          <exclude name="**/examples/**"/>
+        </fileset>
+        <fileset dir="${project.javaDir}">
+          <include name="src/**"/>
+          <exclude name="**/CVS/*.*"/>
+          <exclude name="**/org/sapia/domain/**"/>
+          <exclude name="**/examples/**"/>
+        </fileset>
+        <fileset dir="${project.javaDir}">
+          <include name="test/**"/>
+          <exclude name="**/CVS/*.*"/>
+          <exclude name="**/org/sapia/domain/**"/>
+          <exclude name="**/examples/**"/>
+        </fileset>
+        <fileset dir="${basedir}">
+          <include name="*.txt"/>
+        </fileset>        
+        <manifest>
+          <attribute name="Main-Class" value="version"/>
+          <attribute name="Built-By" value="Sapia OSS (http://www.sapia-oss.org)"/>
+          <section name="org/sapia/ubik">
+            <attribute name="Implementation-Title" value="Sapia Ubik"/>
+            <attribute name="Implementation-Version" value="${sapia.build.release.no}"/>
+            <attribute name="Implementation-Vendor" value="Sapia OSS (http://www.sapia-oss.org)"/>
+          </section>
+        </manifest>
+      </jar>
+
+     <jar jarfile="${project.distributionDir}/${project.distributionName}_examples.jar">
+        <fileset dir="${project.classesDir}">
+          <include name="**/examples/**"/>
+        </fileset>
+        <fileset dir="${project.javaDir}">
+          <include name="src/**/examples/**"/>
+        </fileset>
+        <fileset dir="${project.javaDir}">
+          <include name="test/**/examples/**"/>
+        </fileset>
+
+        <manifest>
+          <attribute name="Main-Class" value="version"/>
+          <attribute name="Built-By" value="Sapia OSS (http://www.sapia-oss.org)"/>
+          <section name="org/sapia/ubik/rmi/examples">
+            <attribute name="Implementation-Title" value="Sapia Ubik Examples"/>
+            <attribute name="Implementation-Version" value="${sapia.build.release.no}"/>
+            <attribute name="Implementation-Vendor" value="Sapia OSS (http://www.sapia-oss.org)"/>
+          </section>
+        </manifest>
+      </jar>
+    
+     <savant:publish from="${project.distributionDir}/${project.distributionName}.jar">
+       <savant:artifact id="${project.distributionName}" group="sapia" projectname="ubik" name="${project.distributionName}" version="${sapia.build.release.no}" type="jar"/>
+     </savant:publish>       
+  </target>
+
+  <!-- Builds the javadoc of this project to the ${project.javadocDir} directory -->
+  <target name="doc">
+    <delete includeEmptyDirs="true">
+        <fileset dir="${project.javadocDir}" includes="**/*" />
+    </delete>
+
+    <copy todir="${project.javadocDir}/${project.packagePath}">
+        <fileset dir="${project.sourceDir}/${project.packagePath}" excludes="**/*.java"/>
+    </copy>
+
+    <javadoc packagenames="${project.packageName}.*"  sourcepath="${project.sourceDir}"
+             destdir="${project.javadocDir}"  author="true"  version="true"  use="true"
+             splitindex="true"  classpathref="test-classpath"  windowtitle="Sapia Open Community - API Documentation">
+        <doctitle><![CDATA[<h2>Sapia Open Community Ubik Package, v. 1.0<br/>API Specification</h2>]]></doctitle>
+        <bottom><![CDATA[<i>Copyright &#169; 2002 Sapia Open Community, Inc. All Rights Reserved.</i>]]></bottom>
+        <group title="Core Packages" packages="${project.packageName}.*"/>
+        <link href="http://java.sun.com/j2se/1.3/docs/api/" />
+    </javadoc>
+  </target>
+  
+  <!-- Builds the web site of this project to the ${project.siteDir} directory -->
+  <target name="site" depends="doc">
+        <mkdir dir="${project.siteDir}/html"/>  
+        <delete dir="${project.siteDir}/html" excludes="api/**/*.*"/>  
+        <xslt basedir="${project.siteDir}/xml" 
+              destdir="${project.siteDir}/html" 
+              includes="**/*.xdocs"
+              style="${project.siteDir}/xsl/sapia.xsl"/>        
+        
+        <!-- 
+        This includes all directories and resources other than 'xdocs' files
+        The whole project's site structure must thus be created in the /xml dir.
+        
+        EACH DIRECTORY MUST HAVE ITS OWN SAPIA.CSS FILE
+        
+        -->
+        <copy todir="${project.siteDir}/html">
+          <fileset dir="${project.siteDir}/xml">
+            <exclude name="**/*.xdocs"/>
+          </fileset>
+        </copy>
+  </target>
+
+  <!-- Build a release; done by project admins -->
+  <target name="release" depends="build, site">
+    <taskdef classname="org.sapia.antlib.build.MakeVersionClass" name="makeVersionClass"/>
+    <taskdef classname="org.sapia.antlib.build.MakeVersionFile"  name="makeVersionFile"/>
+    <mkdir dir="${basedir}/build/META-INF"/>
+    <mkdir dir="${project.sourceDir}"/>
+
+    <input message="Enter release version number (e.g.: 1.0.1):" addproperty="sapia.build.release.no"/>
+    <makeVersionClass destDir="${project.sourceDir}"/>
+    <makeVersionFile destDir="${basedir}/build/META-INF"
+                     softwareName="Sapia Ubik"
+                     version="${sapia.build.release.no}"/>
+
+    <javac srcdir="${project.sourceDir}"
+           destdir="${project.classesDir}" includes="version.java" excludes="**/rmi/transport/udp/*"/>
+
+    <antcall target="dist"/>
+
+    <zip destfile="${project.distributionName}-${sapia.build.release.no}.zip">
+      <fileset dir="${basedir}">
+        <include name="*.txt"/>
+        <include name="*.license"/>
+      </fileset>
+      <fileset dir="${basedir}">
+         <include name="lib/*.jar"/>
+      </fileset>
+      <fileset dir="${basedir}">
+         <include name="dist/*.jar"/>
+         <include name="dist/*_src.jar"/>         
+      </fileset>      
+      <zipfileset dir="${basedir}/site/html" prefix="docs" />
+      <zipfileset dir="${basedir}/bin" prefix="bin">
+        <include name="*.bat"/>
+        <include name="*.sh"/>
+      </zipfileset>            
+      
+    </zip>
+
+    <zip destfile="${project.distributionName}-${sapia.build.release.no}_src.zip">
+      <zipfileset dir="${basedir}/java/src" prefix="java/src">
+        <include name="org/sapia/**/*.*"/>
+      </zipfileset>
+      <zipfileset dir="${basedir}/java/test" prefix="java/test">
+        <include name="org/sapia/**/*.*"/>
+      </zipfileset>
+      <fileset dir="${basedir}">
+        <include name="*.txt"/>
+        <include name="*.license"/>
+      </fileset>
+      <fileset dir="${basedir}">
+         <exclude name="lib/*.jar"/>      
+         <include name="lib/*_src.jar"/>
+      </fileset>
+      <fileset dir="${basedir}">
+         <include name="dist/*.jar"/>
+      </fileset>            
+      <fileset dir="${basedir}">
+         <include name="build.xml"/>
+      </fileset>
+      <zipfileset dir="${basedir}/site" prefix="site">
+        <exclude name="**/CVS/**/*.*"/>
+        <include name="**/*.*"/>        
+      </zipfileset>
+      <zipfileset dir="${basedir}/bin" prefix="bin">
+        <include name="*.bat"/>
+        <include name="*.sh"/>
+      </zipfileset>            
+    </zip>
+  </target>  
+
+  <!-- Default target -->
+  <target name="build" depends="init, clean-classes, get-libs, compile, test" />
+  
+  <target name="current" depends="build, site">
+    <antcall target="dist">
+      <param name="sapia.build.release.no" value="0.0" />
+    </antcall>
+  </target>
+  
+  <!-- ========================= NETBEANS ========================== -->
+  
+   <target name="compile-selected-files">
+    <fail unless="files">Must set property 'files'</fail>
+    <mkdir dir="${project.classesDir}"/>
+    <javac srcdir="${project.sourceDir}" destdir="${project.classesDir}" includes="${files}">
+      <classpath refid="lib-classpath"/>
+    </javac>
+  </target>
+  
+  <target name="run-selected-files" depends="compile" description="Run Single File">
+    <fail unless="classname">Must set property 'classname'</fail>
+    <java classname="${classname}" fork="true" dir=".">
+      <classpath>
+        <fileset dir="${project.libraryDir}">
+          <include name="**/**/*.jar" />
+        </fileset>      
+        <pathelement location="${project.classesDir}"/>      
+      </classpath>
+    </java>
+  </target>  
+  
+  <target name="run-selected-tests" depends="compile" description="Run Single Test">
+    <fail unless="classname">Must select some files in the IDE or set test.includes</fail>
+    <!--java classname="${classname}">
+      <classpath>
+        <fileset dir="${project.libraryDir}">
+          <include name="**/*.jar" />
+        </fileset>      
+        <pathelement location="${project.classesDir}"/>      
+      </classpath>
+    </java-->
+    <junit fork="yes" dir="${basedir}">
+        <classpath>
+            <path refid="test-classpath" />
+        </classpath>
+        <formatter type="plain" usefile="false"/>
+        <formatter type="xml"/>
+        <test name="${classname}Test" haltonfailure="yes" todir="${project.testResultDir}" />
+    </junit>      
+  </target>
+  
+  <target name="debug-selected-files" depends="compile" if="netbeans.home">
+    <fail unless="classname">Must set property 'classname'</fail>
+    <nbjpdastart name="${classname}" addressproperty="jpda.address" transport="dt_socket">
+      <classpath>
+        <fileset dir="${project.libraryDir}">
+          <include name="**/*.jar" />
+        </fileset>      
+        <pathelement location="${project.classesDir}"/>      
+      </classpath>
+      <sourcepath>
+        <pathelement location="${project.sourceDir}/" />
+      </sourcepath>
+    </nbjpdastart>
+    <java classname="${classname}" fork="true">
+      <jvmarg value="-Xdebug"/>
+      <jvmarg value="-Xnoagent"/>
+      <jvmarg value="-Djava.compiler=none"/>
+      <jvmarg value="-Xrunjdwp:transport=dt_socket,address=${jpda.address}"/>
+      <classpath>
+        <fileset dir="${project.libraryDir}">
+          <include name="**/*.jar" />
+        </fileset>      
+        <pathelement location="${project.classesDir}"/>      
+      </classpath>
+    </java>
+  </target>                
+  
+  
+  <target name="debug-selected-tests" depends="compile" description="Run Single Test">
+    <fail unless="classname">Must select some files in the IDE or set test.includes</fail>
+    <nbjpdastart name="${classname}Test" addressproperty="jpda.address" transport="dt_socket">
+      <classpath>
+        <fileset dir="${project.libraryDir}">
+          <include name="**/*.jar" />
+        </fileset>      
+        <pathelement location="${project.classesDir}"/>      
+      </classpath>
+      <sourcepath>
+        <pathelement location="${project.sourceDir}/" />
+        <pathelement location="${project.testDir}/" />        
+      </sourcepath>      
+    </nbjpdastart>    
+    <junit fork="yes" dir="${basedir}">
+        <jvmarg value="-Xdebug"/>
+        <jvmarg value="-Xnoagent"/>
+        <jvmarg value="-Djava.compiler=none"/>
+        <jvmarg value="-Xrunjdwp:transport=dt_socket,address=${jpda.address}"/>    
+        <classpath>
+            <path refid="test-classpath" />
+        </classpath>
+        <formatter type="plain" usefile="false"/>
+        <formatter type="xml"/>
+        <test name="${classname}Test" haltonfailure="yes" todir="${project.testResultDir}" />
+    </junit>      
+  </target>      
+</project>
