@@ -75,6 +75,12 @@ public class Log {
     }
   }
 
+  public static final void info(Class caller, Object msg, Throwable t) {
+    if (_lvl <= INFO) {
+      display(caller.getName(), msg, t);
+    }
+  }
+  
   public static final void info(String caller, Object msg) {
     if (_lvl <= INFO) {
       display(caller, msg);
