@@ -294,9 +294,9 @@ public class ClientGC implements Task, ClientGCMBean, MBeanFactory {
       conn.receive();
       TransportManager.getConnectionsFor(addr).release(conn);
     } catch (Throwable e) {
-      Log.info(ClientGC.class, "Error sending GC command to server " + addr + " - cleaning up corresponding remote objects", e);
       if(e instanceof RemoteException){
-        getHostMap(addr).clear();
+        Log.info(ClientGC.class, "Error sending GC command to server " + addr + " - cleaning up corresponding remote objects", e);
+        removeHostMap(addr);
       }
       
       if (conn != null) {
@@ -330,4 +330,7 @@ public class ClientGC implements Task, ClientGCMBean, MBeanFactory {
     return hostMap;
   }
   
+  private final void removeHostMap(ServerAddress addr) {
+    _objByHosts.remove(addr);
+  }
 }
