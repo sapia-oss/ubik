@@ -12,6 +12,7 @@ import org.sapia.ubik.taskman.TaskContext;
 import org.sapia.ubik.taskman.TaskManager;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.management.ObjectName;
 
@@ -34,7 +35,7 @@ public class ServerGC implements Task, ServerGCMBean, MBeanFactory {
   private static long      _gcInterval  = GC_INTERVAL;
   private static HitsPerMinStatistic _gcRefPerMin;
   private static HitsPerMinStatistic _gcDerefPerMin;  
-  private Map              _clientTable = new Hashtable();
+  private Map              _clientTable = new ConcurrentHashMap();
 
   public ServerGC(TaskManager taskman) {
     PropUtil pu = new PropUtil().addProperties(System.getProperties());

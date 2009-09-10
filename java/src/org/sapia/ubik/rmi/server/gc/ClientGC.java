@@ -17,6 +17,7 @@ import org.sapia.ubik.taskman.TaskManager;
 
 import java.lang.ref.*;
 
+import java.rmi.RemoteException;
 import java.util.*;
 
 import javax.management.ObjectName;
@@ -120,8 +121,7 @@ public class ClientGC implements Task, ClientGCMBean, MBeanFactory {
     Set             keySet;
     ServerAddress[] addresses;
     OID[]           oids;
-    OID[]           oidsToSend = new OID[_gcBatchSize];
-    int             count      = 0;
+    ArrayList       oidsToSend = new ArrayList(_gcBatchSize);
     int             totalCount = 0;
     int             remoteObjectCount = 0;
     Reference       ref;
@@ -136,10 +136,14 @@ public class ClientGC implements Task, ClientGCMBean, MBeanFactory {
       addresses   = (ServerAddress[]) keySet.toArray(new ServerAddress[keySet.size()]);
   
       if (Log.isDebug()) {
-        Log.debug(getClass(), "host ids: " + addresses.length);
+        Log.debug(getClass(), "host count: " + addresses.length);
       }
   
       for (int i = 0; i < addresses.length; i++) {
+        if (Log.isDebug()) {
+          Log.debug(getClass(), "host address: " + addresses[i]);
+        }
+        
         refs   = (Map) _objByHosts.get(addresses[i]);
         oids   = (OID[]) refs.keySet().toArray(new OID[refs.size()]);
         remoteObjectCount += refs.size();
@@ -155,6 +159,8 @@ public class ClientGC implements Task, ClientGCMBean, MBeanFactory {
             break;
           }
         }
+        
+        boolean sent = true;
   
   
         for (int j = 0; j < oids.length; j++) {
@@ -165,24 +171,24 @@ public class ClientGC implements Task, ClientGCMBean, MBeanFactory {
             }
   
             refs.remove(oids[j]);
-            oidsToSend[count++] = oids[j];
+            oidsToSend.add(oids[j]);
             totalCount++;
   
-            if (count >= oidsToSend.length) {
-              doSend(oidsToSend, count, addresses[i]);
-              count = 0;
+            if (oidsToSend.size() >= _gcBatchSize) {
+              sent = doSend((OID[]) oidsToSend.toArray(new OID[oidsToSend.size()]), oidsToSend.size(), addresses[i]);
+              oidsToSend.clear();
             }
           }
            
         }
   
-        doSend(oidsToSend, count, addresses[i]);
-        
+        if(sent){
+          doSend((OID[]) oidsToSend.toArray(new OID[oidsToSend.size()]), oidsToSend.size(), addresses[i]);
+        }
         if(totalCount > 0){
           _lastGcCount = totalCount;
         }
         totalCount = 0;
-        count = 0;
         if(_threshold > 0 && refs.size() >= _threshold){
           _forcedGcPerHour.hit();
           Runtime.getRuntime().gc();
@@ -253,11 +259,12 @@ public class ClientGC implements Task, ClientGCMBean, MBeanFactory {
   
   //////// Private methods  
 
-  private void doSend(OID[] toSend, int count, ServerAddress addr) {
-    if ((count == 0) &&
-          ((System.currentTimeMillis() - _lastGlobalPingTime) < _gcInterval)) {
-      return;
+  private boolean doSend(OID[] toSend, int count, ServerAddress addr) {
+    if ((count == 0) && ((System.currentTimeMillis() - _lastGlobalPingTime) < _gcInterval)) {
+      Log.info(getClass(), "Skipping Client GC command to " + addr + " bacause interval " + _gcInterval + " not met");
+      return true;
     }
+    Log.info(getClass(), "Sending Client GC command to " + addr);
     
     Connection conn = null;
 
@@ -267,9 +274,9 @@ public class ClientGC implements Task, ClientGCMBean, MBeanFactory {
           Log.debug(getClass(), "sending GC command to " + addr + "; cleaning " + count + " objects");
         }
         
-        if(Log.isDebug()){
+        if(Log.isInfo()){
           for(int i = 0; i < toSend.length; i++){
-            Log.debug(getClass(), "Dereferencing: " + toSend[i]);
+            Log.info(getClass(), "Dereferencing: " + toSend[i]);
           }
         }
       } else {
@@ -287,14 +294,24 @@ public class ClientGC implements Task, ClientGCMBean, MBeanFactory {
       conn.receive();
       TransportManager.getConnectionsFor(addr).release(conn);
     } catch (Throwable e) {
+      Log.info(ClientGC.class, "Error sending GC command to server " + addr + " - cleaning up corresponding remote objects", e);
+      if(e instanceof RemoteException){
+        getHostMap(addr).clear();
+      }
+      
       if (conn != null) {
         conn.close();
       }
+      
+      return false;
     }
 
     for (int k = 0; k < count; k++) {
       toSend[k] = null;
     }
+    
+    return true;
+
   }
 
   private final Map getHostMap(ServerAddress addr) {
