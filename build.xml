@@ -253,19 +253,19 @@
 
   <!-- Build a release; done by project admins -->
   <target name="release" depends="build, site">
-    <taskdef classname="org.sapia.antlib.build.MakeVersionClass" name="makeVersionClass"/>
-    <taskdef classname="org.sapia.antlib.build.MakeVersionFile"  name="makeVersionFile"/>
+    <!--taskdef classname="org.sapia.antlib.build.MakeVersionClass" name="makeVersionClass"/>
+    <taskdef classname="org.sapia.antlib.build.MakeVersionFile"  name="makeVersionFile"/-->
     <mkdir dir="${basedir}/build/META-INF"/>
     <mkdir dir="${project.sourceDir}"/>
 
     <input message="Enter release version number (e.g.: 1.0.1):" addproperty="sapia.build.release.no"/>
-    <makeVersionClass destDir="${project.sourceDir}"/>
+    <!--makeVersionClass destDir="${project.sourceDir}"/>
     <makeVersionFile destDir="${basedir}/build/META-INF"
                      softwareName="Sapia Ubik"
                      version="${sapia.build.release.no}"/>
 
     <javac srcdir="${project.sourceDir}"
-           destdir="${project.classesDir}" includes="version.java" excludes="**/rmi/transport/udp/*"/>
+           destdir="${project.classesDir}" includes="version.java" excludes="**/rmi/transport/udp/*"/-->
 
     <antcall target="dist"/>
 
