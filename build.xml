@@ -77,7 +77,8 @@
 
   <!-- Compiles all the files of the ${project.sourceDir} and ${project.testDir} directories -->
   <target name="compile">
-    <javac destdir="${project.classesDir}" debug="true" classpathref="lib-classpath" excludes="**/CVS/**/*.java">
+    <javac destdir="${project.classesDir}" debug="true" source="1.5" target="1.5" 
+	classpathref="lib-classpath" excludes="**/CVS/**/*.java">
         <src path="${project.sourceDir}" />
         <src path="${project.testDir}" />
     </javac>
@@ -335,7 +336,7 @@
    <target name="compile-selected-files">
     <fail unless="files">Must set property 'files'</fail>
     <mkdir dir="${project.classesDir}"/>
-    <javac srcdir="${project.sourceDir}" destdir="${project.classesDir}" includes="${files}">
+    <javac srcdir="${project.sourceDir}" source="1.5" target="1.5" destdir="${project.classesDir}" includes="${files}">
       <classpath refid="lib-classpath"/>
     </javac>
   </target>
