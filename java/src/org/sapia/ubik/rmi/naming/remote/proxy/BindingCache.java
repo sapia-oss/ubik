@@ -54,7 +54,16 @@ public class BindingCache implements Externalizable {
 
       try {
         if ((ref.domainName != null) && domain.contains(ref.domainName)) {
-          ctx.rebind(ref.name, ref.obj);
+          Object toBind;
+          if(ref.obj instanceof SoftReference){
+            toBind = ((SoftReference)ref.obj).get();
+          }
+          else{
+            toBind = ref.obj;
+          }
+          if(toBind != null){
+            ctx.rebind(ref.name, toBind);
+          }
         }
       } catch (NamingException e) {
         //noop;

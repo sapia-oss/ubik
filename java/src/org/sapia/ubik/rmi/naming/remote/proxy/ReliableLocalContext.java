@@ -125,7 +125,7 @@ public class ReliableLocalContext extends LocalContext
    */
   public void addJndiDiscoListener(JndiDiscoListener listener) {
     if (!_helper.getChannel().isClosed()) {
-      _helper.addJndiDiscoListener(new JndiListenerWrapper(listener, _servers));
+      _helper.addJndiDiscoListener(new JndiListenerWrapper(listener));
     }
   }
 
@@ -141,12 +141,16 @@ public class ReliableLocalContext extends LocalContext
 
         Context remoteCtx = (Context) _resolver.resolve(tcp);
         _servers.add(remoteCtx);
+        _bindings.copyTo(remoteCtx, _domainName);
+
       } else if (evt.getType().equals(Consts.JNDI_SERVER_PUBLISH) &&
             (getInternalContext() != null)) {
         tcp = (TCPAddress) evt.getData();
 
         Context remoteCtx = (Context) _resolver.resolve(tcp);
         _servers.add(remoteCtx);
+        _bindings.copyTo(remoteCtx, _domainName);
+
       }
     } catch (RemoteException e) {
       e.printStackTrace();
@@ -225,13 +229,12 @@ public class ReliableLocalContext extends LocalContext
   /*////////////////////////////////////////////////////////////////////
                               INNER CLASSES
   ////////////////////////////////////////////////////////////////////*/
-  static class JndiListenerWrapper implements JndiDiscoListener {
+  
+  class JndiListenerWrapper implements JndiDiscoListener {
     private JndiDiscoListener _wrapped;
-    private List              _servers;
 
-    JndiListenerWrapper(JndiDiscoListener toWrap, List servers) {
+    JndiListenerWrapper(JndiDiscoListener toWrap) {
       _wrapped   = toWrap;
-      _servers   = servers;
     }
 
     /**
