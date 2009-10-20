@@ -20,6 +20,7 @@ import org.sapia.ubik.rmi.naming.remote.RemoteContext;
 import org.sapia.ubik.rmi.naming.remote.discovery.DiscoveryHelper;
 import org.sapia.ubik.rmi.naming.remote.discovery.JndiDiscoListener;
 import org.sapia.ubik.rmi.naming.remote.discovery.ServiceDiscoListener;
+import org.sapia.ubik.rmi.server.Log;
 
 
 /**
@@ -92,7 +93,7 @@ public class ReliableLocalContext extends LocalContext
 
     if (!_helper.getChannel().isClosed()) {
       _bindings.add(_helper.getChannel().getDomainName().toString(),
-        n.toString(), o);
+        n, o);
     }
   }
 
@@ -103,7 +104,7 @@ public class ReliableLocalContext extends LocalContext
     super.rebind(n, o);
 
     if (!_helper.getChannel().isClosed()) {
-      _bindings.add(_helper.getChannel().getDomainName().toString(), n, o);
+      _bindings.add(_helper.getChannel().getDomainName().toString(), super.getNameParser().parse(n), o);
     }
   }
 
@@ -141,21 +142,25 @@ public class ReliableLocalContext extends LocalContext
 
         Context remoteCtx = (Context) _resolver.resolve(tcp);
         _servers.add(remoteCtx);
-        _bindings.copyTo(remoteCtx, _domainName);
+        _bindings.copyTo(remoteCtx, _domainName, super._url,
+            _helper.getChannel().getMulticastHost(),
+            _helper.getChannel().getMulticastPort());
 
       } else if (evt.getType().equals(Consts.JNDI_SERVER_PUBLISH) &&
             (getInternalContext() != null)) {
+        Log.info(getClass(), "Discovered naming service; binding cached stubs...");
         tcp = (TCPAddress) evt.getData();
 
         Context remoteCtx = (Context) _resolver.resolve(tcp);
         _servers.add(remoteCtx);
-        _bindings.copyTo(remoteCtx, _domainName);
-
+        _bindings.copyTo(remoteCtx, _domainName, super._url,
+        _helper.getChannel().getMulticastHost(),
+        _helper.getChannel().getMulticastPort());
       }
     } catch (RemoteException e) {
-      e.printStackTrace();
+      Log.error(getClass(), "Could not connect to naming service", e);
     } catch (IOException e) {
-      e.printStackTrace();
+      Log.error(getClass(), "IO problem trying to bind services", e);
     }
   }
 

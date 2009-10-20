@@ -12,9 +12,11 @@ import java.util.Collections;
 import java.util.List;
 
 import javax.naming.Context;
+import javax.naming.Name;
 import javax.naming.NamingException;
 
 import org.sapia.ubik.mcast.DomainName;
+import org.sapia.ubik.rmi.naming.remote.StubTweaker;
 import org.sapia.ubik.rmi.server.Stub;
 import org.sapia.ubik.rmi.server.StubInvocationHandler;
 
@@ -34,7 +36,7 @@ public class BindingCache implements Externalizable {
   public BindingCache() {
   }
 
-  public synchronized void add(String domainName, String name, Object o) {
+  public synchronized void add(String domainName, Name name, Object o) {
     _services.add(new BoundRef(domainName, name, o));
   }
 
@@ -42,7 +44,7 @@ public class BindingCache implements Externalizable {
     return _services;
   }
 
-  public void copyTo(Context ctx, DomainName domain) {
+  public void copyTo(Context ctx, DomainName domain, String baseUrl, String mcastAddress, int mcastPort) {
     BoundRef ref;
 
     for (int i = 0; i < _services.size(); i++) {
@@ -62,6 +64,12 @@ public class BindingCache implements Externalizable {
             toBind = ref.obj;
           }
           if(toBind != null){
+            toBind = StubTweaker.tweak(baseUrl, 
+                ref.name, 
+                ref.domainName, 
+                mcastAddress, 
+                mcastPort, 
+                toBind);
             ctx.rebind(ref.name, toBind);
           }
         }
@@ -94,7 +102,7 @@ public class BindingCache implements Externalizable {
   }
 
   public static class BoundRef implements Externalizable {
-    public String     name;
+    public Name     name;
     public Object     obj;
     public DomainName domainName;
 
@@ -104,7 +112,7 @@ public class BindingCache implements Externalizable {
     public BoundRef() {
     }
 
-    BoundRef(String domainName, String name, Object o) {
+    BoundRef(String domainName, Name name, Object o) {
       this.domainName   = DomainName.parse(domainName);
       this.name         = name;
       this.obj          = new SoftReference(o);
@@ -112,13 +120,13 @@ public class BindingCache implements Externalizable {
 
     public void readExternal(ObjectInput in)
       throws IOException, ClassNotFoundException {
-      this.name         = in.readUTF();
+      this.name         = (Name)in.readObject();
       this.obj          = in.readObject();
       this.domainName   = (DomainName) in.readObject();
     }
 
     public void writeExternal(ObjectOutput out) throws IOException {
-      out.writeUTF(name);
+      out.writeObject(name);
 
       Object toWrite;
 
