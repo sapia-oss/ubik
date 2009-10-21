@@ -265,7 +265,7 @@
                      softwareName="Sapia Ubik"
                      version="${sapia.build.release.no}"/>
 
-    <javac srcdir="${project.sourceDir}"
+    <javac srcdir="${project.sourceDir}" source="1.5" target="1.5" 
            destdir="${project.classesDir}" includes="version.java" excludes="**/rmi/transport/udp/*"/-->
 
     <antcall target="dist"/>
