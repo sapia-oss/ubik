@@ -390,6 +390,7 @@ public class LocalContext extends ContextProxy implements java.rmi.Remote {
       } catch (RemoteException e) {
         NamingException ne = new NamingException("Could not acquire stub");
         ne.setRootCause(e);
+        throw ne;
       }
     }
 
