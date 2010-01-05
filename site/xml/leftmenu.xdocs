@@ -1,5 +1,6 @@
 <sapia:vmenu xmlns:sapia="http://www.sapia-oss.org/2003/XSL/Transform">
   <sapia:vsection name="Project Home" href="home.html"/>
+  <sapia:vsection name="Wiki" href="http://code.google.com/p/sapia/wiki/Ubik"/>
   <sapia:vsection name="RMI" href="rmi.html">
     <sapia:vitem name="Remoting for Dummies" href="rmi.html#dummies" />
     <sapia:vitem name="Seeing is Believing" href="rmi.html#believing" />
