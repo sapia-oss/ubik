@@ -221,7 +221,7 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
     String msg = "Buffer size to short; set to: " + bufSize() +
       ". This size is not enough to receive some incoming packets";
 
-    System.err.println(msg);
+    Log.error(getClass(), msg);
   }
 
   /**
@@ -268,7 +268,7 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
           _consumer.onAsyncEvent(evt);
         }
       } else {
-        System.out.println("Object not a remote event: " +
+        Log.error(getClass(), "Object not a remote event: " +
           o.getClass().getName() + "; " + o);
       }
     } catch (IOException e) {

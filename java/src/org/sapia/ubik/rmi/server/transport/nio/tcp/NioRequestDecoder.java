@@ -1,17 +1,12 @@
 package org.sapia.ubik.rmi.server.transport.nio.tcp;
 
-import java.io.ByteArrayInputStream;
-
 import org.apache.mina.common.ByteBuffer;
 import org.apache.mina.common.IoSession;
 import org.apache.mina.filter.codec.CumulativeProtocolDecoder;
 import org.apache.mina.filter.codec.ProtocolDecoderOutput;
 import org.sapia.ubik.rmi.server.transport.MarshalInputStream;
-import org.sapia.ubik.rmi.server.transport.MarshalOutputStream;
-import org.sapia.ubik.rmi.server.transport.nio.tcp.NioResponseEncoder.EncoderState;
 import org.sapia.ubik.util.ByteVector;
 import org.sapia.ubik.util.ByteVectorInputStream;
-import org.sapia.ubik.util.ByteVectorOutputStream;
 
 /**
  * A decoder for incoming Ubik client requests.

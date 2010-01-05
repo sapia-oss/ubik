@@ -1,6 +1,5 @@
 package org.sapia.ubik.rmi.server.transport.nio.tcp;
 
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;

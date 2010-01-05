@@ -1,17 +1,12 @@
 package org.sapia.ubik.rmi.server.transport.nio.tcp;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-
-import org.sapia.ubik.rmi.server.transport.MarshalInputStream;
-import org.sapia.ubik.rmi.server.transport.MarshalOutputStream;
-import org.sapia.ubik.util.ByteVector;
-import org.sapia.ubik.util.ByteVectorOutputStream;
 
 import org.apache.mina.common.ByteBuffer;
 import org.apache.mina.common.IoSession;
 import org.apache.mina.filter.codec.ProtocolEncoder;
 import org.apache.mina.filter.codec.ProtocolEncoderOutput;
+import org.sapia.ubik.rmi.server.transport.MarshalOutputStream;
 
 /**
  * An encoder of Ubik server responses.
