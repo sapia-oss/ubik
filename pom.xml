@@ -6,7 +6,7 @@
 
   <groupId>org.sapia</groupId>
   <artifactId>sapia_ubik</artifactId>
-  <version>2.5.5</version>
+  <version>2.5.6-SNAPSHOT</version>
 
   <organization>
     <name>Sapia OSS</name>
@@ -48,9 +48,9 @@
   </repositories>
 
   <scm>
-    <connection>scm:svn:http://sapia.googlecode.com/svn/branches/ubik/sapia_ubik-2.5.5</connection>
-    <developerConnection>scm:svn:https://sapia.googlecode.com/svn/branches/ubik/sapia_ubik-2.5.5</developerConnection>
-    <url>scm:svn:https://sapia.googlecode.com/svn/branches/ubik/sapia_ubik-2.5.5</url>
+    <connection>scm:svn:http://sapia.googlecode.com/svn/branches/ubik</connection>
+    <developerConnection>scm:svn:https://sapia.googlecode.com/svn/branches/ubik</developerConnection>
+    <url>scm:svn:https://sapia.googlecode.com/svn/branches/ubik</url>
   </scm>
 
   <licenses>
