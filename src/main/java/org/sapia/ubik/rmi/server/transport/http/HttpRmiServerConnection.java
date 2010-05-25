@@ -3,6 +3,7 @@ package org.sapia.ubik.rmi.server.transport.http;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.SocketException;
 import java.rmi.RemoteException;
 
 import org.sapia.ubik.net.ServerAddress;
@@ -10,9 +11,8 @@ import org.sapia.ubik.rmi.server.VmId;
 import org.sapia.ubik.rmi.server.transport.MarshalInputStream;
 import org.sapia.ubik.rmi.server.transport.MarshalOutputStream;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
-
-import simple.http.Request;
-import simple.http.Response;
+import org.simpleframework.http.Request;
+import org.simpleframework.http.Response;
 
 
 /**
@@ -78,8 +78,9 @@ class HttpRmiServerConnection implements RmiConnection {
       os.flush();
       os.close();
     } catch (java.net.SocketException e) {
-      throw new RemoteException("communication with server interrupted; server probably disappeared",
-        e);
+      throw new RemoteException("communication with server interrupted; server probably disappeared", e);
+    } catch (Exception e){
+      throw new RemoteException("communication with server interrupted; server probably disappeared", e);
     }
   }
 
@@ -89,7 +90,7 @@ class HttpRmiServerConnection implements RmiConnection {
   public void close() {
     try {
       _res.commit();
-    } catch (IOException e) {
+    } catch (Exception e) {
       //noop
     }
   }
@@ -106,9 +107,15 @@ class HttpRmiServerConnection implements RmiConnection {
    */
   public Object receive()
     throws IOException, ClassNotFoundException, RemoteException {
-    MarshalInputStream is = new MarshalInputStream(_req.getInputStream());
-
-    return is.readObject();
+    try{
+      MarshalInputStream is = new MarshalInputStream(_req.getInputStream());
+      return is.readObject();
+    }catch(SocketException e){
+      throw new RemoteException("communication with server interrupted; server probably disappeared",
+          e);
+    }catch(Exception e){
+      throw new IOException(e);
+    }
   }
 
   /**
@@ -122,6 +129,9 @@ class HttpRmiServerConnection implements RmiConnection {
     } catch (java.net.SocketException e) {
       throw new RemoteException("communication with server interrupted; server probably disappeared",
         e);
+    }catch(Exception e){
+      throw new IOException(e);
     }
+
   }
 }

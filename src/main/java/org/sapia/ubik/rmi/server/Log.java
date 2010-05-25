@@ -93,12 +93,23 @@ public class Log {
     }
   }
 
+  public static final void warning(Class caller, Object msg, Throwable err){
+    if (_lvl <= WARNING) {
+      warning(caller.getName(), msg, err);
+    }
+  }
+
   public static final void warning(String caller, Object msg) {
     if (_lvl <= WARNING) {
       display(caller, msg);
     }
   }
 
+  public static final void warning(String caller, Object msg, Throwable err) {
+    if (_lvl <= WARNING) {
+      display(caller, msg, err);
+    }
+  }
   public static final void error(Class caller, Object msg) {
     if (_lvl <= ERROR) {
       error(caller.getName(), msg);

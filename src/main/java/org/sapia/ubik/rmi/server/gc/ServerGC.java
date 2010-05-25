@@ -159,7 +159,7 @@ public class ServerGC implements Task, ServerGCMBean, MBeanFactory {
     removeTimedOutClients();
   }
 
-  void clear() {
+  public  void clear() {
     _clientTable.clear();
     Hub.serverRuntime.objectTable.clear();
   }

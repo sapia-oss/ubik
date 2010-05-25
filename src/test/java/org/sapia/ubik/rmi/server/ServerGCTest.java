@@ -15,21 +15,23 @@ public class ServerGCTest extends TestCase {
   public ServerGCTest(String name) {
     super(name);
   }
-
+  
   public void testRegisterRef() throws Exception {
     OID  oid  = new OID(1);
     VmId vmid = new VmId(1);
-
+    Hub.serverRuntime.gc.clear();
     Hub.serverRuntime.gc.registerRef(vmid, oid, "addr_1");
-    super.assertTrue(Hub.serverRuntime.gc.getRefCount(vmid, oid) == 1);
+    
+    super.assertEquals(1, Hub.serverRuntime.gc.getRefCount(vmid, oid));
   }
 
   public void testUnregisterRef() throws Exception {
     OID  oid  = new OID(2);
-    VmId vmid = new VmId(1);
+    VmId vmid = new VmId(2);
+    Hub.serverRuntime.gc.clear();
     Hub.serverRuntime.gc.registerRef(vmid, oid, "addr_2");
     Hub.serverRuntime.gc.dereference(vmid, oid);
-    super.assertTrue(Hub.serverRuntime.gc.getRefCount(vmid, oid) == 0);
+    super.assertEquals(0, Hub.serverRuntime.gc.getRefCount(vmid, oid));
   }
 
   public void testMultiVm() throws Exception {
@@ -38,6 +40,7 @@ public class ServerGCTest extends TestCase {
     VmId   vm3 = new VmId(3);
     OID    oid = new OID(3);
     String obj = "object3";
+    Hub.serverRuntime.gc.clear();
 
     Hub.serverRuntime.gc.registerRef(vm1, oid, obj);
     super.assertTrue(Hub.serverRuntime.gc.getRefCount(vm1, oid) == 1);

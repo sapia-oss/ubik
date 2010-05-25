@@ -6,6 +6,11 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NameNotFoundException;
 
+import junit.framework.Assert;
+
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.sapia.ubik.rmi.examples.Foo;
 import org.sapia.ubik.rmi.examples.UbikFoo;
 import org.sapia.ubik.rmi.naming.remote.EmbeddableJNDIServer;
@@ -15,10 +20,7 @@ import org.sapia.ubik.rmi.naming.remote.discovery.JndiDiscoListener;
 import org.sapia.ubik.rmi.naming.remote.discovery.ServiceDiscoListener;
 import org.sapia.ubik.rmi.naming.remote.discovery.ServiceDiscoveryEvent;
 import org.sapia.ubik.rmi.server.Hub;
-
-import junit.framework.TestCase;
-import junit.framework.TestResult;
-import junit.framework.TestSuite;
+import org.sapia.ubik.rmi.server.Log;
 
 /**
  * @author Yanick Duchesne
@@ -29,35 +31,28 @@ import junit.framework.TestSuite;
  *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
  * </dl>
  */
-public class JndiTest extends TestCase{
+public class JndiTest{
 	
   static final int PORT = 5152;
 	static final int WRONG_PORT = 5153;
   static final String DOMAIN = "JndiTest";
 	static final String WRONG_DOMAIN = "default";  
   
-  private EmbeddableJNDIServer _server; 
+  private static EmbeddableJNDIServer _server; 
 	
-	public JndiTest(String name){
-		super(name);
-	}
-	
-	/**
-   * @see junit.framework.TestCase#setUp()
-   */
-  private void doSetUp() throws Exception {
+	@BeforeClass
+  public static void beforeClass() throws Exception {
 		_server = new EmbeddableJNDIServer(DOMAIN, PORT);
 		_server.start(false);
 	}
 	
-	/**
-   * @see junit.framework.TestCase#tearDown()
-   */
-  private void doTearDown() throws Exception {
+	@AfterClass
+  public static void afterClass() throws Exception {
   	_server.stop();
 		Hub.shutdown(10000);
   }
   
+	/*
   public void testAll() throws Exception{
   	doSetUp();
 		TestSuite suite = new TestSuite();
@@ -71,23 +66,28 @@ public class JndiTest extends TestCase{
 		suite.run(res);
 		doTearDown();		
 		listener.throwExc();
-  }
+  }*/
 
-	public void doTestDiscovery() throws Exception{
+	@Test
+	public void testDiscovery() throws Exception{
 		InitialContext ctx = new InitialContext(props(WRONG_PORT, DOMAIN));
 		ctx.close();
 	}
-	
-	public void doTestBind() throws Exception{
+
+	@Test
+	public void testBind() throws Exception{
 		InitialContext ctx = new InitialContext(props(PORT, DOMAIN));
 		Foo f = new UbikFoo();
 		ctx.bind("intg/test/foo", f);
 		ctx.close();
 	}
-	
-	public void doTestLookup() throws Exception{
+
+	 @Test
+	public void testLookup() throws Exception{
 		InitialContext ctx = new InitialContext(props(PORT, DOMAIN));
-		Foo f = (Foo)ctx.lookup("intg/test/foo");
+    Foo f = new UbikFoo();
+    ctx.bind("intg/test/foo", f);
+		f = (Foo)ctx.lookup("intg/test/foo");
 		
 		try{
 			ctx.lookup("intg/test/none");
@@ -99,25 +99,23 @@ public class JndiTest extends TestCase{
 		ctx.close();		
 	}
 	
-	public void doTestDiscoveryHelper() throws Exception{
+	@Test
+	public void testDiscoveryHelper() throws Exception{
 		DiscoveryHelper helper = new DiscoveryHelper(DOMAIN);
 		DiscoListenerImpl listener = new DiscoListenerImpl();
 		helper.addServiceDiscoListener(listener);
 		helper.addJndiDiscoListener(listener);		
-		EmbeddableJNDIServer server = new EmbeddableJNDIServer(DOMAIN, WRONG_PORT);
-		server.start(true);
-		InitialContext ctx = new InitialContext(props(PORT, DOMAIN));
+		InitialContext ctx = new InitialContext(props(WRONG_PORT, DOMAIN));
 		Foo f = new UbikFoo();
 		ctx.rebind("intg/test/foo", f);
-		server.stop();
+    Thread.sleep(2000);
 		ctx.close();
-		Thread.sleep(2000);
-		super.assertTrue("Service not discovered", listener.serviceDiscovered);
-		super.assertTrue("JNDI not discovered", listener.jndiDiscovered);		
-
+		Assert.assertTrue("Service not discovered", listener.serviceDiscovered);
+		Assert.assertTrue("JNDI not discovered", listener.jndiDiscovered);		
+		
 	}
 
-	private static Properties props(int port, String domain){
+  private static Properties props(int port, String domain){
 		Properties props = new Properties();
 		props.setProperty(Context.INITIAL_CONTEXT_FACTORY, RemoteInitialContextFactory.class.getName());
 		props.setProperty(Context.PROVIDER_URL, "ubik://localhost:" + port);

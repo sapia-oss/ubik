@@ -2,6 +2,7 @@ package org.sapia.ubik.rmi.server;
 
 import java.io.IOException;
 import java.lang.reflect.Proxy;
+import java.net.ConnectException;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -382,6 +383,7 @@ public class Hub {
     Object     toReturn;
 
     try {
+      
       conn = TransportManager.getConnectionsFor(address).acquire();
 
       try {
@@ -394,10 +396,12 @@ public class Hub {
       }
 
       toReturn = conn.receive();
+    } catch (ConnectException e){
+      throw new RemoteException("No server at address: " + address, e);
     } catch (IOException e) {
-      throw new RemoteException("error connecting to remote server", e);
+      throw new RemoteException("Error connecting to remote server " + address, e);
     } catch (ClassNotFoundException e) {
-      throw new RemoteException("could not find class", e);
+      throw new RemoteException("Could not find class", e);
     } finally {
       if (conn != null) {
         TransportManager.getConnectionsFor(address).release(conn);
@@ -408,7 +412,7 @@ public class Hub {
       if (toReturn instanceof RuntimeException) {
         throw (RuntimeException) toReturn;
       } else {
-        throw new RemoteException("problem connecting to remote server",
+        throw new RemoteException("Problem connecting to remote server",
           (Throwable) toReturn);
       }
     }

@@ -99,6 +99,11 @@ public class InQueue extends ExecQueue {
         }
       }
     }
+    
+    @Override
+    protected void handleExecutionException(Exception e) {
+      Log.warning(getClass(), "Error executing thread", e);
+    }
 
     /**
      * @see org.sapia.ubik.net.PooledThread#shutdown()

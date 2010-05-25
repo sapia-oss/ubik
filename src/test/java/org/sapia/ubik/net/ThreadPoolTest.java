@@ -80,6 +80,11 @@ public class ThreadPoolTest extends TestCase {
     protected void doExec(Object task) {
       count++;
     }
+    
+    @Override
+    protected void handleExecutionException(Exception e) {
+      e.printStackTrace();
+    }
   }
 
   class TestThreadPool extends ThreadPool {
@@ -99,5 +104,7 @@ public class ThreadPoolTest extends TestCase {
     protected PooledThread newThread() throws Exception {
       return new TestPooledThread();
     }
+    
+    
   }
 }

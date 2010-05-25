@@ -100,7 +100,7 @@ public class EmbeddableJNDIServer implements Runnable, RemoteContextProvider, As
         _ec.dispatch(Consts.JNDI_SERVER_DISCO,
             new TCPAddress(Localhost.getLocalAddress().getHostAddress(), _port));
       }catch(Exception e){
-        e.printStackTrace();
+        Log.warning(getClass(), "Could not dispatch JNDI server publishing event", e);
       }
     }
     

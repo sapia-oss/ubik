@@ -25,6 +25,7 @@ import org.sapia.ubik.rmi.naming.remote.archie.SyncPutEvent;
 import org.sapia.ubik.rmi.naming.remote.proxy.ContextResolver;
 import org.sapia.ubik.rmi.naming.remote.proxy.DefaultContextResolver;
 import org.sapia.ubik.rmi.naming.remote.proxy.LocalContext;
+import org.sapia.ubik.rmi.server.Log;
 
 /**
  * An instance of this class can be used by applications to listen for the appearance of
@@ -159,7 +160,7 @@ public class DiscoveryHelper implements AsyncEventListener {
           try{
             remoteCtx = new LocalContext(getJndiURI(tcp), (RemoteContext)remoteCtx);
           }catch(NamingException e){
-            e.printStackTrace();
+            Log.warning(getClass(), "Could not create local context", e);
             return;              
           }
         }
@@ -193,15 +194,15 @@ public class DiscoveryHelper implements AsyncEventListener {
             listener.onServiceDiscovered(sevt);
           }
         } catch (IOException e) {
-          e.printStackTrace();
+          Log.warning(getClass(), "Caught connection error", e);
         } catch (ClassNotFoundException e) {
-          e.printStackTrace();
+          Log.warning(getClass(), "Class not found deserializing event", e);
         }
       }
     } catch (RemoteException e) {
-      e.printStackTrace();
+      Log.warning(getClass(), "Caught connection error", e);
     } catch (IOException e) {
-      e.printStackTrace();
+      Log.warning(getClass(), "Caught IO error", e);
     }
   }
 

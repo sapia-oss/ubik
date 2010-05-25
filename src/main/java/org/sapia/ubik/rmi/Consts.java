@@ -27,7 +27,7 @@ public interface Consts {
   /**
    * The default multicast address.
    */
-  public static final String DEFAULT_MCAST_ADDR = "224.0.0.1";
+  public static final String DEFAULT_MCAST_ADDR = "231.173.5.7";
 
   /**
    * The default multicast port.

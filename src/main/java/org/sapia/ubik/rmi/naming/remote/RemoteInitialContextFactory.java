@@ -205,7 +205,7 @@ public class RemoteInitialContextFactory implements InitialContextFactory, Const
         
         addr = (TCPAddress) evt.getData();
         
-        Log.warning(getClass(), "Disovered JNDI server at : " + addr);        
+        Log.warning(getClass(), "Discovered JNDI server at : " + addr);        
         ctx = resolver.resolve(addr);
         return new ReliableLocalContext(ec, uri.toString(), ctx, false, resolver);
       }catch(Exception e2){

@@ -104,7 +104,7 @@ public abstract class PooledThread extends Thread {
       try {
         doExec(_task);
       } catch (Exception e) {
-        e.printStackTrace();
+        handleExecutionException(e);
         // noop
       }
       
@@ -126,4 +126,6 @@ public abstract class PooledThread extends Thread {
    * @param a task to execute, or data on which this method should act.
    */
   protected abstract void doExec(Object task);
+  
+  protected abstract void handleExecutionException(Exception e);
 }

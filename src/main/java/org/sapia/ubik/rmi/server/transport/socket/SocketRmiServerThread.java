@@ -28,6 +28,7 @@ import org.sapia.ubik.rmi.server.transport.RmiConnection;
  * </dl>
  */
 public class SocketRmiServerThread extends PooledThread {
+
   private Perf _perf = new Perf();
   Connection           _current;
 
@@ -187,6 +188,11 @@ public class SocketRmiServerThread extends PooledThread {
         }
       }
     }
+  }
+  
+  @Override
+  protected void handleExecutionException(Exception e) {
+    Log.warning(getClass(), "Error executing thread", e);
   }
   
   private void end(long start){

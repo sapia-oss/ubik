@@ -63,5 +63,10 @@ public class MyServer extends SocketServer {
         t.printStackTrace();
       }
     }
+    
+    @Override
+    protected void handleExecutionException(Exception e) {
+      e.printStackTrace();
+    }
   }
 }

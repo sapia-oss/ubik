@@ -159,4 +159,11 @@ class HttpRmiServerThread extends PooledThread {
       }
     }
   }
+
+  @Override
+  protected void handleExecutionException(Exception e) {
+    Log.warning(getClass(), "Error executing thread", e);
+  }
+  
+  
 }
