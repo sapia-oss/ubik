@@ -1,5 +1,6 @@
 package org.sapia.ubik.rmi.server.transport.http;
 
+import java.io.File;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.rmi.RemoteException;
@@ -48,25 +49,34 @@ public class HttpTransportProvider implements TransportProvider, HttpConsts {
   }
 
   private String        _transportType;
-  private ContainerMap _services = new ContainerMap();
+  private ServiceMapper _services = new ServiceMapper();
   private Map           _pools = Collections.synchronizedMap(new HashMap());
 
   public HttpTransportProvider() {
-    this(HttpConsts.DEFAULT_HTTP_TRANSPORT_TYPE);
+    this(HttpConsts.DEFAULT_HTTP_TRANSPORT_TYPE,
+      new File(System.getProperty("user.dir")));
   }
 
   /**
    * @param transportType a "transport type" identifier.
    */
   public HttpTransportProvider(String transportType) {
+    this(transportType, new File(System.getProperty("user.dir")));
+  }
+
+  /**
+   * @param transportType a "transport type" identifier.
+   */
+  public HttpTransportProvider(String transportType, File baseDir) {
     _transportType = transportType;
+    _services.setBaseDir(baseDir);
   }
   
   /**
    * @return the <code>ServiceMapper</code> that holds this instance`s request handlers ("services", in
    * the Simple API's terms).
    */
-  public ContainerMap getServices() {
+  public ServiceMapper getServices() {
     return _services;
   }
 
@@ -168,7 +178,7 @@ public class HttpTransportProvider implements TransportProvider, HttpConsts {
       }
     }
 
-    HttpRmiServer svr = new HttpRmiServer(_services, serverUrl,
+    HttpRmiServer svr = new HttpRmiServer(_services, _transportType, serverUrl,
         contextPath, port);
     svr.setMaxThreads(max);
 
@@ -187,9 +197,9 @@ public class HttpTransportProvider implements TransportProvider, HttpConsts {
    * other types of requests (non-Ubik ones) to be processed by the same HTTP
    * server.
    *
-   * @return the {@link ContainerMap} that this instance holds.
+   * @return the <code>ServiceMapper</code> that this instance holds.
    */
-  public ContainerMap getContainerMap() {
+  public ServiceMapper getServiceMapper() {
     return _services;
   }
 }

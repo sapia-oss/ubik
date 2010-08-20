@@ -1,9 +1,7 @@
 package org.sapia.ubik.rmi.server.transport.http;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.net.ServerSocket;
-import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.rmi.RemoteException;
 
@@ -11,8 +9,8 @@ import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.Uri;
 import org.sapia.ubik.rmi.server.Server;
 
-import org.simpleframework.http.connect.Connection;
-import org.simpleframework.http.connect.SocketConnection;
+import simple.http.connect.Connection;
+import simple.http.connect.ConnectionFactory;
 
 
 /**
@@ -32,10 +30,10 @@ import org.simpleframework.http.connect.SocketConnection;
  * </dl>
  */
 class HttpRmiServer implements Server, HttpConsts {
-  private ContainerMap  _services;
-  //private String        _transportType;
+  private String        _transportType;
   private String        _path;
   private Uri           _serverUrl;
+  private ServiceMapper _services;
   private ServerSocket  _server;
   private HttpAddress   _address;
   private int           _maxThreads = 0;
@@ -44,17 +42,18 @@ class HttpRmiServer implements Server, HttpConsts {
   /**
    * Creates an instance of this class.
    *
-   * @param services a {@link ContainerMap}.
+   * @param services a <code>ServiceMapper</code>.
+   * @param transportType a "transport type" identifier.
    * @param path the URL path to which this server will correspond.
    * @param port a port (must be >= 0).
    */
-  HttpRmiServer(ContainerMap services, Uri serverUrl,
+  HttpRmiServer(ServiceMapper services, String transportType, Uri serverUrl,
     String path, int localPort) {
     if (serverUrl.getPort() <= 0) {
       throw new IllegalStateException("Server does not support dynamic port");
     }
 
-    //_transportType   = transportType;
+    _transportType   = transportType;
     _serverUrl       = serverUrl;
     _path            = path;
     _services        = services;
@@ -97,12 +96,14 @@ class HttpRmiServer implements Server, HttpConsts {
     try {
       _address = new HttpAddress(_serverUrl);
 
-      
-      UbikHttpHandler svc = new UbikHttpHandler(_serverUrl, _maxThreads);
+      UbikHttpHandler svc = new UbikHttpHandler(_serverUrl,
+          _services.getContext(), _maxThreads);
       _services.addService(_path, svc);
-      Connection conn = new SocketConnection(_services);
-      SocketAddress addr = new InetSocketAddress(_localPort);
-      conn.connect(addr);
+      
+      HeaderHandler hh   = new HeaderHandler(_services);
+      Connection    conn = ConnectionFactory.getConnection(_services);
+      _server = new ServerSocket(_localPort);
+      conn.connect(_server);
     } catch (UnknownHostException e) {
       throw new RemoteException("Could not acquire local address", e);
     } catch (IOException e) {

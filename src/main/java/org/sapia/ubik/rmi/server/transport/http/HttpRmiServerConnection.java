@@ -11,8 +11,9 @@ import org.sapia.ubik.rmi.server.VmId;
 import org.sapia.ubik.rmi.server.transport.MarshalInputStream;
 import org.sapia.ubik.rmi.server.transport.MarshalOutputStream;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
-import org.simpleframework.http.Request;
-import org.simpleframework.http.Response;
+
+import simple.http.Request;
+import simple.http.Response;
 
 
 /**
