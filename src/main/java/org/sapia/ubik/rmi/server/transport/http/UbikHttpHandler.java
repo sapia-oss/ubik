@@ -4,6 +4,7 @@ import org.sapia.ubik.net.PooledThread;
 import org.sapia.ubik.net.Uri;
 import org.sapia.ubik.rmi.server.Log;
 
+import simple.http.ProtocolHandler;
 import simple.http.Request;
 import simple.http.Response;
 import simple.http.load.ActiveService;
@@ -21,20 +22,18 @@ import simple.http.serve.Context;
  *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
  * </dl>
  */
-public class UbikHttpHandler extends ActiveService {
+public class UbikHttpHandler implements ProtocolHandler{
   private HttpAddress             _addr;
   private HttpRmiServerThreadPool _pool;
 
-  public UbikHttpHandler(Uri localHostUri, Context ctx, int maxThreads) {
-    super(ctx);
+  public UbikHttpHandler(Uri localHostUri, int maxThreads) {
     _addr   = new HttpAddress(localHostUri);
     _pool   = new HttpRmiServerThreadPool(true, maxThreads);
   }
 
-  /**
-   * @see simple.http.serve.BasicResource#process(simple.http.Request, simple.http.Response)
-   */
-  protected void process(Request req, Response res) throws Exception {
+  
+  @Override
+  public void handle(Request req, Response res) {
     HttpRmiServerConnection conn = new HttpRmiServerConnection(_addr, req, res);
     try{
       PooledThread            th = (PooledThread) _pool.acquire();

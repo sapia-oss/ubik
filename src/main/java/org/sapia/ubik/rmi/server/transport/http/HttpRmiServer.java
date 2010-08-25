@@ -96,8 +96,7 @@ class HttpRmiServer implements Server, HttpConsts {
     try {
       _address = new HttpAddress(_serverUrl);
 
-      UbikHttpHandler svc = new UbikHttpHandler(_serverUrl,
-          _services.getContext(), _maxThreads);
+      UbikHttpHandler svc = new UbikHttpHandler(_serverUrl, _maxThreads);
       _services.addService(_path, svc);
       
       HeaderHandler hh   = new HeaderHandler(_services);

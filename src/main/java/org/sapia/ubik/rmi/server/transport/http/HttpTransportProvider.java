@@ -69,7 +69,6 @@ public class HttpTransportProvider implements TransportProvider, HttpConsts {
    */
   public HttpTransportProvider(String transportType, File baseDir) {
     _transportType = transportType;
-    _services.setBaseDir(baseDir);
   }
   
   /**

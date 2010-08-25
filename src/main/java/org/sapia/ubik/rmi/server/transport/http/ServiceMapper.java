@@ -25,23 +25,9 @@ import simple.util.parse.URIParser;
  * </dl>
  */
 public class ServiceMapper implements ProtocolHandler {
-  private FileContext _context;
-  private FileEngine  _engine = new FileEngine(_context = new FileContext(
-          new File(System.getProperty("user.dir"))));
-  private Map _services = new HashMap();
+  private Map<String, ProtocolHandler> _services = new HashMap();
 
   public ServiceMapper() {
-  }
-
-  /**
-   * @return this instance's <code>Context</code> object.
-   */
-  public Context getContext() {
-    return _context;
-  }
-
-  public void setBaseDir(File baseDir) {
-    _engine = new FileEngine(_context = new FileContext(baseDir));
   }
 
   /**
@@ -51,7 +37,7 @@ public class ServiceMapper implements ProtocolHandler {
    * @param contextPath the path that follows the host:port in a HTTP URL.
    * @param svc a <code>Service</code> instance, as specified by the Simple API.
    */
-  public void addService(String contextPath, Service svc) {
+  public void addService(String contextPath, ProtocolHandler svc) {
     if (contextPath == null) {
       contextPath = "/";
     }
@@ -63,6 +49,18 @@ public class ServiceMapper implements ProtocolHandler {
     _services.put(contextPath, svc);
   }
 
+  public void addService(String contextPath, Service svc) {
+    if (contextPath == null) {
+      contextPath = "/";
+    }
+
+    if (!contextPath.startsWith("/")) {
+      contextPath = "/" + contextPath;
+    }
+
+    _services.put(contextPath, new ProtocolHandlerAdapter(svc));
+  }
+  
   /**
    * @see simple.http.ProtocolHandler#handle(simple.http.Request, simple.http.Response)
    */
@@ -71,11 +69,26 @@ public class ServiceMapper implements ProtocolHandler {
     uri.parse(req.getURI());
 
     if (uri.getPath() != null) {
-      Service svc = (Service) _services.get(uri.getPath().getPath());
+      ProtocolHandler svc = (ProtocolHandler) _services.get(uri.getPath().getPath());
 
       if (svc != null) {
         svc.handle(req, res);
       }
     }
+  }
+  
+  static class ProtocolHandlerAdapter implements ProtocolHandler{
+    
+    private Service service;
+    
+    public ProtocolHandlerAdapter(Service service) {
+      this.service = service;
+    }
+    
+    @Override
+    public void handle(Request req, Response res) {
+      this.service.handle(req, res);
+    }
+    
   }
 }
