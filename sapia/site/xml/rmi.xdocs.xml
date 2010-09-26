@@ -1,0 +1,204 @@
+<sapia:page title="Ubik" xmlns:sapia="http://www.sapia-oss.org/2003/XSL/Transform">
+
+  <sapia:vmenu>
+    <sapia:vsection name="Project Home" href="home.html"/>
+    <sapia:vsection name="Wiki" href="http://code.google.com/p/sapia/wiki/Ubik"/>
+    <sapia:vsection name="RMI" href="rmi.html">
+      <sapia:vitem name="Remoting for Dummies" href="rmi.html#dummies" />
+      <sapia:vitem name="Seeing is Believing" href="rmi.html#believing" />
+      <sapia:vitem name="Architecture" href="architecture.html" />
+      <sapia:vitem name="Tutorial" href="tutorial.html" />    
+    </sapia:vsection>
+    
+    <sapia:vsection name="Naming" href="naming.html">
+      <sapia:vitem name="Robust Naming" href="naming.html#robust" />
+      <sapia:vitem name="Usage" href="naming.html#usage" />
+      <sapia:vitem name="Advanced" href="naming.html#advanced" />    
+    </sapia:vsection>
+    
+    <sapia:vsection name="Transports">
+      <sapia:vitem name="HTTP" href="transport/http.html" />
+      <sapia:vitem name="Mplex" href="transport/mplex.html" />    
+    </sapia:vsection>  
+    <sapia:vsection name="Javadoc" href="maven/api/index.html"/>
+    <sapia:vsection name="Download" href="download.html"/>
+    <sapia:vsection name="Mailing List" href="list.html"/>
+  </sapia:vmenu>
+
+  <sapia:sect1 title="Ubik RMI">
+    <sapia:section>
+      <sapia:path name="home" href="../../home.html" />
+      <sapia:path name="projects" />
+      <sapia:path name="ubik" href="home.html" />
+    </sapia:section>
+    
+    <toc/>
+
+    <sapia:sect2 title="Remoting for Dummies" alias="dummies">
+    
+      <p>Ubik RMI allows to distribute objects with minimum hassle. Especially,
+      contrary to Java's RMI, remote interface methods do not have to throw
+      remote exceptions, and stub compilation is abandoned (stubs are created
+      dynamically with dynamic proxies). The former feature is of utmost interest:
+      this means that no supplementary interfaces need to be defined only for the
+      sake of remoting. As long as "application" interfaces extend the <sapia:class>Remote</sapia:class> 
+      interface, instances of these interfaces will automatically be treated as
+      remote references.</p>
+      
+      <p>Although seemingly a minor detail, the above point is of high value: indeed,
+      in absolute terms, reducing the number of redundant, overlapping interfaces in an API 
+      reduces complexity; furthermore, the more there are interfaces, the more implementations
+      there is, the more unit tests must be conducted and maintained, etc. In addition, 
+      the mere fact that intermediary interfaces have to be designed (and implementations 
+      provided) only for remoting introduces an overhead that reduces development time. With
+      Ubik RMI, remoting is almost implicit (the only constraint is that application interfaces
+      have to extend <sapia:class>java.rmi.Remote</sapia:class>); with the JDK's RMI, applications 
+      specifically have to define remote interfaces that must be implemented by classes that 
+      (to top it off) in addition must inherit from 
+      <sapia:class>java.rmi.server.UnicastRemoteObject.</sapia:class></p>
+      
+      <p>Some might argue that imposing <sapia:class>RemoteException</sapia:class>s guarantees 
+      robustness; fair enough: developers that want their remote interfaces to throw <sapia:class>RemoteException</sapia:class>
+      have the freedom to do so. Ubik RMI is completely "backward" compatible with this (internally, Ubik RMI stubs throw
+      these exceptions, which are translated to <sapia:class>RuntimeException</sapia:class> instances by the dynamic proxy
+      layer if the exceptions are not declared in the "throws" clause of the called methods).
+      </p>
+      
+      <p>Yet, where do <sapia:class>RemoteException</sapia:class>s end up anyway? In the user interface, in most cases; usually,
+      programmers will not provide any special business logic to handle <sapia:class>RemoteException</sapia:class>s. So what
+      difference does it make that the remote interfaces throw <sapia:class>RemoteException</sapia:class>s or not? In our
+      opinion, it only makes design more cumbersome.</p>
+      
+      <p>The table below shows the minimal steps required to work with Ubik RMI (versus Java RMI):</p>
+      <sapia:table>
+        <sapia:th>Ubik RMI</sapia:th><sapia:th>Java</sapia:th>
+        <tr>
+          <td valign="top" width="50%">Define an interface that extends <sapia:class>java.rmi.Remote</sapia:class> and some methods.</td>
+          <td valign="top">Define an interface that extends <sapia:class>java.rmi.Remote</sapia:class> and some methods that throw <sapia:class>RemoteException.</sapia:class></td>
+        </tr>
+        <tr>
+          <td valign="top">Write a class that implements the remote interface.</td>
+          <td valign="top">Write a class that implements the remote interface and extends <sapia:class>java.rmi.server. UnicastRemoteObject.</sapia:class></td>
+        </tr>
+        <tr>
+          <td></td>
+          <td valign="top">Generated the above class' stub with Java's RMI compiler.</td>
+        </tr>        
+      </sapia:table>
+      
+      <p>
+      Note in the above that no stub compilation step is required in the case of Ubik RMI.
+      </p>
+      
+      <p>A well-designed application using Java RMI would decouple remote interfaces (and implementations thereof) from
+      the "rest" of the application: the business logic, defined by "local" interfaces that have no knowledge of distribution
+      issues, would symetrically be implemented by "local" classes. The remote interfaces (and corresponding remote classes) 
+      would correspond one-to-one with their local counterparts, the remote implementations serving as thin-wrappers around
+      the local implementations.
+      </p>
+      
+      <p>Thus, the steps defined in the above table do not exactly correspond to reality, as far as Java RMI goes; the above is 
+      an oversimplification. One can see that in reality, rigourous use of Java RMI introduces a step that is completely unnecessary
+      in the case of Ubik RMI: indeed, the transport layer in this case is totally abstracted from the application; Ubik RMI's runtime
+      automically creates remote references based on the implementation of the <sapia:class>Remote</sapia:class> interface.
+      </p>
+      
+    </sapia:sect2>
+    
+    <sapia:sect2 title="Seeing is Believing" alias="believing">
+      <p>The code snippets below illustrate how remoting in Ubik RMI works. The first step, has we have mentioned, consists of defining the
+      remote interface:
+      </p>
+      <sapia:code>
+package org.sapia.rmi.hello;
+
+import java.rmi.Remote;
+
+public interface Hello extends Remote{
+        
+  public String getMessage();
+
+}</sapia:code>
+      
+      <p>Next, implement the interface:</p>
+      
+      <sapia:code>
+package org.sapia.rmi.hello;
+
+public class HelloImpl implements Hello{
+        
+  public String getMessage(){
+    return "Hello World";
+  }
+
+}</sapia:code>
+
+   <p>Now, export an instance of the above class as a server on a given port:</p>
+   
+      <sapia:code>
+package org.sapia.rmi.hello;
+import java.rmi.RemoteException
+import org.sapia.ubik.rmi.server.Hub;
+
+public class HelloImpl implements Hello{
+        
+  public String getMessage(){
+    return "Hello World";
+  }
+  
+  public static void main(String[] args){
+    try{
+      Hub.exportObject(new HelloImpl(), 7070);
+      
+      while(true){
+        Thread.sleep(100000);
+      }
+    }catch(InterruptedException e){
+      System.out.println("terminating");
+    }catch(RemoteException e){
+      e.printStackTrace();
+    }
+  }
+}</sapia:code>
+
+  <p/>
+  <sapia:note>
+  For all Ubik socket-based transports other than HTTP, Ubik will attempt exporting remote
+  objects using a server bound to the first network interface that it detects that does not
+  correspond to localhost. If the host does not have such a network interface available, then Ubik
+  resorts to localhost. If multiple network interfaces (other than localhost) are available
+  on the host on which a Ubik server is started, then a regular expression can be used to
+  indicate to Ubik which one to use. That regular expression must be specified as a 
+  System property, under the <sapia:command>ubik.rmi.address-pattern</sapia:command>
+  key. If no address could be found that matches the given regexp, then Ubik also
+  resorts to localhost.</sapia:note>
+
+  <p>Note that our Hello interface in this case did not need to extend <sapia:class>Remote</sapia:class>; 
+  the Hub class "knows" that we want to remote-enable our instance (since we export it as a server), so it 
+  would internally generate a stub even if our object would not be an instance of <sapia:class>Remote</sapia:class>. 
+  As for methods that return remote objects, the <sapia:class>Remote</sapia:class> interface has to be extended by 
+  theses objects' interface - indeed, the Ubik RMI runtime has in this case no way to implicitely determine that a
+  remote reference has to be returned.</p>
+
+  <p>And now, of course, to make all of this meaningful, let's implement a client:</p>
+  
+      <sapia:code>
+package org.sapia.rmi.hello;
+import java.rmi.RemoteException
+import org.sapia.ubik.rmi.server.Hub;
+
+public class HelloClient {
+        
+  public static void main(String[] args){
+    try{
+      Hello h = (Hello)Hub.connect(7070);
+      System.out.println(h.getMessage());
+    }catch(RemoteException e){
+      e.printStackTrace();
+    }
+  }
+}</sapia:code>
+  
+    </sapia:sect2>
+  </sapia:sect1>
+</sapia:page>
