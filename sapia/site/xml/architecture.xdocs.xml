@@ -4,8 +4,8 @@
     <sapia:vsection name="Project Home" href="home.html"/>
     <sapia:vsection name="Wiki" href="http://code.google.com/p/sapia/wiki/Ubik"/>
     <sapia:vsection name="RMI" href="rmi.html">
-      <sapia:vitem name="Remoting for Dummies" href="rmi.html#dummies" />
-      <sapia:vitem name="Seeing is Believing" href="rmi.html#believing" />
+      <sapia:vitem name="For Dummies" href="rmi.html#dummies" />
+      <sapia:vitem name="Believing" href="rmi.html#believing" />
       <sapia:vitem name="Architecture" href="architecture.html" />
       <sapia:vitem name="Tutorial" href="tutorial.html" />    
     </sapia:vsection>
