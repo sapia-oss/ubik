@@ -25,6 +25,7 @@ import javax.management.ObjectName;
  * 2002-08-09
  */
 public class ServerGC implements Task, ServerGCMBean, MBeanFactory {
+
   /* delay after which client that haved not performed a ping are considered down. */
   public static final long GC_TIMEOUT = ClientGC.GC_CLEAN_INTERVAL * 3 * 15;
 
@@ -35,16 +36,21 @@ public class ServerGC implements Task, ServerGCMBean, MBeanFactory {
   private static long      _gcInterval  = GC_INTERVAL;
   private static HitsPerMinStatistic _gcRefPerMin;
   private static HitsPerMinStatistic _gcDerefPerMin;  
-  private Map              _clientTable = new ConcurrentHashMap();
+  
+  private Map<VmId, ClientInfo> _clientTable = new ConcurrentHashMap<VmId, ClientInfo>();
 
+  /**
+   * Creates a new {@link ServerGC} instance.
+   *
+   * @param taskman
+   */
   public ServerGC(TaskManager taskman) {
     PropUtil pu = new PropUtil().addProperties(System.getProperties());
     _gcInterval = pu.getLongProperty(Consts.SERVER_GC_INTERVAL, GC_INTERVAL);
     _gcTimeout  = pu.getLongProperty(Consts.SERVER_GC_TIMEOUT, GC_TIMEOUT); 
-    if(_gcInterval > 0){
+    if (_gcInterval > 0) {
       taskman.addTask(new TaskContext("UbikRMI.ServerGC", _gcInterval), this);
-    }
-    else{
+    } else {
       Log.warning(getClass(), "Will be disabled; client timeouts will not be monitored");
     }
     
@@ -61,7 +67,7 @@ public class ServerGC implements Task, ServerGCMBean, MBeanFactory {
    *
    * @return a reference count, as an <code>int</code>.
    */
-  public synchronized int getRefCount(VmId id, OID oid) {
+  public int getRefCount(VmId id, OID oid) {
     return getClientInfo(id).getRefCount(oid);
   }
 
@@ -69,7 +75,7 @@ public class ServerGC implements Task, ServerGCMBean, MBeanFactory {
    * Returns the total number of references held on the given object
    * by the client whose host corresponds to the passed in <code>VmId</code>.
    */
-  public synchronized int getSpecificCount(VmId id, OID oid) {
+  public int getSpecificCount(VmId id, OID oid) {
     return getClientInfo(id).getSpecificCount(oid);
   }
 
@@ -80,7 +86,7 @@ public class ServerGC implements Task, ServerGCMBean, MBeanFactory {
    * @return <code>true</code> if this instance contains the passed in
    * <code>VmId</code>.
    */
-  public synchronized boolean containsClient(VmId id) {
+  public boolean containsClient(VmId id) {
     return _clientTable.containsKey(id);
   }
 
@@ -92,11 +98,11 @@ public class ServerGC implements Task, ServerGCMBean, MBeanFactory {
    * @param oid the object identifier of whose reference count to
    * increment.
    */
-  public synchronized void reference(VmId id, OID oid) {
+  public void reference(VmId id, OID oid) {
     if (Log.isDebug()) {
-      Log.debug(ServerGC.class, "referencing from: " + id + " on object: " +
-        oid);
+      Log.debug(ServerGC.class, "referencing from: " + id + " on object: " + oid);
     }
+    
     _gcRefPerMin.hit();
     ClientInfo inf = getClientInfo(id);
     inf.reference(oid);
@@ -113,11 +119,11 @@ public class ServerGC implements Task, ServerGCMBean, MBeanFactory {
    * locally.
    * @param the object for which a stub is eventually returned to the client.
    */
-  public synchronized void registerRef(VmId id, OID oid, Object o) {
+  public void registerRef(VmId id, OID oid, Object o) {
     if (Log.isInfo()) {
-      Log.info(ServerGC.class,
-        "reference created from: " + id + " on object: " + oid + " - " + o.getClass().getName());
+      Log.info(ServerGC.class, "reference created from: " + id + " on object: " + oid + " - " + o.getClass().getName());
     }
+    
     _gcRefPerMin.hit();
     ClientInfo inf = getClientInfo(id);
     inf.registerRef(oid, o);
@@ -130,27 +136,34 @@ public class ServerGC implements Task, ServerGCMBean, MBeanFactory {
    * dereferencing call comes.
    * @param oid the <code>OID</code> to dereference.
    */
-  public synchronized void dereference(VmId id, OID oid) {
+  public void dereference(VmId id, OID oid) {
     if (Log.isDebug()) {
-      Log.debug(ServerGC.class,
-        "dereferencing from: " + id + " on object: " + oid);
+      Log.debug(ServerGC.class, "dereferencing from: " + id + " on object: " + oid);
     }
+    
     _gcDerefPerMin.hit();
     ClientInfo inf = getClientInfo(id);
     inf.dereference(oid);
   }
 
-  public synchronized void touch(VmId id) {
-    ClientInfo info = (ClientInfo) _clientTable.get(id);
-
+  /**
+   * Touches the client info of the vm id passed in.
+   * 
+   * @param id
+   */
+  public void touch(VmId id) {
     if (Log.isDebug()) {
       Log.debug(getClass(), "touching client info of vm id " + id);
     }
     
-    if (info != null) {
-      info.touch();
-    } else {
-      Log.warning(getClass(), "NO CLIENT INFO FOUND FOR vm id " + id);
+    synchronized (_clientTable) {
+      ClientInfo info = _clientTable.get(id);
+      
+      if (info != null) {
+        info.touch();
+      } else {
+        Log.warning(getClass(), "NO CLIENT INFO FOUND FOR vm id " + id);
+      }
     }
   }
 
@@ -159,20 +172,24 @@ public class ServerGC implements Task, ServerGCMBean, MBeanFactory {
     removeTimedOutClients();
   }
 
-  public  void clear() {
-    _clientTable.clear();
-    Hub.serverRuntime.objectTable.clear();
+  public void clear() {
+    synchronized (_clientTable) {
+      _clientTable.clear();
+      Hub.serverRuntime.objectTable.clear();
+    }
   }
 
   ClientInfo getClientInfo(VmId id) {
-    ClientInfo inf = (ClientInfo) _clientTable.get(id);
-
-    if (inf == null) {
-      inf = new ClientInfo(id);
-      _clientTable.put(id, inf);
+    synchronized (_clientTable) {
+      ClientInfo inf = _clientTable.get(id);
+  
+      if (inf == null) {
+        inf = new ClientInfo(id);
+        _clientTable.put(id, inf);
+      }
+  
+      return inf;
     }
-
-    return inf;
   }
   
   ////// JMX-related
@@ -208,16 +225,18 @@ public class ServerGC implements Task, ServerGCMBean, MBeanFactory {
    * property.
    */
   private synchronized void removeTimedOutClients() {
-    ClientInfo[] infos = (ClientInfo[]) _clientTable.values().toArray(new ClientInfo[_clientTable.size()]);
+    synchronized (_clientTable) {
+      ClientInfo[] infos = _clientTable.values().toArray(new ClientInfo[_clientTable.size()]);
 
-    for (int i = 0; i < infos.length; i++) {
-      if (!infos[i].isValid(_gcTimeout)) {
-        if (Log.isInfo()) {
-          Log.info(getClass(), "removing timed-out client's references " + infos[i].vmid());
+      for (int i = 0; i < infos.length; i++) {
+        if (!infos[i].isValid(_gcTimeout)) {
+          if (Log.isInfo()) {
+            Log.info(getClass(), "removing timed-out client's references " + infos[i].vmid());
+          }
+
+          infos[i].unregisterRefs();
+          _clientTable.remove(infos[i].vmid());
         }
-
-        infos[i].unregisterRefs();
-        _clientTable.remove(infos[i].vmid());
       }
     }
   }
@@ -230,7 +249,7 @@ public class ServerGC implements Task, ServerGCMBean, MBeanFactory {
   }
 
   static class ClientInfo {
-    private Map  _oids       = new HashMap();
+    private Map<OID, Count> _oids = new HashMap<OID, Count>();
     private long _lastAccess = System.currentTimeMillis();
     private VmId _id;
 
@@ -245,61 +264,68 @@ public class ServerGC implements Task, ServerGCMBean, MBeanFactory {
       return _id;
     }
 
-    synchronized void touch() {
+    void touch() {
       _lastAccess = System.currentTimeMillis();
       if (Log.isDebug()) {
         Log.debug(getClass(), "Touched this client info: " + toString());
       }
     }
 
-    synchronized boolean isValid(long timeout) {
+    boolean isValid(long timeout) {
       return (System.currentTimeMillis() - _lastAccess) < timeout;
     }
 
     void reference(OID oid) {
-      Count count = (Count) _oids.get(oid);
-
-      if (count == null) {
-        count = new Count();
-        _oids.put(oid, count);
+      synchronized (_oids) {
+        Count count = _oids.get(oid);
+  
+        if (count == null) {
+          count = new Count();
+          _oids.put(oid, count);
+        }
+  
+        count.count++;
+        Hub.serverRuntime.objectTable.reference(oid);
       }
-
-      count.count++;
-      Hub.serverRuntime.objectTable.reference(oid);
     }
 
     void registerRef(OID oid, Object obj) {
-      Count c = new Count();
-      c.count++;
-      _oids.put(oid, c);
-      Hub.serverRuntime.objectTable.register(oid, obj);
+      synchronized (_oids) {
+        Count c = new Count();
+        c.count++;
+        _oids.put(oid, c);
+        Hub.serverRuntime.objectTable.register(oid, obj);
+      }
     }
 
     void dereference(OID oid) {
-      Count count;
-
-      if ((count = (Count) _oids.get(oid)) != null) {
-        Hub.serverRuntime.objectTable.dereference(oid, count.count);
-        _oids.remove(oid);
+      synchronized (_oids) {
+        Count count;
+  
+        if ((count = _oids.get(oid)) != null) {
+          Hub.serverRuntime.objectTable.dereference(oid, count.count);
+          _oids.remove(oid);
+        }
       }
     }
 
     void unregisterRefs() {
-      OID[] oids = (OID[]) _oids.keySet().toArray(new OID[_oids.size()]);
-
-      for (int i = 0; i < oids.length; i++) {
-        if(Log.isDebug()){
-          Log.debug(getClass(), "Dereferencing: " + oids[i]);
+      synchronized (_oids) {
+        OID[] oids = _oids.keySet().toArray(new OID[_oids.size()]);
+  
+        for (int i = 0; i < oids.length; i++) {
+          if(Log.isDebug()){
+            Log.debug(getClass(), "Dereferencing: " + oids[i]);
+          }
+          Hub.serverRuntime.objectTable.dereference(oids[i], (_oids.get(oids[i])).count);
         }
-        Hub.serverRuntime.objectTable.dereference(oids[i],
-          ((Count) _oids.get(oids[i])).count);
+  
+        _oids.clear();
       }
-
-      _oids.clear();
     }
 
     int getSpecificCount(OID oid) {
-      Count c = (Count) _oids.get(oid);
+      Count c = _oids.get(oid);
 
       if (c == null) {
         return 0;
@@ -316,4 +342,5 @@ public class ServerGC implements Task, ServerGCMBean, MBeanFactory {
       return super.toString() + "[vmId=" + _id + " oidCount=" + _oids.size() + " lastAccess=" + _lastAccess;
     }
   }
+  
 }
