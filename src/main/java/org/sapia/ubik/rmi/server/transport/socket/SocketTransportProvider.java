@@ -145,7 +145,7 @@ public class SocketTransportProvider implements TransportProvider {
     String bindAddress = null;
     
     try{
-      bindAddress = pu.getProperty(BIND_ADDRESS, Localhost.getLocalAddress().getHostAddress());
+      bindAddress = pu.getProperty(BIND_ADDRESS, Localhost.getAnyLocalAddress().getHostAddress());
     }catch(IOException e){
       throw new RemoteException("Invalid bind address", e);
     }

@@ -1,19 +1,17 @@
 package org.sapia.ubik.net.mplex;
 
-import org.sapia.ubik.rmi.server.Log;
-
 import java.io.IOException;
-
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
-
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
-import org.sapia.ubik.util.Localhost;
+
+import org.sapia.ubik.rmi.server.Log;
 
 
 /**
@@ -86,16 +84,16 @@ public class MultiplexServerSocket extends ServerSocket implements Runnable {
   public static final short DEFAULT_SELECTOR_DAEMON_THREAD = 3;
 
   /** The list of created connectors that can handle new connections on this server. */
-  private List _theConnectors = new ArrayList();
+  private List<MultiplexSocketConnector> _theConnectors = new ArrayList<MultiplexSocketConnector>();
 
   /** The default connector that handles incoming connections. */
   private SocketConnectorImpl _theDefaultConnector;
 
   /** The list of running acceptor daemon threads. */
-  private List _theAcceptorDaemons = new ArrayList();
+  private List<Thread> _theAcceptorDaemons = new ArrayList<Thread>();
 
   /** The list of running selector daemon threads. */
-  private List _theSelectorDaemons = new ArrayList();
+  private List<Thread> _theSelectorDaemons = new ArrayList<Thread>();
 
   /** The socket queue of accepted connection. */
   private SocketQueue _theAcceptedQueue = new SocketQueue();
@@ -132,7 +130,7 @@ public class MultiplexServerSocket extends ServerSocket implements Runnable {
    * @throws IOException If an error occurs when opening the socket.
    */
   public MultiplexServerSocket(int port) throws IOException {
-    super(port, 50, Localhost.getLocalAddress());
+    super(port, 50);
   }
 
   /**
@@ -150,7 +148,7 @@ public class MultiplexServerSocket extends ServerSocket implements Runnable {
    * @throws IOException If an error occurs when opening the socket.
    */
   public MultiplexServerSocket(int port, int backlog) throws IOException {
-    super(port, backlog, Localhost.getLocalAddress());
+    super(port, backlog);
   }
 
   /**
@@ -398,11 +396,8 @@ public class MultiplexServerSocket extends ServerSocket implements Runnable {
       // May close the acceptor and selector threads here!!!
       if (_theConnectors != null) {
         // To avoid concurrent modifs when removing
-        ArrayList someConnectors = new ArrayList(_theConnectors);
-
-        for (Iterator it = someConnectors.iterator(); it.hasNext();) {
-          MultiplexSocketConnector aConnector = (MultiplexSocketConnector) it.next();
-          aConnector.close();
+        for (MultiplexSocketConnector connector: new ArrayList<MultiplexSocketConnector>(_theConnectors)) {
+          connector.close();
         }
       }
     }
@@ -483,7 +478,7 @@ public class MultiplexServerSocket extends ServerSocket implements Runnable {
 
       // Select the right connector
       synchronized (this) {
-        for (Iterator it = _theConnectors.iterator(); it.hasNext();) {
+        for (Iterator<MultiplexSocketConnector> it = _theConnectors.iterator(); it.hasNext();) {
           SocketConnectorImpl aCandidate = (SocketConnectorImpl) it.next();
 
           if (aCandidate.getSelector().selectStream(header)) {

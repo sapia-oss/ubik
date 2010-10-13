@@ -107,7 +107,11 @@ public class NioTcpTransportProvider implements TransportProvider {
       addr = new InetSocketAddress(bindAddress, port);
     } else {
       try{
-        addr = new InetSocketAddress(Localhost.getLocalAddress().getHostAddress(), port);
+        if (Localhost.isIpPatternDefined()) {
+          addr = new InetSocketAddress(Localhost.getAnyLocalAddress().getHostAddress(), port);
+        } else {
+          addr = new InetSocketAddress(port);
+        }
       }catch(UnknownHostException e){
         throw new RemoteException("Could not determine local address", e);
       }

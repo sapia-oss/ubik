@@ -12,7 +12,7 @@ public class NioFooClient {
     try {
       
       Foo foo = (Foo) Hub.connect(
-        new NioAddress(Localhost.getLocalAddress().getHostAddress(), 6060)
+        new NioAddress(Localhost.getAnyLocalAddress().getHostAddress(), 6060)
       );
       
       long start = System.currentTimeMillis();

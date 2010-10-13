@@ -8,8 +8,8 @@
 package org.sapia.ubik.util;
 
 import java.util.regex.Pattern;
+
 import junit.framework.TestCase;
-import org.sapia.ubik.rmi.Consts;
 
 /**
  *
@@ -25,7 +25,7 @@ public class LocalhostTest extends TestCase {
    * Test of getLocalAddress method, of class org.sapia.ubik.util.Localhost.
    */
   public void testGetLocalAddress() throws Exception{
-    String addr = Localhost.getLocalAddress().getHostAddress();
+    String addr = Localhost.getAnyLocalAddress().getHostAddress();
     super.assertTrue(!addr.equals("localhost"));
     super.assertTrue(!addr.equals("127.0.0.1"));
     super.assertTrue(!addr.equals("0.0.0.0"));

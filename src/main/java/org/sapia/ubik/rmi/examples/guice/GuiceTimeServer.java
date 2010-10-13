@@ -5,7 +5,6 @@ import org.sapia.ubik.ioc.guice.NamingServiceImpl;
 import org.sapia.ubik.ioc.guice.RemoteServiceExporter;
 import org.sapia.ubik.rmi.examples.time.TimeServiceIF;
 import org.sapia.ubik.rmi.examples.time.TimeServiceImpl;
-import org.sapia.ubik.rmi.server.Log;
 import org.sapia.ubik.util.Localhost;
 
 import com.google.inject.AbstractModule;
@@ -18,7 +17,7 @@ public class GuiceTimeServer {
   public static void main(String[] args) throws Exception{
     
     final NamingService naming = new NamingServiceImpl("default")
-      .setJndiHost(Localhost.getLocalAddress().getHostAddress())
+      .setJndiHost(Localhost.getAnyLocalAddress().getHostAddress())
       .setJndiPort(1099);    
     
     Injector injector = Guice.createInjector(new AbstractModule(){

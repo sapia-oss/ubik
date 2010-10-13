@@ -1,13 +1,16 @@
 package org.sapia.ubik.mcast;
 
+import java.io.IOException;
+import java.io.InterruptedIOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.SocketException;
+import java.net.UnknownHostException;
+import java.util.List;
+
 import org.sapia.ubik.mcast.server.UDPServer;
 import org.sapia.ubik.net.ServerAddress;
-
-import java.io.*;
-
-import java.net.*;
-
-import java.util.List;
 import org.sapia.ubik.rmi.server.Log;
 import org.sapia.ubik.util.Localhost;
 
@@ -79,7 +82,7 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
     super.start();
 
     try {
-      InetAddress addr = Localhost.getLocalAddress();
+      InetAddress addr = Localhost.getAnyLocalAddress();
       if(Log.isDebug()){
         Log.debug(getClass(), "Local address: " + addr.getHostAddress());
       }

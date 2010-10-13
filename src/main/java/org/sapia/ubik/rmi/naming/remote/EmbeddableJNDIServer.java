@@ -98,7 +98,7 @@ public class EmbeddableJNDIServer implements Runnable, RemoteContextProvider, As
     if(evt.getType().equals(Consts.JNDI_CLIENT_PUBLISH)){
       try{
         _ec.dispatch(Consts.JNDI_SERVER_DISCO,
-            new TCPAddress(Localhost.getLocalAddress().getHostAddress(), _port));
+            new TCPAddress(Localhost.getAnyLocalAddress().getHostAddress(), _port));
       }catch(Exception e){
         Log.warning(getClass(), "Could not dispatch JNDI server publishing event", e);
       }
@@ -162,10 +162,10 @@ public class EmbeddableJNDIServer implements Runnable, RemoteContextProvider, As
       _ec.registerAsyncListener(Consts.JNDI_CLIENT_PUBLISH, this);
 
       _ec.dispatch(Consts.JNDI_SERVER_PUBLISH,
-        new TCPAddress(Localhost.getLocalAddress().getHostAddress(), _port));
+        new TCPAddress(Localhost.getAnyLocalAddress().getHostAddress(), _port));
       
       _ec.dispatch(Consts.JNDI_SERVER_DISCO,
-          new TCPAddress(Localhost.getLocalAddress().getHostAddress(), _port));
+          new TCPAddress(Localhost.getAnyLocalAddress().getHostAddress(), _port));
       
 
       _root = JNDIServerHelper.newRootContext(_ec);

@@ -17,7 +17,7 @@ public class GuiceTimeClient {
   public static void main(String[] args) throws IOException {
     
     final NamingService naming = new NamingServiceImpl("default")
-      .setJndiHost(Localhost.getLocalAddress().getHostAddress())
+      .setJndiHost(Localhost.getAnyLocalAddress().getHostAddress())
       .setJndiPort(1099);    
     
     Injector injector = Guice.createInjector(new AbstractModule(){

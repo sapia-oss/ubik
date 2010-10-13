@@ -37,47 +37,53 @@ public class Localhost {
   
   private static String LOCALHOST = "0.0.0.0";
   private static String LOOPBACK  = "127.0.0.1";
-  private static Pattern DEFAULT_IP_PATTERN = Pattern.compile("\\d+\\.\\d+\\.\\d+\\.\\d+");
-  private static Pattern _pattern = DEFAULT_IP_PATTERN;
+  private static Pattern _pattern;
   
   static{
     String patternStr = System.getProperty(Consts.IP_PATTERN_KEY);
-    if(patternStr != null){
-      if(Log.isDebug()){
+    if (patternStr != null) {
+      if (Log.isDebug()) {
         Log.debug(Localhost.class, "Got local network address pattern: " + patternStr);
       }
       _pattern = Pattern.compile(patternStr);
     }
   }
   
-  /**
-   * @return the <code>InetAddress</code> of this host.
-   */
-  public static InetAddress getLocalAddress() throws UnknownHostException{
-    NetworkInterface iface;
-    try{
-      for(Enumeration ifaces = NetworkInterface.getNetworkInterfaces(); ifaces.hasMoreElements();){
-        iface = (NetworkInterface)ifaces.nextElement();
-        InetAddress ia = null;
-        for(Enumeration ips = iface.getInetAddresses(); ips.hasMoreElements();){
-          ia = (InetAddress)ips.nextElement();
-          String addr = ia.getHostAddress();
-          if(addr.equals(LOCALHOST) || addr.equals(LOOPBACK)){
-            continue;
-          }
-          if(isLocalAddress(_pattern, addr)){
-            if(Log.isDebug()){
-              Log.debug(Localhost.class, "Address " + addr + " matches: " + _pattern.toString());
+  public static boolean isIpPatternDefined() {
+    return (_pattern != null);
+  }
+  
+  public static InetAddress getAnyLocalAddress() throws UnknownHostException {
+    if (isIpPatternDefined()) {
+      NetworkInterface iface;
+      try {
+        for (Enumeration<NetworkInterface> ifaces = NetworkInterface.getNetworkInterfaces(); ifaces.hasMoreElements(); ) {
+          iface = ifaces.nextElement();
+          
+          for (Enumeration<InetAddress> ips = iface.getInetAddresses(); ips.hasMoreElements(); ) {
+            InetAddress ia = ips.nextElement();
+            String addr = ia.getHostAddress();
+            if (addr.equals(LOCALHOST) || addr.equals(LOOPBACK)) {
+              continue;
             }
-            return ia;
+            
+            if (isLocalAddress(_pattern, addr)) {
+              if (Log.isInfo()) {
+                Log.info(Localhost.class, "Address " + addr + " matches: " + _pattern.toString());
+              }
+              return ia;
+            }
           }
         }
+        
+      } catch (SocketException e) {
       }
-    }catch(SocketException e){}
+    }
+
     return InetAddress.getLocalHost();
   }
   
-  static boolean isLocalAddress(Pattern pattern, String addr){
+  static boolean isLocalAddress(Pattern pattern, String addr) {
     return pattern.matcher(addr).matches();
   }
   

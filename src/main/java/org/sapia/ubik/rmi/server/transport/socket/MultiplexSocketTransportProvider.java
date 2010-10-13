@@ -122,7 +122,7 @@ public class MultiplexSocketTransportProvider extends SocketTransportProvider {
     String bindAddress = null;
     
     try{
-      bindAddress = pu.getProperty(BIND_ADDRESS, Localhost.getLocalAddress().getHostAddress());
+      bindAddress = pu.getProperty(BIND_ADDRESS, Localhost.getAnyLocalAddress().getHostAddress());
     }catch(IOException e){
       throw new RemoteException("Invalid bind address", e);
     }
@@ -137,7 +137,11 @@ public class MultiplexSocketTransportProvider extends SocketTransportProvider {
 
     try {
       Log.debug(getClass(), "Creating server on " + bindAddress + ":" + port);
+      if (Localhost.isIpPatternDefined()) {
         _multiplexServer = new MultiplexServerSocket(port, 50, InetAddress.getByName(bindAddress));
+      } else {
+        _multiplexServer = new MultiplexServerSocket(port, 50);
+      }
 
       if (acceptorCount > 0) {
         _multiplexServer.setAcceptorDaemonThread(acceptorCount);

@@ -8,6 +8,8 @@ import java.io.ObjectOutputStream;
 
 import java.net.Socket;
 
+import org.sapia.ubik.util.Localhost;
+
 
 /**
  * Class documentation
@@ -30,6 +32,7 @@ public class MultiplexedServer {
    */
   public MultiplexedServer() throws IOException {
     int backlog = 100;
+//    _server = new MultiplexServerSocket(7777, backlog, Localhost.getLocalAddressForConfig());
     _server = new MultiplexServerSocket(7777, backlog);
     log("Started multiplex server on port 7777");
     log("Setting backlog queue to " + backlog);
