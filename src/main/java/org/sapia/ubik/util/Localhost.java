@@ -53,6 +53,16 @@ public class Localhost {
     return (_pattern != null);
   }
   
+  /**
+   * 
+   * @return
+   * @throws UnknownHostException
+   * @deprecated Should method {@link #getAnyLocalAddress()} instead.
+   */
+  public static InetAddress getLocalAddress() throws UnknownHostException {
+    return getAnyLocalAddress();
+  }
+  
   public static InetAddress getAnyLocalAddress() throws UnknownHostException {
     if (isIpPatternDefined()) {
       NetworkInterface iface;
