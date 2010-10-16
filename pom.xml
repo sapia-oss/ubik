@@ -6,7 +6,7 @@
 
   <groupId>org.sapia</groupId>
   <artifactId>sapia_ubik</artifactId>
-  <version>2.5.6-SNAPSHOT</version>
+  <version>2.5.7-SNAPSHOT</version>
 
   <parent>
     <groupId>org.sapia</groupId>
