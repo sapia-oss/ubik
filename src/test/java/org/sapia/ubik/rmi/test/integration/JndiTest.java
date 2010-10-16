@@ -71,7 +71,6 @@ public class JndiTest{
 	@Test
 	public void testDiscovery() throws Exception{
 		InitialContext ctx = new InitialContext(props(WRONG_PORT, DOMAIN));
-		ctx.close();
 	}
 
 	@Test
@@ -79,7 +78,6 @@ public class JndiTest{
 		InitialContext ctx = new InitialContext(props(PORT, DOMAIN));
 		Foo f = new UbikFoo();
 		ctx.bind("intg/test/foo", f);
-		ctx.close();
 	}
 
 	 @Test
@@ -95,8 +93,6 @@ public class JndiTest{
 		}catch(NameNotFoundException e){
 			//ok
 		}
-
-		ctx.close();		
 	}
 	
 	@Test
@@ -109,7 +105,6 @@ public class JndiTest{
 		Foo f = new UbikFoo();
 		ctx.rebind("intg/test/foo", f);
     Thread.sleep(2000);
-		ctx.close();
 		Assert.assertTrue("Service not discovered", listener.serviceDiscovered);
 		Assert.assertTrue("JNDI not discovered", listener.jndiDiscovered);		
 		
