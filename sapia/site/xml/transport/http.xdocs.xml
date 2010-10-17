@@ -1,4 +1,4 @@
-<sapia:page title="HTTP Transport" xmlns:sapia="http://www.sapia-oss.org/2003/XSL/Transform">
+<sapia:page title="HTTP Transport" cssPath="../css/sapia.css" xmlns:sapia="http://www.sapia-oss.org/2003/XSL/Transform">
   <sapia:sect1 title="HTTP Transport" alias="http-transport">
   
     <sapia:section>
