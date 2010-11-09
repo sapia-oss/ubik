@@ -1,20 +1,20 @@
 package org.sapia.ubik.rmi.server;
 
+import java.lang.ref.SoftReference;
 import java.rmi.RemoteException;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.sapia.ubik.jmx.JmxHelper;
 import org.sapia.ubik.jmx.MBeanContainer;
 import org.sapia.ubik.jmx.MBeanFactory;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.Remote;
 import org.sapia.ubik.rmi.server.transport.TransportManager;
 import org.sapia.ubik.rmi.server.transport.socket.SocketTransportProvider;
 
@@ -39,8 +39,8 @@ public class ServerTable implements Server {
   static final String DEFAULT_TRANSPORT_TYPE = SocketTransportProvider.TRANSPORT_TYPE;
 
   // A "cache" of class-to-interfaces mappings.
-  private static Map _interfaceCache = Collections.synchronizedMap(new WeakHashMap());
-  Map                _serversByType = Collections.synchronizedMap(new HashMap());
+  private static Map<Class<?>, Class<?>[]> _interfaceCache = new ConcurrentHashMap<Class<?>, Class<?>[]>();
+  Map<String, ServerRef> _serversByType = new ConcurrentHashMap<String, ServerRef>();
 
   /*////////////////////////////////////////////////////////////////////
                       Server interface methods
@@ -57,11 +57,11 @@ public class ServerTable implements Server {
    * @see org.sapia.ubik.rmi.server.Server#close()
    */
   public void close() {
-    Iterator  itr = _serversByType.values().iterator();
+    Iterator<ServerRef>  itr = _serversByType.values().iterator();
     ServerRef ref;
 
     while (itr.hasNext()) {
-      ref = (ServerRef) itr.next();
+      ref = itr.next();
       ref.server.close();
     }
   }
@@ -202,24 +202,35 @@ public class ServerTable implements Server {
     return initRef(remote, generateOID(), getServerRef(transportType));
   }
 
-  static Class[] getInterfacesFor(Class clazz) {
-    Class[] cachedInterfaces = (Class[]) _interfaceCache.get(clazz);
+  static Class<?>[] getInterfacesFor(Class<?> clazz) {
+    Class<?>[] cachedInterfaces = _interfaceCache.get(clazz);
 
     if (cachedInterfaces == null) {
-      HashSet set     = new HashSet();
-      Class   current = clazz;
-      appendInterfaces(current, set);
-      set.add(Stub.class);
-
-      cachedInterfaces = (Class[]) set.toArray(new Class[set.size()]);
+      Class<?>   current = clazz;
+      Remote remoteAnno = current.getAnnotation(Remote.class);
+      if(remoteAnno != null){
+        Class<?>[] remoteInterfaces = remoteAnno.interfaces();
+        HashSet<Class<?>> set     = new HashSet<Class<?>>();
+        set.add(Stub.class);
+        for(Class<?> remoteInterface: remoteInterfaces){
+          set.add(remoteInterface);
+        }
+        cachedInterfaces = set.toArray(new Class[set.size()]);
+      }
+      else{
+        HashSet<Class<?>> set     = new HashSet<Class<?>>();
+        appendInterfaces(current, set);
+        set.add(Stub.class);
+        cachedInterfaces = set.toArray(new Class[set.size()]);
+      }
       _interfaceCache.put(clazz, cachedInterfaces);
     }
 
     return cachedInterfaces;
   }
 
-  static void appendInterfaces(Class current, Set interfaces) {
-    Class[] ifs = current.getInterfaces();
+  static void appendInterfaces(Class<?> current, Set<Class<?>> interfaces) {
+    Class<?>[] ifs = current.getInterfaces();
 
     for (int i = 0; i < ifs.length; i++) {
       appendInterfaces(ifs[i], interfaces);

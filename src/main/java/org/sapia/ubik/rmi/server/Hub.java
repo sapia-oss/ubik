@@ -543,7 +543,8 @@ public class Hub {
   }
 
   public static Object getStubFor(RemoteRef ref, Object remote) {
-    Class[] cachedInterfaces = ServerTable.getInterfacesFor(remote.getClass());
+    
+    Class<?>[] cachedInterfaces = ServerTable.getInterfacesFor(remote.getClass());
 
     if (_perf.createStub.isEnabled()) {
       _perf.createStub.start();
