@@ -568,7 +568,7 @@ public class Hub {
     try {
       doSend(conns, oid);
     } catch (ClassNotFoundException e) {
-      throw new RemoteException("could refer to object: " + oid + "@" +
+      throw new RemoteException("could not refer to object: " + oid + "@" +
         address, e);
     } catch (RemoteException e) {
       conns.clear();
@@ -576,11 +576,11 @@ public class Hub {
       try {
         doSend(conns, oid);
       } catch (Exception e2) {
-        throw new RemoteException("could refer to object: " + oid + "@" +
+        throw new RemoteException("could not refer to object: " + oid + "@" +
           address, e2);
       }
     } catch (IOException e) {
-      throw new RemoteException("could refer to object: " + oid + "@" +
+      throw new RemoteException("could not refer to object: " + oid + "@" +
         address, e);
     }
   }
