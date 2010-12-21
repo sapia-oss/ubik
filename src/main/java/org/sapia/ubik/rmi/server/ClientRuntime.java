@@ -1,7 +1,7 @@
 package org.sapia.ubik.rmi.server;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
@@ -12,6 +12,8 @@ import org.sapia.ubik.rmi.interceptor.MultiDispatcher;
 import org.sapia.ubik.rmi.server.gc.ClientGC;
 import org.sapia.ubik.rmi.server.invocation.InvocationDispatcher;
 import org.sapia.ubik.taskman.TaskManager;
+
+import com.google.inject.Singleton;
 
 
 /**
@@ -36,7 +38,7 @@ public class ClientRuntime {
    *
    * @see Singleton
    */
-  private static Map _serverAddresses = new HashMap();
+  private static Map<String, ServerAddress> _serverAddresses = new ConcurrentHashMap<String, ServerAddress>();
 
   /**
    * The dispatcher of events destined to be intercepted by <code>Interceptor</code> instances.
@@ -72,7 +74,6 @@ public class ClientRuntime {
   }
 
   void shutdown(long timeout) throws InterruptedException {
-    //Log.warning(ClientRuntime.class, "Shutting down GC");
   }
 
   /**
@@ -93,7 +94,7 @@ public class ClientRuntime {
         Consts.CALLBACK_ENABLED);
     }
 
-    return (ServerAddress) _serverAddresses.get(transportType);
+    return _serverAddresses.get(transportType);
   }
 
   /**
@@ -102,7 +103,7 @@ public class ClientRuntime {
    * @see Interceptor
    * @see MultiDispatcher#addInterceptor(Class, Interceptor)
    */
-  public synchronized void addInterceptor(Class eventClass, Interceptor it)
+  public synchronized void addInterceptor(Class<?> eventClass, Interceptor it)
     throws InvalidInterceptorException {
     dispatcher.addInterceptor(eventClass, it);
   }

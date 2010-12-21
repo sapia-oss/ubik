@@ -14,6 +14,9 @@ import java.io.PrintWriter;
  * </dl>
  */
 public class RmiIOException extends IOException {
+  
+  static final long serialVersionUID = 1L;
+  
   /** The source error that is encapsulated in this composite exception. */
   private Throwable _theSourceError;
 

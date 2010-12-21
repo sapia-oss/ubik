@@ -85,7 +85,7 @@ public class ServerRuntime {
    * @see Interceptor
    * @see MultiDispatcher#addInterceptor(Class, Interceptor)
    */
-  public synchronized void addInterceptor(Class eventClass, Interceptor it)
+  public synchronized void addInterceptor(Class<?> eventClass, Interceptor it)
     throws InvalidInterceptorException {
     dispatcher.addInterceptor(eventClass, it);
   }

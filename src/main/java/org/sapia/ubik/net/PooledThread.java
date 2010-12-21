@@ -19,10 +19,10 @@ import org.sapia.ubik.rmi.server.perf.Statistic;
  * </dl>
  */
 public abstract class PooledThread extends Thread {
-  private Pool         _pool;
-  private Object       _task;
-  private boolean      _shutdown;
-  private boolean      _aquired;
+  private Pool<PooledThread>    _pool;
+  private Object                _task;
+  private boolean               _shutdown;
+  private boolean               _aquired;
   protected HitsPerSecStatistic _tps;
   protected Statistic    _duration;  
 
@@ -39,7 +39,7 @@ public abstract class PooledThread extends Thread {
   
 
   /** Sets the pool that owns this thread */
-  final void setOwner(Pool pool) {
+  final void setOwner(Pool<PooledThread> pool) {
     _pool = pool;
   }
 

@@ -15,6 +15,9 @@ import org.sapia.ubik.mcast.DomainName;
  * </dl>
  */
 public class DomainInfo implements Serializable {
+  
+  static final long serialVersionUID = 1L;
+  
   private DomainName _domain;
   private String     _mcastAddress;
   private int        _mcastPort;

@@ -17,20 +17,23 @@ import java.util.Set;
  * </dl>
  */
 public class ReplicationStrategy {
-  private Set _visited;
-  private Set _targets;
-  private Set _siblings;
+  private Set<ServerAddress> _visited;
+  private Set<ServerAddress> _targets;
+  private Set<ServerAddress> _siblings;
 
   /**
-   * @param visited the <code>Set</code> of <code>ServerAddress</code>es of the hosts
+   * @param visited the {@link Set} of {@link ServerAddress}es of the hosts
    * that have already been visited.
-   * @param targets the <code>Set</code> of <code>ServerAddress</code>es corresponding to
+   * @param targets the {@link Set} of {@link ServerAddress}es corresponding to
    * targeted hosts - if <code>null</code>, then the strategy assumes that all hosts must
    * be visited.
-   * @param existing the <code>Set</code> of <code>ServerAddress</code>es corresponding to
+   * @param existing the {@link Set} of {@link ServerAddress}es corresponding to
    * the existing hosts.
    */
-  public ReplicationStrategy(Set visited, Set targets, Set existing) {
+  public ReplicationStrategy(
+      Set<ServerAddress> visited, 
+      Set<ServerAddress> targets, 
+      Set<ServerAddress> existing) {
     _visited    = visited;
     _targets    = targets;
     _siblings   = existing;

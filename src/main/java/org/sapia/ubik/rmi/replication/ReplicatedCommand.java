@@ -28,8 +28,8 @@ import java.util.Set;
  * </dl>
  */
 public abstract class ReplicatedCommand extends InvokeCommand {
-  private Set               _visited     = new HashSet();
-  private Set               _targets;
+  private Set<ServerAddress>               _visited     = new HashSet<ServerAddress>();
+  private Set<ServerAddress>               _targets;
   private ReplicatedInvoker _invoker;
   private boolean           _executed;
   private boolean           _synchronous;
@@ -40,13 +40,13 @@ public abstract class ReplicatedCommand extends InvokeCommand {
   }
 
   /**
-   * @param cmd the <code>InvokeCommand</code> to replicate.
-   * @param targets the <code>Set</code> of <code>ServerAddress</code>es that are
+   * @param cmd the {@link InvokeCommand} to replicate.
+   * @param targets the {@link Set} of {@link ServerAddress}es that are
    * targeted by the command. If <code>null</code>, then all siblings will be targeted.
-   * @param invoker the <code>ReplicatedInvoker</code> implementation in charge of
+   * @param invoker the {@link ReplicatedInvoker} implementation in charge of
    * performing replicated method invocations.
    */
-  public ReplicatedCommand(InvokeCommand cmd, Set targets,
+  public ReplicatedCommand(InvokeCommand cmd, Set<ServerAddress> targets,
     ReplicatedInvoker invoker, boolean synchronous) {
     super(cmd.getOID(), cmd.getMethodName(), cmd.getParams(),
       cmd.getParameterTypes(), null);
@@ -56,17 +56,6 @@ public abstract class ReplicatedCommand extends InvokeCommand {
   }
 
   /**
-   * This method's implementation internally calls the <code>getReplicationContext()</code>
-   * method. The returned <code>ReplicationContext</code> is used as a hook to the server
-   * in which this command is executed. Internally, the method selects the next server
-   * to which this instance should be dispatched, and executes the command that this
-   * instance wraps.
-   * </p>
-   * If the execution is successful, this instance is dispatched by means of the
-   * <code>ReplicationContext</code>.
-   *
-   * @see #getReplicationContext()
-   *
    * @see org.sapia.ubik.rmi.server.RMICommand#execute()
    */
   public Object execute() throws Throwable {
@@ -77,7 +66,7 @@ public abstract class ReplicatedCommand extends InvokeCommand {
     Object toReturn;
     Hub.serverRuntime.dispatchEvent(new ReplicationEvent(this));
 
-    Set                 siblings = _invoker.getSiblings();
+    Set<ServerAddress>  siblings = _invoker.getSiblings();
     ReplicationStrategy strat   = new ReplicationStrategy(_visited, _targets,
         siblings);
     ServerAddress       addr;
@@ -132,11 +121,12 @@ public abstract class ReplicatedCommand extends InvokeCommand {
   /**
    * @see org.sapia.ubik.rmi.server.invocation.InvokeCommand#readExternal(java.io.ObjectInput)
    */
+  @SuppressWarnings(value="unchecked")
   public void readExternal(ObjectInput in)
     throws IOException, ClassNotFoundException {
     super.readExternal(in);
-    _visited       = (Set) in.readObject();
-    _targets       = (Set) in.readObject();
+    _visited       = (Set<ServerAddress>) in.readObject();
+    _targets       = (Set<ServerAddress>) in.readObject();
     _invoker       = (ReplicatedInvoker) in.readObject();
     _executed      = in.readBoolean();
     _synchronous   = in.readBoolean();
@@ -192,11 +182,11 @@ public abstract class ReplicatedCommand extends InvokeCommand {
     }
   }
   
-  protected Set getVisitedAddresses(){
+  protected Set<ServerAddress> getVisitedAddresses(){
     return _visited;
   }
   
-  protected Set getTargetAddresses(){
+  protected Set<ServerAddress> getTargetAddresses(){
     return _targets;
   }  
 }

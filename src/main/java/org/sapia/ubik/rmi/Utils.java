@@ -70,7 +70,7 @@ public class Utils {
     /**
      * @see java.io.ObjectInputStream#resolveClass(ObjectStreamClass)
      */
-    protected Class resolveClass(ObjectStreamClass desc)
+    protected Class<?> resolveClass(ObjectStreamClass desc)
     throws IOException, ClassNotFoundException {
       if (_loader != null) {
         return _loader.loadClass(desc.getName());

@@ -38,7 +38,7 @@ public class EventChannel {
   ChannelEventListener _listener;
   View                 _view           = new View(30000);
   ServerAddress        _address;
-  List                 _discoListeners = new ArrayList();
+  List<DiscoveryListener> _discoListeners = new ArrayList<DiscoveryListener>();
   boolean              _started;
   boolean              _closed;
 
@@ -318,12 +318,11 @@ public class EventChannel {
     public void handleSoTimeout() {
       _owner._view.removeDeadHosts();
 
-      List siblings = _owner._view.getHosts();
+      List<ServerAddress> siblings = _owner._view.getHosts();
 
       if (_owner._address != null) {
         for (int i = 0; i < siblings.size(); i++) {
           try {
-            //System.out.println("sending heartbeat");
             _owner.dispatch((ServerAddress) siblings.get(i), HEARTBEAT_EVT,
               _owner._address);
           } catch (IOException e) {
@@ -349,7 +348,7 @@ public class EventChannel {
           }
           _owner._view.addHost(addr, evt.getNode());
 
-          List listeners = _owner._discoListeners;
+          List<DiscoveryListener> listeners = _owner._discoListeners;
 
           for (int i = 0; i < listeners.size(); i++) {
             ((DiscoveryListener) listeners.get(i)).onDiscovery(addr, evt);
@@ -367,7 +366,7 @@ public class EventChannel {
           _owner._view.addHost(addr, evt.getNode());
           _owner.dispatch(false, DISCOVER_EVT, _owner._address);
 
-          List listeners = _owner._discoListeners;
+          List<DiscoveryListener> listeners = _owner._discoListeners;
 
           for (int i = 0; i < listeners.size(); i++) {
             ((DiscoveryListener) listeners.get(i)).onDiscovery(addr, evt);

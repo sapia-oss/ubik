@@ -13,6 +13,9 @@ package org.sapia.ubik.rmi.interceptor;
  * </dl>
  */
 public class InvalidInterceptorException extends RuntimeException {
+  
+  static final long serialVersionUID = 1L;
+
   private Throwable _err;
 
   public InvalidInterceptorException(String msg) {

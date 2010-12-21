@@ -3,15 +3,16 @@ package org.sapia.ubik.mcast;
 import org.sapia.ubik.net.ServerAddress;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
  * Encapsulates the addresses of the nodes that compose an event channel. An
- * instance of this class is encapsulated by an <code>EventChannel</code>. Its
+ * instance of this class is encapsulated by an <code>EventChannel</code>. It
  * provides a "view" of the domain.
  * <p>
  * An instance of this class encapsulates the address of each of the sibling of
- * an <code>EventChannel</code> node.
+ * an {@link EventChannel} node.
  *
  * @author Yanick Duchesne
  * <dl>
@@ -21,9 +22,9 @@ import java.util.*;
  * </dl>
  */
 public class View {
-  private Map  _addresses  = new HashMap();
-  private Map  _nodeToAddr = new HashMap();
-  private long _timeout;
+  private Map<NodeInfo, Long>    _addresses  = new ConcurrentHashMap<NodeInfo, Long>();
+  private Map<String, NodeInfo>  _nodeToAddr = new ConcurrentHashMap<String, NodeInfo>();
+  private long                   _timeout;
 
   /**
    * Constructor for View.
@@ -37,8 +38,12 @@ public class View {
    *
    * @return a <code>List</code> of <code>ServerAddress</code>es.
    */
-  public synchronized List getHosts() {
-    return new AddressList(_addresses.keySet());
+  public synchronized List<ServerAddress> getHosts() {
+    List<ServerAddress> toReturn = new ArrayList<ServerAddress>(_addresses.size());
+    for(NodeInfo info : _addresses.keySet()){
+      toReturn.add(info.addr);
+    }
+    return toReturn;
   }
 
   /**
@@ -90,22 +95,19 @@ public class View {
    * Removes the "dead" (timed-out) hosts from this instance.
    */
   void removeDeadHosts() {
-    Map.Entry   entry;
-    Map.Entry[] hosts;
-
-    synchronized (_addresses) {
-      hosts = (Map.Entry[]) _addresses.entrySet().toArray(new Map.Entry[_addresses.size()]);
-
-      NodeInfo info;
-
-      for (int i = 0; i < hosts.length; i++) {
+    
+    List<NodeInfo> deadNodes = new ArrayList<NodeInfo>(_addresses.size() / 2);
+    
+    for(Map.Entry<NodeInfo, Long> entry:_addresses.entrySet()){
         if ((System.currentTimeMillis() -
-              ((Long) hosts[i].getValue()).longValue()) > _timeout) {
-          info = (NodeInfo) hosts[i].getKey();
-          _addresses.remove(info);
-          _nodeToAddr.remove(info.node);
+              entry.getValue().longValue()) > _timeout) {
+          deadNodes.add(entry.getKey());
         }
-      }
+    }
+    
+    for(NodeInfo dead: deadNodes){
+      _addresses.remove(dead);
+      _nodeToAddr.remove(dead.node);
     }
   }
 
@@ -129,20 +131,6 @@ public class View {
 
     public int hashCode() {
       return addr.hashCode();
-    }
-  }
-
-  public static class AddressList extends ArrayList {
-    AddressList(Collection infos) {
-      super(infos);
-    }
-
-    public Object get(int idx) {
-      try {
-        return ((NodeInfo) super.get(idx)).addr;
-      } catch (ClassCastException e) {
-        throw e;
-      }
     }
   }
 }

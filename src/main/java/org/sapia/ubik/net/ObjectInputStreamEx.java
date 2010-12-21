@@ -19,6 +19,7 @@ import java.util.HashMap;
  *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
  * </dl>
  */
+@SuppressWarnings(value="unchecked")
 public class ObjectInputStreamEx extends ObjectInputStream {
   /** table mapping primitive type names to corresponding class objects */
   private static final HashMap _primitives = new HashMap(8, 1.0F);

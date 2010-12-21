@@ -1,9 +1,8 @@
 package org.sapia.ubik.rmi.server;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.sapia.ubik.mcast.EventChannel;
 import org.sapia.ubik.rmi.Consts;
@@ -22,7 +21,7 @@ import org.sapia.ubik.rmi.RemoteRuntimeException;
  * </dl>
  */
 class EventChannelSingleton {
-  private static Map    _channels     = new HashMap();
+  private static Map<String, EventChannel>    _channels     = new ConcurrentHashMap<String, EventChannel>();
   private static String _mcastAddress = Consts.DEFAULT_MCAST_ADDR;
   private static int    _mcastPort    = Consts.DEFAULT_MCAST_PORT;
 
@@ -66,7 +65,7 @@ class EventChannelSingleton {
 
     String       key = domain + ":" + mcastAddress + ":" + mcastPort;
 
-    if ((channel = (EventChannel) _channels.get(key)) == null) {
+    if ((channel = _channels.get(key)) == null) {
       try {
         channel = new EventChannel(domain, mcastAddress, mcastPort);
         channel.start();
@@ -85,13 +84,9 @@ class EventChannelSingleton {
    * Shuts down all event channels that this instance keeps.
    */
   static synchronized void shutdown() {
-    EventChannel channel;
-
-    for (Iterator iter = _channels.values().iterator(); iter.hasNext();) {
-      channel = (EventChannel) iter.next();
+    for (EventChannel channel : _channels.values()) {
       channel.close();
     }
-
     _channels.clear();
   }
 }

@@ -30,7 +30,6 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
   private EventConsumer         _consumer;
   private int                   _bufsize         = DEFAULT_BUFSZ;
   private int                   _responseTimeout = 10000;
-  private String                _domain;
   private String                _node;
   private SocketTimeoutListener _listener;
   private ServerAddress         _addr;
@@ -43,7 +42,6 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
     super(consumer.getNode() + "Unicast@" +
       consumer.getDomainName().toString(), soTimeout);
     _consumer   = consumer;
-    _domain     = consumer.getDomainName().toString();
     _node       = consumer.getNode();
   }
 
@@ -55,7 +53,6 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
     super(consumer.getNode() + "@" + consumer.getDomainName().toString(),
       soTimeout, port);
     _consumer   = consumer;
-    _domain     = consumer.getDomainName().toString();
     _node       = consumer.getNode();
   }
 
@@ -157,7 +154,7 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
   /**
    * @see UnicastDispatcher#send(java.util.List, String, Object)
    */
-  public RespList send(List addresses, String type, Object data)
+  public RespList send(List<ServerAddress> addresses, String type, Object data)
     throws IOException {
     DatagramSocket sock = new DatagramSocket();
 

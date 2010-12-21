@@ -15,13 +15,13 @@ import java.util.List;
  * </dl>
  */
 public class RespList {
-  private List _resps;
+  private List<Response> _resps;
 
   /**
    * Constructor for RespList.
    */
   public RespList(int capacity) {
-    _resps = new ArrayList(capacity);
+    _resps = new ArrayList<Response>(capacity);
   }
 
   /**

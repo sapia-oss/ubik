@@ -29,6 +29,9 @@ import java.io.ObjectOutputStream;
  * </dl>
  */
 public class RemoteEvent implements java.io.Serializable {
+  
+  static final long serialVersionUID = 1L;
+  
   // CLASS VARIABLES
   static final int BUFSZ   = 1048;
   static int       _inc    = 0;

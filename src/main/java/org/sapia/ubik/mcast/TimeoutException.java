@@ -10,6 +10,9 @@ package org.sapia.ubik.mcast;
  * </dl>
  */
 public class TimeoutException extends Exception {
+  
+  static final long serialVersionUID = 1L;
+  
   /**
    * Constructor for TimeoutException.
    */

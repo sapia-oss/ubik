@@ -13,6 +13,9 @@ package org.sapia.ubik.net;
  * </dl>
  */
 public class NoObjectAvailableException extends Exception {
+  
+  static final long serialVersionUID = 1L;
+  
   /**
    * Constructor for NoObjectAvailableException.
    */

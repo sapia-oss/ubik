@@ -22,7 +22,7 @@ import java.util.Map;
  */
 public class QueryString {
   private String _path       = "/";
-  private Map    _properties = new HashMap();
+  private Map<String, String>    _properties = new HashMap<String, String>();
 
   /**
    * Constructor for QueryString.
@@ -53,9 +53,9 @@ public class QueryString {
   /**
    * Returns this instance's parameters.
    *
-   * @return a <code>Map</code> containing name/value pairs.
+   * @return a {@link Map} containing name/value pairs.
    */
-  public Map getParameters() {
+  public Map<String,String> getParameters() {
     return _properties;
   }
 
@@ -105,14 +105,14 @@ public class QueryString {
     StringBuffer buf = new StringBuffer(_path);
 
     if (_properties.size() > 0) {
-      Map.Entry entry;
+      Map.Entry<String, String> entry;
       buf.append(QueryStringParser.QMARK);
 
-      Iterator itr   = _properties.entrySet().iterator();
+      Iterator<Map.Entry<String, String>> itr   = _properties.entrySet().iterator();
       int      count = 0;
 
       while (itr.hasNext()) {
-        entry = (Map.Entry) itr.next();
+        entry = (Map.Entry<String, String>) itr.next();
 
         if (count > 0) {
           buf.append(QueryStringParser.AMP);

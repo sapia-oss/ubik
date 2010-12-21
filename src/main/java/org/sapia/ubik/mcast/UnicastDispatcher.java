@@ -3,6 +3,7 @@ package org.sapia.ubik.mcast;
 import org.sapia.ubik.net.ServerAddress;
 
 import java.io.IOException;
+import java.util.List;
 
 
 /**
@@ -22,11 +23,11 @@ public interface UnicastDispatcher {
   /**
    * Dispatches the given data to the node whose address is given.
    *
-   * @param addr a <code>ServerAddress</code> that corresponds to the
+   * @param addr a {@link ServerAddress} that corresponds to the
    * destination node for the data passed in.
    * @param type the logical type of the data that is sent - allows the
    * receiver to perform logic according to the "type".
-   * @param data the <code>Object</code> to send.
+   * @param data the {@link Object} to send.
    */
   public void dispatch(ServerAddress addr, String type, Object data)
     throws IOException;
@@ -35,13 +36,13 @@ public interface UnicastDispatcher {
    * Sends the given data to the node whose address is given, returning the
    * corresponding response - received from the destination.
    *
-   * @param addr a <code>ServerAddress</code> that corresponds to the
+   * @param addr a {@link ServerAddress} that corresponds to the
    * destination node for the data passed in.
    * @param type the logical type of the data that is sent - allows the
    * receiver to perform logic according to the "type".
-   * @param data the <code>Object</code> to send.
+   * @param data the {@link Object} to send.
    *
-   * @return a <code>Response</code>.
+   * @return a {@link Response}.
    */
   public Response send(ServerAddress addr, String type, Object data)
     throws IOException;
@@ -50,14 +51,14 @@ public interface UnicastDispatcher {
    * Sends the given data to the list of destinations specified, and returning
    * the responses received from each destination.
    *
-   * @param addresses a <code>List</code> of <code>ServerAddress</code> instances.
+   * @param addresses a {@link List} of {@link ServerAddress} instances.
    * @param type the logical type of the data that is sent - allows the
    * receiver to perform logic according to the "type".
-   * @param data the <code>Object</code> to send.
+   * @param data the {@link Object} to send.
    *
    * @return a <code>RespList</code>.
    */
-  public RespList send(java.util.List addresses, String type, Object data)
+  public RespList send(java.util.List<ServerAddress> addresses, String type, Object data)
     throws IOException;
 
   /**
@@ -91,11 +92,11 @@ public interface UnicastDispatcher {
   /**
    * Returns the address of this instance.
    *
-   * @return a <code>ServerAddress</code>.
+   * @return a {@link ServerAddress}.
    *
    * @throws IllegalStateException if the address of this instance is not yet available.
-   * This can be the case if the <code>start()</code> method has not yet been called;
-   * therefore, always call start() before calling this method.
+   * This can be the case if the {@link #start()} method has not yet been called;
+   * therefore, always call {@link #start()} before calling this method.
    *
    * @see #start()
    */

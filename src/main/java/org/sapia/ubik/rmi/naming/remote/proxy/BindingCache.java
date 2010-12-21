@@ -7,9 +7,8 @@ import java.io.ObjectOutput;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.naming.Context;
 import javax.naming.Name;
@@ -31,7 +30,8 @@ import org.sapia.ubik.rmi.server.StubInvocationHandler;
  * </dl>
  */
 public class BindingCache implements Externalizable {
-  private List _services = Collections.synchronizedList(new ArrayList());
+  
+  private List<BoundRef> _services = new CopyOnWriteArrayList<BoundRef>();
 
   public BindingCache() {
   }
@@ -40,7 +40,7 @@ public class BindingCache implements Externalizable {
     _services.add(new BoundRef(domainName, name, o));
   }
 
-  public synchronized List cachedRefs() {
+  public synchronized List<BoundRef> cachedRefs() {
     return _services;
   }
 
@@ -57,8 +57,8 @@ public class BindingCache implements Externalizable {
       try {
         if ((ref.domainName != null) && domain.contains(ref.domainName)) {
           Object toBind;
-          if(ref.obj instanceof SoftReference){
-            toBind = ((SoftReference)ref.obj).get();
+          if(ref.obj instanceof SoftReference<?>){
+            toBind = ((SoftReference<?>)ref.obj).get();
           }
           else{
             toBind = ref.obj;
@@ -79,9 +79,10 @@ public class BindingCache implements Externalizable {
     }
   }
 
+  @SuppressWarnings(value="unchecked")
   public void readExternal(ObjectInput in)
     throws IOException, ClassNotFoundException {
-    _services = (List) in.readObject();
+    _services = (List<BoundRef>) in.readObject();
   }
 
   public void writeExternal(ObjectOutput out) throws IOException {
@@ -115,7 +116,7 @@ public class BindingCache implements Externalizable {
     BoundRef(String domainName, Name name, Object o) {
       this.domainName   = DomainName.parse(domainName);
       this.name         = name;
-      this.obj          = new SoftReference(o);
+      this.obj          = new SoftReference<Object>(o);
     }
 
     public void readExternal(ObjectInput in)
@@ -130,8 +131,8 @@ public class BindingCache implements Externalizable {
 
       Object toWrite;
 
-      if (obj instanceof SoftReference) {
-        toWrite = ((SoftReference) obj).get();
+      if (obj instanceof SoftReference<?>) {
+        toWrite = ((SoftReference<?>)obj).get();
       } else {
         toWrite = obj;
       }
@@ -153,8 +154,8 @@ public class BindingCache implements Externalizable {
         return true;
       }
 
-      if (obj instanceof SoftReference) {
-        return ((SoftReference) obj).get() == null;
+      if (obj instanceof SoftReference<?>) {
+        return ((SoftReference<?>) obj).get() == null;
       }
 
       return false;

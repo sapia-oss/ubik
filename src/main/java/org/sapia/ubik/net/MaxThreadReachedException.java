@@ -10,6 +10,9 @@ package org.sapia.ubik.net;
  * </dl>
  */
 public class MaxThreadReachedException extends Exception {
+  
+  static final long serialVersionUID = 1L;
+  
   /**
    * Constructor for MaxThreadReachedException.
    * @param arg0

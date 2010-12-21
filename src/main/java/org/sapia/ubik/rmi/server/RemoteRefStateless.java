@@ -8,7 +8,6 @@ import java.lang.reflect.Method;
 import java.rmi.RemoteException;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -53,7 +52,7 @@ public class RemoteRefStateless implements StubInvocationHandler,
   protected int     _mcastPort;
   protected OID     _oid          = new OID(UIDGenerator.createdUID());
   protected transient boolean _isRegistered;
-  protected List    _serviceInfos = Collections.synchronizedList(new LinkedList());
+  protected List<ServiceInfo>    _serviceInfos = Collections.synchronizedList(new LinkedList<ServiceInfo>());
   
   /**
    * Constructor for RemoteRefStateless.
@@ -114,14 +113,14 @@ public class RemoteRefStateless implements StubInvocationHandler,
    * @see StubInvocationHandler#toStubContainer(Object)
    */
   public StubContainer toStubContainer(Object proxy) {
-    Set interfaces = new HashSet();
+    Set<Class<?>> interfaces = new HashSet<Class<?>>();
     ServerTable.appendInterfaces(proxy.getClass(), interfaces);
 
     String[] names = new String[interfaces.size()];
     int      count = 0;
 
-    for (Iterator iter = interfaces.iterator(); iter.hasNext();) {
-      names[count++] = ((Class) iter.next()).getName();
+    for(Class<?> intf : interfaces){
+      names[count++] = intf.getName();
     }
 
     return new StubContainerBase(names, this);
@@ -130,6 +129,7 @@ public class RemoteRefStateless implements StubInvocationHandler,
   /**
    * @see java.io.Externalizable#readExternal(ObjectInput)
    */
+  @SuppressWarnings(value="unchecked")
   public void readExternal(ObjectInput in)
     throws IOException, ClassNotFoundException {
     _name           = (Name) in.readObject();
@@ -137,7 +137,7 @@ public class RemoteRefStateless implements StubInvocationHandler,
     _mcastAddress   = in.readUTF();
     _mcastPort      = in.readInt();
     _oid            = (OID) in.readObject();
-    _serviceInfos   = (List) in.readObject();
+    _serviceInfos   = (List<ServiceInfo>) in.readObject();
 
     ServiceInfo info;
 
@@ -174,7 +174,7 @@ public class RemoteRefStateless implements StubInvocationHandler,
    * @param domain the name of the domain to which the service belongs.
    */
   public static RemoteRefStateless fromRemoteRefs(Name name, String domain,
-    List remoteRefs) {
+    List<RemoteRef> remoteRefs) {
     RemoteRefStateless ref     = new RemoteRefStateless(name, domain);
     RemoteRef          current;
     ServiceInfo        info;
@@ -238,9 +238,9 @@ public class RemoteRefStateless implements StubInvocationHandler,
   /**
    * Returns this instance's underlying connection information.
    *
-   * @return a <code>List</code> of <code>RemoteRefStateless.ServiceInfo</code>.
+   * @return the {@link List} of {@link ServiceInfo} instances that this instance holds.
    */
-  List getInfos() {
+  List<ServiceInfo> getInfos() {
     return _serviceInfos;
   }
 
@@ -457,6 +457,9 @@ public class RemoteRefStateless implements StubInvocationHandler,
                                       INNER CLASSES
   ////////////////////////////////////////////////////////////////////////////////////*/
   public static class ServiceInfo implements java.io.Serializable {
+    
+    static final long serialVersionUID = 1L;
+    
     ServerAddress address;
     OID           oid;
     boolean       callback;

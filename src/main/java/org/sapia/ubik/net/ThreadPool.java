@@ -45,11 +45,11 @@ import org.sapia.ubik.rmi.server.perf.Statistic;
  *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
  * </dl>
  */
-public abstract class ThreadPool extends Pool {
+public abstract class ThreadPool extends Pool<PooledThread> {
   private String  _name;
   private boolean _daemon;
   private boolean _shuttingDown;
-  private List    _busy = new ArrayList();
+  private List<PooledThread>    _busy = new ArrayList<PooledThread>();
   private HitsPerSecStatistic _tps = HitStatFactory.createHitsPerSec("TPC", -0, null);
   private Statistic    _duration = new Statistic("Duration");  
 
@@ -91,13 +91,13 @@ public abstract class ThreadPool extends Pool {
    *
    * @throws IllegalStateException if this instance is shutting down or is shut down.
    */
-  protected Object onAcquire(Object o) throws Exception, IllegalStateException {
+  protected PooledThread onAcquire(PooledThread o) throws Exception, IllegalStateException {
     if (_shuttingDown) {
       throw new IllegalStateException(
         "Could not acquire thread; pool is shutting down");
     }
 
-    ((PooledThread) o).acquire();
+    o.acquire();
     _busy.add(o);
 
     return o;
@@ -106,7 +106,7 @@ public abstract class ThreadPool extends Pool {
   /**
    * @see org.sapia.ubik.net.Pool#onRelease(Object)
    */
-  protected synchronized void onRelease(Object o) {
+  protected synchronized void onRelease(PooledThread o) {
     ((PooledThread) o).release();
     _busy.remove(o);
     notifyAll();
@@ -174,12 +174,12 @@ public abstract class ThreadPool extends Pool {
     _shuttingDown = true;
 
     for (int i = 0; i < _objects.size(); i++) {
-      ((PooledThread) _objects.get(i)).shutdown();
+      _objects.get(i).shutdown();
     }
 
     if (_busy.size() > 0) {
       for (int i = 0; i < _busy.size(); i++) {
-        ((PooledThread) _busy.get(i)).shutdown();
+        _busy.get(i).shutdown();
       }
 
       Timer timer = new Timer(timeout);
@@ -201,8 +201,8 @@ public abstract class ThreadPool extends Pool {
   /**
    * @see org.sapia.ubik.net.Pool#doNewObject()
    */
-  protected final Object doNewObject() throws Exception {
-    PooledThread th = (PooledThread) newThread();
+  protected final PooledThread doNewObject() throws Exception {
+    PooledThread th = newThread();
     th.setTpsStat(_tps);
     th.setDurationStat(_duration);
     th.setOwner(this);

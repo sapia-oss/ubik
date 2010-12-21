@@ -17,6 +17,7 @@ import org.sapia.ubik.rmi.naming.remote.RemoteContext;
  *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
  * </dl>
  */
+@SuppressWarnings(value="unchecked")
 public class LocalNamingEnum extends EnumProxy {
   private String _url;
 

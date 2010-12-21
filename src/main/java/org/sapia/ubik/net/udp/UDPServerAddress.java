@@ -17,6 +17,9 @@ import java.net.InetAddress;
  * </dl>
  */
 public class UDPServerAddress implements ServerAddress {
+  
+  static final long serialVersionUID = 1L;
+  
   public static final String TRANSPORT_TYPE = "udp/socket";
   private String             _transportType = TRANSPORT_TYPE;
   private InetAddress        _addr;

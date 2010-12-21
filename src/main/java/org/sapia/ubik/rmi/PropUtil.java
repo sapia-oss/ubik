@@ -20,7 +20,7 @@ import org.sapia.ubik.rmi.server.Log;
  */
 public class PropUtil {
   
-  private List _props = new ArrayList();
+  private List<Properties> _props = new ArrayList<Properties>();
   
   /**
    * @param props some <code>Properties</code> to look up.

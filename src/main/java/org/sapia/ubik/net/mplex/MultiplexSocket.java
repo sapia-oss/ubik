@@ -30,11 +30,14 @@ import java.net.SocketImpl;
  * </dl>
  */
 public class MultiplexSocket extends Socket {
+  
+  private static final int PUSHBACK_BUFZ = 256;
+  
   /** The input stream to provides the read-ahead logic. */
   private PushbackInputStream _theInput;
 
   /** The size of the number of the maximum number of bytes that can be read-ahead. */
-  private int _thePushbackBufferSize;
+  private int _thePushbackBufferSize = PUSHBACK_BUFZ;
 
   /**
    * Creates a new MultiplexSocket instance. The socket will not be connected.
@@ -60,7 +63,7 @@ public class MultiplexSocket extends Socket {
   public InputStream getInputStream() throws IOException {
     if (_theInput == null) {
       _theInput = new PushbackInputStream(new BufferedInputStream(
-            super.getInputStream()), 256);
+            super.getInputStream()), _thePushbackBufferSize);
     }
 
     return _theInput;

@@ -1,16 +1,16 @@
 package org.sapia.ubik.rmi.server;
 
-import java.rmi.NoSuchObjectException;
 import java.rmi.server.Unreferenced;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.management.ObjectName;
 
 import org.sapia.ubik.jmx.MBeanContainer;
 import org.sapia.ubik.jmx.MBeanFactory;
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.NoSuchObjectException;
 import org.sapia.ubik.rmi.PropUtil;
 import org.sapia.ubik.rmi.server.perf.Statistic;
 
@@ -42,7 +42,7 @@ public class ObjectTable implements ObjectTableMBean, MBeanFactory{
   static final float DEFAULT_LOAD_FACTOR = 0.75f;
   static final int DEFAULT_INIT_CAPACITY = 2000;
   
-  Map _refs;
+  Map<OID, Ref> _refs;
   Statistic _refCount = new RefCountStat();
   
   ObjectTable(){
@@ -51,7 +51,7 @@ public class ObjectTable implements ObjectTableMBean, MBeanFactory{
     PropUtil pu = new PropUtil().addProperties(System.getProperties());
     loadFactor = pu.getFloat(Consts.OBJECT_TABLE_LOAD_FACTOR, DEFAULT_LOAD_FACTOR);
     initCapacity = pu.getIntProperty(Consts.OBJECT_TABLE_INITCAPACITY, DEFAULT_INIT_CAPACITY);
-    _refs = Collections.synchronizedMap(new HashMap(initCapacity, loadFactor));
+    _refs = new ConcurrentHashMap<OID, Ref>(initCapacity, loadFactor);
     Hub.statsCollector.addStat(_refCount);
   }
 
@@ -59,7 +59,7 @@ public class ObjectTable implements ObjectTableMBean, MBeanFactory{
    * Registers the given object (for which a stub will eventually be
    * sent on the client side) with the given object identifier.
    *
-   * @param oid the <code>OID</code> of the object passed in.
+   * @param oid the {@link OID} of the object passed in.
    * @param o the object whose stub will be sent to the client.
    */
   public synchronized void register(OID oid, Object o) {
@@ -81,10 +81,10 @@ public class ObjectTable implements ObjectTableMBean, MBeanFactory{
    * Increases the reference count of the object whose identifier
    * is passed as a parameter.
    *
-   * @param oid the <code>OID</code> of the object whose reference count
+   * @param oid the {@link OID} of the object whose reference count
    * should be incremented.
    */
-  public synchronized void reference(OID oid) {
+  public synchronized void reference(OID oid){
     if (Log.isDebug()) {
       Log.debug(ObjectTable.class, "referencing to: " + oid);
     }
@@ -96,7 +96,7 @@ public class ObjectTable implements ObjectTableMBean, MBeanFactory{
         Log.debug(getClass(), "No object reference for: " + oid);
         Log.debug(getClass(), "Current objects: " + _refs);
       }
-      throw new NullPointerException("no object reference for: " + oid);
+      throw new NoSuchObjectException("no object reference for: " + oid);
     }
 
     ref.inc();
@@ -133,21 +133,32 @@ public class ObjectTable implements ObjectTableMBean, MBeanFactory{
   /**
    * Returns the object whose identifier is passed in.
    *
-   * @param oid the identifier of the object to return
+   * @param oid the {@link OID} corresponding to the identifier of the object to return
+   * @return the {@link Object} whose identifier is passed in.
    * @throws NoSuchObjectException if no object exists for the given identifier
    */
   public Object getObjectFor(OID oid) throws NoSuchObjectException {
+    return getRefFor(oid).get();
+  }
+  
+  /**
+   * Returns the reference whose identifier is passed in.
+   *
+   * @param oid the {@link OID} corresponding to the identifier of the object to return
+   * @return the {@link Ref} whose identifier is passed in.
+   * @throws NoSuchObjectException if no object exists for the given identifier
+   */
+  public Ref getRefFor(OID oid) throws NoSuchObjectException{
     Ref ref = (Ref) _refs.get(oid);
-
     if ((ref != null) && (ref.count() > 0)) {
-      return ref.get();
-    } else {
-      if(Log.isDebug()){
-        Log.debug(getClass(), "No object reference for: " + oid);
-        Log.debug(getClass(), "Current objects: " + _refs);
-      }      
-      throw new NullPointerException("no object reference for: " + oid);
+      return ref;
     }
+    if(Log.isDebug()){
+      Log.debug(getClass(), "No object reference for: " + oid);
+      Log.debug(getClass(), "Current objects: " + _refs);
+    }      
+    throw new NoSuchObjectException("no object reference for: " + oid);    
+    
   }
 
   /**
@@ -173,7 +184,7 @@ public class ObjectTable implements ObjectTableMBean, MBeanFactory{
    * Removes all objects whose class was loaded by the given
    * classloader.
    *
-   * @param loader a <code>ClassLoader</code>.
+   * @param loader a {@link ClassLoader}.
    *
    * @return <code>true</code> if any objects were removed that correspond to the
    * given classloader.
@@ -201,7 +212,7 @@ public class ObjectTable implements ObjectTableMBean, MBeanFactory{
    * Returns the reference count of the object whose identifier is given.
    *
    * @return the reference count of the object corresponding to the
-   * <code>OID</code> passed in.
+   * {@link OID} passed in.
    */
   public int getRefCount(OID oid) {
     Ref ref = (Ref) _refs.get(oid);
@@ -213,6 +224,12 @@ public class ObjectTable implements ObjectTableMBean, MBeanFactory{
     }
   }
   
+  /**
+   * Returns the total number of references that this instance holds.
+   *
+   * @return the reference count of the object corresponding to the
+   * {@link OID} passed in.
+   */  
   public int getRefCount(){
     Ref[]   refs    = (Ref[]) _refs.values().toArray(new Ref[_refs.size()]);
     int total = 0;
@@ -222,21 +239,33 @@ public class ObjectTable implements ObjectTableMBean, MBeanFactory{
     return total;
   }
 
+  /**
+   * Clears this instance's internal {@link Ref}s.
+   */
   public synchronized void clear() {
     _refs.clear();
   }
 
-  public Map getRefs() {
-    return _refs;
-  }
-
+  /**
+   * Resets the reference count corresponding to the given {@link OID} 
+   * to 0.
+   * 
+   * @param oid an {@link OID}
+   */
   public synchronized void clear(OID oid) {
     Ref ref = (Ref) _refs.get(oid);
 
     if (ref != null) {
-      ref._count = 0;
+      ref._count.set(0);
     }
   }
+  
+
+  /*
+  Map<OID, Ref> getRefs() {
+    return _refs;
+  }*/
+
   
   //////// MBeanFactory
   
@@ -249,7 +278,7 @@ public class ObjectTable implements ObjectTableMBean, MBeanFactory{
                               INNER CLASSES
   ////////////////////////////////////////////////////////////////////*/
   protected static class Ref {
-    int    _count;
+    AtomicInteger _count = new AtomicInteger();
     Object _obj;
     OID    _oid;
 
@@ -259,23 +288,21 @@ public class ObjectTable implements ObjectTableMBean, MBeanFactory{
     }
 
     void dec() {
-      _count--;
+      _count.decrementAndGet();
     }
 
     void dec(int count) {
-      _count = _count - count;
-
-      if (_count < 0) {
-        _count = 0;
+      if(_count.addAndGet(-count) < 0){
+        _count.set(0);
       }
     }
 
     void inc() {
-      _count++;
+      _count.incrementAndGet();
     }
 
     int count() {
-      return _count;
+      return _count.get();
     }
 
     Object get() {

@@ -69,8 +69,8 @@ public class QueryStringParser implements NameParser {
    * <code>some/object?prop1=value1&prop2=value2</code> would have
    * <code>object?prop1=value1&prop2=value2</code> as its last path string.
    */
-  public Enumeration parseNameTokens(String queryString) {
-    Vector      tokens = new Vector();
+  public Enumeration<String> parseNameTokens(String queryString) {
+    Vector<String>      tokens = new Vector<String>();
     QueryString qs = new QueryString();
 
     parseName(qs, queryString);
@@ -82,15 +82,15 @@ public class QueryStringParser implements NameParser {
     }
 
     if (qs.getParameters().size() > 0) {
-      StringBuffer buf   = new StringBuffer((String) tokens.lastElement());
-      Map.Entry    entry;
+      StringBuffer buf   = new StringBuffer(tokens.lastElement());
+      Map.Entry<String, String>    entry;
       buf.append(QueryStringParser.QMARK);
 
-      Iterator itr   = qs.getParameters().entrySet().iterator();
+      Iterator<Map.Entry<String, String>> itr   = qs.getParameters().entrySet().iterator();
       int      count = 0;
 
       while (itr.hasNext()) {
-        entry = (Map.Entry) itr.next();
+        entry = itr.next();
 
         if (count > 0) {
           buf.append(QueryStringParser.AMP);
@@ -197,7 +197,10 @@ public class QueryStringParser implements NameParser {
                      INNER CLASSES
   //////////////////////////////////////////////////*/
   static final class CompositeNameEx extends CompositeName {
-    protected CompositeNameEx(Enumeration en) {
+    
+    static final long serialVersionUID = 1L;
+    
+    protected CompositeNameEx(Enumeration<String> en) {
       super(en);
     }
   }

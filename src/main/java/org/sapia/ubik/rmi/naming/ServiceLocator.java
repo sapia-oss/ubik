@@ -1,14 +1,14 @@
 package org.sapia.ubik.rmi.naming;
 
-import org.sapia.ubik.net.Uri;
-import org.sapia.ubik.net.UriSyntaxException;
-import org.sapia.ubik.rmi.naming.remote.proxy.JNDIHandler;
-
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.naming.NameNotFoundException;
 import javax.naming.NamingException;
+
+import org.sapia.ubik.net.Uri;
+import org.sapia.ubik.net.UriSyntaxException;
+import org.sapia.ubik.rmi.naming.remote.proxy.JNDIHandler;
 
 
 /**
@@ -81,7 +81,7 @@ public class ServiceLocator {
    *
    * @see JNDIHandler
    */
-  private static Map _handlers = new HashMap();
+  private static Map<String, ServiceHandler> _handlers = new ConcurrentHashMap<String, ServiceHandler>();
 
   static {
     registerHandler(UBIK_SCHEME, new JNDIHandler());

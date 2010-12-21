@@ -10,10 +10,9 @@ import java.io.IOException;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.sapia.ubik.mcast.AsyncEventListener;
 import org.sapia.ubik.mcast.EventChannel;
@@ -28,7 +27,7 @@ import org.sapia.ubik.rmi.naming.remote.archie.SyncPutEvent;
  */
 public class StatelessStubTable implements AsyncEventListener{
   
-  private static Map                _stubs    = Collections.synchronizedMap(new HashMap());
+  private static Map<String, List<SoftReference<RemoteRefStateless>>> _stubs = new ConcurrentHashMap<String, List<SoftReference<RemoteRefStateless>>>();
   private static StatelessStubTable _instance = new StatelessStubTable();
   
   /** Creates a new instance of StatelessStubTable */
@@ -84,9 +83,9 @@ public class StatelessStubTable implements AsyncEventListener{
         RemoteRefStateless other = (RemoteRefStateless) handler;
 
         synchronized(_stubs){
-          List siblings = (List)_stubs.get(other._domain);
+          List<SoftReference<RemoteRefStateless>> siblings = _stubs.get(other._domain);
           if(siblings == null){
-            siblings = new ArrayList();
+            siblings = new ArrayList<SoftReference<RemoteRefStateless>>();
             _stubs.put(other._domain,  siblings);
           }
           addSiblings(siblings, other);
@@ -102,24 +101,24 @@ public class StatelessStubTable implements AsyncEventListener{
   
   static synchronized void doRegister(RemoteRefStateless ref){
     synchronized(_stubs){
-      List siblings = (List)_stubs.get(ref._domain);
+      List<SoftReference<RemoteRefStateless>> siblings = _stubs.get(ref._domain);
       if(siblings == null){
-        siblings = new ArrayList();
+        siblings = new ArrayList<SoftReference<RemoteRefStateless>>();
         _stubs.put(ref._domain,  siblings);
       }
-      siblings.add(new SoftReference(ref));
+      siblings.add(new SoftReference<RemoteRefStateless>(ref));
       addSiblings(siblings, ref);      
     }
   }  
   
-  static List getSiblings(String domain){
-    return (List)_stubs.get(domain);
+  static List<SoftReference<RemoteRefStateless>> getSiblings(String domain){
+    return (List<SoftReference<RemoteRefStateless>>)_stubs.get(domain);
   }
   
-  private static void addSiblings(List siblings, RemoteRefStateless other){
+  private static void addSiblings(List<SoftReference<RemoteRefStateless>> siblings, RemoteRefStateless other){
     for(int i = 0; i < siblings.size(); i++){
-      SoftReference ref = (SoftReference)siblings.get(i);
-      RemoteRefStateless remoteRef = (RemoteRefStateless)ref.get();
+      SoftReference<RemoteRefStateless> ref = siblings.get(i);
+      RemoteRefStateless remoteRef = ref.get();
       if(remoteRef == null){
         siblings.remove(i--);
       }

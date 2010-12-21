@@ -34,9 +34,9 @@ public class JmxHelper {
    */
   public static void registerMBean(ObjectName name, Object mbean) throws Exception{
     if(isJmxEnabled()){
-      List list = MBeanServerFactory.findMBeanServer(null);
+      List<MBeanServer> list = MBeanServerFactory.findMBeanServer(null);
       for(int i = 0; i < list.size(); i++){
-        MBeanServer server = (MBeanServer)list.get(i);
+        MBeanServer server = list.get(i);
         server.registerMBean(mbean, name);
       }
     }

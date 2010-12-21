@@ -37,6 +37,6 @@ public interface ServiceHandler {
    * given path.
    * @throws NamingException if an error occurs while performing the lookup.
    */
-  public Object handleLookup(String host, int port, String path, Map attributes)
+  public Object handleLookup(String host, int port, String path, Map<String,String> attributes)
     throws NameNotFoundException, NamingException;
 }

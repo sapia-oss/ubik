@@ -23,7 +23,6 @@ public class BroadcastDispatcherImpl /*extends Thread*/
   implements BroadcastDispatcher {
   static final int        DEFAULT_BUFSZ = 5000;
   static final int        TTL       = 7;
-  private boolean         _started;
   private String          _node;
   private String          _domain;
   private BroadcastServer _server;

@@ -26,6 +26,7 @@ import org.sapia.ubik.rmi.server.StubContainer;
  *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
  * </dl>
  */
+@SuppressWarnings(value="unchecked")
 public class LocalContext extends ContextProxy implements java.rmi.Remote {
   protected DomainName _domainName;
   protected String     _mcastAddress;

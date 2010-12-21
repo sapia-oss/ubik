@@ -3,9 +3,9 @@ package org.sapia.ubik.rmi.naming.remote.discovery;
 import java.io.IOException;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.naming.Context;
 import javax.naming.NamingException;
@@ -40,8 +40,8 @@ import org.sapia.ubik.rmi.server.Log;
  */
 public class DiscoveryHelper implements AsyncEventListener {
   protected EventChannel  _channel;
-  private List            _svclisteners  = Collections.synchronizedList(new ArrayList());
-  private List            _jndiListeners = Collections.synchronizedList(new ArrayList());
+  private List<ServiceDiscoListener>            _svclisteners  = new CopyOnWriteArrayList<ServiceDiscoListener>();
+  private List<JndiDiscoListener>               _jndiListeners = new CopyOnWriteArrayList<JndiDiscoListener>();
   private ContextResolver _resolver = new DefaultContextResolver();
 
   /**
@@ -107,9 +107,7 @@ public class DiscoveryHelper implements AsyncEventListener {
    * @param a <code>ServiceDiscoListener</code>.
    */
   public synchronized void removeServiceDiscoListener(ServiceDiscoListener listener) {
-    List listeners = new ArrayList(_svclisteners);
-    listeners.remove(listener);
-    _svclisteners = listeners;
+    _svclisteners.remove(listener);
   }  
 
   /**
@@ -132,9 +130,7 @@ public class DiscoveryHelper implements AsyncEventListener {
    * @param a <code>JndiDiscoListener</code>.
    */
   public synchronized void removeJndiDiscoListener(JndiDiscoListener listener) {
-    List listeners = new ArrayList(_jndiListeners);
-    listeners.remove(listener);
-    _jndiListeners = listeners;    
+    _jndiListeners.remove(listener);    
   }  
   
   /**
@@ -150,7 +146,7 @@ public class DiscoveryHelper implements AsyncEventListener {
 
         Context remoteCtx = (Context) _resolver.resolve(tcp);
 
-        List listeners = new ArrayList(_jndiListeners);
+        List<JndiDiscoListener> listeners = new ArrayList<JndiDiscoListener>(_jndiListeners);
          
         /*
          * TODO: this code is a hack and a refactoring will
@@ -165,11 +161,10 @@ public class DiscoveryHelper implements AsyncEventListener {
           }
         }
         for (int i = 0; i < listeners.size(); i++) {
-          ((JndiDiscoListener) listeners.get(i)).onJndiDiscovered(remoteCtx);
+          listeners.get(i).onJndiDiscovered(remoteCtx);
         }
       } else if (evt.getType().equals(SyncPutEvent.class.getName())) {
         SyncPutEvent bevt = (SyncPutEvent) evt.getData();
-        Object       obj;
 
         try {
           ServiceDiscoListener listener;
@@ -188,7 +183,7 @@ public class DiscoveryHelper implements AsyncEventListener {
           ServiceDiscoveryEvent sevt = new ServiceDiscoveryEvent(props, name,
               bevt.getValue());
 
-          List listeners = new ArrayList(_svclisteners);
+          List<ServiceDiscoListener> listeners = new ArrayList<ServiceDiscoListener>(_svclisteners);
           for (int i = 0; i < listeners.size(); i++) {
             listener = (ServiceDiscoListener) listeners.get(i);
             listener.onServiceDiscovered(sevt);

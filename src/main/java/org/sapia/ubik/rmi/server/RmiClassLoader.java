@@ -26,7 +26,7 @@ public class RmiClassLoader extends SecureClassLoader{
   /**
    * @see java.lang.ClassLoader#loadClass(java.lang.String, boolean)
    */
-  public synchronized Class loadClass(String name, boolean resolve)
+  public synchronized Class<?> loadClass(String name, boolean resolve)
       throws ClassNotFoundException {
     try{
       return RMIClassLoader.loadClass(_codebase, name, getParent());

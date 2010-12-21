@@ -16,6 +16,9 @@ package org.sapia.ubik.mcast;
  * </dl>
  */
 public class Response implements java.io.Serializable {
+  
+  static final long serialVersionUID = 1L;
+  
   /**
    * Corresponds to the OK status, signifying that the response
    * was returned normally.

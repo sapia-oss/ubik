@@ -1,17 +1,16 @@
 package org.sapia.ubik.rmi.server.perf;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import javax.management.ObjectName;
+
 import org.sapia.ubik.jmx.MBeanContainer;
 import org.sapia.ubik.jmx.MBeanFactory;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.PropUtil;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.management.ObjectName;
 
 
 /**
@@ -42,7 +41,7 @@ import javax.management.ObjectName;
 public class PerfAnalyzer implements MBeanFactory {
   private static final PerfAnalyzer _perf      = new PerfAnalyzer();
   private boolean                   _isEnabled;
-  private Map                       _avgs = Collections.synchronizedMap(new HashMap());
+  private Map<String, Topic>        _avgs = new ConcurrentHashMap<String, Topic>();
 
   /**
    * Constructor for PerfAnalyer.
@@ -113,12 +112,11 @@ public class PerfAnalyzer implements MBeanFactory {
   }
   
   /**
-   * @return the <code>Collection</code> of <code>Topic</code>s held by this instance.
+   * @return the {@link Collection} of {@link Topic}s held by this instance.
    */
-  public Collection getTopics(){
+  public Collection<Topic> getTopics(){
     synchronized(_avgs){
-      Collection topics = new ArrayList(_avgs.size());
-      topics.addAll(_avgs.values());
+      Collection<Topic> topics = new ArrayList<Topic>(_avgs.values());
       return topics;
     }
   }

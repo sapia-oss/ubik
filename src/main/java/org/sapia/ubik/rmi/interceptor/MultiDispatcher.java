@@ -6,6 +6,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
@@ -20,7 +21,8 @@ import java.util.*;
  * </dl>
  */
 public class MultiDispatcher {
-  Map _interceptors = new HashMap();
+  
+  Map<Class<?>, List<InterceptorInfo>> _interceptors = new ConcurrentHashMap<Class<?>, List<InterceptorInfo>>();
 
   /**
    * Adds an interceptor for the given event type.
@@ -30,9 +32,9 @@ public class MultiDispatcher {
    *
    * @throws InvalidInterceptorException if the interceptor could not be added.
    */
-  public void addInterceptor(Class event, Interceptor it)
+  public void addInterceptor(Class<?> event, Interceptor it)
     throws InvalidInterceptorException {
-    Class  itClass   = it.getClass();
+    Class<?>  itClass   = it.getClass();
     int    idx       = event.getName().lastIndexOf('.');
     String shortName;
 
@@ -54,10 +56,10 @@ public class MultiDispatcher {
       throw new InvalidInterceptorException(e);
     }
 
-    List interceptors = (List) _interceptors.get(event);
+    List<InterceptorInfo> interceptors = _interceptors.get(event);
 
     if (interceptors == null) {
-      interceptors = new ArrayList();
+      interceptors = new ArrayList<InterceptorInfo>();
       _interceptors.put(event, interceptors);
     }
 
@@ -69,7 +71,7 @@ public class MultiDispatcher {
    * registered for the event's class.
    */
   public void dispatch(Event event) {
-    List interceptors = (List) _interceptors.get(event.getClass());
+    List<InterceptorInfo> interceptors = _interceptors.get(event.getClass());
 
     if (interceptors == null) {
       return;

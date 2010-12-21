@@ -1,14 +1,17 @@
 package org.sapia.ubik.mcast;
 
-import org.sapia.ubik.rmi.server.Log;
-import org.sapia.ubik.rmi.server.UIDGenerator;
-
 import java.lang.ref.SoftReference;
-
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
-import java.util.*;
+import org.sapia.ubik.rmi.server.Log;
+import org.sapia.ubik.rmi.server.UIDGenerator;
 
 
 /**
@@ -29,11 +32,10 @@ import java.util.*;
  * </dl>
  */
 public class EventConsumer {
-  private static int    _count;
   private static Random _rand                  = new Random();
-  private Map           _asyncListenersByEvent = new HashMap();
-  private Map           _syncListenersByEvent  = new HashMap();
-  private Map           _reverseMap            = new WeakHashMap();
+  private Map<String, List<SoftReference<AsyncEventListener>>>  _asyncListenersByEvent = new ConcurrentHashMap<String, List<SoftReference<AsyncEventListener>>>();
+  private Map<String, SoftReference<SyncEventListener>>   _syncListenersByEvent  = new ConcurrentHashMap<String, SoftReference<SyncEventListener>>();
+  private Map<Object, String>           _reverseMap            = new WeakHashMap<Object, String>();
   private DomainName    _domain;
   private String        _node;
 
@@ -86,10 +88,10 @@ public class EventConsumer {
    */
   public synchronized void registerAsyncListener(String evtType,
     AsyncEventListener listener) {
-    List lst = getAsyncListenersFor(evtType, true);
+    List<SoftReference<AsyncEventListener>> lst = getAsyncListenersFor(evtType, true);
 
     if (!contains(lst, listener)) {
-      lst.add(new SoftReference(listener));
+      lst.add(new SoftReference<AsyncEventListener>(listener));
       _reverseMap.put(listener, evtType);
     }
     else{
@@ -109,7 +111,7 @@ public class EventConsumer {
       throw new ListenerAlreadyRegisteredException(evtType);
     }
 
-    _syncListenersByEvent.put(evtType, new SoftReference(listener));
+    _syncListenersByEvent.put(evtType, new SoftReference<SyncEventListener>(listener));
     _reverseMap.put(listener, evtType);
   }
 
@@ -135,25 +137,24 @@ public class EventConsumer {
     String evtId = (String) _reverseMap.remove(listener);
 
     if (evtId != null) {
-      List lst = getAsyncListenersFor(evtId, false);
+      List<SoftReference<AsyncEventListener>> lst = getAsyncListenersFor(evtId, false);
 
       if (lst != null) {
-        SoftReference      contained;
+        SoftReference<AsyncEventListener> contained;
         AsyncEventListener instance;
 
         for (int i = 0; i < lst.size(); i++) {
-          contained = (SoftReference) lst.get(i);
+          contained = lst.get(i);
+          instance = contained.get();
 
-          if ((instance = (AsyncEventListener) contained.get()) == null) {
+          if (instance == null) {
             lst.remove(i);
             i--;
-
             continue;
           }
 
           if (contained.get().equals(instance)) {
             lst.remove(i);
-
             break;
           }
         }
@@ -171,7 +172,7 @@ public class EventConsumer {
     String type = (String) _reverseMap.get(listener);
 
     if (type != null) {
-      List listeners = (List) _asyncListenersByEvent.get(type);
+      List<SoftReference<AsyncEventListener>> listeners = _asyncListenersByEvent.get(type);
 
       return contains(listeners, listener);
     }
@@ -265,7 +266,8 @@ public class EventConsumer {
 
     if ((dn == null) && (evt.getNode() != null) &&
           !evt.getNode().equals(_node)) {
-      SyncEventListener sync = (SyncEventListener) ((SoftReference) _syncListenersByEvent.get(evt.getType())).get();
+      SoftReference<SyncEventListener> reference = _syncListenersByEvent.get(evt.getType());
+      SyncEventListener sync = reference != null ? reference.get() : null;
 
       if (sync != null) {
         if(Log.isDebug()){
@@ -278,7 +280,8 @@ public class EventConsumer {
       }
     } else if ((dn != null) && _domain.contains(dn) && (evt.getNode() != null) &&
           !evt.getNode().equals(_node)) {
-      SyncEventListener sync = (SyncEventListener) ((SoftReference) _syncListenersByEvent.get(evt.getType())).get();
+      SoftReference<SyncEventListener> reference = _syncListenersByEvent.get(evt.getType());
+      SyncEventListener sync = reference != null ? reference.get() : null;
 
       if (sync != null) {
         if(Log.isDebug()){
@@ -295,8 +298,7 @@ public class EventConsumer {
   }
 
   private synchronized void notifyAsyncListeners(RemoteEvent evt) {
-    List               lst      = getAsyncListenersFor(evt.getType(), false);
-    AsyncEventListener listener;
+    List<SoftReference<AsyncEventListener>> lst      = getAsyncListenersFor(evt.getType(), false);
 
     if (lst != null) {
       if(lst.size() == 0){
@@ -304,7 +306,7 @@ public class EventConsumer {
           Log.debug(getClass(), "No listener for event: " + evt.getType());        
       }
       for (int i = 0; i < lst.size(); i++) {
-        listener = (AsyncEventListener) ((SoftReference) lst.get(i)).get();
+        AsyncEventListener listener = lst.get(i).get();
         if (listener == null) {
           Log.debug(getClass(), "Async listener reference is null for: " + evt.getType());
           lst.remove(i);
@@ -321,33 +323,34 @@ public class EventConsumer {
     }
   }
 
-  private List getAsyncListenersFor(String evtId, boolean create) {
-    List lst = (List) _asyncListenersByEvent.get(evtId);
+  private List<SoftReference<AsyncEventListener>> getAsyncListenersFor(String evtId, boolean create) {
+    List<SoftReference<AsyncEventListener>> lst = _asyncListenersByEvent.get(evtId);
 
     if ((lst == null) && create) {
-      lst = new ArrayList();
+      lst = new ArrayList<SoftReference<AsyncEventListener>>();
       _asyncListenersByEvent.put(evtId, lst);
     }
 
     return lst;
   }
 
-  protected boolean contains(List listeners, AsyncEventListener listener) {
+  protected boolean contains(List<SoftReference<AsyncEventListener>> listeners, AsyncEventListener listener) {
     if (listeners != null) {
-      SoftReference      contained;
+      SoftReference<AsyncEventListener>      contained;
       AsyncEventListener instance;
 
       for (int i = 0; i < listeners.size(); i++) {
-        contained = (SoftReference) listeners.get(i);
+        contained = listeners.get(i);
+        instance = contained.get();
 
-        if ((instance = (AsyncEventListener) contained.get()) == null) {
+        if (instance == null) {
           listeners.remove(i);
           i--;
 
           continue;
         }
 
-        if (contained.get().equals(listener)) {
+        if (instance.equals(listener)) {
           return true;
         }
       }
@@ -356,7 +359,4 @@ public class EventConsumer {
     return false;
   }
 
-  private static synchronized int inc() {
-    return _count++;
-  }
 }

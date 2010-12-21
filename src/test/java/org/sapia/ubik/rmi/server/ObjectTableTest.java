@@ -4,6 +4,8 @@ import junit.framework.*;
 
 import java.rmi.server.Unreferenced;
 
+import org.sapia.ubik.rmi.NoSuchObjectException;
+
 
 /**
  * @author Yanick Duchesne
@@ -72,7 +74,7 @@ public class ObjectTableTest extends TestCase {
     try {
       Hub.serverRuntime.objectTable.getObjectFor(oid);
       throw new Exception("instance should be null");
-    } catch (NullPointerException e) {
+    } catch (NoSuchObjectException e) {
       //ok
     }
 

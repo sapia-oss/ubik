@@ -39,6 +39,7 @@ import org.sapia.ubik.rmi.server.Log;
  *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
  * </dl>
  */
+@SuppressWarnings(value="unchecked")
 public class ReliableLocalContext extends LocalContext
   implements AsyncEventListener {
   private static ThreadLocal _currentContext = new ThreadLocal();

@@ -17,7 +17,7 @@ import java.io.ObjectOutput;
  *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
  * </dl>
  */
-public class OID implements Externalizable, Comparable {
+public class OID implements Externalizable, Comparable<OID> {
   static final long serialVersionUID = 1L;
   private static final Object _unique = new Object();
   private long      _id;
@@ -89,19 +89,15 @@ public class OID implements Externalizable, Comparable {
                              .append(_hashCode).append("]").toString();
   }
 
-  public int compareTo(Object other) {
-    try {
-      long diff = _id - ((OID) other)._id;
+  public int compareTo(OID other) {
+    long diff = _id - other._id;
 
-      if (diff < 0) {
-        return -1;
-      } else if (diff == 0) {
-        return _hashCode - other.hashCode();
-      } else {
-        return 1;
-      }
-    } catch (ClassCastException e) {
+    if (diff < 0) {
       return -1;
+    } else if (diff == 0) {
+      return _hashCode - other.hashCode();
+    } else {
+      return 1;
     }
   }
 }

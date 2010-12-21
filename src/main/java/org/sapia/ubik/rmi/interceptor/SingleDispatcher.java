@@ -17,7 +17,8 @@ import java.util.*;
  * </dl>
  */
 public class SingleDispatcher {
-  Map _interceptors = new HashMap();
+  
+  Map<Class<?>, InterceptorInfo> _interceptors = new HashMap<Class<?>, InterceptorInfo>();
 
   /**
    * Registers an interceptor with the given event type.
@@ -27,9 +28,9 @@ public class SingleDispatcher {
    *
    * @throws InvalidInterceptorException if the interceptor could not be registered.
    */
-  public void registerInterceptor(Class event, Interceptor it)
+  public void registerInterceptor(Class<?> event, Interceptor it)
     throws InvalidInterceptorException {
-    Class  itClass   = it.getClass();
+    Class<?> itClass   = it.getClass();
     int    idx       = event.getName().lastIndexOf('.');
     String shortName;
 

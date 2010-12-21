@@ -33,10 +33,13 @@ import java.util.List;
  * </dl>
  */
 public class DomainName implements java.io.Serializable {
+  
+  static final long serialVersionUID = 1L;
+  
   public static final char DELIM     = '/';
-  private List             _segments;
+  private List<String> _segments;
 
-  private DomainName(List segments) {
+  private DomainName(List<String> segments) {
     _segments = segments;
   }
 
@@ -56,7 +59,7 @@ public class DomainName implements java.io.Serializable {
     * @return a domain name component.
     */
   public String get(int i) {
-    return (String) _segments.get(i);
+    return _segments.get(i);
   }
 
   /**
@@ -66,7 +69,7 @@ public class DomainName implements java.io.Serializable {
     * @return a <code>DomainName</code> object.
     */
   public static DomainName parse(String name) {
-    List _segments = new ArrayList(5);
+    List<String> _segments = new ArrayList<String>(5);
 
     int  idx     = 0;
     int  lastIdx = 0;

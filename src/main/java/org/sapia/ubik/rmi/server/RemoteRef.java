@@ -7,7 +7,6 @@ import java.io.ObjectOutput;
 import java.lang.reflect.Method;
 import java.rmi.RemoteException;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 
 import org.sapia.ubik.net.Connection;
@@ -126,14 +125,14 @@ public abstract class RemoteRef implements StubInvocationHandler,
    * @see StubInvocationHandler#toStubContainer(Object)
    */
   public StubContainer toStubContainer(Object proxy) {
-    Set interfaces = new HashSet();
+    Set<Class<?>> interfaces = new HashSet<Class<?>>();
     ServerTable.appendInterfaces(proxy.getClass(), interfaces);
 
     String[] names = new String[interfaces.size()];
     int      count = 0;
 
-    for (Iterator iter = interfaces.iterator(); iter.hasNext();) {
-      names[count++] = ((Class) iter.next()).getName();
+    for(Class<?> intf : interfaces){
+      names[count++] = intf.getName();
     }
 
     return new StubContainerBase(names, this);

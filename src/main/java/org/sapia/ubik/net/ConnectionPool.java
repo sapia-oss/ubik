@@ -15,7 +15,7 @@ import java.util.*;
  */
 public class ConnectionPool {
   public static final long         DEFAULT_ACQUIRE_TIME_OUT = 2000;
-  private Vector                   _conns         = new Vector(50);
+  private List<Connection>         _conns         = new Vector<Connection>(50);
   protected ConnectionFactory      _fac;
   protected String                 _host;
   protected int                    _port;

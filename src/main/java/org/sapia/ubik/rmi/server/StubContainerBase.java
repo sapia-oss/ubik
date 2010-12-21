@@ -18,6 +18,9 @@ import org.sapia.ubik.rmi.Consts;
  * </dl>
  */
 public class StubContainerBase implements StubContainer, HealthCheck {
+  
+  static final long serialVersionUID = 1L;
+  
   private StubInvocationHandler _ref;
   private String[]              _interfaceNames;
   private static final boolean CODE_DOWNLOAD = 
@@ -49,7 +52,7 @@ public class StubContainerBase implements StubContainer, HealthCheck {
    * @see StubContainer#toStub(ClassLoader)
    */
   public Object toStub(ClassLoader loader) throws RemoteException {
-    Class[] interfaces = new Class[_interfaceNames.length];
+    Class<?>[] interfaces = new Class[_interfaceNames.length];
 
     if(_ref.getOID().getCodebase() != null && CODE_DOWNLOAD){
       loader = new RmiClassLoader(loader, _ref.getOID().getCodebase());

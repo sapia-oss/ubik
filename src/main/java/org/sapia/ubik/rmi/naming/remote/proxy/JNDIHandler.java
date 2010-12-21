@@ -20,6 +20,7 @@ import org.sapia.ubik.rmi.naming.remote.RemoteInitialContextFactory;
  *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
  * </dl>
  */
+@SuppressWarnings(value="unchecked")
 public class JNDIHandler implements ServiceHandler {
   /**
    * @see org.sapia.ubik.rmi.naming.ServiceHandler#handleLookup(String, int, String, Map)

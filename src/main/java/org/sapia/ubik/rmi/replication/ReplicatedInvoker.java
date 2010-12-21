@@ -4,6 +4,8 @@ import java.io.Serializable;
 
 import java.util.Set;
 
+import org.sapia.ubik.net.ServerAddress;
+
 
 /**
  * @author Yanick Duchesne
@@ -14,12 +16,12 @@ import java.util.Set;
  * </dl>
  */
 public interface ReplicatedInvoker extends Serializable {
-  public Object invoke(String methodName, Class[] sig, Object[] params)
+  public Object invoke(String methodName, Class<?>[] sig, Object[] params)
     throws Throwable;
 
   /**
-   * @return the <code>Set</code> of <code>ServerAddress</code>es corresponding to the siblings
+   * @return the {@link Set} of {@link ServerAddress}es corresponding to the siblings
    * of the server in which this instance is executed.
    */
-  public Set getSiblings();
+  public Set<ServerAddress >getSiblings();
 }

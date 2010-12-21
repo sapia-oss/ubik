@@ -16,6 +16,9 @@ package org.sapia.ubik.mcast;
  * </dl>
  */
 public class ListenerAlreadyRegisteredException extends Exception {
+  
+  static final long serialVersionUID = 1L;
+  
   /**
    * Constructor for ListenerAlreadyRegisteredException.
    */

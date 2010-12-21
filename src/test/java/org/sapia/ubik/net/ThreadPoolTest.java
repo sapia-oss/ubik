@@ -34,27 +34,6 @@ public class ThreadPoolTest extends TestCase {
     super.assertEquals(2, ((TestPooledThread) pt).count);
   }
 
-  //	/**
-  //	 * Constructor for ThreadPoolTest.
-  //	 * @param arg0
-  //	 */
-  //	public ThreadPoolTest(String arg0) {
-  //		super(arg0);
-  //	}
-  //  
-  //	public void testAcquire() throws Exception{
-  //		ThreadPool tp = new TestThreadPool("true", false, 5);
-  //		PooledThread pt = (PooledThread)tp.acquire();
-  //		super.assertTrue(pt.isAlive());
-  //		pt.exec("aTask");
-  //		Thread.sleep(500);
-  //		pt = (PooledThread)tp.acquire();
-  //		super.assertEquals(1, ((TestPooledThread)pt).count);
-  //		super.assertEquals(1, tp.getCreatedCount());
-  //		pt.exec("aTask");
-  //		Thread.sleep(500);  	
-  //		super.assertEquals(2, ((TestPooledThread)pt).count);
-  //	}
   public void testShutDown() throws Exception {
     ThreadPool   tp  = new TestThreadPool("true", false, 5);
     PooledThread pt1 = (PooledThread) tp.acquire();

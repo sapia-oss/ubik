@@ -31,7 +31,7 @@ import org.sapia.ubik.rmi.server.StubInvocationHandler;
  * </dl>
  */
 public class StubTweaker {
-  public static Object tweak(Iterator boundObjects, Object toBind) {
+  public static Object tweak(Iterator<?> boundObjects, Object toBind) {
     RemoteRefStateless newRef = null;
 
     if (toBind instanceof StubContainer &&

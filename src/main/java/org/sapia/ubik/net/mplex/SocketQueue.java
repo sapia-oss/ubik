@@ -40,7 +40,7 @@ import java.util.LinkedList;
  */
 public class SocketQueue {
   /** The list that act as a queue. */
-  private LinkedList _theSockets;
+  private LinkedList<Socket> _theSockets;
 
   /** The close indicator of the queue. */
   private boolean _isClosed;
@@ -52,7 +52,7 @@ public class SocketQueue {
    * Creates a new SocketQueue instance.
    */
   public SocketQueue() {
-    _theSockets   = new LinkedList();
+    _theSockets   = new LinkedList<Socket>();
     _isClosed     = false;
   }
 
@@ -110,7 +110,7 @@ public class SocketQueue {
   public synchronized void close() {
     _isClosed = true;
 
-    for (Iterator it = _theSockets.iterator(); it.hasNext();) {
+    for (Iterator<Socket> it = _theSockets.iterator(); it.hasNext();) {
       Socket socket = (Socket) it.next();
 
       try {

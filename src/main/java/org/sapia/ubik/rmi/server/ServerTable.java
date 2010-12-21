@@ -1,6 +1,5 @@
 package org.sapia.ubik.rmi.server;
 
-import java.lang.ref.SoftReference;
 import java.rmi.RemoteException;
 import java.util.HashSet;
 import java.util.Iterator;

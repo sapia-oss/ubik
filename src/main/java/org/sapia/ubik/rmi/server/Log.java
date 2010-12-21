@@ -57,7 +57,7 @@ public class Log {
     _lvl = ERROR;
   }
 
-  public static final void debug(Class caller, Object msg) {
+  public static final void debug(Class<?> caller, Object msg) {
     if (_lvl <= DEBUG) {
       debug(caller.getName(), msg);
     }
@@ -69,13 +69,13 @@ public class Log {
     }
   }
 
-  public static final void info(Class caller, Object msg) {
+  public static final void info(Class<?> caller, Object msg) {
     if (_lvl <= INFO) {
       info(caller.getName(), msg);
     }
   }
 
-  public static final void info(Class caller, Object msg, Throwable t) {
+  public static final void info(Class<?> caller, Object msg, Throwable t) {
     if (_lvl <= INFO) {
       display(caller.getName(), msg, t);
     }
@@ -87,13 +87,13 @@ public class Log {
     }
   }
 
-  public static final void warning(Class caller, Object msg) {
+  public static final void warning(Class<?> caller, Object msg) {
     if (_lvl <= WARNING) {
       warning(caller.getName(), msg);
     }
   }
 
-  public static final void warning(Class caller, Object msg, Throwable err){
+  public static final void warning(Class<?> caller, Object msg, Throwable err){
     if (_lvl <= WARNING) {
       warning(caller.getName(), msg, err);
     }
@@ -110,7 +110,7 @@ public class Log {
       display(caller, msg, err);
     }
   }
-  public static final void error(Class caller, Object msg) {
+  public static final void error(Class<?> caller, Object msg) {
     if (_lvl <= ERROR) {
       error(caller.getName(), msg);
     }
@@ -122,7 +122,7 @@ public class Log {
     }
   }
 
-  public static final void error(Class caller, Object msg, Throwable t) {
+  public static final void error(Class<?> caller, Object msg, Throwable t) {
     if (_lvl <= ERROR) {
       error(caller.getName(), msg, t);
     }
@@ -134,7 +134,7 @@ public class Log {
     }
   }
   
-	public static final void report(Class caller, Object msg){
+	public static final void report(Class<?> caller, Object msg){
 		display(caller.getName(), msg);
 	}  
   
@@ -186,6 +186,7 @@ public class Log {
   
   /////////////////////////////// Debug Impl ///////////////////////////////
   
+  @SuppressWarnings(value="unchecked")
   static final class RmiDebug implements Debug{
   
     public void out(Class caller, String msg){

@@ -5,7 +5,6 @@ import java.lang.reflect.Proxy;
 import java.net.ConnectException;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 
@@ -17,6 +16,7 @@ import org.sapia.ubik.net.Connection;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.TCPAddress;
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.NoSuchObjectException;
 import org.sapia.ubik.rmi.PropUtil;
 import org.sapia.ubik.rmi.server.gc.CommandRefer;
 import org.sapia.ubik.rmi.server.perf.PerfAnalyzer;
@@ -105,9 +105,7 @@ public class Hub {
         Task task = new Task(){
           public void exec(TaskContext ctx) {
             statsCollector.dumpStats(System.out);
-            Iterator topics = PerfAnalyzer.getInstance().getTopics().iterator();
-            while(topics.hasNext()){
-              Topic topic = (Topic)topics.next();
+            for(Topic topic: PerfAnalyzer.getInstance().getTopics()){
               if(topic.isEnabled()){
                 statsCollector.dumpStat(System.out, topic.getName(), new Double(topic.duration()));
               }
@@ -170,12 +168,7 @@ public class Hub {
           handler.getServerAddress());
       rmiHandler.setCallBack(handler.isCallBack());
 
-      ObjectTable.Ref ref = (ObjectTable.Ref) serverRuntime.objectTable.getRefs()
-                                                                       .get(handler.getOid());
-
-      if (ref == null) {
-        throw new NullPointerException("no object for: " + handler.getOid());
-      }
+      ObjectTable.Ref ref = (ObjectTable.Ref) serverRuntime.objectTable.getRefFor(handler.getOid());
 
       Object proxy = Proxy.newProxyInstance(Thread.currentThread()
                                                   .getContextClassLoader(),
@@ -202,15 +195,14 @@ public class Hub {
       RemoteRef          handler = (RemoteRef) Proxy.getInvocationHandler(obj);
 
       RemoteRefStateless rmiHandler;
-      List               lst = new ArrayList(1);
+      List<RemoteRef>               lst = new ArrayList<RemoteRef>(1);
       lst.add(handler);
       rmiHandler = RemoteRefStateless.fromRemoteRefs(name, domain, lst);
 
-      ObjectTable.Ref ref = (ObjectTable.Ref) serverRuntime.objectTable.getRefs()
-                                                                       .get(handler.getOid());
+      ObjectTable.Ref ref = (ObjectTable.Ref) serverRuntime.objectTable.getRefFor(handler.getOid());
 
       if (ref == null) {
-        throw new NullPointerException("no object for: " + handler.getOid());
+        throw new NoSuchObjectException("no object for: " + handler.getOid());
       }
 
       Object proxy = Proxy.newProxyInstance(Thread.currentThread()

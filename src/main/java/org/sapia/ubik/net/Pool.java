@@ -1,6 +1,7 @@
 package org.sapia.ubik.net;
 
-import java.util.*;
+import java.util.List;
+import java.util.Vector;
 
 
 /**
@@ -14,11 +15,10 @@ import java.util.*;
  *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
  * </dl>
  */
-public abstract class Pool {
+public abstract class Pool<T> {
   public static final long NO_TIME_OUT    = -1;
   public static final int NO_MAX = 0;
-  protected List           _objects       = Collections.synchronizedList(new ArrayList(
-        50));
+  protected List<T>        _objects = new Vector<T>(50);
   protected int            _maxSize = NO_MAX;
   protected int            _currentCount;
   protected long           _lastUsageTime = System.currentTimeMillis();
@@ -40,7 +40,7 @@ public abstract class Pool {
    * @return an <code>Object</code>
    * @throws an <code>Exception</code> if a problem occurs acquiring the object.
    */
-  public synchronized Object acquire() throws InterruptedException, Exception {
+  public synchronized T acquire() throws InterruptedException, Exception {
     return acquire(NO_TIME_OUT);
   }
 
@@ -57,11 +57,11 @@ public abstract class Pool {
    * the specified amount of time.
    * @throws Exception if a problem occurs creating the object.
    */
-  public synchronized Object acquire(long timeout)
+  public synchronized T acquire(long timeout)
     throws InterruptedException, NoObjectAvailableException, Exception {
     _lastUsageTime = System.currentTimeMillis();
 
-    Object obj;
+    T obj;
 
     if (_objects.size() == 0) {
       if (_maxSize <= NO_MAX) {
@@ -102,20 +102,20 @@ public abstract class Pool {
     return onAcquire(obj);
   }
 
-  protected Object onAcquire(Object o) throws Exception {
+  protected T onAcquire(T o) throws Exception {
     return o;
   }
 
-  protected void onRelease(Object o) {
+  protected void onRelease(T o) {
   }
 
   /**
    * Releases the given object to the given pool.
    *
-   * @param obj an <code>Object</code> to put back into
+   * @param obj an object to put back into
    * the pool.
    */
-  public synchronized void release(Object obj) {
+  public synchronized void release(T obj) {
     _objects.add(obj);
     onRelease(obj);
     notify();
@@ -197,7 +197,7 @@ public abstract class Pool {
    * and has reached the maximum number of objects it can create. 
    * @throws Exception if no object could be acquired/created.
    */
-  public synchronized Object acquireCreate() throws Exception{
+  public synchronized T acquireCreate() throws Exception{
     if(_objects.size() == 0){
       if(getCreatedCount() >= _maxSize && _maxSize > NO_MAX){
         return null;
@@ -223,7 +223,7 @@ public abstract class Pool {
    * @throws Exception if an error occurs while creating the object to be
    * returned.
    */
-  protected abstract Object doNewObject() throws Exception;
+  protected abstract T doNewObject() throws Exception;
 
   /**
    * Inheriting classes should override this method to implement proper
@@ -235,8 +235,8 @@ public abstract class Pool {
   protected void cleanup(Object pooled) {
   }
 
-  private Object newObject() throws Exception {
-    Object toReturn = doNewObject();
+  private T newObject() throws Exception {
+    T toReturn = doNewObject();
     _currentCount++;
 
     return toReturn;

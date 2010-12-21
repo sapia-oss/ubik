@@ -9,6 +9,9 @@ package org.sapia.ubik.rmi.server;
  * 8-Sep-2003
  */
 public class ShutdownException extends RuntimeException {
+  
+  static final long serialVersionUID = 1L;
+  
   /**
    * Constructor for ShutdownException.
    */
