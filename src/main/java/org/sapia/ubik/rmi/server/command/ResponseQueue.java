@@ -1,8 +1,10 @@
 package org.sapia.ubik.rmi.server.command;
 
-import org.sapia.ubik.net.Timer;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
-import java.util.*;
+import org.sapia.ubik.net.Timer;
 
 
 /**
@@ -17,9 +19,10 @@ import java.util.*;
  * </dl>
  */
 public class ResponseQueue {
-  private static ResponseQueue _instance  = new ResponseQueue();
-  private Map                  _responses = Collections.synchronizedMap(new HashMap());
-  private boolean              _shutdown;
+  
+  private static ResponseQueue      _instance  = new ResponseQueue();
+  private Map<String, ResponseLock> _responses = new ConcurrentHashMap<String, ResponseLock>();
+  private boolean                   _shutdown;
 
   /**
    * Constructor for ResponseQueue.
@@ -53,7 +56,7 @@ public class ResponseQueue {
    *
    * @param responses a <code>List</code> of <code>Response</code> instances.
    */
-  public void onResponses(List responses) {
+  public void onResponses(List<Response> responses) {
     Response     resp;
     ResponseLock lock;
 

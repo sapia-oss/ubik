@@ -1,6 +1,8 @@
 package org.sapia.ubik.util;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 
 /**
  * A basic FIFO datastructure.
@@ -13,8 +15,8 @@ import java.util.LinkedList;
  *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
  * </dl>
  */
-public class Queue {
-  protected LinkedList _items = new LinkedList();
+public class Queue<T> {
+  protected LinkedList<T> _items = new LinkedList<T>();
   private boolean _added;
   
   /**
@@ -28,7 +30,7 @@ public class Queue {
    * @param notifyAll if <code>true</code>, all threads waiting on this queue will be
    * internally notified.
    */
-  public synchronized void add(Object o, boolean notifyAll){
+  public synchronized void add(T o, boolean notifyAll){
     
     _items.add(o);
     _added = true;
@@ -41,17 +43,34 @@ public class Queue {
   }
   
   /**
-   * This method retrusn the first object in this queue, or blocks until an object is added.
+   * This method returns the first object in this queue, or blocks until an object is added.
    * 
    * @return the first <code>Object</code> in the queue - which is internally removed. 
    * @throws InterruptedException
    */
-  public synchronized Object remove() throws InterruptedException{
+  public synchronized T remove() throws InterruptedException{
     while(_items.size() == 0){
       wait();
     }
     _added = false;
     return _items.removeFirst();
+  }
+  
+  
+  /**
+   * This method returns all objects in this queue, or blocks until an object is added.
+   * 
+   * @return the {@link List} of items in this queue - after which this instance is cleared.
+   *  
+   * @throws InterruptedException
+   */
+  public synchronized List<T> removeAll() throws InterruptedException{
+    while(_items.size() == 0){
+      wait();
+    }
+    List<T> toReturn = new ArrayList<T>(_items);
+    _items.clear();
+    return toReturn;
   }
   
   /**

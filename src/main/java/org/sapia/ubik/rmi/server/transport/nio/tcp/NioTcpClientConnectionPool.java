@@ -1,11 +1,10 @@
 package org.sapia.ubik.rmi.server.transport.nio.tcp;
 
 import java.rmi.RemoteException;
-import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
-import org.sapia.ubik.net.Connection;
 import org.sapia.ubik.net.ConnectionPool;
 import org.sapia.ubik.net.DefaultClientSocketFactory;
 import org.sapia.ubik.net.ServerAddress;
@@ -36,7 +35,8 @@ import org.sapia.ubik.taskman.TaskContext;
  *         </dl>
  */
 public class NioTcpClientConnectionPool implements Connections {
-  private static Map     _pools = new Hashtable();
+  
+  private static Map<ServerAddress, NioTcpClientConnectionPool> _pools = new ConcurrentHashMap<ServerAddress, NioTcpClientConnectionPool>();
   private static boolean _started;
   ConnectionPool         _pool;
 
@@ -64,10 +64,8 @@ public class NioTcpClientConnectionPool implements Connections {
     }
   }
 
-  /**
-   * @see org.sapia.ubik.rmi.server.transport.Connections#release(Connection)
-   */
-  public void release(Connection conn) {
+  @Override
+  public void release(RmiConnection conn) {
     _pool.release(conn);
   }
 
@@ -91,7 +89,7 @@ public class NioTcpClientConnectionPool implements Connections {
 
   static synchronized void shutdown() {
     NioTcpClientConnectionPool pool;
-    Iterator pools;
+    Iterator<NioTcpClientConnectionPool> pools;
 
     if(_started) {
       synchronized(_pools) {
@@ -138,9 +136,9 @@ public class NioTcpClientConnectionPool implements Connections {
    */
   static final class PoolCleaner implements Task {
     static final long INTERVAL = 5000;
-    Map               _pools;
+    Map<ServerAddress, NioTcpClientConnectionPool> _pools;
 
-    PoolCleaner(Map pools) {
+    PoolCleaner(Map<ServerAddress, NioTcpClientConnectionPool> pools) {
       _pools = pools;
     }
 

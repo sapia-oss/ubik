@@ -4,10 +4,9 @@ import java.io.File;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.rmi.RemoteException;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.Uri;
@@ -50,7 +49,7 @@ public class HttpTransportProvider implements TransportProvider, HttpConsts {
 
   private String        _transportType;
   private ServiceMapper _services = new ServiceMapper();
-  private Map           _pools = Collections.synchronizedMap(new HashMap());
+  private Map<ServerAddress, Connections> _pools = new ConcurrentHashMap<ServerAddress, Connections>();
 
   public HttpTransportProvider() {
     this(HttpConsts.DEFAULT_HTTP_TRANSPORT_TYPE,
@@ -177,7 +176,7 @@ public class HttpTransportProvider implements TransportProvider, HttpConsts {
       }
     }
 
-    HttpRmiServer svr = new HttpRmiServer(_services, _transportType, serverUrl,
+    HttpRmiServer svr = new HttpRmiServer(_services, serverUrl,
         contextPath, port);
     svr.setMaxThreads(max);
 

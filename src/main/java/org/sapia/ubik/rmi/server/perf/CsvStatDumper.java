@@ -48,7 +48,7 @@ public class CsvStatDumper implements Task{
   }
   
   public void exec(TaskContext ctx) {
-    List stats = Hub.statsCollector.getStats();
+    List<Statistic> stats = Hub.statsCollector.getStats();
     if(!_headerWritten){
       writeHeaders(stats);
       _headerWritten = true;
@@ -56,7 +56,7 @@ public class CsvStatDumper implements Task{
     writeContent(stats);
   }
   
-  private void writeContent(List stats){
+  private void writeContent(List<Statistic> stats){
     _stream.print(getDate());
     _stream.print(",");
     for(int i = 0; i < stats.size(); i++){
@@ -72,7 +72,7 @@ public class CsvStatDumper implements Task{
     _stream.flush();
   }
   
-  private void writeHeaders(List stats){
+  private void writeHeaders(List<Statistic> stats){
     _stream.print("Time,");
     for(int i = 0; i < stats.size(); i++){
       Statistic stat = (Statistic)stats.get(i);

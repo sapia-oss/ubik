@@ -1,13 +1,12 @@
 package org.sapia.ubik.rmi.replication;
 
-import org.sapia.ubik.net.Connection;
+import java.io.IOException;
+import java.rmi.RemoteException;
+
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.server.transport.Connections;
+import org.sapia.ubik.rmi.server.transport.RmiConnection;
 import org.sapia.ubik.rmi.server.transport.TransportManager;
-
-import java.io.IOException;
-
-import java.rmi.RemoteException;
 
 
 /**
@@ -54,8 +53,8 @@ class SendHelper implements Runnable {
   }
 
   private Object doSend() throws Throwable {
-    Connections conns    = TransportManager.getConnectionsFor(_addr);
-    Connection  conn     = conns.acquire();
+    Connections  conns     = TransportManager.getConnectionsFor(_addr);
+    RmiConnection conn     = conns.acquire();
     Object      toReturn;
 
     try {

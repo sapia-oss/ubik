@@ -2,8 +2,6 @@ package org.sapia.ubik.rmi.server.transport;
 
 import java.rmi.RemoteException;
 
-import org.sapia.ubik.net.Connection;
-
 
 /**
  * Specifies the behavior of pools of client-side <code>Connection</code>.
@@ -29,7 +27,7 @@ public interface Connections {
    *
    * @param a <code>Connection</code>.
    */
-  public void release(Connection conn);
+  public void release(RmiConnection conn);
 
   /**
    * Closes all connections kept internally and removes them.

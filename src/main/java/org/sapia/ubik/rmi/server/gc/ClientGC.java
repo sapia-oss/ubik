@@ -14,7 +14,6 @@ import javax.management.ObjectName;
 
 import org.sapia.ubik.jmx.MBeanContainer;
 import org.sapia.ubik.jmx.MBeanFactory;
-import org.sapia.ubik.net.Connection;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.PropUtil;
@@ -25,6 +24,7 @@ import org.sapia.ubik.rmi.server.perf.HitStatFactory;
 import org.sapia.ubik.rmi.server.perf.HitsPerHourStatistic;
 import org.sapia.ubik.rmi.server.perf.HitsPerMinStatistic;
 import org.sapia.ubik.rmi.server.perf.Statistic;
+import org.sapia.ubik.rmi.server.transport.RmiConnection;
 import org.sapia.ubik.rmi.server.transport.TransportManager;
 import org.sapia.ubik.taskman.Task;
 import org.sapia.ubik.taskman.TaskContext;
@@ -285,7 +285,7 @@ public class ClientGC implements Task, ClientGCMBean, MBeanFactory {
     }
     Log.info(getClass(), "Sending Client GC command to " + addr);
     
-    Connection conn = null;
+    RmiConnection conn = null;
 
     try {
       if (count > 0) {

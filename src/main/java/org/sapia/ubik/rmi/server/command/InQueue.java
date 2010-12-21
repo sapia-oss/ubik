@@ -25,7 +25,7 @@ import org.sapia.ubik.rmi.server.ShutdownException;
  *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
  * </dl>
  */
-public class InQueue extends ExecQueue {
+public class InQueue extends ExecQueue<AsyncCommand> {
   CmdProcessorThreadPool _pool;
 
   /**

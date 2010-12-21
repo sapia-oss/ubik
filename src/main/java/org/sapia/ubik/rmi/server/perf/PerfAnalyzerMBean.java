@@ -1,7 +1,6 @@
 package org.sapia.ubik.rmi.server.perf;
 
 import java.util.Collection;
-import java.util.Iterator;
 
 import javax.management.Attribute;
 import javax.management.AttributeList;
@@ -77,8 +76,7 @@ public class PerfAnalyzerMBean implements DynamicMBean{
   }
   
   private MBeanInfo buildMBeanInfo(){
-    Collection topics = PerfAnalyzer.getInstance().getTopics();
-    Iterator itr = topics.iterator();
+    Collection<Topic> topics = PerfAnalyzer.getInstance().getTopics();
     MBeanAttributeInfo[] attributes = new MBeanAttributeInfo[topics.size()+1];
     
     attributes[0] = new MBeanAttributeInfo(
@@ -90,8 +88,7 @@ public class PerfAnalyzerMBean implements DynamicMBean{
         true);
 
     int count = 1;
-    while(itr.hasNext()){
-      Topic tp = (Topic)itr.next();
+    for(Topic tp : topics){
       MBeanAttributeInfo attr = getAttributeFor(tp);
       attributes[count] = attr;
       count++;

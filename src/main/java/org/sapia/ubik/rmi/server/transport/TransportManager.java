@@ -27,7 +27,7 @@ import org.sapia.ubik.rmi.server.transport.socket.SocketTransportProvider;
  * </dl>
  */
 public class TransportManager {
-  private static Map _providers = Collections.synchronizedMap(new HashMap());
+  private static Map<String, TransportProvider> _providers = Collections.synchronizedMap(new HashMap<String, TransportProvider>());
 
   static {
     TransportProvider provider = new MultiplexSocketTransportProvider();
@@ -125,7 +125,7 @@ public class TransportManager {
 
   public static void shutdown() {
     TransportProvider provider;
-    Iterator          providers;
+    Iterator<TransportProvider> providers;
 
     synchronized (_providers) {
       providers = _providers.values().iterator();

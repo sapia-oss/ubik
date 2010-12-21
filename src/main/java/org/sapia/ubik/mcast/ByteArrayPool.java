@@ -1,18 +1,13 @@
-/*
- * ByteArrayPool.java
- *
- * Created on November 3, 2005, 10:02 PM
- */
-
 package org.sapia.ubik.mcast;
 
 import org.sapia.ubik.net.Pool;
 
 /**
  * This class implements a pool of byte arrays.
+ * 
  * @author yduchesne
  */
-public class ByteArrayPool extends Pool{
+public class ByteArrayPool extends Pool<byte[]>{
   
   private int _bufSize;
   
@@ -29,17 +24,16 @@ public class ByteArrayPool extends Pool{
     return _bufSize;
   }
   
-  protected Object onAcquire(Object o) throws Exception {
-    byte[] bytes = (byte[])o;
+  protected byte[] onAcquire(byte[] bytes) throws Exception {
     if(bytes.length != _bufSize){
       return new byte[_bufSize];
     }
     else{
-      return o;
+      return bytes;
     }
   }  
   
-  protected Object doNewObject() throws Exception{
+  protected byte[] doNewObject() throws Exception{
     return new byte[_bufSize];
   }
   

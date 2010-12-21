@@ -17,7 +17,7 @@ import java.util.List;
  */
 public class StatsCollector {
 
-  private static List _stats = Collections.synchronizedList(new ArrayList());
+  private static List<SoftReference<Statistic>> _stats = Collections.synchronizedList(new ArrayList<SoftReference<Statistic>>());
   private boolean _enabled = true;
   
   /**
@@ -27,7 +27,7 @@ public class StatsCollector {
    */
   public void setEnabled(boolean enabled){
     _enabled = enabled;
-    List stats = getStats();
+    List<Statistic> stats = getStats();
     for(int i = 0; i < stats.size(); i++){
       Statistic stat = (Statistic)stats.get(i);
       stat.setEnabled(enabled);
@@ -42,18 +42,18 @@ public class StatsCollector {
    */
   public StatsCollector addStat(Statistic stat){
     stat.setEnabled(_enabled);
-    _stats.add(new SoftReference(stat));
+    _stats.add(new SoftReference<Statistic>(stat));
     return this;
   }
   
   /**
    * @return the {@link List} of {@link Statistic}s held by this instance.
    */
-  public List getStats(){
-    List toReturn = new ArrayList(_stats.size());
+  public List<Statistic> getStats(){
+    List<Statistic> toReturn = new ArrayList<Statistic>(_stats.size());
     synchronized(_stats){
       for(int i = 0; i < _stats.size(); i++){
-        SoftReference ref = (SoftReference)_stats.get(i);
+        SoftReference<Statistic> ref = _stats.get(i);
         Statistic stat = (Statistic)ref.get();
         if(stat == null){
           _stats.remove(i--);
@@ -68,7 +68,7 @@ public class StatsCollector {
   
   public void dumpStats(PrintStream ps){
     ps.println("================= Ubik Stats Dump at " + new Date() + " =================");
-    List stats = getStats();
+    List<Statistic> stats = getStats();
     for(int i = 0; i < stats.size(); i++){
       Statistic stat = (Statistic)stats.get(i);
       if(stat.isEnabled()){

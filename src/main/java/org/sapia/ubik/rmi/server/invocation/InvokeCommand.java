@@ -33,7 +33,7 @@ public class InvokeCommand extends RMICommand implements Externalizable {
   static final long            serialVersionUID         = 1L;
   private static final boolean _vmUsesMarshalledObjects = (System.getProperty(Consts.MARSHALLING) != null) &&
     System.getProperty(Consts.MARSHALLING).equals("true");
-  private transient Class[] _paramTypes;
+  private transient Class<?>[] _paramTypes;
   private transient String  _transportType;
   private OID               _oid;
   private String            _methodName;
@@ -55,7 +55,7 @@ public class InvokeCommand extends RMICommand implements Externalizable {
    * @param paramClasses the method's signature, as a class array.
    */
   public InvokeCommand(OID oid, String methodName, Object[] params,
-    Class[] paramClasses, String transportType) {
+    Class<?>[] paramClasses, String transportType) {
     _oid             = oid;
     _methodName      = methodName;
     _params          = params;
@@ -94,7 +94,7 @@ public class InvokeCommand extends RMICommand implements Externalizable {
    *
    * @return an array of <code>Class</code> instances.
    */
-  public Class[] getParameterTypes() {
+  public Class<?>[] getParameterTypes() {
     return _paramTypes;
   }
 

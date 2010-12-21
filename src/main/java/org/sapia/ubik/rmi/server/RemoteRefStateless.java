@@ -14,12 +14,12 @@ import java.util.Set;
 
 import javax.naming.Name;
 
-import org.sapia.ubik.net.Connection;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.invocation.CallBackInvokeCommand;
 import org.sapia.ubik.rmi.server.invocation.InvokeCommand;
 import org.sapia.ubik.rmi.server.transport.Connections;
+import org.sapia.ubik.rmi.server.transport.RmiConnection;
 import org.sapia.ubik.rmi.server.transport.TransportManager;
 
 
@@ -264,8 +264,8 @@ public class RemoteRefStateless implements StubInvocationHandler,
     synchronized(_serviceInfos){
       for(int i = 0; i < _serviceInfos.size(); i++){
         ServiceInfo info     = (ServiceInfo)_serviceInfos.get(i);
-        Connections pool     = null;
-        Connection  conn     = null;        
+        Connections   pool     = null;
+        RmiConnection conn     = null;        
         try{
           pool = TransportManager.getConnectionsFor(info.address);          
           conn = pool.acquire();
@@ -295,7 +295,7 @@ public class RemoteRefStateless implements StubInvocationHandler,
   protected Object sendCommand(RMICommand cmd) throws Throwable {
     ServiceInfo info     = acquire();
     Connections pool     = TransportManager.getConnectionsFor(info.address);
-    Connection  conn     = null;
+    RmiConnection  conn     = null;
     Object      toReturn = null;
 
     try {

@@ -2,11 +2,10 @@ package org.sapia.ubik.rmi.server.transport.socket;
 
 import java.rmi.RemoteException;
 import java.rmi.server.RMIClientSocketFactory;
-import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
-import org.sapia.ubik.net.Connection;
 import org.sapia.ubik.net.ConnectionPool;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.TCPAddress;
@@ -33,7 +32,7 @@ import org.sapia.ubik.taskman.TaskContext;
  * </dl>
  */
 public class SocketClientConnectionPool implements Connections {
-  private static Map     _pools   = new Hashtable();
+  private static Map<ServerAddress, SocketClientConnectionPool>  _pools   = new ConcurrentHashMap<ServerAddress, SocketClientConnectionPool>();
   private static boolean _started;
   ConnectionPool         _pool;
 
@@ -60,9 +59,9 @@ public class SocketClientConnectionPool implements Connections {
   }
 
   /**
-   * @see org.sapia.ubik.rmi.server.transport.Connections#release(Connection)
+   * @see org.sapia.ubik.rmi.server.transport.Connections#release(RmiConnection)
    */
-  public void release(Connection conn) {
+  public void release(RmiConnection conn) {
     _pool.release(conn);
   }
 
@@ -86,14 +85,14 @@ public class SocketClientConnectionPool implements Connections {
 
   static synchronized void shutdown() {
     SocketClientConnectionPool pool;
-    Iterator                   pools;
+    Iterator<SocketClientConnectionPool> pools;
 
     if (_started) {
       synchronized (_pools) {
         pools = _pools.values().iterator();
 
         while (pools.hasNext()) {
-          pool = (SocketClientConnectionPool) pools.next();
+          pool = pools.next();
           pool.internalPool().shrinkTo(0);
         }
       }
@@ -112,7 +111,7 @@ public class SocketClientConnectionPool implements Connections {
       );
     }
 
-    SocketClientConnectionPool pool = (SocketClientConnectionPool) _pools.get(address);
+    SocketClientConnectionPool pool = _pools.get(address);
 
     if (pool == null) {
       pool = new SocketClientConnectionPool(((TCPAddress) address).getHost(),
@@ -132,9 +131,9 @@ public class SocketClientConnectionPool implements Connections {
   //////////////////////////////////////////////////*/
   static final class PoolCleaner implements Task {
     static final long INTERVAL = 30000;
-    Map               _pools;
+    Map<ServerAddress, SocketClientConnectionPool> _pools;
 
-    PoolCleaner(Map pools) {
+    PoolCleaner(Map<ServerAddress, SocketClientConnectionPool> pools) {
       _pools = pools;
     }
 

@@ -1,9 +1,6 @@
 package org.sapia.ubik.rmi.server;
 
-import java.io.PrintStream;
-
 import org.sapia.ubik.rmi.Consts;
-import org.sapia.ubik.util.Debug;
 
 
 /**
@@ -161,10 +158,6 @@ public class Log {
   public static int getLevel() {
     return _lvl;
   }
-  
-  public static Debug getDebugImpl(){
-    return new RmiDebug();
-  }
 
   private static void display(String caller, Object msg) {
     if (msg instanceof Throwable) {
@@ -184,28 +177,4 @@ public class Log {
     t.printStackTrace();
   }
   
-  /////////////////////////////// Debug Impl ///////////////////////////////
-  
-  @SuppressWarnings(value="unchecked")
-  static final class RmiDebug implements Debug{
-  
-    public void out(Class caller, String msg){
-      Log.debug(caller, msg);
-    }
-  
-    public void out(Class caller, String msg, Throwable err){
-      Log.error(caller, msg, err);        
-    }
-  
-    public PrintStream out(){
-      return System.out;
-    }
-   
-    public boolean on(){
-      return true;
-    }
-
-    public void on(boolean on){
-    }
-  }
 }

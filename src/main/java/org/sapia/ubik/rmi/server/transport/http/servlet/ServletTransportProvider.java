@@ -1,5 +1,17 @@
 package org.sapia.ubik.rmi.server.transport.http.servlet;
 
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.InvalidClassException;
+import java.io.NotSerializableException;
+import java.rmi.RemoteException;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.sapia.ubik.net.Request;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.UriSyntaxException;
@@ -15,21 +27,6 @@ import org.sapia.ubik.rmi.server.transport.TransportProvider;
 import org.sapia.ubik.rmi.server.transport.http.HttpAddress;
 import org.sapia.ubik.rmi.server.transport.http.HttpClientConnectionPool;
 import org.sapia.ubik.rmi.server.transport.http.JdkClientConnectionPool;
-
-import java.io.EOFException;
-import java.io.IOException;
-import java.io.InvalidClassException;
-import java.io.NotSerializableException;
-
-import java.rmi.RemoteException;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 
 /**
@@ -110,7 +107,7 @@ public class ServletTransportProvider implements TransportProvider,
   private Perf           _perf          = new Perf();
   private ServletAddress _addr;
   private String         _transportType;
-  private Map            _pools = Collections.synchronizedMap(new HashMap());
+  private Map<ServerAddress, Connections> _pools = new ConcurrentHashMap<ServerAddress, Connections>();
 
   public ServletTransportProvider() {
     this(DEFAULT_SERVLET_TRANSPORT_TYPE);
@@ -173,7 +170,7 @@ public class ServletTransportProvider implements TransportProvider,
     throws RemoteException {
     Connections conns;
 
-    if ((conns = (Connections) _pools.get(address)) == null) {
+    if ((conns = _pools.get(address)) == null) {
       try {
         if (_usesJakarta) {
           conns = new HttpClientConnectionPool((HttpAddress) address);

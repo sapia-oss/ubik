@@ -2,7 +2,6 @@ package org.sapia.ubik.rmi.server.transport.http;
 
 import java.rmi.RemoteException;
 
-import org.sapia.ubik.net.Connection;
 import org.sapia.ubik.net.Pool;
 import org.sapia.ubik.net.Uri;
 import org.sapia.ubik.net.UriSyntaxException;
@@ -70,21 +69,19 @@ public class JdkClientConnectionPool implements Connections {
   public String getTransportType() {
     return _address.getTransportType();
   }
-
-  /**
-   * @see org.sapia.ubik.rmi.server.transport.Connections#release(org.sapia.ubik.net.Connection)
-   */
-  public void release(Connection conn) {
+  
+  @Override
+  public void release(RmiConnection conn) {
     conn.close();
-    _pool.release(conn);
+    _pool.release((JdkRmiClientConnection)conn);
   }
 
   ///// INNER CLASS /////////////////////////////////////////////////////////////
-  static class InternalPool extends Pool {
+  static class InternalPool extends Pool<JdkRmiClientConnection> {
     /**
      * @see org.sapia.ubik.net.Pool#doNewObject()
      */
-    protected Object doNewObject() throws Exception {
+    protected JdkRmiClientConnection doNewObject() throws Exception {
       return new JdkRmiClientConnection();
     }
   }

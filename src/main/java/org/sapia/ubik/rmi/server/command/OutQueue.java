@@ -4,6 +4,7 @@ import org.sapia.ubik.net.Timer;
 import org.sapia.ubik.rmi.server.ShutdownException;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
@@ -17,8 +18,8 @@ import java.util.*;
  *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
  * </dl>
  */
-public class OutQueue extends ExecQueue {
-  static Map             _queuesByHost = Collections.synchronizedMap(new HashMap());
+public class OutQueue extends ExecQueue<Response> {
+  static Map<Destination, OutQueue> _queuesByHost = new ConcurrentHashMap<Destination, OutQueue>();
   static ResponseSender  _sender  = new LocalResponseSender();
   static OutQueueMonitor _monitor;
   static boolean         _added;
@@ -42,22 +43,12 @@ public class OutQueue extends ExecQueue {
    * @param timeout a shutdown timeout - in millis.
    */
   public static void shutdownAll(long timeout) throws InterruptedException {
-    Iterator queues = _queuesByHost.values().iterator();
-    OutQueue queue;
-
+    Iterator<OutQueue> queues = _queuesByHost.values().iterator();
     while (queues.hasNext()) {
-      ((OutQueue) queues.next()).shutdown(timeout);
+      queues.next().shutdown(timeout);
     }
 
     _monitor.shutdown(timeout);
-  }
-
-  /**
-   * @see org.sapia.ubik.rmi.server.command.ExecQueue#add(Executable)
-   */
-  public final void add(Executable cmd) {
-    super.add(cmd);
-    _monitor.wakeUp();
   }
 
   /**
@@ -87,11 +78,11 @@ public class OutQueue extends ExecQueue {
                              INNER CLASSES
   ////////////////////////////////////////////////////////////////////*/
   static final class OutQueueMonitor extends Thread {
-    Destination[] hosts;
-    OutQueue      queue;
-    List          resps;
-    boolean       shutdown;
-    boolean       shutdownRequested;
+    Destination[]    hosts;
+    OutQueue         queue;
+    List<Response>   responses;
+    boolean          shutdown;
+    boolean          shutdownRequested;
 
     public void run() {
       while (true) {
@@ -103,7 +94,7 @@ public class OutQueue extends ExecQueue {
           if (queue.size() > 0) {
             try {
               try {
-                resps = queue.removeAll();
+                responses = queue.removeAll();
               } catch (ShutdownException e) {
                 shutdownRequested = true;
 
@@ -111,7 +102,7 @@ public class OutQueue extends ExecQueue {
               }
 
               if (_sender != null) {
-                _sender.sendResponses(hosts[i], resps);
+                _sender.sendResponses(hosts[i], responses);
               }
             } catch (InterruptedException e) {
               return;

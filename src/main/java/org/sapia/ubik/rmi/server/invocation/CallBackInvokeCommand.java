@@ -40,7 +40,7 @@ public class CallBackInvokeCommand extends InvokeCommand
    * @param paramClasses the classes of the method's parameters (representing the method's signature).
    */
   public CallBackInvokeCommand(OID oid, String methodName, Object[] params,
-    Class[] paramClasses, String transportType) {
+    Class<?>[] paramClasses, String transportType) {
     super(oid, methodName, params, paramClasses, transportType);
   }
 

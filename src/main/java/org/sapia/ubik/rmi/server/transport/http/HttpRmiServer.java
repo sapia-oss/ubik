@@ -30,7 +30,6 @@ import simple.http.connect.ConnectionFactory;
  * </dl>
  */
 class HttpRmiServer implements Server, HttpConsts {
-  private String        _transportType;
   private String        _path;
   private Uri           _serverUrl;
   private ServiceMapper _services;
@@ -47,13 +46,11 @@ class HttpRmiServer implements Server, HttpConsts {
    * @param path the URL path to which this server will correspond.
    * @param port a port (must be >= 0).
    */
-  HttpRmiServer(ServiceMapper services, String transportType, Uri serverUrl,
+  HttpRmiServer(ServiceMapper services, Uri serverUrl,
     String path, int localPort) {
     if (serverUrl.getPort() <= 0) {
       throw new IllegalStateException("Server does not support dynamic port");
     }
-
-    _transportType   = transportType;
     _serverUrl       = serverUrl;
     _path            = path;
     _services        = services;
@@ -99,7 +96,6 @@ class HttpRmiServer implements Server, HttpConsts {
       UbikHttpHandler svc = new UbikHttpHandler(_serverUrl, _maxThreads);
       _services.addService(_path, svc);
       
-      HeaderHandler hh   = new HeaderHandler(_services);
       Connection    conn = ConnectionFactory.getConnection(_services);
       _server = new ServerSocket(_localPort);
       conn.connect(_server);

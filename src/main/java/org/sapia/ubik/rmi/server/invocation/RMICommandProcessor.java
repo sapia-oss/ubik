@@ -3,6 +3,7 @@ package org.sapia.ubik.rmi.server.invocation;
 import org.sapia.ubik.rmi.server.*;
 import org.sapia.ubik.rmi.server.command.CommandProcessor;
 import org.sapia.ubik.rmi.server.command.Destination;
+import org.sapia.ubik.rmi.server.command.Response;
 import org.sapia.ubik.rmi.server.command.ResponseQueue;
 import org.sapia.ubik.rmi.server.command.ResponseSender;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
@@ -53,7 +54,7 @@ public class RMICommandProcessor extends CommandProcessor {
     /**
     * @see org.sapia.ubik.rmi.command.ResponseSender#sendResponses(Destination, List)
     */
-    public void sendResponses(Destination dest, List responses) {
+    public void sendResponses(Destination dest, List<Response> responses) {
       if (Log.isDebug()) {
         Log.debug(getClass(), "Sending callback responses to " + dest);
       }
@@ -91,12 +92,12 @@ public class RMICommandProcessor extends CommandProcessor {
   }
 
   public static final class ResponseListCommand extends RMICommand {
-    private List _responses;
+    private List<Response> _responses;
 
     public ResponseListCommand() {
     }
 
-    ResponseListCommand(List responses) {
+    ResponseListCommand(List<Response> responses) {
       _responses = responses;
     }
 
@@ -124,10 +125,10 @@ public class RMICommandProcessor extends CommandProcessor {
     /**
      * @see org.sapia.ubik.rmi.server.RMICommand#readExternal(ObjectInput)
      */
-    public void readExternal(ObjectInput in)
-      throws IOException, ClassNotFoundException {
+    @SuppressWarnings(value="unchecked")
+    public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
       super.readExternal(in);
-      _responses = (List) in.readObject();
+      _responses = (List<Response>) in.readObject();
     }
   }
 }

@@ -18,8 +18,8 @@ import java.util.List;
  *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
  * </dl>
  */
-public class ExecQueue {
-  private LinkedList _queue    = new LinkedList();
+public class ExecQueue<T extends Executable> {
+  private LinkedList<T> _queue    = new LinkedList<T>();
   private boolean    _shutdown;
 
   /**
@@ -34,7 +34,7 @@ public class ExecQueue {
    *
    * @param toExecute an <code>Executable</code>.
    */
-  public synchronized void add(Executable toExecute) {
+  public synchronized void add(T toExecute) {
     if (_shutdown) {
       throw new ShutdownException();
     }
@@ -50,7 +50,7 @@ public class ExecQueue {
    *
    * @return a <code>List</code> of <code>Executable</code>.
    */
-  public synchronized List removeAll()
+  public synchronized List<T> removeAll()
     throws InterruptedException, ShutdownException {
     while (_queue.size() == 0) {
       if (_shutdown) {
@@ -61,7 +61,7 @@ public class ExecQueue {
       wait();
     }
 
-    List toReturn = new ArrayList(_queue);
+    List<T> toReturn = new ArrayList<T>(_queue);
     _queue.clear();
 
     return toReturn;
@@ -113,6 +113,6 @@ public class ExecQueue {
       wait();
     }
 
-    return (Executable) _queue.remove(0);
+    return _queue.remove(0);
   }
 }

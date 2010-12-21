@@ -3,7 +3,6 @@ package org.sapia.ubik.rmi.server.transport.http;
 import java.rmi.RemoteException;
 
 import org.apache.commons.httpclient.HttpClient;
-import org.sapia.ubik.net.Connection;
 import org.sapia.ubik.net.Pool;
 import org.sapia.ubik.net.Uri;
 import org.sapia.ubik.net.UriSyntaxException;
@@ -47,7 +46,7 @@ public class HttpClientConnectionPool implements Connections {
   /**
    * @see org.sapia.ubik.rmi.server.transport.Connections#acquire()
    */
-  public RmiConnection acquire() throws RemoteException {
+  public HttpRmiClientConnection acquire() throws RemoteException {
     try {
       return ((HttpRmiClientConnection) _pool.acquire()).setUp(_client, _address);
     } catch (Exception e) {
@@ -73,19 +72,19 @@ public class HttpClientConnectionPool implements Connections {
   }
 
   /**
-   * @see org.sapia.ubik.rmi.server.transport.Connections#release(org.sapia.ubik.net.Connection)
+   * @see org.sapia.ubik.rmi.server.transport.Connections#release(RmiConnection)
    */
-  public void release(Connection conn) {
+  public void release(RmiConnection conn) {
     conn.close();
-    _pool.release(conn);
+    _pool.release((HttpRmiClientConnection)conn);
   }
 
   ///// INNER CLASS /////////////////////////////////////////////////////////////
-  static class InternalPool extends Pool {
+  static class InternalPool extends Pool<HttpRmiClientConnection> {
     /**
      * @see org.sapia.ubik.net.Pool#doNewObject()
      */
-    protected Object doNewObject() throws Exception {
+    protected HttpRmiClientConnection doNewObject() throws Exception {
       return new HttpRmiClientConnection();
     }
   }

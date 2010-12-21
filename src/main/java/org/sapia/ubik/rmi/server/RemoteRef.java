@@ -9,9 +9,9 @@ import java.rmi.RemoteException;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.sapia.ubik.net.Connection;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.server.transport.Connections;
+import org.sapia.ubik.rmi.server.transport.RmiConnection;
 import org.sapia.ubik.rmi.server.transport.TransportManager;
 
 
@@ -176,7 +176,7 @@ public abstract class RemoteRef implements StubInvocationHandler,
       }
     }
 
-    Connection conn = _pool.acquire();
+    RmiConnection conn = _pool.acquire();
 
     try {
       try {

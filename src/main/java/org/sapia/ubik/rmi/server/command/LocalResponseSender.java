@@ -22,7 +22,7 @@ public class LocalResponseSender implements ResponseSender {
   /**
    * @see org.sapia.ubik.rmi.server.command.ResponseSender#sendResponses(Destination, java.util.List)
    */
-  public void sendResponses(Destination dest, List responses) {
+  public void sendResponses(Destination dest, List<Response> responses) {
     ResponseQueue.getInstance().onResponses(responses);
   }
 }

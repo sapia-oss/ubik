@@ -17,7 +17,7 @@ import org.sapia.ubik.rmi.server.VmId;
  * </dl>
  */
 public class CommandProcessor {
-  private ExecQueue _in;
+  private ExecQueue<AsyncCommand> _in;
 
   /**
    * Constructor for CommandProcessor.

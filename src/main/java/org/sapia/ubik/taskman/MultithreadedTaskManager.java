@@ -18,7 +18,7 @@ import org.sapia.ubik.rmi.server.perf.HitsPerMinStatistic;
  */
 public class MultithreadedTaskManager implements TaskManager{
 
-  private List _threads = Collections.synchronizedList(new ArrayList());
+  private List<Thread> _threads = Collections.synchronizedList(new ArrayList<Thread>());
   
   public void addTask(final TaskContext ctx, final Task task) {
     final HitsPerMinStatistic stat = HitStatFactory.createHitsPerMin("TaskManager."+ctx.getName(), ctx.getInterval(), Hub.statsCollector);
@@ -67,6 +67,3 @@ public class MultithreadedTaskManager implements TaskManager{
     }
   }
 }
-
-
-

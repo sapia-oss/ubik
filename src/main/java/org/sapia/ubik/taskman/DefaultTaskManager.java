@@ -1,8 +1,7 @@
 package org.sapia.ubik.taskman;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.sapia.ubik.rmi.server.Log;
 
@@ -17,9 +16,9 @@ public class DefaultTaskManager implements TaskManager{
   
   public static long DEFAULT_MIN_DELAY = 5000;
 
-  private List _tasks = new ArrayList();
-  private List _toAdd = Collections.synchronizedList(new ArrayList(3));
-  private List _processing = new ArrayList();
+  private List<Task> _tasks = new CopyOnWriteArrayList<Task>();
+  private List<TaskWrapper> _toAdd = new CopyOnWriteArrayList<TaskWrapper>();
+  private List<Task> _processing = new CopyOnWriteArrayList<Task>();
   private long _nextExectime = System.currentTimeMillis();
   private long _minDelay = DEFAULT_MIN_DELAY;
   private Object     _taskLock = new Object();
@@ -47,7 +46,9 @@ public class DefaultTaskManager implements TaskManager{
   void processTasks() {
     _processing.clear();
     if (_toAdd.size() > 0) {
-      _tasks.addAll(_toAdd);
+      for(TaskWrapper wrapper:_toAdd){
+        _tasks.add(wrapper.task);
+      }
       _toAdd.clear();
     }
     synchronized (_taskLock) {

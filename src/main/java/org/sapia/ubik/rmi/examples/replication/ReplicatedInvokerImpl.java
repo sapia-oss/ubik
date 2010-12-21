@@ -6,6 +6,7 @@ import org.sapia.ubik.rmi.examples.Foo;
 import org.sapia.ubik.rmi.replication.ReplicatedCommand;
 import org.sapia.ubik.rmi.replication.ReplicatedInvoker;
 import org.sapia.ubik.rmi.server.transport.Connections;
+import org.sapia.ubik.rmi.server.transport.RmiConnection;
 import org.sapia.ubik.rmi.server.transport.TransportManager;
 
 import java.io.IOException;
@@ -67,7 +68,7 @@ public class ReplicatedInvokerImpl implements ReplicatedInvoker {
     System.out.println("Dispatching replicated command");
 
     Connections conns    = TransportManager.getConnectionsFor(addr);
-    Connection  conn     = conns.acquire();
+    RmiConnection conn   = conns.acquire();
     Object      toReturn;
 
     try {

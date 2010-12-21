@@ -21,5 +21,5 @@ public interface ResponseSender {
    * @param dest a <code>Destination</code>.
    * @param responses a <code>List</code> of <code>Response</code> objects.
    */
-  public void sendResponses(Destination destination, java.util.List responses);
+  public void sendResponses(Destination destination, java.util.List<Response> responses);
 }

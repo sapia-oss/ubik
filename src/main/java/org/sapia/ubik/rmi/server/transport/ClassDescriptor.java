@@ -21,6 +21,7 @@ import java.util.Map;
  *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
  * </dl>
  */
+@SuppressWarnings(value="unchecked")
 public class ClassDescriptor implements Externalizable {
   private static final long serialVersionUID = 6382603348796329430l;
   private static Map _primitives = new HashMap();

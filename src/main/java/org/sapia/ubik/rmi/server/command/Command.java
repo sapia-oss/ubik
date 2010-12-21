@@ -12,6 +12,9 @@ package org.sapia.ubik.rmi.server.command;
  * </dl>
  */
 public abstract class Command implements Executable, java.io.Serializable {
+  
+  static final long serialVersionUID = 1L;
+  
   /**
    * Constructor for Command.
    */

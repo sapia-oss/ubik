@@ -3,6 +3,7 @@ package org.sapia.ubik.rmi.examples;
 import org.sapia.ubik.net.Connection;
 import org.sapia.ubik.net.TCPAddress;
 import org.sapia.ubik.rmi.server.RMICommand;
+import org.sapia.ubik.rmi.server.transport.RmiConnection;
 import org.sapia.ubik.rmi.server.transport.TransportManager;
 
 import java.io.IOException;
@@ -30,7 +31,7 @@ public class HelloWorldCommand extends RMICommand {
     // creating address of server we wish to connect to
     TCPAddress addr = new TCPAddress("localhost", 7070);
 
-    Connection conn = null;
+    RmiConnection conn = null;
 
     try {
       // acquiring connection

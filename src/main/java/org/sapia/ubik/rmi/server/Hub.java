@@ -12,7 +12,6 @@ import javax.naming.Name;
 
 import org.sapia.ubik.jmx.JmxHelper;
 import org.sapia.ubik.jmx.MBeanContainer;
-import org.sapia.ubik.net.Connection;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.TCPAddress;
 import org.sapia.ubik.rmi.Consts;
@@ -24,6 +23,7 @@ import org.sapia.ubik.rmi.server.perf.Statistic;
 import org.sapia.ubik.rmi.server.perf.StatsCollector;
 import org.sapia.ubik.rmi.server.perf.Topic;
 import org.sapia.ubik.rmi.server.transport.Connections;
+import org.sapia.ubik.rmi.server.transport.RmiConnection;
 import org.sapia.ubik.rmi.server.transport.TransportManager;
 import org.sapia.ubik.taskman.Task;
 import org.sapia.ubik.taskman.TaskContext;
@@ -371,7 +371,7 @@ public class Hub {
    * @throws RemoteException if a problem occurs performing the connection.
    */
   public static Object connect(ServerAddress address) throws RemoteException {
-    Connection conn     = null;
+    RmiConnection conn     = null;
     Object     toReturn;
 
     try {
@@ -591,7 +591,7 @@ public class Hub {
 
   private static void doSend(Connections conns, OID oid)
     throws RemoteException, IOException, ClassNotFoundException {
-    Connection conn = null;
+    RmiConnection conn = null;
 
     try {
       conn = conns.acquire();

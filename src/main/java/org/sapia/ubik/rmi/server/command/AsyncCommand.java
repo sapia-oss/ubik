@@ -19,7 +19,6 @@ public class AsyncCommand implements Executable {
   private VmId          _caller;
   private ServerAddress _from;
   private Command       _cmd;
-  private Object        _response;
 
   /**
    * Constructor for AsyncCommandWrapper.

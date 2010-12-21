@@ -1,6 +1,5 @@
 package org.sapia.ubik.rmi.server.transport.http;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -8,9 +7,6 @@ import simple.http.ProtocolHandler;
 import simple.http.Request;
 import simple.http.Response;
 import simple.http.load.Service;
-import simple.http.serve.Context;
-import simple.http.serve.FileContext;
-import simple.http.serve.FileEngine;
 import simple.util.parse.URIParser;
 
 
@@ -25,7 +21,8 @@ import simple.util.parse.URIParser;
  * </dl>
  */
 public class ServiceMapper implements ProtocolHandler {
-  private Map<String, ProtocolHandler> _services = new HashMap();
+  
+  private Map<String, ProtocolHandler> _services = new HashMap<String, ProtocolHandler>();
 
   public ServiceMapper() {
   }

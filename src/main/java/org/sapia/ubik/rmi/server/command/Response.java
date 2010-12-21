@@ -14,6 +14,9 @@ package org.sapia.ubik.rmi.server.command;
  * </dl>
  */
 public class Response implements Executable, java.io.Serializable {
+  
+  static final long serialVersionUID = 1L;
+  
   private String _id;
   private Object _obj;
 

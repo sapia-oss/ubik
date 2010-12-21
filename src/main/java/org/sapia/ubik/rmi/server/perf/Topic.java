@@ -20,7 +20,7 @@ package org.sapia.ubik.rmi.server.perf;
  * 
  * @author Yanick Duchesne
  */
-public class Topic implements Comparable {
+public class Topic implements Comparable<Topic> {
   private static int _count     = 0;
   private long       _startTime = -1;
   private long       _endTime   = -1;
@@ -90,8 +90,8 @@ public class Topic implements Comparable {
   /**
    * @see java.lang.Comparable#compareTo(Object)
    */
-  public int compareTo(Object other) {
-    return _id - ((Topic) other)._id;
+  public int compareTo(Topic other) {
+    return _id - other._id;
   }
 
   static synchronized int inc() {
