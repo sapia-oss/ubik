@@ -41,7 +41,7 @@ public interface BroadcastDispatcher {
    * be interpreted differently from one implementation to another - for example, for
    * UDP-based implementation, it can correspond to the datagram packet size.
    *
-   * @param the size of this instance's internal buffer, in bytes.
+   * @param size the size of this instance's internal buffer, in bytes.
    */
   public void setBufsize(int size);
 

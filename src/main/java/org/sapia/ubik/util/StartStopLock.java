@@ -173,7 +173,7 @@ public class StartStopLock {
    * Blocks until this instance's <code>stopped</code> flag is set to <code>true</code>,
    * or until a startup error is signaled. If the given timeout has elapsed, this method exits.
    * 
-   * @see #notifyStopped(Throwable)(Throwable)
+   * @see #notifyStopped(Throwable)
    * 
    * @param timeout a given amount of time to wait for this instance's
    *  <code>stopped</code> flag to be <code>true</code>.

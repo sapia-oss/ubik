@@ -34,7 +34,7 @@ public class CommandProcessor {
   /**
    * Processes this command in the same thread as the caller's.
    *
-   * @param cmd a <code>Command</code>.
+   * @param cmd a {@link Command}.
    * @return the passed in command return value.
    */
   public Object processSyncCommand(Command cmd) {
@@ -49,7 +49,7 @@ public class CommandProcessor {
    * Processes the given command asynchronously.
    *
    * @param cmdId a command's unique identifier.
-   * @param from the <code>ServerAddress</code> from which this command originates.
+   * @param from the {@link ServerAddress} from which this command originates.
    * @param cmd the command to execute.
    */
   public void processAsyncCommand(String cmdId, VmId caller,
@@ -62,7 +62,7 @@ public class CommandProcessor {
    * implies, in charge of returing a command's return value to the originator of
    * the command.
    *
-   * @param a <code>ResponseSender</code>.
+   * @param sender a  {@link ResponseSender}.
    */
   public void setResponseSender(ResponseSender sender) {
     OutQueue.setResponseSender(sender);

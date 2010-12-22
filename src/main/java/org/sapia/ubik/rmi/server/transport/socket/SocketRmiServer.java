@@ -1,6 +1,7 @@
 package org.sapia.ubik.rmi.server.transport.socket;
 
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.SocketException;
@@ -19,11 +20,12 @@ import org.sapia.ubik.net.ThreadPool;
 import org.sapia.ubik.net.UbikServerSocketFactory;
 import org.sapia.ubik.rmi.server.Hub;
 import org.sapia.ubik.rmi.server.Log;
+import org.sapia.ubik.rmi.server.RMICommand;
 import org.sapia.ubik.rmi.server.Server;
 
 /**
  * A standard socket server that listens on a given port for
- * incoming <code>RMICommand</code> instances.
+ * incoming {@link RMICommand} instances.
  *
  * @author Yanick Duchesne
  * <dl>
@@ -67,8 +69,10 @@ public class SocketRmiServer extends SocketServer implements Server, SocketRmiSe
   /**
    * Creates a new SocketRmiServer instance
    *
-   * @param tp
-   * @param server
+   * @param maxThreads the max number of threads in the underlying pool.
+   * @param server a {@link ServerSocket}
+   * @param resetInterval the interval (in millis) at which the underlying {@link ObjectOutputStream}
+   * should be reset.
    * @throws IOException
    */
   protected SocketRmiServer(int maxThreads, ServerSocket server, long resetInterval)
@@ -82,9 +86,9 @@ public class SocketRmiServer extends SocketServer implements Server, SocketRmiSe
   /**
    * Creates a new SocketRmiServer instance.
    *
-   * @param fac
-   * @param tp
-   * @param server
+   * @param fac a {@link SocketConnectionFactory}
+   * @param tp a {@link ThreadPool}
+   * @param server a {@link SocketServer}
    * @throws IOException
    */
   protected SocketRmiServer(SocketConnectionFactory fac, ThreadPool tp,

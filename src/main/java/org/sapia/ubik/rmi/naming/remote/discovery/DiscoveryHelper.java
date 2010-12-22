@@ -93,7 +93,7 @@ public class DiscoveryHelper implements AsyncEventListener {
   /**
    * Adds a service discovery listener to this instance.
    *
-   * @param a <code>ServiceDiscoListener</code>.
+   * @param listener a {@link ServiceDiscoListener}.
    */
   public synchronized void addServiceDiscoListener(ServiceDiscoListener listener) {
     if(!_svclisteners.contains(listener)){
@@ -104,7 +104,7 @@ public class DiscoveryHelper implements AsyncEventListener {
   /**
    * Removes the given service discovery listener from this instance.
    *
-   * @param a <code>ServiceDiscoListener</code>.
+   * @param listener a {@link ServiceDiscoListener}.
    */
   public synchronized void removeServiceDiscoListener(ServiceDiscoListener listener) {
     _svclisteners.remove(listener);
@@ -113,7 +113,7 @@ public class DiscoveryHelper implements AsyncEventListener {
   /**
    * Adds a JNDI discovery listener to this instance.
    *
-   * @param a <code>JndiDiscoListener</code>.
+   * @param listener a {@link JndiDiscoListener}.
    */
   public synchronized void addJndiDiscoListener(JndiDiscoListener listener) {
     if(!_jndiListeners.contains(listener)){
@@ -127,7 +127,7 @@ public class DiscoveryHelper implements AsyncEventListener {
   /**
    * Removes the given JNDI discovery listener from this instance.
    *
-   * @param a <code>JndiDiscoListener</code>.
+   * @param listener {@link JndiDiscoListener}.
    */
   public synchronized void removeJndiDiscoListener(JndiDiscoListener listener) {
     _jndiListeners.remove(listener);    

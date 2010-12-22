@@ -21,7 +21,7 @@ public interface Connection {
    * Sends the given object to the server with which this connection
    * communicates.
    *
-   * @param an <code>Object</code>.
+   * @param o an {@link Object}.
    */
   public void send(Object o) throws IOException, RemoteException;
 
@@ -29,7 +29,7 @@ public interface Connection {
    * Receives an object from the server with which this connection
    * communicates.
    *
-   * @return an <code>Object</code>.
+   * @return an {@link Object}.
    */
   public Object receive()
     throws IOException, ClassNotFoundException, RemoteException;
@@ -43,7 +43,7 @@ public interface Connection {
    * Returns "address" of the server with which this connection
    * communicates.
    *
-   * @return a <code>ServerAddress</code>.
+   * @return a {@link ServerAddress}.
    */
   public ServerAddress getServerAddress();
 }

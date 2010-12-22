@@ -15,10 +15,8 @@ import java.util.Set;
 
 
 /**
- * Wraps an <code>InvokeCommand</code> that is intented to be replicated to the different
+ * Wraps an {@link InvokeCommand} that is intented to be replicated to the different
  * servers in a domain or cluster.
- *
- * @see #getReplicationContext()
  *
  * @author Yanick Duchesne
  * <dl>

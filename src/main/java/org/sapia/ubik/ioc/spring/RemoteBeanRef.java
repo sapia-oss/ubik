@@ -31,7 +31,7 @@ public class RemoteBeanRef{
   }
 
   /**
-   * @param intf an array of fully-qualified interface names.
+   * @param intfs an array of fully-qualified interface names.
    */
   public void setInterfaces(String[] intfs) {
     interfaces = new Class[intfs.length];

@@ -21,11 +21,11 @@ public class ClientPostInvokeEvent implements Event {
   /**
    * Creates an instance of this class.
    *
-   * @param invocable the <code>Invocable</code> command to was sent to
+   * @param toInvoke the {@link InvokeCommand} that was sent to
    * the server to perform the method call.
    * @param toReturn the object returned by the remote method
    * (might be <code>null</code> (if the called method returned
-   * such); must be <code>Throwable</code> if the called method
+   * such); must be {@link Throwable} if the called method
    * threw and exception).
    */
   public ClientPostInvokeEvent(InvokeCommand toInvoke, Object toReturn) {
@@ -36,7 +36,7 @@ public class ClientPostInvokeEvent implements Event {
   /**
    * Returns the command to invoke.
    *
-   * @return an <code>InvokeCommand</code> instance.
+   * @return an {@link InvokeCommand} instance.
    */
   public InvokeCommand getCommand() {
     return _toInvoke;
@@ -51,7 +51,8 @@ public class ClientPostInvokeEvent implements Event {
    * method actually returned nothing, or has a return
    * type of <code>void</code>.
    *
-   * @param an <code>Object</code>.
+   * @param object the {@link Object} that consists of the return value 
+   * of the method call.
    */
   public void setReturnObject(Object object) {
     if (_return != null) {
@@ -64,10 +65,10 @@ public class ClientPostInvokeEvent implements Event {
    * method call.
    * <p>
    * Important: the object that will be returned might be an
-   * instance of <code>Throwable</code>, provided the method
+   * instance of {@link Throwable}, provided the method
    * threw an exception.
    *
-   * @return an <code>Object</code>, or <code>null</code> if
+   * @return an {@link Object}, or <code>null</code> if
    * the invoked remote method returned nothing, or has a
    * return type of <code>void</code>.
    */

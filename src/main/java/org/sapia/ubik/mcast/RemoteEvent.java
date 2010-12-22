@@ -49,7 +49,7 @@ public class RemoteEvent implements java.io.Serializable {
   /**
    * Creates an instance of this class.
    *
-   * @param the name of the domain to which this instance is targeted.
+   * @param domain the name of the domain to which this instance is targeted.
    * @param type the event's type, which in fact is its logical type.
    * @param data the event's data.
    */

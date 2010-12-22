@@ -20,7 +20,7 @@ public class Statistic {
   /**
    * Creates a statistic with a max count of 100 by default.
    * 
-   * @see #Statistic(String, StatValue, int)
+   * @see #Statistic(String, int)
    */
   public Statistic(String name){
     this(name, DEFAULT_MAX_COUNT);
@@ -105,6 +105,9 @@ public class Statistic {
     return _value.avg(_count);
   }
   
+  /**
+   * Internally resets this instance's counter.
+   */
   public void reset(){
     doReset();
   } 

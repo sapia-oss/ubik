@@ -49,12 +49,12 @@ public class ResponseLock {
    * Waits for the response of an asynchronous call-back. The caller
    * will wait for the length of time specified by the given timeout; if
    * no response comes in before the given timeout, a
-   * <code>ResponseTimeOutException</code> is thrown.
+   * {@link ResponseTimeOutException} is thrown.
    *
    * @param timeout a timeout, in milliseconds.
    * @throws ResponseTimeOutException if no response comes in before the specified timeout.
    * @throws InterruptedException if the caller is interrupted while waiting for the response.
-   * @return a response, as an <code>Object</code>.
+   * @return a response, as an {@link Object}.
    */
   public synchronized Object waitResponse(long timeout)
     throws InterruptedException, ResponseTimeOutException {
@@ -77,7 +77,7 @@ public class ResponseLock {
   /**
    * Sets this lock's response.
    *
-   * @param an <code>Object</code> corresponding to an asynchronous response.
+   * @param r an {@link Object} corresponding to an asynchronous response.
    */
   public synchronized void setResponse(Object r) {
     _response   = r;

@@ -17,9 +17,11 @@ import org.sapia.ubik.mcast.RemoteEvent;
 import org.sapia.ubik.net.TCPAddress;
 import org.sapia.ubik.rmi.naming.remote.Consts;
 import org.sapia.ubik.rmi.naming.remote.RemoteContext;
+import org.sapia.ubik.rmi.naming.remote.RemoteInitialContextFactory;
 import org.sapia.ubik.rmi.naming.remote.discovery.DiscoveryHelper;
 import org.sapia.ubik.rmi.naming.remote.discovery.JndiDiscoListener;
 import org.sapia.ubik.rmi.naming.remote.discovery.ServiceDiscoListener;
+import org.sapia.ubik.rmi.naming.remote.discovery.ServiceDiscoveryEvent;
 import org.sapia.ubik.rmi.server.Log;
 
 
@@ -28,9 +30,9 @@ import org.sapia.ubik.rmi.server.Log;
  * clients to register <code>ServiceDiscoveryListener</code>s that are notified when new services
  * are bound to the JNDI servers on the network.
  *
- * @see org.sapia.ubik.rmi.naming.remote.RemoteInitialContextFactory
- * @see org.sapia.ubik.rmi.naming.remote.discovery.ServiceDiscoListener
- * @see org.sapia.ubik.rmi.naming.remote.discovery.ServiceDiscoveryEvent
+ * @see RemoteInitialContextFactory
+ * @see ServiceDiscoListener
+ * @see ServiceDiscoveryEvent
  *
  * @author Yanick Duchesne
  * <dl>
@@ -112,7 +114,7 @@ public class ReliableLocalContext extends LocalContext
   /**
    * Adds a service discovery listener to this instance.
    *
-   * @param a <code>ServiceDiscoListener</code>.
+   * @param listener a {@link ServiceDiscoListener}.
    */
   public void addServiceDiscoListener(ServiceDiscoListener listener) {
     if (!_helper.getChannel().isClosed()) {
@@ -123,7 +125,7 @@ public class ReliableLocalContext extends LocalContext
   /**
    * Adds a JNDI discovery listener to this instance.
    *
-   * @param a <code>JndiDiscoListener</code>.
+   * @param listener a {@link JndiDiscoListener}.
    */
   public void addJndiDiscoListener(JndiDiscoListener listener) {
     if (!_helper.getChannel().isClosed()) {

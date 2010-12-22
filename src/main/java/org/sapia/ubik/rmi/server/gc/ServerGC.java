@@ -62,8 +62,8 @@ public class ServerGC implements Task, ServerGCMBean, MBeanFactory {
    * Returns the total number of references held on the given object
    * identifier.
    *
-   * @param id a <code>VmId</code>.
-   * @param oid an <code>OID</code>.
+   * @param id a {@link VmId}.
+   * @param oid an {@link OID}.
    *
    * @return a reference count, as an <code>int</code>.
    */
@@ -73,7 +73,10 @@ public class ServerGC implements Task, ServerGCMBean, MBeanFactory {
 
   /**
    * Returns the total number of references held on the given object
-   * by the client whose host corresponds to the passed in <code>VmId</code>.
+   * by the client whose host corresponds to the passed in {@link VmId}.
+   * 
+   * @param id a {@link VmId}
+   * @param oid an {@link OID}
    */
   public int getSpecificCount(VmId id, OID oid) {
     return getClientInfo(id).getSpecificCount(oid);
@@ -81,10 +84,10 @@ public class ServerGC implements Task, ServerGCMBean, MBeanFactory {
 
   /**
    * Returns true if this instance contains the passed in
-   * <code>VmId</code>.
+   * {@link VmId}.
    *
    * @return <code>true</code> if this instance contains the passed in
-   * <code>VmId</code>.
+   * {@link VmId}.
    */
   public boolean containsClient(VmId id) {
     return _clientTable.containsKey(id);
@@ -92,11 +95,11 @@ public class ServerGC implements Task, ServerGCMBean, MBeanFactory {
 
   /**
    * Increments the reference count of the given object identifier,
-   * for the client whose <code>VmId</code> is given.
+   * for the client whose {@link VmId} is given.
    *
-   * @param address the client's <code>VmId</code>.
-   * @param oid the object identifier of whose reference count to
-   * increment.
+   * @param id the client's {@link VmId}.
+   * @param oid the {@link OID} of the object whose reference count 
+   * should be incremented.
    */
   public void reference(VmId id, OID oid) {
     if (Log.isDebug()) {
@@ -112,12 +115,12 @@ public class ServerGC implements Task, ServerGCMBean, MBeanFactory {
    * Registers a given object internally so that it is not garbage collected before
    * clients themselves garbage collect it.
    *
-   * @param id the <code>VmId</code> of the client to whom a stub
+   * @param id the {@link VmId} of the client to whom a stub
    * corresponding to the passed in object is returned (this in fact creates
    * a remote reference on the object).
-   * @param oid the <code>OID</code> that identifies the passed in object
+   * @param oid the {@link OID} that identifies the passed in object
    * locally.
-   * @param the object for which a stub is eventually returned to the client.
+   * @param o the {@link Object} for which a stub is eventually returned to the client.
    */
   public void registerRef(VmId id, OID oid, Object o) {
     if (Log.isInfo()) {
@@ -132,9 +135,9 @@ public class ServerGC implements Task, ServerGCMBean, MBeanFactory {
   /**
    * Dereferences a given object identifier.
    *
-   * @param id the <code>VmId</code> of the client from which the
+   * @param id the {@link VmId} of the client from which the
    * dereferencing call comes.
-   * @param oid the <code>OID</code> to dereference.
+   * @param oid the {@link OID} to dereference.
    */
   public void dereference(VmId id, OID oid) {
     if (Log.isDebug()) {
@@ -147,9 +150,9 @@ public class ServerGC implements Task, ServerGCMBean, MBeanFactory {
   }
 
   /**
-   * Touches the client info of the vm id passed in.
+   * Touches the client info of the {@link VmId} passed in.
    * 
-   * @param id
+   * @param id a {@link VmId}
    */
   public void touch(VmId id) {
     if (Log.isDebug()) {

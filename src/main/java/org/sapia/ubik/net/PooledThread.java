@@ -3,7 +3,6 @@ package org.sapia.ubik.net;
 import org.sapia.ubik.rmi.server.perf.HitsPerSecStatistic;
 import org.sapia.ubik.rmi.server.perf.Statistic;
 
-
 /**
  * Implements a pooled thread. Inheriting classes need only implementing
  * the <code>doExec</code> template method.
@@ -123,7 +122,7 @@ public abstract class PooledThread extends Thread {
    * <p>
    * This template method is to be implemented by subclasses.
    *
-   * @param a task to execute, or data on which this method should act.
+   * @param task a task to execute, or data on which this method should act.
    */
   protected abstract void doExec(Object task);
   

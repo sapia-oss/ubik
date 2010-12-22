@@ -110,7 +110,7 @@ public class Uri {
   /**
    * Sets this instance's scheme.
    *
-   * @param a scheme.
+   * @param scheme a scheme.
    */
   public void setScheme(String scheme) {
     _scheme = scheme;
@@ -119,7 +119,7 @@ public class Uri {
   /**
    * Sets this instance's host.
    *
-   * @param a host identifier.
+   * @param host a host identifier.
    */
   public void setHost(String host) {
     _host = host;
@@ -128,7 +128,7 @@ public class Uri {
   /**
    * Sets this instance's port.
    *
-   * @param a port.
+   * @param port a port.
    */
   public void setPort(int port) {
     _port = port;

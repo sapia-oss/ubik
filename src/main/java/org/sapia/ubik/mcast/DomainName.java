@@ -65,7 +65,7 @@ public class DomainName implements java.io.Serializable {
   /**
     * Creates an instance of this class out of the given name/path.
     *
-    * @param a domain name/path.
+    * @param name a domain name/path.
     * @return a <code>DomainName</code> object.
     */
   public static DomainName parse(String name) {
@@ -112,10 +112,10 @@ public class DomainName implements java.io.Serializable {
   /**
    * Compares this instance with another <code>DomainName</code>.
    *
-   * @param an <code>Object</code>.
+   * @param other an {@link Object}.
    *
    * @return <code>true</code> if the passed in object is a
-   * <code>DomainName</code> instance and if it has the same domain name
+   * {@link DomainName} instance and if it has the same domain name
    * string as this instance's.
    */
   public boolean equals(Object other) {

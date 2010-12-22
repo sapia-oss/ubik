@@ -4,7 +4,7 @@ import java.rmi.RemoteException;
 
 
 /**
- * Specifies the behavior of pools of client-side <code>Connection</code>.
+ * Specifies the behavior of pools of client-side {@link RmiConnection}.
  *
  * @author Yanick Duchesne
  * <dl>
@@ -17,7 +17,7 @@ public interface Connections {
   /**
    * Acquires a connection from this pool.
    *
-   * @return a <code>Connection</code>.
+   * @return a {@link RmiConnection}
    * @throws RemoteException if a problem occurs acquiring a connection.
    */
   public RmiConnection acquire() throws RemoteException;
@@ -25,7 +25,7 @@ public interface Connections {
   /**
    * Releases the given connection to this pool.
    *
-   * @param a <code>Connection</code>.
+   * @param conn a {@link RmiConnection}
    */
   public void release(RmiConnection conn);
 

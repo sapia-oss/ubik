@@ -55,7 +55,7 @@ public class Localhost {
   
   /**
    * 
-   * @return
+   * @return an InetAddress
    * @throws UnknownHostException
    * @deprecated Should method {@link #getAnyLocalAddress()} instead.
    */

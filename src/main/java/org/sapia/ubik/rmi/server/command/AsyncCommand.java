@@ -23,10 +23,11 @@ public class AsyncCommand implements Executable {
   /**
    * Constructor for AsyncCommandWrapper.
    *
-   * @param the unique identifier of this command.
-   * @param from the <code>ServerAddress</code> corresponding to
+   * @param cmdId the unique identifier of this command.
+   * @param caller the {@link VmId} corresponding to the JVM from which the command originates.
+   * @param from the {@link ServerAddress} corresponding to
    * the server to call back, and from which this command originates.
-   * @param cmd the <code>Command</code> instance to wrap.
+   * @param cmd the {@link Command} instance to wrap.
    */
   public AsyncCommand(String cmdId, VmId caller, ServerAddress from, Command cmd) {
     _cmdId    = cmdId;
@@ -36,8 +37,6 @@ public class AsyncCommand implements Executable {
   }
 
   /**
-   * Returns the identifier of this command.
-   *
    * @return the identifier of this command.
    */
   public String getCmdId() {
@@ -48,7 +47,7 @@ public class AsyncCommand implements Executable {
    * Returns the address of the server to call back, and from which
    * this command originates.
    *
-   * @return a <code>ServerAddress<code>.
+   * @return a {@link ServerAddress}.
    */
   public ServerAddress getFrom() {
     return _from;
@@ -57,7 +56,7 @@ public class AsyncCommand implements Executable {
   /**
    * Returns the caller's VM identifier.
    *
-   * @return a <code>VmId</code>
+   * @return a {@link VmId}
    */
   public VmId getCallerVmId() {
     return _caller;

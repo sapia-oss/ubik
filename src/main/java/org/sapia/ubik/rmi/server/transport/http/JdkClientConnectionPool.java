@@ -27,7 +27,6 @@ public class JdkClientConnectionPool implements Connections {
   private InternalPool _pool = new InternalPool();
 
   /**
-   * @param transportType the "transport type" identifier.
    * @param address the address of the target server.
    */
   public JdkClientConnectionPool(HttpAddress address) throws UriSyntaxException {

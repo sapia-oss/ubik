@@ -113,14 +113,14 @@ public abstract class ThreadPool extends Pool<PooledThread> {
   }
   
   /**
-   * @return this instance's requests-per-second stat.
+   * @return this instance's requests-per-second {@link Statistic}.
    */
   public Statistic getRpsStat(){
     return _tps;
   }
   
   /**
-   * @return
+   * @return this instance's duration {@link Statistic}.
    */
   public Statistic getDurationStat(){
     return _duration;

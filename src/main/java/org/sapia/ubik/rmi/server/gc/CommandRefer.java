@@ -25,7 +25,7 @@ public class CommandRefer extends RMICommand {
    * This constructor takes the object identifier of the remote object
    * to refer to.
    *
-   * @param an <code>OID</code>
+   * @param oid an {@link OID}
    */
   public CommandRefer(OID oid) {
     _oid = oid;

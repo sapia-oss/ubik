@@ -15,13 +15,13 @@ import org.sapia.ubik.net.ServerAddress;
  */
 public interface DiscoveryListener {
   /**
-   * This method is called by the <code>EventChannel</code> to which
+   * This method is called by the {@link EventChannel} to which
    * this instance belongs.
    *
-   * @param addr a <code>ServerAddress</code> that corresponds to the address physical
+   * @param addr a {@link ServerAddress} that corresponds to the address physical
    * address of the discovered node.
    *
-   * @param discovered the <code>RemoteEvent</code> that is received from the
+   * @param evt the {@link RemoteEvent} that is received from the
    * discovered event channel node.
    */
   public void onDiscovery(ServerAddress addr, RemoteEvent evt);

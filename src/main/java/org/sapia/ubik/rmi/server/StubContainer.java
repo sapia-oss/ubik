@@ -20,7 +20,7 @@ public interface StubContainer extends java.io.Serializable {
    * Returns the stub that this instance contains.
    *
    * @return the stub that this instance contains.
-   * @param a <code>ClassLoader</code>
+   * @param loader a {@link ClassLoader}
    * @throws RemoteException if the stub could not be created.
    */
   public Object toStub(ClassLoader loader) throws RemoteException;
@@ -28,7 +28,7 @@ public interface StubContainer extends java.io.Serializable {
   /**
    * Returns the invocation handler that this instance wraps.
    *
-   * @return a <code>StubInvocationHandler</code>.
+   * @return a {@link StubInvocationHandler}.
    */
   public StubInvocationHandler getStubInvocationHandler();
 }

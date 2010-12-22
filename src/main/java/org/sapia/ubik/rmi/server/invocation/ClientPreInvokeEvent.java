@@ -33,9 +33,9 @@ public class ClientPreInvokeEvent implements Event {
   }
 
   /**
-   * Return the command that will be sent to the server.
+   * Returns the command that will be sent to the server.
    *
-   * @return am <code>InvokeCommand</code> instance.
+   * @return an {@link InvokeCommand} instance.
    */
   public InvokeCommand getCommand() {
     return _cmd;
@@ -44,7 +44,7 @@ public class ClientPreInvokeEvent implements Event {
   /**
    * Sets the command that will be sent to the server.
    *
-   * @param an <code>InvokeCommand</code>.
+   * @param cmd an {@link InvokeCommand}.
    */
   public void setCommand(InvokeCommand cmd) {
     _cmd = cmd;

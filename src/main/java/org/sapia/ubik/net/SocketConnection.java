@@ -63,7 +63,7 @@ public class SocketConnection implements Connection {
   }
 
   /**
-   * @see org.sapia.ubik.net.Connection#send(Object)
+   * @see Connection#send(Object)
    */
   public void send(Object o) throws IOException, RemoteException {
       writeHeader(_sock.getOutputStream(), _loader);
@@ -71,7 +71,7 @@ public class SocketConnection implements Connection {
   }
 
   /**
-   * @see org.sapia.ubik.net.Connection#receive()
+   * @see Connection#receive()
    */
   public Object receive()
     throws IOException, ClassNotFoundException, RemoteException {
@@ -110,7 +110,7 @@ public class SocketConnection implements Connection {
   }
 
   /**
-   * @see org.sapia.ubik.net.Connection#getServerAddress()
+   * @see Connection#getServerAddress()
    */
   public ServerAddress getServerAddress() {
     return _address;
@@ -119,7 +119,7 @@ public class SocketConnection implements Connection {
   /**
    * Returns this instance's internal input stream.
    *
-   * @return an <code>InputStream</code>.
+   * @return an {@link InputStream}.
    */
   public InputStream getInputStream() throws IOException {
     return _sock.getInputStream();
@@ -128,7 +128,7 @@ public class SocketConnection implements Connection {
   /**
    * Returns this instance's internal output stream.
    *
-   * @return an <code>OutputStream</code>.
+   * @return an {@link OutputStream}.
    */
   public OutputStream getOuputStream() throws IOException {
     return _sock.getOutputStream();
@@ -136,11 +136,11 @@ public class SocketConnection implements Connection {
 
   /**
    * Template method internally called by this instance; the method should create
-   * an <code>ObjectOutputStream</code> for the given parameters.
+   * an {@link ObjectOutputStream} for the given parameters.
    *
-   * @param os the <code>OutputStream</code> that the returned stream should wrap.
-   * @param the <code>ClassLoader</code> that this instance corresponds to.
-   * @return an <code>ObjectOutputStream</code>.
+   * @param os the {@link OutputStream} that the returned stream should wrap.
+   * @param loader the {@link ClassLoader} that this instance corresponds to.
+   * @return an {@link ObjectOutputStream}.
    * @throws IOException if a problem occurs creating the desired object.
    */
   protected ObjectOutputStream newOutputStream(OutputStream os,
@@ -156,9 +156,9 @@ public class SocketConnection implements Connection {
    * deserialized objects.
    *
    * @see ObjectInputStream#resolveClass(java.io.ObjectStreamClass)
-   * @param is the <code>InputStream</code> that the returned stream should wrap.
-   * @param the <code>ClassLoader</code> that this instance corresponds to.
-   * @return an <code>ObjectInputStream</code>.
+   * @param is the {@link InputStream} that the returned stream should wrap.
+   * @param loader the {@link ClassLoader} that this instance corresponds to.
+   * @return an {@link ObjectInputStream}.
    * @throws IOException if a problem occurs creating the desired object.
 
    */

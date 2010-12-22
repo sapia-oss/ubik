@@ -35,7 +35,7 @@ public class QueryString {
    *
    * This constructor takes the path of the query string.
    *
-   * @param a path
+   * @param path a path
    */
   public QueryString(String path) {
     _path = path;
@@ -73,7 +73,7 @@ public class QueryString {
    * Returns the value for the parameter with the passed
    * in name.
    *
-   * @param the name of the parameter whose value should be returned.
+   * @param name the name of the parameter whose value should be returned.
    * @return the value of the given parameter, or <code>null</code>
    * if no such value exists.
    */

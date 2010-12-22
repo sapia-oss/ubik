@@ -238,8 +238,8 @@ public class ByteVector {
   
   /**
    * @param b a byte array that will be filled with the bytes that were read.
-   * @off the offset from which bytes should be inserted into the given array.
-   * @len the number of bytes to fill in the given array, starting from the 
+   * @param off the offset from which bytes should be inserted into the given array.
+   * @param len the number of bytes to fill in the given array, starting from the 
    * given offset.
    * @return the number of bytes that were read.
    */
@@ -262,7 +262,7 @@ public class ByteVector {
   }
   
   /**
-   * @param a <code>ByteBuffer</code>.
+   * @param buf a {@link ByteBuffer}.
    * @return the number of bytes that were read.
    */
   public int read(ByteBuffer buf){
@@ -287,7 +287,7 @@ public class ByteVector {
   /**
    * Reads this instance's bytes and transfers them to the given stream.
    *
-   * @param out an <code>OutputStream</code>.
+   * @param out an {@link OutputStream}.
    */
   public void read(OutputStream out) throws IOException{
     int read;
@@ -347,7 +347,7 @@ public class ByteVector {
   /**
    * Writes the bytes contained in the given buffer to this instance.
    *
-   * @param buf a <code>ByteBuffer</code>
+   * @param buf a {@link ByteBuffer}
    */
   public void write(ByteBuffer buf){
     while(buf.hasRemaining()){

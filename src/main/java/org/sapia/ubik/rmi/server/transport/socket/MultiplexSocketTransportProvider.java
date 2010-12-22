@@ -79,7 +79,7 @@ public class MultiplexSocketTransportProvider extends SocketTransportProvider {
   /**
    * Removes the passed in connector from the multiplex server.
    *
-   * @param aConnector The connector to remove.
+   * @param anInterceptor The connector to remove.
    */
   public void removeSocketConnector(MultiplexSocketConnector anInterceptor) {
     _multiplexServer.removeSocketConnector(anInterceptor);

@@ -36,7 +36,6 @@ public class HttpClientConnectionPool implements Connections {
   }
 
   /**
-   * @param transportType the "transport type" identifier.
    * @param serverUri the address of the target server.
    */
   public HttpClientConnectionPool(Uri serverUri) {

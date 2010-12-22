@@ -5,7 +5,7 @@ import java.util.List;
 
 
 /**
- * Models a list of <code>Response</code> objects.
+ * Models a list of {@link Response} objects.
  *
  * @author Yanick Duchesne
  * <dl>
@@ -27,17 +27,18 @@ public class RespList {
   /**
    * Adds the given response to this instance.
    *
-   * @param a <code>Response</code> object.
+   * @param resp a {@link Response} object.
    */
   public void addResponse(Response resp) {
     _resps.add(resp);
   }
 
   /**
-   * Returns the <code>Response</code> object at
+   * Returns the {@link Response} object at
    * the given index.
    *
-   * @param a <code>Response</code> object.
+   * @param index an index.
+   * @return a {@link Response} object.
    */
   public Response get(int index) {
     return (Response) _resps.get(index);
@@ -45,11 +46,11 @@ public class RespList {
 
   /**
    * Returns <code>true</code> if this instance contains a
-   * <code>Response</code> object that represents an error
+   * {@link Response} object that represents an error
    * that occurred on the remote side.
    *
    * @return <code>true</code> if this instance contains a
-   * <code>Response</code> object that holds a <code>Throwable</code>
+   * {@link Response} object that holds a {@link Throwable}
    */
   public boolean containsError() {
     Response r;
@@ -67,11 +68,11 @@ public class RespList {
 
   /**
    * Returns <code>true</code> if this instance contains
-   * a <code>Response</code> object whose status is "suspect" -
+   * a {@link Response} object whose status is "suspect" -
    * meaning that the corresponding node is probably down.
    *
    * @return <code>true</code> if this instance contains
-   * a <code>Response</code> whose corresponding node is probably
+   * a {@link Response} whose corresponding node is probably
    * down.
    */
   public boolean containsSuspect() {
