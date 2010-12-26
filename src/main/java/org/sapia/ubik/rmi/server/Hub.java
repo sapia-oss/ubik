@@ -411,6 +411,20 @@ public class Hub {
 
     return toReturn;
   }
+  
+  /**
+   * Forces the clearing of the connection pool corresponding to the given address.
+   * 
+   * @see Connections#clear()
+   * @param address a {@link ServerAddress}
+   */
+  public static void refresh(ServerAddress address){
+    try{
+      TransportManager.getConnectionsFor(address).clear();
+    }catch(RemoteException e){
+      // noop
+    }
+  }
 
   /**
    * Returns the address of the server for the given transport type.
