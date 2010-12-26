@@ -4,7 +4,9 @@
     <sapia:section>
       <sapia:path name="home" href="../../../home.html" />
       <sapia:path name="projects" />
-      <sapia:path name="ubik" href="../home.html" />      
+      <sapia:path name="ubik" href="../home.html" />
+      <sapia:path name="transport" />
+      <sapia:path name="http" />
     </sapia:section>  
   
     <toc/>

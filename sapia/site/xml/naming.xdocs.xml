@@ -29,6 +29,7 @@
       <sapia:path name="home" href="../../home.html" />
       <sapia:path name="projects" />
       <sapia:path name="ubik" href="home.html" />
+      <sapia:path name="naming" />
     </sapia:section>
     <toc/>
     <sapia:sect2 title="Robust Naming" alias="robust">

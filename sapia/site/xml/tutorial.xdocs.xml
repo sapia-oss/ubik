@@ -29,7 +29,8 @@
       <sapia:path name="home" href="../../home.html" />
       <sapia:path name="projects" />
       <sapia:path name="ubik" href="home.html" />
-      <sapia:path name="rmi" href="rmi.html" />      
+      <sapia:path name="rmi" href="rmi.html" />
+      <sapia:path name="tutorial" />      
     </sapia:section>  
   
     <toc/>

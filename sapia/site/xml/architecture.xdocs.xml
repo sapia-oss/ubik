@@ -31,6 +31,7 @@
       <sapia:path name="projects" />
       <sapia:path name="ubik" href="home.html" />
       <sapia:path name="rmi" href="rmi.html" />      
+      <sapia:path name="architecture" />
     </sapia:section>
 
     <sapia:sect2 title="Overview" alias="overview">

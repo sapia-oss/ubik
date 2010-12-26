@@ -26,8 +26,9 @@
 
   <sapia:sect1 title="Mailing List">
     <sapia:section>
-      <sapia:path name="home" href="../../../home.html" />
+      <sapia:path name="home" href="../../home.html" />
       <sapia:path name="projects"/>
+      <sapia:path name="mailing list" />
     </sapia:section>
 
     <sapia:sect-desc>

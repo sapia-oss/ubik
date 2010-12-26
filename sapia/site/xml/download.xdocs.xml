@@ -29,6 +29,7 @@
     <sapia:section>
       <sapia:path name="home" href="../../home.html" />
       <sapia:path name="projects" />
+      <sapia:path name="download" />
     </sapia:section>
 
     <toc />
