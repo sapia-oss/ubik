@@ -6,7 +6,7 @@
 
   <groupId>org.sapia</groupId>
   <artifactId>sapia_ubik</artifactId>
-  <version>2.5.9-SNAPSHOT</version>
+  <version>2.5.8-SNAPSHOT</version>
 
   <parent>
     <groupId>org.sapia</groupId>
@@ -41,14 +41,32 @@
    <plugins>
 
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
-        <configuration>
-          <excludes>
-            <exclude>**/examples/**/*</exclude>
-            <exclude>**/examples/*</exclude>            
-          </excludes>
-        </configuration>
+        <executions>
+          <execution>
+            <id>examples</id>
+            <goals><goal>jar</goal></goals>
+            <phase>package</phase>
+            <configuration>
+              <classifier>examples</classifier>
+              <includes>
+                <include>**/examples/**/*</include>
+                <include>**/examples/*</include>            
+              </includes>
+            </configuration>
+          </execution>
+          <execution>
+            <id>core</id>
+            <goals><goal>jar</goal></goals>
+            <phase>package</phase>
+            <configuration>
+              <excludes>
+                <exclude>**/examples/**/*</exclude>
+                <exclude>**/examples/*</exclude>            
+              </excludes>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
 
       <plugin>
