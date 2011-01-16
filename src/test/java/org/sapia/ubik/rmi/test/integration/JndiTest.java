@@ -20,7 +20,6 @@ import org.sapia.ubik.rmi.naming.remote.discovery.JndiDiscoListener;
 import org.sapia.ubik.rmi.naming.remote.discovery.ServiceDiscoListener;
 import org.sapia.ubik.rmi.naming.remote.discovery.ServiceDiscoveryEvent;
 import org.sapia.ubik.rmi.server.Hub;
-import org.sapia.ubik.rmi.server.Log;
 
 /**
  * @author Yanick Duchesne
@@ -68,7 +67,6 @@ public class JndiTest{
 		listener.throwExc();
   }*/
 
-	/*
 	@Test
 	public void testDiscovery() throws Exception{
 		InitialContext ctx = new InitialContext(props(WRONG_PORT, DOMAIN));
@@ -79,7 +77,7 @@ public class JndiTest{
 		InitialContext ctx = new InitialContext(props(PORT, DOMAIN));
 		Foo f = new UbikFoo();
 		ctx.bind("intg/test/foo", f);
-	}*/
+	}
 
 	 @Test
 	public void testLookup() throws Exception{
@@ -95,7 +93,7 @@ public class JndiTest{
 			//ok
 		}
 	}
-	/*
+	
 	@Test
 	public void testDiscoveryHelper() throws Exception{
 		DiscoveryHelper helper = new DiscoveryHelper(DOMAIN);
@@ -109,7 +107,7 @@ public class JndiTest{
 		Assert.assertTrue("Service not discovered", listener.serviceDiscovered);
 		Assert.assertTrue("JNDI not discovered", listener.jndiDiscovered);		
 		
-	}*/
+	}
 
   private static Properties props(int port, String domain){
 		Properties props = new Properties();
