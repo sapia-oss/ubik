@@ -18,7 +18,7 @@ public class ServerGCTest extends TestCase {
   
   public void testRegisterRef() throws Exception {
     OID  oid  = new OID(1);
-    VmId vmid = new VmId(1);
+    VmId vmid = new VmId(1,1);
     Hub.serverRuntime.gc.clear();
     Hub.serverRuntime.gc.registerRef(vmid, oid, "addr_1");
     
@@ -27,7 +27,7 @@ public class ServerGCTest extends TestCase {
 
   public void testUnregisterRef() throws Exception {
     OID  oid  = new OID(2);
-    VmId vmid = new VmId(2);
+    VmId vmid = new VmId(2,2);
     Hub.serverRuntime.gc.clear();
     Hub.serverRuntime.gc.registerRef(vmid, oid, "addr_2");
     Hub.serverRuntime.gc.dereference(vmid, oid);
@@ -35,9 +35,9 @@ public class ServerGCTest extends TestCase {
   }
 
   public void testMultiVm() throws Exception {
-    VmId   vm1 = new VmId(1);
-    VmId   vm2 = new VmId(2);
-    VmId   vm3 = new VmId(3);
+    VmId   vm1 = new VmId(1,1);
+    VmId   vm2 = new VmId(2,2);
+    VmId   vm3 = new VmId(3,2);
     OID    oid = new OID(3);
     String obj = "object3";
     Hub.serverRuntime.gc.clear();
