@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
+import org.sapia.ubik.net.ServerAddress;
+
 
 /**
  * Models a multicast event. An instance of this class strictly encapsulates its
@@ -45,6 +47,7 @@ public class RemoteEvent implements java.io.Serializable {
   private byte[]  _data;
   private boolean _wasBytes;
   private boolean _sync;
+  private ServerAddress _unicastAddress;
 
   /**
    * Creates an instance of this class.
@@ -86,6 +89,25 @@ public class RemoteEvent implements java.io.Serializable {
     this(null, type, data);
   }
 
+  /**
+   * 
+   * @return the unicast {@link ServerAddress} of the node from which this event originates,
+   * or <code>null</code> if no such address has been set (or most likely if the node cannot
+   * be connected to directly).
+   */
+  public ServerAddress getUnicastAddress() {
+    return _unicastAddress;
+  }
+  
+  /**
+   * Sets the unicast addresss of the node from which this event originates.
+   * 
+   * @param addr a {@link ServerAddress}.
+   */
+  public void setUnicastAddress(ServerAddress addr){
+    _unicastAddress = addr;
+  }
+  
   /**
    * Returns this instance's domain name.
    *
