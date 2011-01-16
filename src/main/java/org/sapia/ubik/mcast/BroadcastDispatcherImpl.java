@@ -1,6 +1,7 @@
 package org.sapia.ubik.mcast;
 
 import org.sapia.ubik.mcast.server.MulticastServer;
+import org.sapia.ubik.net.ServerAddress;
 
 import java.io.*;
 
@@ -82,10 +83,7 @@ public class BroadcastDispatcherImpl /*extends Thread*/
     }
   }
 
-  /**
-   * @see BroadcastDispatcher#dispatch(boolean, String, Object)
-   */
-  public void dispatch(boolean alldomains, String evtType, Object data)
+  public void dispatch(ServerAddress unicastAddr, boolean alldomains, String evtType, Object data)
     throws IOException {
     RemoteEvent evt;
 
@@ -94,14 +92,14 @@ public class BroadcastDispatcherImpl /*extends Thread*/
     } else {
       evt = new RemoteEvent(_domain, evtType, data).setNode(_node);
     }
-
+    evt.setUnicastAddress(unicastAddr);
     _server.send(Util.toBytes(evt, _bufsz));
   }
 
   /**
    * @see BroadcastDispatcher#dispatch(String, String, Object)
    */
-  public void dispatch(String domain, String evtType, Object data)
+  public void dispatch(ServerAddress unicastAddr, String domain, String evtType, Object data)
     throws IOException {
     RemoteEvent evt;
 
@@ -109,6 +107,7 @@ public class BroadcastDispatcherImpl /*extends Thread*/
       Log.debug(getClass(), "Sending event bytes for: " + evtType);
     }
     evt = new RemoteEvent(domain, evtType, data).setNode(_node);
+    evt.setUnicastAddress(unicastAddr);
     _server.send(Util.toBytes(evt, _bufsz));
   }
 

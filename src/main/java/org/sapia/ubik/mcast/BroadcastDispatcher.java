@@ -2,6 +2,8 @@ package org.sapia.ubik.mcast;
 
 import java.io.IOException;
 
+import org.sapia.ubik.net.ServerAddress;
+
 
 /**
  * An instance of this interface dispatches multicast events.
@@ -17,12 +19,14 @@ public interface BroadcastDispatcher {
   /**
    * Dispatches a multicast event holding the given parameters.
    *
+   * @param unicastAddr the unicast {@link ServerAddress} of the caller, or <code>null</code> if such an address
+   * does not exist.
    * @param alldomains if <code>true</code> sends an event to all domains.
    * @param id the logical identifier of the event.
    * @param data the data that is encapsulated within the event.
    * @throws IOException if an IO problem occurs.
    */
-  public void dispatch(boolean alldomains, String id, Object data)
+  public void dispatch(ServerAddress unicastAddr , boolean alldomains, String id, Object data)
     throws IOException;
 
   /**
@@ -33,9 +37,23 @@ public interface BroadcastDispatcher {
    * @param data the data that is encapsulated within the event.
    * @throws IOException if an IO problem occurs.
    */
-  public void dispatch(String domain, String id, Object data)
-    throws IOException;
+  /*public void dispatch(String domain, String id, Object data)
+    throws IOException;*/
 
+  /**
+   * Dispatches a multicast event to the given domain.
+   * 
+   * @param unicastAddr the unicast {@link ServerAddress} of the caller, or <code>null</code> if such an address
+   * does not exist.
+   * @param domain the domain to dispatch the event to.
+   * @param id the logical identifier of the event.
+   * @param data the data that is encapsulated within the event.
+   * @throws IOException if an IO problem occurs.
+   */
+  public void dispatch(ServerAddress unicastAddr, String domain, String id, Object data)
+    throws IOException;
+  
+  
   /**
    * Sets this instance's "buffer size". The size is specified in bytes, and can
    * be interpreted differently from one implementation to another - for example, for
