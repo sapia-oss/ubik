@@ -112,7 +112,7 @@ public class InvocationDispatcher {
         ServerPostInvokeEvent postEvt = new ServerPostInvokeEvent(serverPreEvent.getTarget(),
                 serverPreEvent.getInvokeCommand(), System.currentTimeMillis() - serverPreEvent.getInvokeTime(), e);
         Hub.serverRuntime.dispatchEvent(postEvt);      
-
+        e.fillInStackTrace();
         throw e;
       }
       
@@ -243,7 +243,7 @@ public class InvocationDispatcher {
         ServerPostInvokeEvent postEvt = new ServerPostInvokeEvent(serverPreEvent.getTarget(),
                 serverPreEvent.getInvokeCommand(), System.currentTimeMillis() - serverPreEvent.getInvokeTime(), e);
         Hub.serverRuntime.dispatchEvent(postEvt);      
-
+        e.fillInStackTrace();
         throw e;
       }
       
