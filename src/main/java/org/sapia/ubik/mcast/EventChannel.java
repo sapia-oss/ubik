@@ -32,15 +32,15 @@ public class EventChannel {
   static final String  DISCOVER_EVT    = "ubik/mcast/discover";
   static final String  PUBLISH_EVT     = "ubik/mcast/publish";
   static final String  HEARTBEAT_EVT   = "ubik/mcast/heartbeat";
-  BroadcastDispatcher  _broadcast;
-  UnicastDispatcher    _unicast;
-  EventConsumer        _consumer;
-  ChannelEventListener _listener;
-  View                 _view           = new View(30000);
-  ServerAddress        _address;
-  List<DiscoveryListener> _discoListeners = new ArrayList<DiscoveryListener>();
-  boolean              _started;
-  boolean              _closed;
+  private BroadcastDispatcher  _broadcast;
+  private UnicastDispatcher    _unicast;
+  private EventConsumer        _consumer;
+  private ChannelEventListener _listener;
+  private View                 _view           = new View(30000);
+  private ServerAddress        _address;
+  private List<DiscoveryListener> _discoListeners = new ArrayList<DiscoveryListener>();
+  private boolean              _started;
+  private boolean              _closed;
 
   /**
    * Constructor for EventChannel. For point-to-point communication, this instance will
@@ -132,7 +132,7 @@ public class EventChannel {
     _broadcast.start();
     _unicast.start();
     _address = _unicast.getAddress();
-    _broadcast.dispatch(false, PUBLISH_EVT, _address);
+    _broadcast.dispatch(_unicast.getAddress(), false, PUBLISH_EVT, _address);
     _started = true;
   }
 
@@ -168,7 +168,7 @@ public class EventChannel {
    */
   public void dispatch(boolean alldomains, String type, Object data)
     throws IOException {
-    _broadcast.dispatch(alldomains, type, data);
+    _broadcast.dispatch(_unicast.getAddress(), alldomains, type, data);
   }
 
   /**
@@ -188,7 +188,7 @@ public class EventChannel {
     if(Log.isDebug()){
       Log.debug(getClass(), "Sending event " + type + " - " + data);
     }
-    _broadcast.dispatch(_consumer.getDomainName().toString(), type, data);
+    _broadcast.dispatch(_unicast.getAddress(), _consumer.getDomainName().toString(), type, data);
   }
 
   /**
