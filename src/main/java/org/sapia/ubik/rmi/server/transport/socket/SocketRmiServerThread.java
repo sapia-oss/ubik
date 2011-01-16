@@ -97,8 +97,6 @@ public class SocketRmiServerThread extends PooledThread {
             }
           }
         } catch (Throwable t) {
-          t.printStackTrace();
-          t.fillInStackTrace();
           resp = t;
           end(start);
         }
