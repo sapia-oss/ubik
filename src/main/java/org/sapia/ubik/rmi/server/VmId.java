@@ -55,6 +55,10 @@ public class VmId implements java.io.Externalizable {
       return false;
     }
   }
+    
+  public boolean equals(VmId otherId) {
+    return _left == otherId._left && _right == otherId._right;
+  } 
 
   /**
    * @see java.lang.Object#hashCode()
