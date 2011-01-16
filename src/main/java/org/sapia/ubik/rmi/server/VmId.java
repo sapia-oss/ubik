@@ -3,7 +3,7 @@ package org.sapia.ubik.rmi.server;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.net.InetAddress;
+import java.util.UUID;
 
 
 /**
@@ -19,28 +19,21 @@ import java.net.InetAddress;
 public class VmId implements java.io.Externalizable {
   public static final long serialVersionUID = 1L;
   private static VmId      _instance;
-  private static Object _unique = new Object();
 
   static {
-    try {
-      _instance = new VmId(InetAddress.getLocalHost().getHostAddress().hashCode() ^
-          VmId.class.hashCode() ^ UIDGenerator.createdUID());
-    } catch (Throwable t) {
-      t.printStackTrace();
-      new IllegalStateException("could not initialize VM identifier");
-    }
+      UUID uuid = UUID.randomUUID();
+      _instance = new VmId(uuid.getLeastSignificantBits(), uuid.getMostSignificantBits());
   }
 
-  private long _id;
-  private int  _hashCode;
+  private long _left, _right;
 
   /** Do not use; meant for externalization only. */
   public VmId() {
   }
 
-  VmId(long id) {
-    _id         = id;
-    _hashCode   = (int) (_id ^ (_id >>> 32)) ^ _unique.hashCode();
+  VmId(long left, long right) {
+    _left = left;
+    _right = right;
   }
 
   /**
@@ -50,17 +43,15 @@ public class VmId implements java.io.Externalizable {
     return _instance;
   }
 
-  public boolean equals(VmId other) {
-    return other._id == _id && _hashCode == other.hashCode();
-  }
-
   /**
    * @see java.lang.Object#equals(java.lang.Object)
    */
   public boolean equals(Object other) {
-    try {
-      return equals((VmId) other);
-    } catch (ClassCastException e) {
+    if(other instanceof VmId){
+      VmId otherId = (VmId)other;
+      return _left == otherId._left && _right == otherId._right;
+    }
+    else{
       return false;
     }
   }
@@ -69,7 +60,7 @@ public class VmId implements java.io.Externalizable {
    * @see java.lang.Object#hashCode()
    */
   public int hashCode() {
-    return _hashCode;
+    return (int)(_right + _left * 31);
   }
 
   /**
@@ -77,19 +68,19 @@ public class VmId implements java.io.Externalizable {
    */
   public void readExternal(ObjectInput in)
     throws IOException, ClassNotFoundException {
-    _id         = in.readLong();
-    _hashCode   = in.readInt();
+    _left  = in.readLong();
+    _right = in.readInt();
   }
 
   /**
    * @see java.io.Externalizable#writeExternal(ObjectOutput)
    */
   public void writeExternal(ObjectOutput out) throws IOException {
-    out.writeLong(_id);
-    out.writeInt(_hashCode);
+    out.writeLong(_left);
+    out.writeLong(_right);
   }
 
   public String toString() {
-    return "[ id=" + _id + " ]";
+    return "[ id=" + _left + _right + " ]";
   }
 }
