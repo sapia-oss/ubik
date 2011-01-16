@@ -78,15 +78,18 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
   public void start() {
     super.start();
 
-    try {
-      InetAddress addr = Localhost.getAnyLocalAddress();
-      if(Log.isDebug()){
-        Log.debug(getClass(), "Local address: " + addr.getHostAddress());
+    InetAddress addr = _sock.getInetAddress();
+    if(addr == null){
+      try{
+        addr = Localhost.getAnyLocalAddress();
+      }catch(UnknownHostException e){
+        throw new IllegalStateException(e);
       }
-      _addr = new InetServerAddress(addr, getPort());
-    } catch (UnknownHostException e) {
-      throw new IllegalStateException(e.getMessage());
     }
+    if(Log.isDebug()){
+      Log.debug(getClass(), "Local address: " + addr.getHostAddress());
+    }
+    _addr = new InetServerAddress(addr, getPort());
   }
 
   /**
@@ -137,6 +140,7 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
 
     RemoteEvent       evt = new RemoteEvent(null, type, data).setNode(_node)
                                                              .setSync();
+    evt.setUnicastAddress(this._addr);
     InetServerAddress inet = (InetServerAddress) addr;
 
     try {
@@ -163,6 +167,8 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
     try{
       RemoteEvent       evt = new RemoteEvent(null, type, data).setNode(_node)
                                                                .setSync();
+      evt.setUnicastAddress(this._addr);
+
       byte[]            bytes   = Util.toBytes(evt, bufSize());
       InetServerAddress current;
       RespList          resps   = new RespList(addresses.size());
