@@ -40,7 +40,7 @@ public class EmbeddableJNDIServer implements Runnable, RemoteContextProvider, As
   private Context      _root;
   private boolean      _closed;
   private boolean      _started;
-  private Exception    _startErr;
+  private volatile Exception    _startErr;
 
   /**
    * Creates an instance of this class that will listen on the default (1099) port,
@@ -187,6 +187,7 @@ public class EmbeddableJNDIServer implements Runnable, RemoteContextProvider, As
       notifyClosed();
     } catch (Exception e) {
       _startErr = e;
+      Log.error(getClass(), "Could not start JNDI server", e);
       notifyStarted();
     }
   }
