@@ -29,18 +29,24 @@ import org.sapia.ubik.rmi.server.Log;
  * </dl>
  */
 public class EventChannel {
+  
+  public static final long DEFAULT_NODE_TIMEOUT = 60000;
+  public static final int  DEFAULT_SO_TIMEOUT   = 20000;
+  public static final int  DEFAULT_UDP_TIMEOUT  = 10000;
+  
   static final String  DISCOVER_EVT    = "ubik/mcast/discover";
   static final String  PUBLISH_EVT     = "ubik/mcast/publish";
   static final String  HEARTBEAT_EVT   = "ubik/mcast/heartbeat";
-  private BroadcastDispatcher  _broadcast;
-  private UnicastDispatcher    _unicast;
-  private EventConsumer        _consumer;
-  private ChannelEventListener _listener;
-  private View                 _view           = new View(30000);
-  private ServerAddress        _address;
+  
+  private BroadcastDispatcher     _broadcast;
+  private UnicastDispatcher       _unicast;
+  private EventConsumer           _consumer;
+  private ChannelEventListener    _listener;
+  private View                    _view           = new View(DEFAULT_NODE_TIMEOUT);
+  private ServerAddress           _address;
   private List<DiscoveryListener> _discoListeners = new ArrayList<DiscoveryListener>();
-  private boolean              _started;
-  private boolean              _closed;
+  private boolean                 _started;
+  private boolean                 _closed;
 
   /**
    * Constructor for EventChannel. For point-to-point communication, this instance will
@@ -56,7 +62,7 @@ public class EventChannel {
     throws IOException {
     _consumer    = new EventConsumer(domain);
     _broadcast   = new BroadcastDispatcherImpl(_consumer, mcastHost, mcastPort);
-    _unicast     = new UDPUnicastDispatcher(10000, _consumer);
+    _unicast     = new UDPUnicastDispatcher(DEFAULT_UDP_TIMEOUT, _consumer);
     init();
   }
 
@@ -74,17 +80,7 @@ public class EventChannel {
   public EventChannel(String domain, String mcastHost, int mcastPort,
     int unicastPort) throws IOException {
     _consumer    = new EventConsumer(domain);
-    
-    String soTimeoutProp = System.getProperty(Consts.MCAST_HEARTBEAT_INTERVAL);
-    int soTimeout = 20000;
-    if(soTimeoutProp != null){
-      try{
-        soTimeout = Integer.parseInt(soTimeoutProp);
-      }catch(NumberFormatException e){
-        // use default
-      }
-    }
-    _unicast     = new UDPUnicastDispatcher(soTimeout, unicastPort, _consumer);
+    _unicast     = new UDPUnicastDispatcher(DEFAULT_UDP_TIMEOUT, unicastPort, _consumer);
     _broadcast   = new BroadcastDispatcherImpl(_consumer, mcastHost, mcastPort);
     init();    
   }
@@ -263,6 +259,16 @@ public class EventChannel {
    */
   public synchronized void unregisterListener(AsyncEventListener listener) {
     _consumer.unregisterListener(listener);
+  }
+  
+  /**
+   * Registers the given listener with this instance.
+   * 
+   * @param listener an {@link EventChannelStateListener}.
+   * @see View#addEventChannelStateListener(EventChannelStateListener)
+   */
+  public void registerEventChannelStateListener(EventChannelStateListener listener){
+    _view.addEventChannelStateListener(listener);
   }
 
   /**

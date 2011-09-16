@@ -1,7 +1,9 @@
 package org.sapia.ubik.mcast;
 
+import org.sapia.ubik.mcast.EventChannelStateListener.EventChannelEvent;
 import org.sapia.ubik.net.ServerAddress;
 
+import java.lang.ref.SoftReference;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -25,12 +27,22 @@ public class View {
   private Map<NodeInfo, Long>    _addresses  = new ConcurrentHashMap<NodeInfo, Long>();
   private Map<String, NodeInfo>  _nodeToAddr = new ConcurrentHashMap<String, NodeInfo>();
   private long                   _timeout;
+  private List<SoftReference<EventChannelStateListener>> _listeners = Collections.synchronizedList(new ArrayList<SoftReference<EventChannelStateListener>>());
 
   /**
    * Constructor for View.
    */
   public View(long timeout) {
     _timeout = timeout;
+  }
+  
+  /**
+   * Adds the given listener to this instance, which will be kept in a {@link SoftReference}.
+   * 
+   * @param listener an {@link EventChannelStateListener}.
+   */
+  public void addEventChannelStateListener(EventChannelStateListener listener){
+    _listeners.add(new SoftReference<EventChannelStateListener>(listener));
   }
 
   /**
@@ -75,8 +87,10 @@ public class View {
    */
   void addHost(ServerAddress addr, String node) {
     NodeInfo info = new NodeInfo(addr, node);
-    _nodeToAddr.put(node, info);
     _addresses.put(info, new Long(System.currentTimeMillis()));
+    if(_nodeToAddr.put(node, info) == null) {
+      notifyListeners(new EventChannelEvent(node, addr), true);
+    }    
   }
 
   /**
@@ -108,6 +122,27 @@ public class View {
     for(NodeInfo dead: deadNodes){
       _addresses.remove(dead);
       _nodeToAddr.remove(dead.node);
+      notifyListeners(new EventChannelEvent(dead.node, dead.addr), false);
+    }
+  }
+  
+  private void notifyListeners(EventChannelEvent event, boolean added){
+    synchronized(_listeners){
+      for(int i = 0; i < _listeners.size(); i++){
+        SoftReference<EventChannelStateListener> listenerRef = _listeners.get(i);
+        EventChannelStateListener listener = listenerRef.get();
+        if(listener == null){
+          _listeners.remove(i);
+        }
+        else{
+          if(added){
+            listener.onDiscovered(event);
+          }
+          else{
+            listener.onDisappeared(event);
+          }
+        }
+      }
     }
   }
 
@@ -133,4 +168,5 @@ public class View {
       return addr.hashCode();
     }
   }
+  
 }

@@ -20,7 +20,7 @@ import org.sapia.ubik.rmi.server.Log;
  *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
  * </dl>
  */
-public class BroadcastDispatcherImpl /*extends Thread*/
+public class BroadcastDispatcherImpl
   implements BroadcastDispatcher {
   static final int        DEFAULT_BUFSZ = 5000;
   static final int        TTL       = 7;

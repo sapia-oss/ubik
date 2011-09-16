@@ -1,17 +1,16 @@
 package org.sapia.ubik.mcast;
 
 import java.lang.ref.SoftReference;
-import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.sapia.ubik.rmi.server.Log;
-import org.sapia.ubik.rmi.server.UIDGenerator;
 
 
 /**
@@ -32,10 +31,10 @@ import org.sapia.ubik.rmi.server.UIDGenerator;
  * </dl>
  */
 public class EventConsumer {
-  private static Random _rand                  = new Random();
+  private static Random _rand = new Random();
   private Map<String, List<SoftReference<AsyncEventListener>>>  _asyncListenersByEvent = new ConcurrentHashMap<String, List<SoftReference<AsyncEventListener>>>();
-  private Map<String, SoftReference<SyncEventListener>>   _syncListenersByEvent  = new ConcurrentHashMap<String, SoftReference<SyncEventListener>>();
-  private Map<Object, String>           _reverseMap            = new WeakHashMap<Object, String>();
+  private Map<String, SoftReference<SyncEventListener>>  _syncListenersByEvent  = new ConcurrentHashMap<String, SoftReference<SyncEventListener>>();
+  private Map<Object, String> _reverseMap = new WeakHashMap<Object, String>();
   private DomainName    _domain;
   private String        _node;
 
@@ -56,10 +55,7 @@ public class EventConsumer {
    * Internally creates a globally unique node identifier.
    */
   public EventConsumer(String domain) throws UnknownHostException {
-    this(new String("" +
-        (InetAddress.getLocalHost().getHostAddress().hashCode() ^
-        new Object().hashCode() ^ UIDGenerator.createdUID())) + "_" +
-      _rand.nextLong(), domain);
+    this(UUID.randomUUID().toString(), domain);
   }
 
   /**
