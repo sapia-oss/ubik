@@ -7,6 +7,10 @@ import java.io.InterruptedIOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
+import java.net.UnknownHostException;
+
+import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.util.Localhost;
 
 
 /**
@@ -26,21 +30,35 @@ public abstract class UDPServer extends Thread {
    * Constructor for UDPServer.
    */
   public UDPServer(String name, int soTimeout) throws java.net.SocketException {
-    super(name);
-    super.setDaemon(true);
-    _sock = new DatagramSocket();
-    _sock.setSoTimeout(soTimeout);
+    this(name, soTimeout, 0);
   }
 
   public UDPServer(String name, int soTimeout, int port)
     throws java.net.SocketException {
     super(name);
-    _sock = new DatagramSocket(port);
+    super.setDaemon(true);
+    try{
+      _sock = createSocket(port);
+    }catch(UnknownHostException e){
+      throw new IllegalStateException("Could not bind to local address", e);
+    }
     _sock.setSoTimeout(soTimeout);
   }
 
   public void setBufsize(int size) {
     _bufsize = size;
+  }
+  
+  
+  private static DatagramSocket createSocket(int port) throws UnknownHostException, SocketException{
+    DatagramSocket socket;
+    if(System.getProperty(Consts.IP_PATTERN_KEY) != null){
+      socket = new DatagramSocket(port, Localhost.getAnyLocalAddress());
+    }
+    else{
+      socket = new DatagramSocket(port);
+    }
+    return socket;
   }
 
   public int getPort() {

@@ -36,7 +36,7 @@ import org.sapia.ubik.rmi.server.Log;
 public class Localhost {
   
   private static String LOCALHOST = "0.0.0.0";
-  private static String LOOPBACK  = "127.0.0.1";
+  private static String LOOPBACK  = "127.0";
   private static Pattern _pattern;
   
   static{
@@ -73,7 +73,7 @@ public class Localhost {
           for (Enumeration<InetAddress> ips = iface.getInetAddresses(); ips.hasMoreElements(); ) {
             InetAddress ia = ips.nextElement();
             String addr = ia.getHostAddress();
-            if (addr.equals(LOCALHOST) || addr.equals(LOOPBACK)) {
+            if (addr.equals(LOCALHOST) || addr.startsWith(LOOPBACK)) {
               continue;
             }
             

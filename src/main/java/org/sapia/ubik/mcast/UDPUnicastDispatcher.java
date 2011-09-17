@@ -112,6 +112,7 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
 
     try {
       RemoteEvent       evt  = new RemoteEvent(null, type, data).setNode(_node);
+      evt.setUnicastAddress(_addr);
       InetServerAddress inet = (InetServerAddress) addr;
 
       if(Log.isDebug()){
@@ -140,7 +141,7 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
 
     RemoteEvent       evt = new RemoteEvent(null, type, data).setNode(_node)
                                                              .setSync();
-    evt.setUnicastAddress(this._addr);
+    evt.setUnicastAddress(_addr);
     InetServerAddress inet = (InetServerAddress) addr;
 
     try {
@@ -167,7 +168,7 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
     try{
       RemoteEvent       evt = new RemoteEvent(null, type, data).setNode(_node)
                                                                .setSync();
-      evt.setUnicastAddress(this._addr);
+      evt.setUnicastAddress(_addr);
 
       byte[]            bytes   = Util.toBytes(evt, bufSize());
       InetServerAddress current;

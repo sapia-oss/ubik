@@ -50,7 +50,7 @@ public interface EventChannelStateListener {
    * @param event an {@link EventChannelEvent} holding the unique identifier of 
    * the node that was detected as having disappeared.
    */
-  public void onDisappeared(EventChannelEvent event);
+  public void onDown(EventChannelEvent event);
   
   /**
    * Called when a remote node has been discovered.
@@ -58,5 +58,5 @@ public interface EventChannelStateListener {
    * @param event an {@link EventChannelEvent} holding the unique identifier of 
    * the node that was discovered.
    */
-  public void onDiscovered(EventChannelEvent event);
+  public void onUp(EventChannelEvent event);
 }

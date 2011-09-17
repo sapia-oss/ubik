@@ -70,14 +70,14 @@ public interface Consts {
   /**
    * This constant corresponds to the 'ubik.rmi.naming.mcast.heartbeat.timeout' property key. It
    * is used to determine the interval (in millis) after which nodes that haven't sent a heartbeat
-   * are considered down (defaults to 30000).
+   * are considered down (defaults to 60000).
    */
   public static final String MCAST_HEARTBEAT_TIMEOUT = "ubik.rmi.naming.mcast.heartbeat.timeout";    
   
   /**
    * This constant corresponds to the 'ubik.rmi.naming.mcast.heartbeat.interval' property key. It
    * is used to determine the interval (in millis) at which nodes send their heartbeat to the other nodes
-   * (defaults to 60000).
+   * (defaults to 20000).
    * <p>
    * The value of this property should consistent with the value given to the heartbeat timeout: it
    * should not be more.

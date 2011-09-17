@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.PropUtil;
 import org.sapia.ubik.rmi.server.Log;
 
 
@@ -30,9 +31,8 @@ import org.sapia.ubik.rmi.server.Log;
  */
 public class EventChannel {
   
-  public static final long DEFAULT_NODE_TIMEOUT = 60000;
-  public static final int  DEFAULT_SO_TIMEOUT   = 20000;
-  public static final int  DEFAULT_UDP_TIMEOUT  = 10000;
+  public static final long DEFAULT_NODE_TIMEOUT    = 60000;
+  public static final int  DEFAULT_UDP_SO_TIMEOUT  = 20000;
   
   static final String  DISCOVER_EVT    = "ubik/mcast/discover";
   static final String  PUBLISH_EVT     = "ubik/mcast/publish";
@@ -62,7 +62,11 @@ public class EventChannel {
     throws IOException {
     _consumer    = new EventConsumer(domain);
     _broadcast   = new BroadcastDispatcherImpl(_consumer, mcastHost, mcastPort);
-    _unicast     = new UDPUnicastDispatcher(DEFAULT_UDP_TIMEOUT, _consumer);
+    _unicast     = new UDPUnicastDispatcher(
+        PropUtil.getSystemProperties()
+          .getIntProperty(Consts.MCAST_HEARTBEAT_INTERVAL, DEFAULT_UDP_SO_TIMEOUT), 
+        _consumer
+    );
     init();
   }
 
@@ -80,7 +84,12 @@ public class EventChannel {
   public EventChannel(String domain, String mcastHost, int mcastPort,
     int unicastPort) throws IOException {
     _consumer    = new EventConsumer(domain);
-    _unicast     = new UDPUnicastDispatcher(DEFAULT_UDP_TIMEOUT, unicastPort, _consumer);
+    _unicast     = new UDPUnicastDispatcher(
+        PropUtil.getSystemProperties()
+          .getIntProperty(Consts.MCAST_HEARTBEAT_INTERVAL, DEFAULT_UDP_SO_TIMEOUT), 
+        unicastPort, 
+        _consumer
+    );
     _broadcast   = new BroadcastDispatcherImpl(_consumer, mcastHost, mcastPort);
     init();    
   }
@@ -329,6 +338,7 @@ public class EventChannel {
       if (_owner._address != null) {
         for (int i = 0; i < siblings.size(); i++) {
           try {
+            Log.debug(getClass(), String.format("Sending heartbeat to %s", _owner._address));
             _owner.dispatch((ServerAddress) siblings.get(i), HEARTBEAT_EVT,
               _owner._address);
           } catch (IOException e) {
@@ -362,29 +372,30 @@ public class EventChannel {
         } catch (IOException e) {
           e.printStackTrace();
         }
-      } else if (evt.getType().equals(PUBLISH_EVT)) {
+      } else if (evt.getType().equals(HEARTBEAT_EVT)) {
+        try {
+          ServerAddress addr = (ServerAddress) evt.getData();
+
+          _owner._view.heartbeat(addr, evt.getNode());
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
+      } else {
         try {
           ServerAddress addr = (ServerAddress) evt.getData();
           if(addr == null){
             return;
           }          
 
-          _owner._view.addHost(addr, evt.getNode());
-          _owner.dispatch(false, DISCOVER_EVT, _owner._address);
-
-          List<DiscoveryListener> listeners = _owner._discoListeners;
-
-          for (int i = 0; i < listeners.size(); i++) {
-            ((DiscoveryListener) listeners.get(i)).onDiscovery(addr, evt);
+          if(_owner._view.addHost(addr, evt.getNode())){
+            _owner.dispatch(false, DISCOVER_EVT, _owner._address);
+  
+            List<DiscoveryListener> listeners = _owner._discoListeners;
+  
+            for (int i = 0; i < listeners.size(); i++) {
+              ((DiscoveryListener) listeners.get(i)).onDiscovery(addr, evt);
+            }
           }
-        } catch (IOException e) {
-          e.printStackTrace();
-        }
-      } else if (evt.getType().equals(HEARTBEAT_EVT)) {
-        try {
-          ServerAddress addr = (ServerAddress) evt.getData();
-
-          _owner._view.heartbeat(addr, evt.getNode());
         } catch (IOException e) {
           e.printStackTrace();
         }

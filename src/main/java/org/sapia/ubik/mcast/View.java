@@ -50,12 +50,14 @@ public class View {
    *
    * @return a <code>List</code> of <code>ServerAddress</code>es.
    */
-  public synchronized List<ServerAddress> getHosts() {
-    List<ServerAddress> toReturn = new ArrayList<ServerAddress>(_addresses.size());
-    for(NodeInfo info : _addresses.keySet()){
-      toReturn.add(info.addr);
+  public List<ServerAddress> getHosts() {
+    synchronized(_addresses){
+      List<ServerAddress> toReturn = new ArrayList<ServerAddress>(_addresses.size());
+      for(NodeInfo info : _addresses.keySet()){
+        toReturn.add(info.addr);
+      }
+      return toReturn;
     }
-    return toReturn;
   }
 
   /**
@@ -79,18 +81,28 @@ public class View {
   }
   
   /**
+   * @return this instance's heartbeat timeout.
+   */
+  public long getTimeout() {
+    return _timeout;
+  }
+  
+  /**
    * Adds the given address to this instance.
    *
    * @param addr the <code>ServerAddress</code> corresponding to a remote
    * <code>EventChannel</code>.
    * @param node node identifier.
    */
-  void addHost(ServerAddress addr, String node) {
+  boolean addHost(ServerAddress addr, String node) {
     NodeInfo info = new NodeInfo(addr, node);
-    _addresses.put(info, new Long(System.currentTimeMillis()));
-    if(_nodeToAddr.put(node, info) == null) {
-      notifyListeners(new EventChannelEvent(node, addr), true);
-    }    
+    synchronized(_addresses){
+      if(_addresses.put(info, new Long(System.currentTimeMillis())) == null){
+        _nodeToAddr.put(node, info);
+        return true;
+      }    
+    }
+    return false;
   }
 
   /**
@@ -101,8 +113,13 @@ public class View {
    * @param node node identifier.
    */
   void heartbeat(ServerAddress addr, String node) {
-    _addresses.put(new NodeInfo(addr, node),
-      new Long(System.currentTimeMillis()));
+    synchronized(_addresses){
+      NodeInfo info = new NodeInfo(addr, node);
+      if(_addresses.put(info, new Long(System.currentTimeMillis())) == null){
+        _nodeToAddr.put(node, info);
+        notifyListeners(new EventChannelEvent(node, addr), true);
+      }
+    }
   }
 
   /**
@@ -110,19 +127,23 @@ public class View {
    */
   void removeDeadHosts() {
     
-    List<NodeInfo> deadNodes = new ArrayList<NodeInfo>(_addresses.size() / 2);
+    synchronized(_addresses){
     
-    for(Map.Entry<NodeInfo, Long> entry:_addresses.entrySet()){
-        if ((System.currentTimeMillis() -
-              entry.getValue().longValue()) > _timeout) {
-          deadNodes.add(entry.getKey());
-        }
-    }
+      List<NodeInfo> deadNodes = new ArrayList<NodeInfo>(_addresses.size() / 2);
     
-    for(NodeInfo dead: deadNodes){
-      _addresses.remove(dead);
-      _nodeToAddr.remove(dead.node);
-      notifyListeners(new EventChannelEvent(dead.node, dead.addr), false);
+      for(Map.Entry<NodeInfo, Long> entry:_addresses.entrySet()){
+          if ((System.currentTimeMillis() -
+                entry.getValue().longValue()) > _timeout) {
+            deadNodes.add(entry.getKey());
+          }
+      }
+    
+      for(NodeInfo dead: deadNodes){
+        
+        _addresses.remove(dead);
+        _nodeToAddr.remove(dead.node);
+        notifyListeners(new EventChannelEvent(dead.node, dead.addr), false);
+      }
     }
   }
   
@@ -136,10 +157,10 @@ public class View {
         }
         else{
           if(added){
-            listener.onDiscovered(event);
+            listener.onUp(event);
           }
           else{
-            listener.onDisappeared(event);
+            listener.onDown(event);
           }
         }
       }
@@ -165,7 +186,7 @@ public class View {
     }
 
     public int hashCode() {
-      return addr.hashCode();
+      return addr.hashCode() * 31 ^ node.hashCode() * 31;
     }
   }
   

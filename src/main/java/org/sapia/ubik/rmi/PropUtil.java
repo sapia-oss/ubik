@@ -161,6 +161,13 @@ public class PropUtil {
     return val;
   }  
   
+  /**
+   * @return an instance of this class encapsulating system {@link Properties}.
+   */
+  public static PropUtil getSystemProperties(){
+    return new PropUtil().addProperties(System.getProperties());
+  }
+  
   private String lookup(String key, boolean throwExcIfNotFound){
     Properties current;
     String val;

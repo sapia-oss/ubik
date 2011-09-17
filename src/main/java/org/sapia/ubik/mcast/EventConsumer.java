@@ -31,7 +31,6 @@ import org.sapia.ubik.rmi.server.Log;
  * </dl>
  */
 public class EventConsumer {
-  private static Random _rand = new Random();
   private Map<String, List<SoftReference<AsyncEventListener>>>  _asyncListenersByEvent = new ConcurrentHashMap<String, List<SoftReference<AsyncEventListener>>>();
   private Map<String, SoftReference<SyncEventListener>>  _syncListenersByEvent  = new ConcurrentHashMap<String, SoftReference<SyncEventListener>>();
   private Map<Object, String> _reverseMap = new WeakHashMap<Object, String>();
