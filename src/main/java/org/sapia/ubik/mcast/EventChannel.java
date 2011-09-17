@@ -6,6 +6,9 @@ import java.io.IOException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
+
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.PropUtil;
 import org.sapia.ubik.rmi.server.Log;
@@ -31,18 +34,19 @@ import org.sapia.ubik.rmi.server.Log;
  */
 public class EventChannel {
   
-  public static final long DEFAULT_NODE_TIMEOUT    = 60000;
-  public static final int  DEFAULT_UDP_SO_TIMEOUT  = 20000;
+  public static final long DEFAULT_HEARTBEAT_TIMEOUT    = 60000;
+  public static final int  DEFAULT_HEARTBEAT_INTERVAL   = 20000;
   
   static final String  DISCOVER_EVT    = "ubik/mcast/discover";
   static final String  PUBLISH_EVT     = "ubik/mcast/publish";
   static final String  HEARTBEAT_EVT   = "ubik/mcast/heartbeat";
   
+  private Timer                   _heartbeatTimer = new Timer("EventChannel.Timer", true);
   private BroadcastDispatcher     _broadcast;
   private UnicastDispatcher       _unicast;
   private EventConsumer           _consumer;
   private ChannelEventListener    _listener;
-  private View                    _view           = new View(DEFAULT_NODE_TIMEOUT);
+  private View                    _view           = new View(DEFAULT_HEARTBEAT_TIMEOUT);
   private ServerAddress           _address;
   private List<DiscoveryListener> _discoListeners = new ArrayList<DiscoveryListener>();
   private boolean                 _started;
@@ -64,7 +68,7 @@ public class EventChannel {
     _broadcast   = new BroadcastDispatcherImpl(_consumer, mcastHost, mcastPort);
     _unicast     = new UDPUnicastDispatcher(
         PropUtil.getSystemProperties()
-          .getIntProperty(Consts.MCAST_HEARTBEAT_INTERVAL, DEFAULT_UDP_SO_TIMEOUT), 
+          .getIntProperty(Consts.MCAST_HEARTBEAT_INTERVAL, DEFAULT_HEARTBEAT_INTERVAL), 
         _consumer
     );
     init();
@@ -86,7 +90,7 @@ public class EventChannel {
     _consumer    = new EventConsumer(domain);
     _unicast     = new UDPUnicastDispatcher(
         PropUtil.getSystemProperties()
-          .getIntProperty(Consts.MCAST_HEARTBEAT_INTERVAL, DEFAULT_UDP_SO_TIMEOUT), 
+          .getIntProperty(Consts.MCAST_HEARTBEAT_INTERVAL, DEFAULT_HEARTBEAT_INTERVAL), 
         unicastPort, 
         _consumer
     );
@@ -128,12 +132,6 @@ public class EventChannel {
    * @throws IOException if an IO problem occurs starting this instance.
    */
   public void start() throws IOException {
-    _listener = new ChannelEventListener(this);
-    _consumer.registerAsyncListener(PUBLISH_EVT, _listener);
-    _consumer.registerAsyncListener(DISCOVER_EVT, _listener);
-    _consumer.registerAsyncListener(HEARTBEAT_EVT, _listener);
-    _unicast.setSoTimeoutListener(_listener);
-    _unicast.setBufsize(2000);
     _broadcast.start();
     _unicast.start();
     _address = _unicast.getAddress();
@@ -154,6 +152,7 @@ public class EventChannel {
    * Closes this instance.
    */
   public void close() {
+    _heartbeatTimer.cancel();
     _broadcast.close();
     _unicast.close();
     _closed = true;
@@ -319,28 +318,18 @@ public class EventChannel {
     return _broadcast.getNode();
   }
 
-  public static class ChannelEventListener implements AsyncEventListener,
-    SocketTimeoutListener {
-    private EventChannel _owner;
+  public class ChannelEventListener implements AsyncEventListener {
 
-    ChannelEventListener(EventChannel channel) {
-      _owner = channel;
-    }
+    private void checkDeadHosts() {
+      _view.removeDeadHosts();
 
-    /**
-     * @see org.sapia.ubik.mcast.SocketTimeoutListener#handleSoTimeout()
-     */
-    public void handleSoTimeout() {
-      _owner._view.removeDeadHosts();
+      List<ServerAddress> siblings = _view.getHosts();
 
-      List<ServerAddress> siblings = _owner._view.getHosts();
-
-      if (_owner._address != null) {
+      if (_address != null) {
         for (int i = 0; i < siblings.size(); i++) {
           try {
-            Log.debug(getClass(), String.format("Sending heartbeat to %s", _owner._address));
-            _owner.dispatch((ServerAddress) siblings.get(i), HEARTBEAT_EVT,
-              _owner._address);
+            if(Log.isDebug()) Log.debug(getClass(), String.format("Sending heartbeat to %s", _address));
+            dispatch((ServerAddress) siblings.get(i), HEARTBEAT_EVT, _address);
           } catch (IOException e) {
             e.printStackTrace();
 
@@ -362,9 +351,9 @@ public class EventChannel {
           if(addr == null){
             return;
           }
-          _owner._view.addHost(addr, evt.getNode());
+          _view.addHost(addr, evt.getNode());
 
-          List<DiscoveryListener> listeners = _owner._discoListeners;
+          List<DiscoveryListener> listeners = _discoListeners;
 
           for (int i = 0; i < listeners.size(); i++) {
             ((DiscoveryListener) listeners.get(i)).onDiscovery(addr, evt);
@@ -376,7 +365,7 @@ public class EventChannel {
         try {
           ServerAddress addr = (ServerAddress) evt.getData();
 
-          _owner._view.heartbeat(addr, evt.getNode());
+          _view.heartbeat(addr, evt.getNode());
         } catch (IOException e) {
           e.printStackTrace();
         }
@@ -387,10 +376,10 @@ public class EventChannel {
             return;
           }          
 
-          if(_owner._view.addHost(addr, evt.getNode())){
-            _owner.dispatch(false, DISCOVER_EVT, _owner._address);
+          if(_view.addHost(addr, evt.getNode())){
+            dispatch(false, DISCOVER_EVT, _address);
   
-            List<DiscoveryListener> listeners = _owner._discoListeners;
+            List<DiscoveryListener> listeners = _discoListeners;
   
             for (int i = 0; i < listeners.size(); i++) {
               ((DiscoveryListener) listeners.get(i)).onDiscovery(addr, evt);
@@ -404,6 +393,12 @@ public class EventChannel {
   }
   
   private void init(){
+    _listener = new ChannelEventListener();
+    _consumer.registerAsyncListener(PUBLISH_EVT, _listener);
+    _consumer.registerAsyncListener(DISCOVER_EVT, _listener);
+    _consumer.registerAsyncListener(HEARTBEAT_EVT, _listener);
+    _unicast.setBufsize(2000);
+    
     String bufsizeStr = System.getProperty(Consts.MCAST_BUFSIZE_KEY);
     if(bufsizeStr != null){
       try{
@@ -417,13 +412,20 @@ public class EventChannel {
       }
     }
     
-    String heartBeatTimeout = System.getProperty(Consts.MCAST_HEARTBEAT_TIMEOUT);
-    if(heartBeatTimeout != null){
-      try{
-        _view.setTimeout(Long.parseLong(heartBeatTimeout));
-      }catch(NumberFormatException e){
-        // use default;
-      }
-    }
+    PropUtil props = PropUtil.getSystemProperties();
+    
+    _view.setTimeout(props.getLongProperty(Consts.MCAST_HEARTBEAT_TIMEOUT, DEFAULT_HEARTBEAT_TIMEOUT));
+    
+    _heartbeatTimer.schedule(
+        new TimerTask() {
+          @Override
+          public void run() {
+            _listener.checkDeadHosts();
+          }
+        }, 0, 
+        PropUtil.getSystemProperties()
+                .getLongProperty(Consts.MCAST_HEARTBEAT_INTERVAL, DEFAULT_HEARTBEAT_INTERVAL)
+    );
+    
   }
 }

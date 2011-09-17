@@ -139,7 +139,6 @@ public class View {
       }
     
       for(NodeInfo dead: deadNodes){
-        
         _addresses.remove(dead);
         _nodeToAddr.remove(dead.node);
         notifyListeners(new EventChannelEvent(dead.node, dead.addr), false);
