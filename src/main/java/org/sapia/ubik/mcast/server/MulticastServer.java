@@ -3,13 +3,15 @@ package org.sapia.ubik.mcast.server;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InterruptedIOException;
-
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
+import java.net.NetworkInterface;
 import java.net.SocketException;
+
 import org.sapia.ubik.mcast.ByteArrayPool;
 import org.sapia.ubik.rmi.server.Log;
+import org.sapia.ubik.util.Localhost;
 
 
 /**
@@ -39,6 +41,9 @@ public abstract class MulticastServer extends Thread {
     _group      = InetAddress.getByName(mcastAddress);
     _groupStr   = mcastAddress;
     _sock       = new MulticastSocket(mcastPort);
+    if (Localhost.isIpPatternDefined()) {
+        _sock.setNetworkInterface(NetworkInterface.getByInetAddress(Localhost.getAnyLocalAddress()));
+    }
     _sock.setSoTimeout(soTimeout);
     _sock.setTimeToLive(ttl);
     _sock.joinGroup(_group);
