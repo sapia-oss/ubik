@@ -48,7 +48,7 @@ public class JNDIServer {
    * If not specified, the following are used for multicast address and port, respectively:
    *
    * <ul>
-   *   <li>224.0.0.1
+   *   <li>231.173.5.7
    *   <li>5454
    * </ul>
    */

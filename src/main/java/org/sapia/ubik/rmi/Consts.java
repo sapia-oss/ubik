@@ -49,10 +49,10 @@ public interface Consts {
   public static final String IP_PATTERN_KEY = "ubik.rmi.address-pattern";
 
   /**
-   * This constant corresponds to the 'ubik.rmi.naming.mcast.post' property key. It
+   * This constant corresponds to the 'ubik.rmi.naming.mcast.port' property key. It
    * is used to bind a multicast port value in a properties/map instance.
    */
-  public static final String MCAST_PORT_KEY = "ubik.rmi.naming.mcast.post";
+  public static final String MCAST_PORT_KEY = "ubik.rmi.naming.mcast.port";
 
   /**
    * This constant corresponds to the 'ubik.rmi.naming.mcast.address' property key. It

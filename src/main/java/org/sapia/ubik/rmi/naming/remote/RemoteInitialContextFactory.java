@@ -83,7 +83,7 @@ import org.sapia.ubik.rmi.server.Log;
  * <pre>
  *   Properties props = new Properties();
  *
- *   props.setProperty("ubik.rmi.naming.mcast.address", "224.0.0.10");
+ *   props.setProperty("ubik.rmi.naming.mcast.address", "231.173.5.7");
  *
  *   props.setProperty("ubik.rmi.naming.mcast.port", "6565");
  *
@@ -92,15 +92,13 @@ import org.sapia.ubik.rmi.server.Log;
  *   props.setProperty(InitialContext.INITIAL_CONTEXT_FACTORY,
  *                      ReliableInitialContextFactory.class.getName());
  *
- *   props.setProperty(
- *
  *   InitialContext         ctx = new InitialContext(props);
  * </pre>
  *
  * If not specified, the following are used for multicast address and port, respectively:
  *
  * <ul>
- *   <li>224.0.0.1
+ *   <li>231.173.5.7
  *   <li>5454
  * </ul>
  *
@@ -159,11 +157,11 @@ public class RemoteInitialContextFactory implements InitialContextFactory, Const
     String mcastAddr = org.sapia.ubik.rmi.Consts.DEFAULT_MCAST_ADDR;
     int    mcastPort = org.sapia.ubik.rmi.Consts.DEFAULT_MCAST_PORT;
     
-    if (props.get(Consts.MCAST_ADDR_KEY) != null) {
+    if (props.containsKey(Consts.MCAST_ADDR_KEY)) {
       mcastAddr = (String) props.get(MCAST_ADDR_KEY);
     }
     
-    if (props.get(MCAST_PORT_KEY) != null) {
+    if (props.containsKey(MCAST_PORT_KEY)) {
       try {
         mcastPort = Integer.parseInt((String) props.get(MCAST_PORT_KEY));
       } catch (NumberFormatException e) {

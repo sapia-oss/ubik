@@ -30,8 +30,6 @@ public class JNDIServerHelper implements Consts {
   public static Args parseArgs(String[] args) {
     int    port         = DEFAULT_PORT;
     String domain       = DEFAULT_DOMAIN;
-    String mcastAddress = org.sapia.ubik.rmi.Consts.DEFAULT_MCAST_ADDR;
-    int    mcastPort    = org.sapia.ubik.rmi.Consts.DEFAULT_MCAST_PORT;
 
     if (args.length > 0) {
       if (args[0].equals("-h")) {
@@ -61,22 +59,21 @@ public class JNDIServerHelper implements Consts {
       }
     }
 
+    String portProp = null;
+    int mcastPort;
+    String mcastAddress;
+    
     try {
-      if (System.getProperty(org.sapia.ubik.rmi.Consts.MCAST_PORT_KEY) != null) {
-        mcastPort = Integer.parseInt(System.getProperty(
-              org.sapia.ubik.rmi.Consts.MCAST_PORT_KEY));
-      }
+      portProp = System.getProperty(org.sapia.ubik.rmi.Consts.MCAST_PORT_KEY, Integer.toString(Consts.DEFAULT_MCAST_PORT));
+      mcastPort = Integer.parseInt(portProp);
+      
     } catch (NumberFormatException e) {
-      System.out.println("Invalid multicast port: " +
-        System.getProperty(org.sapia.ubik.rmi.Consts.MCAST_PORT_KEY));
+      System.out.println("Invalid multicast port: " + portProp);
       help();
-
       return null;
     }
 
-    if (System.getProperty(org.sapia.ubik.rmi.Consts.MCAST_ADDR_KEY) != null) {
-      mcastAddress = System.getProperty(org.sapia.ubik.rmi.Consts.MCAST_ADDR_KEY);
-    }
+    mcastAddress = System.getProperty(org.sapia.ubik.rmi.Consts.MCAST_ADDR_KEY, Consts.DEFAULT_MCAST_ADDR);
 
     return new Args(port, domain, mcastAddress, mcastPort);
   }
