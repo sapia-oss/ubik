@@ -1,10 +1,9 @@
 package org.sapia.ubik.rmi.examples.time;
 
-import org.sapia.ubik.rmi.server.Stateless;
-
 import java.text.SimpleDateFormat;
-
 import java.util.Date;
+
+import org.sapia.ubik.rmi.server.Stateless;
 
 
 /**

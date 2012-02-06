@@ -1,7 +1,9 @@
 package org.sapia.ubik.rmi;
 
+import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * This annotation allows specifying remote interface directly on concrete remote classes.
@@ -10,6 +12,7 @@ import java.lang.annotation.RetentionPolicy;
  *
  */
 @Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
 public @interface Remote {
 
   /**

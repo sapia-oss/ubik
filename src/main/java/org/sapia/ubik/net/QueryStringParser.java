@@ -1,6 +1,10 @@
 package org.sapia.ubik.net;
 
-import java.util.*;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.StringTokenizer;
+import java.util.Vector;
 
 import javax.naming.CompositeName;
 import javax.naming.Name;
@@ -10,7 +14,7 @@ import javax.naming.NamingException;
 
 /**
  * Parses query strings to object representations. It can be used to
- * create <code>QueryString</code> or <code>Name</code> instances.
+ * create {@link QueryString} or {@link Name} instances.
  * <p>
  * From this class' point of view, a query string/name is made of paths
  * delimited by '/'; it can optionally be followed by a list of name-value
@@ -21,11 +25,6 @@ import javax.naming.NamingException;
  * @see org.sapia.ubik.net.QueryString
  *
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 public class QueryStringParser implements NameParser {
   static final char   QMARK = '?';

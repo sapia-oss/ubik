@@ -1,7 +1,7 @@
 package org.sapia.ubik.rmi.examples.time;
 
+import org.sapia.ubik.log.Log;
 import org.sapia.ubik.rmi.server.Hub;
-import org.sapia.ubik.rmi.server.Log;
 
 
 /**

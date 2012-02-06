@@ -9,25 +9,24 @@ import java.util.concurrent.Executors;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.filter.executor.ExecutorFilter;
 import org.apache.mina.transport.socket.nio.SocketAcceptor;
+import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.TcpPortSelector;
-import org.sapia.ubik.rmi.server.Log;
 import org.sapia.ubik.rmi.server.Server;
 
 /**
  * This class implements the {@link Server} interface on top of a {@link SocketAcceptor}.
- * <p>
  * 
  * @author Yanick Duchesne
  * 
  */
 class NioServer implements Server{
 
-  private SocketAcceptor _acceptor;
-  private InetSocketAddress _inetAddr;
-  private NioAddress _addr;
-  private NioHandler _handler;
-  private ExecutorService _executor;
+  private SocketAcceptor    acceptor;
+  private InetSocketAddress inetAddr;
+  private NioAddress        addr;
+  private NioHandler        handler;
+  private ExecutorService   executor;
 
   /**
    * This constructor is called by a {@link NioTcpTransportProvider} instance. The <code>maxThreads</code> 
@@ -44,27 +43,27 @@ class NioServer implements Server{
    * @throws IOException if a problem occurs while creating this instance.
    */
   NioServer(InetSocketAddress inetAddr, int bufsize, int maxThreads) throws IOException {
-    _acceptor = new SocketAcceptor();
+    this.acceptor = new SocketAcceptor();
     if(maxThreads <= 0){
       Log.debug(getClass(), "Using a cached thread pool (no max threads)");
-      _executor = Executors.newCachedThreadPool();
+      this.executor = Executors.newCachedThreadPool();
     }
     else{
       Log.debug(getClass(), "Using maximum number of threads: " + maxThreads);      
-      _executor = Executors.newFixedThreadPool(maxThreads);
+      this.executor = Executors.newFixedThreadPool(maxThreads);
     }
-    _acceptor.getFilterChain().addLast("protocol", new ProtocolCodecFilter(new NioCodecFactory()));
-    _acceptor.getFilterChain().addLast("threads", new ExecutorFilter(_executor));    
+    acceptor.getFilterChain().addLast("protocol", new ProtocolCodecFilter(new NioCodecFactory()));
+    acceptor.getFilterChain().addLast("threads", new ExecutorFilter(executor));    
     
     if(inetAddr.getPort() != 0){
-      _inetAddr = inetAddr;  
+      this.inetAddr = inetAddr;  
     }
     else{
       int randomPort = new TcpPortSelector().select(inetAddr.getAddress().getHostAddress());
-      _inetAddr = new InetSocketAddress(inetAddr.getAddress().getHostAddress(), randomPort);
+      inetAddr = new InetSocketAddress(inetAddr.getAddress().getHostAddress(), randomPort);
     }
-    _addr = new NioAddress(_inetAddr.getAddress().getHostAddress(), _inetAddr.getPort());
-    _handler = new NioHandler(_addr);    
+    addr = new NioAddress(inetAddr.getAddress().getHostAddress(), inetAddr.getPort());
+    handler = new NioHandler(addr);    
   }
   
   /**
@@ -78,7 +77,7 @@ class NioServer implements Server{
    * @see org.sapia.ubik.rmi.server.Server#getServerAddress()
    */
   public ServerAddress getServerAddress() {
-    return _addr;
+    return addr;
   }
 
   /**
@@ -86,7 +85,7 @@ class NioServer implements Server{
    */
   public void start() throws RemoteException {
     try {
-      _acceptor.bind(_inetAddr, _handler);
+      acceptor.bind(inetAddr, handler);
     } catch(IOException e) {
       throw new RemoteException("Could not start acceptor", e);
     }
@@ -96,7 +95,7 @@ class NioServer implements Server{
    * @see org.sapia.ubik.rmi.server.Server#close()
    */
   public void close() {
-    _acceptor.unbind(_inetAddr);    
-    //_executor.shutdown();
+    acceptor.unbind(inetAddr);    
+    executor.shutdown();
   }
 }

@@ -24,6 +24,7 @@ public interface NamingService {
    * 
    * @param name the name under which to bind the object.
    * @param o the object to bind.
+   * @throws NamingException if a problem occurs performing this operation.
    */
   public void bind(String name, Object o) throws NamingException;
 
@@ -31,21 +32,23 @@ public interface NamingService {
    * Looks up the object under the given name.
    * 
    * @param name the name of the remote object to lookup.
+   * @return this {@link Object} corresponding to the given name.
+   * @throws NameNotFoundException if no object corresponds to the given name.
+   * @throws NamingException if a problem occurs performing this operation.
    */
-  public Object lookup(String name) throws NamingException,
-      NameNotFoundException;
+  public Object lookup(String name) throws NamingException, NameNotFoundException;
   
   /**
    * Registers the given listener with this instance.
    * 
-   * @param listener a <code>ServiceDiscoListener</code>.
+   * @param listener a {@link ServiceDiscoListener}.
    */
   public void register(ServiceDiscoListener listener);
   
   /**
    * Unregisters the given listener from this instance.
    * 
-   * @param listener a <code>ServiceDiscoListener</code>.
+   * @param listener a {@link ServiceDiscoListener}.
    */
   public void unregister(ServiceDiscoListener listener);  
 

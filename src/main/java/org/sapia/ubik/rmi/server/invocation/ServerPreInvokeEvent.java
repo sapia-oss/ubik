@@ -1,41 +1,36 @@
 package org.sapia.ubik.rmi.server.invocation;
 
 import org.sapia.ubik.rmi.interceptor.Event;
+import org.sapia.ubik.rmi.server.command.InvokeCommand;
 
 
 /**
- * An event signaling that a remote method call has been
- * received on the server-side.
+ * An event signaling that a remote method call has been received on the server-side.
  *
  * @author Yanick
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 public class ServerPreInvokeEvent implements Event {
-  private InvokeCommand _cmd;
-  private Object        _target;
-  private long          _start = System.currentTimeMillis();
+  private InvokeCommand cmd;
+  private Object        target;
+  private long          start = System.currentTimeMillis();
 
   /**
    * @param cmd the command representing the method invocation that will be performed.
    * @param target the object on which the invocation will be performed.
    */
-  ServerPreInvokeEvent(InvokeCommand cmd, Object target) {
-    _cmd      = cmd;
-    _target   = target;
+  public ServerPreInvokeEvent(InvokeCommand cmd, Object target) {
+    this.cmd      = cmd;
+    this.target   = target;
   }
 
   /**
    * Returns the command that represents the method invocation that will
    * be performed.
    *
-   * @return an <code>InvokeCommand</code>.
+   * @return an {@link InvokeCommand}.
    */
   public InvokeCommand getInvokeCommand() {
-    return _cmd;
+    return cmd;
   }
 
   /**
@@ -45,16 +40,16 @@ public class ServerPreInvokeEvent implements Event {
    * @param target a new target on which to perform the invocation.
    */
   public void setTarget(Object target) {
-    _target = target;
+    this.target = target;
   }
 
   /**
    * Returns the object on which to perform the method call.
    *
-   * @return an <code>Object</code>.
+   * @return an {@link Object}.
    */
   public Object getTarget() {
-    return _target;
+    return target;
   }
 
   /**
@@ -64,6 +59,6 @@ public class ServerPreInvokeEvent implements Event {
    * @return a time in milliseconds.
    */
   public long getInvokeTime() {
-    return _start;
+    return start;
   }
 }

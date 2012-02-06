@@ -1,18 +1,17 @@
 package org.sapia.ubik.rmi.examples;
 
+import java.rmi.RemoteException;
+import java.util.Properties;
+
+import javax.naming.InitialContext;
+
+import org.sapia.ubik.log.Log;
 import org.sapia.ubik.rmi.naming.remote.JNDIServer;
 import org.sapia.ubik.rmi.naming.remote.RemoteInitialContextFactory;
 import org.sapia.ubik.rmi.naming.remote.discovery.ServiceDiscoListener;
 import org.sapia.ubik.rmi.naming.remote.discovery.ServiceDiscoveryEvent;
 import org.sapia.ubik.rmi.naming.remote.proxy.ReliableLocalContext;
-import org.sapia.ubik.rmi.server.Log;
 import org.sapia.ubik.rmi.server.Stateless;
-
-import java.rmi.RemoteException;
-
-import java.util.Properties;
-
-import javax.naming.*;
 
 
 /**

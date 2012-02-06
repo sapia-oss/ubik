@@ -7,28 +7,29 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
-import org.sapia.ubik.rmi.server.Log;
+import org.sapia.ubik.log.Category;
+import org.sapia.ubik.log.Log;
+import org.sapia.ubik.net.ThreadInterruptedException;
 
 
 /**
  * This class is the main server socket that multiplexes the traditionnal
- * <code>java.net.ServerSocket</code>. That means that it listens on the port of the
+ * {@link java.net.ServerSocket}. That means that it listens on the port of the
  * server socket and it provides a mechanism to register different handlers for
  * these new incoming socket connections. These handlers are called socket connectors
  * and they can be used to process multiple types of data streams over the same socket.<p>
  *
- * For instance, using this <code>MultiplexServerSocket</code> you could handle serialized
+ * For instance, using this {@link MultiplexServerSocket} you could handle serialized
  * Java objects and HTTP requests using two different connectors (two distinct handling
  * logic), same host/port. This is achieved through a read-ahead on the incoming stream of data
  * from a new client socket connection. When a new incoming connection is requested by a client,
- * all the registered <code>StreamSelector</code>s are used to determine which socket connector
+ * all the registered {@link StreamSelector}s are used to determine which socket connector
  * will handle the new connection.<p>
  *
- * The internals of this <code>MultiplexServerSocket</code> are simple. An instance of this class
+ * The internals of this {@link MultiplexServerSocket} are simple: an instance of this class
  * works on an asynchronous process were new socket connections are first accepted, and then selected.
  * These two steps are described as follows:
  * <ol>
@@ -42,14 +43,14 @@ import org.sapia.ubik.rmi.server.Log;
  *       handles the new socket connection; if none of the registered connectors is.
  *   </li>
  * </ol>
- * To perform this process, the <code>MultiplexServerSocket</code> contains two distinct pools of
- * threads that are configurable using the <code>setAcceptorDaemonThread(int)</code> and
- * <code>setSelectorDaemonThread(int)</code> methods.<p>
+ * To perform this process, the {@link MultiplexServerSocket} contains two distinct pools of
+ * threads that are configurable using the {@link #setAcceptorDaemonThread(int)} and
+ * {@link #setSelectorDaemonThread(int)} methods.<p>
  *
- * The primary goal of the <code>MultiplexServerSocket</code> was to keep the "standard" (non-NIO)
+ * The primary goal of this class is to keep the "standard" (non-NIO)
  * programming model of the JDK regarding socket handling. Whether you use this server socket
  * directly or you use a socket connector, the logic is still the same for the client that
- * receives new incoming connections: it calls an <code>accept()</code> method that blocks
+ * receives new incoming connections: it calls an {@link #accept()} method that blocks
  * until a new connection is made. For integration with actual running systems, an adapter
  * is available to make a socket connector look like a server socket. We used that strategy
  * with the open-source Simple HTTP server and it worked transparently and fluidly.
@@ -59,13 +60,6 @@ import org.sapia.ubik.rmi.server.Log;
  * @see ServerSocketAdapter
  * @see StreamSelector
  * @author <a href="mailto:jc@sapia-oss.org">Jean-Cedric Desrochers</a>
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2004 <a href="http://www.sapia-oss.org">
- *     Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *     <a href="http://www.sapia-oss.org/license.html" target="sapia-license">license page</a>
- *     at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 public class MultiplexServerSocket extends ServerSocket implements Runnable {
   /**
@@ -82,6 +76,11 @@ public class MultiplexServerSocket extends ServerSocket implements Runnable {
    * The default number of selector daemon thread used to accept connections.
    */
   public static final short DEFAULT_SELECTOR_DAEMON_THREAD = 3;
+  
+  /**
+   * This instance's log.
+   */
+  private Category log = Log.createCategory(getClass());
 
   /** The list of created connectors that can handle new connections on this server. */
   private List<MultiplexSocketConnector> _theConnectors = new ArrayList<MultiplexSocketConnector>();
@@ -172,6 +171,14 @@ public class MultiplexServerSocket extends ServerSocket implements Runnable {
     throws IOException {
     super(port, backlog, bindAddr);
   }
+  
+  @Override
+  public synchronized void setSoTimeout(int timeout) throws SocketException {
+    super.setSoTimeout(timeout);
+    if(_theDefaultConnector != null) {
+      _theDefaultConnector.getQueue().setSoTimeout(timeout);
+    }
+  }
 
   /**
    * Returns the size of the buffer used to pre-read the incoming bytes of the
@@ -256,7 +263,7 @@ public class MultiplexServerSocket extends ServerSocket implements Runnable {
   /**
    * This factory method creates a socket connector through which a client will be able
    * to receive incoming socket connections. The stream selector passed in will be used
-   * y this multiplex server socket to determine if an incoming socket connection must
+   * by this multiplex server socket to determine if an incoming socket connection must
    * be handled by the created socket connector.
    *
    * @param aSelector The stream selector to assign to the created socket connector.
@@ -284,12 +291,16 @@ public class MultiplexServerSocket extends ServerSocket implements Runnable {
    * connections. It also creates all the acceptor and selector thread pools according to the
    * configuration.
    */
-  private synchronized void initializeDefaultConnector() {
+  private synchronized void initializeDefaultConnector() throws IOException {
     if (_theDefaultConnector == null) {
       // Create the default handler
       _theDefaultConnector = new SocketConnectorImpl(this,
           new PositiveStreamSelector(), new SocketQueue());
 
+      int soTimeout = getSoTimeout();
+      if(soTimeout > 0) {
+        _theDefaultConnector.getQueue().setSoTimeout(soTimeout);
+      }
       // Create the selector daemons
       for (int i = 1; i <= _theAcceptorDaemonThread; i++) {
         Thread aDaemon = new Thread(new SelectorTask(),
@@ -375,8 +386,14 @@ public class MultiplexServerSocket extends ServerSocket implements Runnable {
     } else if (_theDefaultConnector == null) {
       initializeDefaultConnector();
     }
-
-    return _theDefaultConnector.getQueue().getSocket();
+    
+    try {
+      return _theDefaultConnector.getQueue().getSocket();
+    } catch (ThreadInterruptedException e) {
+      SocketException se = new SocketException("Thread interrupted while waiting for socket");
+      se.fillInStackTrace();
+      throw e;
+    }
   }
 
   /**
@@ -425,9 +442,7 @@ public class MultiplexServerSocket extends ServerSocket implements Runnable {
    */
   public void run() {
     try {
-      Log.warning(getClass(),
-        new Date() + " [" + Thread.currentThread().getName() +
-        "] MultiplexServerSocket * REPORT * Starting this acceptor thread");
+      Log.warning(getClass(), "Starting this acceptor thread");
 
       // Loop for accepting incoming client socket connection  
       while (!isClosed() && !Thread.interrupted()) {
@@ -435,8 +450,11 @@ public class MultiplexServerSocket extends ServerSocket implements Runnable {
           // Wait for a connection
           MultiplexSocket aClient = new MultiplexSocket(null,
               _theReadAheadBufferSize);
+          
+          log.trace("Acceptor waiting for incoming client connection on address %s:%s", getInetAddress(), getLocalPort());
           implAccept(aClient);
 
+          log.trace("Got connection, adding to accepted queue");
           _theAcceptedQueue.add(aClient);
           
         } catch (IOException ioe) {
@@ -447,14 +465,9 @@ public class MultiplexServerSocket extends ServerSocket implements Runnable {
       }
       
     } catch (Exception e) {
-      Log.error(getClass(),
-        new Date() + " [" + Thread.currentThread().getName() +
-        "] MultiplexServerSocket * ERROR * An unhandled exception occured in this acceptor thread... EXITING LOOP",
-        e);
+      log.error("An unhandled exception occured in this acceptor thread... EXITING LOOP", e);
     } finally {
-      Log.warning(getClass(),
-        new Date() + " [" + Thread.currentThread().getName() +
-        "] MultiplexServerSocket * REPORT * Stopping this acceptor thread");
+      log.warning("Stopping this acceptor thread");
     }
   }
 
@@ -504,9 +517,7 @@ public class MultiplexServerSocket extends ServerSocket implements Runnable {
      */
     public void run() {
       try {
-        Log.warning(getClass(),
-          new Date() + " [" + Thread.currentThread().getName() +
-          "] MultiplexServerSocket * REPORT * Starting this selector thread");
+        log.info("Starting this selector thread");
 
         // Loop for selecting new client socket connections
         while (!isClosed() && !Thread.interrupted()) {
@@ -516,7 +527,8 @@ public class MultiplexServerSocket extends ServerSocket implements Runnable {
           try {
             // Get the next accepted client socket
             aSocket   = (MultiplexSocket) _theAcceptedQueue.getSocket();
-
+            log.trace("Selector got connection from accepted queue");
+            
             // Selects a registered connector
             aConnector = selectConnector(aSocket);
 
@@ -535,13 +547,9 @@ public class MultiplexServerSocket extends ServerSocket implements Runnable {
         }
         
       } catch (Exception e) {
-        Log.error(new Date() + " [" + Thread.currentThread().getName() +
-          "] MultiplexServerSocket * ERROR * An unhandled exception occured in this selector thread... EXITING LOOP",
-          e);
+        log.error("An unhandled exception occured in this selector thread... EXITING LOOP", e);
       } finally {
-        Log.warning(getClass(),
-          new Date() + " [" + Thread.currentThread().getName() +
-          "] MultiplexServerSocket * REPORT * Stopping this selector thread");
+        log.warning("Stopping this selector thread");
       }
     }
   }

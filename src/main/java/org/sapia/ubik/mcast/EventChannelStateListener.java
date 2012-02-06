@@ -2,6 +2,13 @@ package org.sapia.ubik.mcast;
 
 import org.sapia.ubik.net.ServerAddress;
 
+/**
+ * Implementations of this interface are notified when a node is detected as down or up
+ * by an {@link EventChannel}.
+ * 
+ * @author yduchesne
+ *
+ */
 public interface EventChannelStateListener {
 
   /**
@@ -45,7 +52,7 @@ public interface EventChannelStateListener {
   }
   
   /**
-   * Called when a remote node has been deemed disappeared.
+   * Called when a remote node is deemed disappeared.
    * 
    * @param event an {@link EventChannelEvent} holding the unique identifier of 
    * the node that was detected as having disappeared.

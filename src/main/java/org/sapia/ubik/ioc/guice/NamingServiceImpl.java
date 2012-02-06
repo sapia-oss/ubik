@@ -13,6 +13,8 @@ import javax.naming.InitialContext;
 import javax.naming.NameNotFoundException;
 import javax.naming.NamingException;
 
+import org.sapia.ubik.ioc.NamingService;
+import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.EventChannel;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.naming.remote.RemoteInitialContextFactory;
@@ -20,7 +22,8 @@ import org.sapia.ubik.rmi.naming.remote.discovery.DiscoveryHelper;
 import org.sapia.ubik.rmi.naming.remote.discovery.JndiDiscoListener;
 import org.sapia.ubik.rmi.naming.remote.discovery.ServiceDiscoListener;
 import org.sapia.ubik.rmi.naming.remote.proxy.ReliableLocalContext;
-import org.sapia.ubik.rmi.server.Log;
+import org.sapia.ubik.util.Localhost;
+import org.sapia.ubik.util.Props;
 
 import com.google.inject.Singleton;
 
@@ -30,6 +33,7 @@ public class NamingServiceImpl implements NamingService, JndiDiscoListener{
   private String         _domain;
   private String         _host, _addr;
   private int            _port, _mcastPort;
+  private String         _avisUrl;
   private Context        _ctx;
   private Set<Object>    _toBind = Collections.synchronizedSet(new HashSet<Object>());
   private DiscoveryHelper _helper;
@@ -78,6 +82,16 @@ public class NamingServiceImpl implements NamingService, JndiDiscoListener{
     _mcastPort = port;
   }
   
+  /**
+   * @param avisUrl the Avis URL, if Avis should be used as discovery mechanism.
+   */
+  public void setAvisUrl(String avisUrl) {
+    _avisUrl = avisUrl;
+  }
+  
+  /**
+   * @return this instance's {@link EventChannel}.
+   */
   public EventChannel getEventChannel() {
     return _helper.getChannel();
   }
@@ -93,8 +107,7 @@ public class NamingServiceImpl implements NamingService, JndiDiscoListener{
     _ctx.bind(name, o);
   }
 
-  public synchronized Object lookup(String name) throws NamingException,
-      NameNotFoundException {
+  public synchronized Object lookup(String name) throws NamingException, NameNotFoundException {
     if(_ctx == null){
       throw new NamingException("No connection to JNDI");
     }
@@ -129,26 +142,22 @@ public class NamingServiceImpl implements NamingService, JndiDiscoListener{
       _port = 1099;
     }
     if(_host == null){
-      _host = "localhost";
+      _host = Localhost.getAnyLocalAddress().getHostAddress();
     }
-    if(_mcastPort == 0){
-      _mcastPort = Consts.DEFAULT_MCAST_PORT;
-    }
-    if(_addr == null){
-      _addr = Consts.DEFAULT_MCAST_ADDR;
-    }
+    
+    Properties props = createProperties();
     try{
-      _ctx = getInitialContext(_domain, _host, _port);      
+      _ctx = new InitialContext(props);
       Log.info(getClass(), "Got JNDI initial context");
       EventChannel channel = ReliableLocalContext.currentContext().getEventChannel();
       if(channel != null){
-        _helper = getDiscoHelper(channel);
+        _helper = new DiscoveryHelper(channel);
         Log.info(getClass(), "Got discovery helper");
       }
     }catch(NamingException e){
       Log.info(getClass(), "Could not get JNDI initial context for (domain:host:port):" + 
         _domain + ":" + _host + ":" + _port);
-      _helper = getDiscoHelper(_domain, _addr, _mcastPort);
+      _helper = new DiscoveryHelper(createEventChannel(createProperties()));
       _helper.addJndiDiscoListener(this);
     }
   }
@@ -171,24 +180,27 @@ public class NamingServiceImpl implements NamingService, JndiDiscoListener{
     }
   }
   
-  protected DiscoveryHelper getDiscoHelper(String domain, 
-                                           String mcastHost, 
-                                           int mcastPort) throws IOException{
-    return new DiscoveryHelper(domain, mcastHost, mcastPort);
+  private EventChannel createEventChannel(Properties props) throws IOException{
+    EventChannel channel = new EventChannel(_domain, new Props().addProperties(props));
+    channel.start();
+    return channel;
   }
   
-  protected DiscoveryHelper getDiscoHelper(EventChannel channel) throws IOException{
-    return new DiscoveryHelper(channel);
-  }  
-  
-  protected InitialContext getInitialContext(String domain, String host, int port)
-    throws NamingException{
+  private Properties createProperties() {
     Properties props = new Properties();
     props.setProperty(Context.INITIAL_CONTEXT_FACTORY,
         RemoteInitialContextFactory.class.getName());
     props.setProperty(RemoteInitialContextFactory.UBIK_DOMAIN_NAME, _domain);
     props.setProperty(Context.PROVIDER_URL, "ubik://" + _host + ":" + _port);
-    return new InitialContext(props);          
+    if(_avisUrl != null) {
+      props.setProperty(Consts.BROADCAST_PROVIDER, Consts.BROADCAST_PROVIDER_AVIS);
+      props.setProperty(Consts.BROADCAST_AVIS_URL, _avisUrl);
+    }
+    else {
+      props.setProperty(Consts.MCAST_ADDR_KEY, _addr == null ? Consts.DEFAULT_MCAST_ADDR : _addr);
+      props.setProperty(Consts.MCAST_PORT_KEY, _mcastPort == 0 ? Integer.toString(Consts.DEFAULT_MCAST_PORT) : Integer.toString(_mcastPort));
+    }
+    return props;
   }
   
   static class Binding{

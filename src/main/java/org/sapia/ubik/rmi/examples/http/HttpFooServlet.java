@@ -1,22 +1,7 @@
 package org.sapia.ubik.rmi.examples.http;
 
-import org.mortbay.http.HttpContext;
-import org.mortbay.http.HttpServer;
-
-import org.mortbay.jetty.servlet.ServletHandler;
-
-import org.sapia.ubik.rmi.Consts;
-import org.sapia.ubik.rmi.examples.Foo;
-import org.sapia.ubik.rmi.examples.UbikFoo;
-import org.sapia.ubik.rmi.server.Hub;
-import org.sapia.ubik.rmi.server.transport.TransportManager;
-import org.sapia.ubik.rmi.server.transport.http.servlet.ServletConsts;
-import org.sapia.ubik.rmi.server.transport.http.servlet.ServletTransportProvider;
-
 import java.io.IOException;
-
 import java.rmi.RemoteException;
-
 import java.util.Properties;
 
 import javax.servlet.ServletConfig;
@@ -24,6 +9,17 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import org.mortbay.http.HttpContext;
+import org.mortbay.http.HttpServer;
+import org.mortbay.jetty.servlet.ServletHandler;
+import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.examples.Foo;
+import org.sapia.ubik.rmi.examples.UbikFoo;
+import org.sapia.ubik.rmi.server.Hub;
+import org.sapia.ubik.rmi.server.transport.TransportManager;
+import org.sapia.ubik.rmi.server.transport.http.servlet.ServletConsts;
+import org.sapia.ubik.rmi.server.transport.http.servlet.ServletTransportProvider;
 
 
 /**
@@ -44,7 +40,7 @@ public class HttpFooServlet extends HttpServlet {
 
   public void init(ServletConfig conf) throws ServletException {
     _provider = new ServletTransportProvider();
-    TransportManager.registerProvider(_provider);
+    Hub.getModules().getTransportManager().registerProvider(_provider);
 
     Properties props = new Properties();
 

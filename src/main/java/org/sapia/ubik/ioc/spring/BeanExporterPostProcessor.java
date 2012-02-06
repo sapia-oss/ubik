@@ -7,15 +7,21 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.FatalBeanException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 
+/**
+ * Checks for the {@link Export} annotation on beans, and performs remoting accordingly. 
+ * 
+ * @author yduchesne
+ *
+ */
 public class BeanExporterPostProcessor implements BeanPostProcessor{
   
-  NamingService _namingService;
+  NamingService namingService;
   
   @Override
   public Object postProcessAfterInitialization(Object bean, String name)
       throws BeansException {
     if(bean instanceof NamingService){
-      _namingService = (NamingService)bean;
+      namingService = (NamingService) bean;
     }
     
     else if(bean instanceof Export || bean.getClass().isAnnotationPresent(Export.class)){
@@ -25,7 +31,7 @@ public class BeanExporterPostProcessor implements BeanPostProcessor{
       }
       else{
         try{
-          _namingService.bind(name, bean);
+          namingService.bind(name, bean);
         }catch(NamingException e){
           throw new FatalBeanException(String.format("Could not export bean %s", name), e);
         }

@@ -1,5 +1,7 @@
 package org.sapia.ubik.mcast;
 
+import org.sapia.ubik.net.ServerAddress;
+
 
 /**
  * Models a synchronous response to a remote event.
@@ -9,11 +11,6 @@ package org.sapia.ubik.mcast;
  * @see Response
  *
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 public class Response implements java.io.Serializable {
   
@@ -30,36 +27,36 @@ public class Response implements java.io.Serializable {
    * is probably down.
    */
   public static final int STATUS_SUSPECT = 1;
-  private long            _eventId;
-  private Object          _data;
-  private boolean         _none;
-  private int             _status = STATUS_OK;
-
+  
+  private long            eventId;
+  private Object          data;
+  private boolean         none;
+  private int             status = STATUS_OK;
   /**
    * Constructor for Response.
    */
-  Response(long eventId, Object data) {
-    _eventId   = eventId;
-    _data      = data;
+  public Response(long eventId, Object data) {
+    this.eventId   = eventId;
+    this.data      = data;
   }
 
   /**
-   * Returns <code>true</code> if this instance contains a <code>Throwable</code>.
+   * Returns <code>true</code> if this instance contains a {@link Throwable}.
    */
   public boolean isError() {
-    return (_data != null) && _data instanceof Throwable;
+    return (data != null) && data instanceof Throwable;
   }
 
   /**
-   * Returns the <code>Throwable</code> held within this response.
+   * Returns the {@link Throwable} held within this response.
    *
-   * @return a <code>Throwable</code>
+   * @return a {@link Throwable}.
    *
    * @see #isError()
    */
   public Throwable getThrowable() {
-    if (_data != null) {
-      return (Throwable) _data;
+    if (data != null) {
+      return (Throwable) data;
     }
 
     return null;
@@ -68,11 +65,11 @@ public class Response implements java.io.Serializable {
   /**
    * Returns the data held by this instance.
    *
-   * @return an <code>Object</code>, or null if this response
+   * @return an {@link Object}, or null if this response
    * has no data.
    */
   public Object getData() {
-    return _data;
+    return data;
   }
 
   /**
@@ -82,26 +79,26 @@ public class Response implements java.io.Serializable {
    * @see #STATUS_SUSPECT
    */
   public int getStatus() {
-    return _status;
+    return status;
   }
 
-  Response setNone() {
-    _none = true;
+  public Response setNone() {
+    none = true;
 
     return this;
   }
 
-  boolean isNone() {
-    return _none;
+  public boolean isNone() {
+    return none;
   }
 
-  Response setStatusSuspect() {
-    _status = STATUS_SUSPECT;
+  public Response setStatusSuspect() {
+    status = STATUS_SUSPECT;
 
     return this;
   }
 
   public String toString() {
-    return "[ eventId=" + _eventId + ", data=" + _data + "] ";
+    return "[ eventId=" + eventId + ", data=" + data + "] ";
   }
 }

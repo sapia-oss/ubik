@@ -11,36 +11,25 @@ import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 
 import org.sapia.archie.jndi.proxy.ContextProxy;
-import org.sapia.ubik.mcast.DomainName;
 import org.sapia.ubik.rmi.naming.remote.DomainInfo;
 import org.sapia.ubik.rmi.naming.remote.RemoteContext;
-import org.sapia.ubik.rmi.naming.remote.StubTweaker;
-import org.sapia.ubik.rmi.server.StubContainer;
+import org.sapia.ubik.rmi.server.Hub;
+import org.sapia.ubik.rmi.server.stub.StubContainer;
+import org.sapia.ubik.rmi.server.stub.enrichment.StubEnrichmentStrategy.JndiBindingInfo;
 
 
 /**
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 @SuppressWarnings(value="unchecked")
 public class LocalContext extends ContextProxy implements java.rmi.Remote {
-  protected DomainName _domainName;
-  protected String     _mcastAddress;
-  protected int        _mcastPort;
-  protected String     _url;
+  protected DomainInfo domainInfo;
+  protected String     url;
 
   public LocalContext(String url, RemoteContext remote) throws NamingException {
     super(remote);
-    _url = url;
-
-    DomainInfo info = remote.getDomainInfo();
-    _domainName     = info.getDomainName();
-    _mcastAddress   = info.getMulticastAddress();
-    _mcastPort      = info.getMulticastPort();
+    this.url   = url;
+    domainInfo = remote.getDomainInfo();
   }
 
   /**
@@ -402,8 +391,15 @@ public class LocalContext extends ContextProxy implements java.rmi.Remote {
    * @see ContextProxy#onBind(javax.naming.Name, java.lang.Object)
    */
   protected Object onBind(Name n, Object toBind) throws NamingException {
-    toBind = StubTweaker.tweak(_url, n, _domainName, _mcastAddress, _mcastPort,
-             toBind);
+    JndiBindingInfo info = new JndiBindingInfo(url, n, domainInfo.getDomainName(), domainInfo.getMulticastAddress());
+    try {
+      toBind = Hub.getModules().getServerTable().getStubProcessor().enrichForJndiBinding(toBind, info);
+    } catch (RemoteException e) {
+      NamingException ne = new NamingException("Could not enrich stub for binding");
+      ne.setRootCause(e);
+      ne.fillInStackTrace();
+      throw ne;
+    }
     return toBind;
   }
 
@@ -418,7 +414,7 @@ public class LocalContext extends ContextProxy implements java.rmi.Remote {
    * @see ContextProxy#onEnum(javax.naming.Name, javax.naming.NamingEnumeration)
    */
   protected NamingEnumeration onEnum(Name n, NamingEnumeration en) {
-    return new LocalNamingEnum(_url, n, en);
+    return new LocalNamingEnum(url, n, en);
   }
 
   /**
@@ -426,13 +422,13 @@ public class LocalContext extends ContextProxy implements java.rmi.Remote {
    */
   protected Context onSubContext(Name name, Context ctx)
     throws NamingException {
-    return new LocalContext(_url, (RemoteContext) ctx);
+    return new LocalContext(url, (RemoteContext) ctx);
   }
 
   protected void doFailOver(UndeclaredThrowableException e)
     throws NamingException {
     NamingException ne = new NamingException("Unavailable naming service for " +
-        _url);
+        url);
     ne.setRootCause(e.getUndeclaredThrowable());
   }
 }

@@ -12,16 +12,16 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.Request;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.UriSyntaxException;
 import org.sapia.ubik.rmi.server.Config;
-import org.sapia.ubik.rmi.server.Log;
-import org.sapia.ubik.rmi.server.RMICommand;
 import org.sapia.ubik.rmi.server.Server;
-import org.sapia.ubik.rmi.server.invocation.InvokeCommand;
-import org.sapia.ubik.rmi.server.perf.PerfAnalyzer;
-import org.sapia.ubik.rmi.server.perf.Topic;
+import org.sapia.ubik.rmi.server.command.InvokeCommand;
+import org.sapia.ubik.rmi.server.command.RMICommand;
+import org.sapia.ubik.rmi.server.stats.Stats;
+import org.sapia.ubik.rmi.server.stats.Timer;
 import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.TransportProvider;
 import org.sapia.ubik.rmi.server.transport.http.HttpAddress;
@@ -85,43 +85,54 @@ import org.sapia.ubik.rmi.server.transport.http.JdkClientConnectionPool;
  * @see #handleRequest(HttpServletRequest, HttpServletResponse)
  *
  * @author Yanick Duchesne
- *
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2004 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 public class ServletTransportProvider implements TransportProvider,
   ServletConsts {
-  private static boolean _usesJakarta;
+  
+  class Perf {
+    
+    Timer remoteCall   = Stats.getInstance().createTimer(
+        ServletTransportProvider.class, 
+        "RemoteCall",
+        "Avg time to execute a remote method invocation"
+    );
+    
+    Timer sendResponse = Stats.getInstance().createTimer(
+        ServletTransportProvider.class, 
+        "SendResponse",
+        "Avg time to send the return value of a remote method invocation"
+    );
+  }  
+
+  
+  private static boolean usesJakarta;
 
   static {
     try {
       Class.forName("org.apache.commons.httpclient.HttpClient");
-      _usesJakarta = true;
+      usesJakarta = true;
     } catch (Exception e) {
     }
   }
 
-  private Perf           _perf          = new Perf();
-  private ServletAddress _addr;
-  private String         _transportType;
-  private Map<ServerAddress, Connections> _pools = new ConcurrentHashMap<ServerAddress, Connections>();
+  private Perf                            perf            = new Perf();
+  private ServletAddress                  addr;
+  private String                          transportType;
+  private Map<ServerAddress, Connections> pools           = new ConcurrentHashMap<ServerAddress, Connections>();
 
   public ServletTransportProvider() {
     this(DEFAULT_SERVLET_TRANSPORT_TYPE);
   }
 
   protected ServletTransportProvider(String transportType) {
-    _transportType = transportType;
+    this.transportType = transportType;
   }
 
   /**
    * @see org.sapia.ubik.rmi.server.transport.TransportProvider#getTransportType()
    */
   public String getTransportType() {
-    return _transportType;
+    return transportType;
   }
 
   /**
@@ -149,7 +160,7 @@ public class ServletTransportProvider implements TransportProvider,
     }
 
     try {
-      return new ServletServer(_addr = new ServletAddress(servletUrl));
+      return new ServletServer(addr = new ServletAddress(servletUrl));
     } catch (UriSyntaxException e) {
       throw new RemoteException("Could not parse servlet URL property", e);
     }
@@ -170,15 +181,15 @@ public class ServletTransportProvider implements TransportProvider,
     throws RemoteException {
     Connections conns;
 
-    if ((conns = _pools.get(address)) == null) {
+    if ((conns = pools.get(address)) == null) {
       try {
-        if (_usesJakarta) {
+        if (usesJakarta) {
           conns = new HttpClientConnectionPool((HttpAddress) address);
         } else {
           conns = new JdkClientConnectionPool((HttpAddress) address);
         }
 
-        _pools.put(address, conns);
+        pools.put(address, conns);
       } catch (UriSyntaxException e) {
         throw new RemoteException("Could not process given address", e);
       }
@@ -189,9 +200,9 @@ public class ServletTransportProvider implements TransportProvider,
 
   public void handleRequest(HttpServletRequest httpReq,
     HttpServletResponse httpRes) {
-    ServletRmiConnection conn = new ServletRmiConnection(_addr, httpReq, httpRes);
-
-    Request              req = new Request(conn, _addr);
+    
+    ServletRmiConnection conn = new ServletRmiConnection(addr, httpReq, httpRes);
+    Request              req  = new Request(conn, addr);
 
     if (Log.isDebug()) {
       Log.debug(getClass(), "handling request");
@@ -216,41 +227,41 @@ public class ServletTransportProvider implements TransportProvider,
       cmd.init(new Config(req.getServerAddress(), req.getConnection()));
 
       try {
-        if (_perf.remoteCall.isEnabled()) {
+        if (perf.remoteCall.isEnabled()) {
           if (cmd instanceof InvokeCommand) {
-            _perf.remoteCall.start();
+            perf.remoteCall.start();
           }
         }
 
         resp = cmd.execute();
 
-        if (_perf.remoteCall.isEnabled()) {
+        if (perf.remoteCall.isEnabled()) {
           if (cmd instanceof InvokeCommand) {
-            _perf.remoteCall.end();
+            perf.remoteCall.end();
           }
         }
       } catch (Throwable t) {
         t.printStackTrace();
         t.fillInStackTrace();
         resp = t;
-        if (_perf.remoteCall.isEnabled()) {
+        if (perf.remoteCall.isEnabled()) {
           if (cmd instanceof InvokeCommand) {
-            _perf.remoteCall.end();
+            perf.remoteCall.end();
           }
         }        
       }
 
-      if (_perf.sendResponse.isEnabled()) {
+      if (perf.sendResponse.isEnabled()) {
         if (cmd instanceof InvokeCommand) {
-          _perf.sendResponse.start();
+          perf.sendResponse.start();
         }
       }
 
       conn.send(resp, cmd.getVmId(), cmd.getServerAddress().getTransportType());
 
-      if (_perf.sendResponse.isEnabled()) {
+      if (perf.sendResponse.isEnabled()) {
         if (cmd instanceof InvokeCommand) {
-          _perf.sendResponse.end();
+          perf.sendResponse.end();
         }
       }
     } catch (RuntimeException e) {
@@ -324,14 +335,4 @@ public class ServletTransportProvider implements TransportProvider,
     }
   }
   
-  private String className(){
-    return getClass().getName();
-  }
-    
-  ////// Inner classes
-  
-  class Perf {
-    Topic remoteCall = PerfAnalyzer.getInstance().getTopic(className() + ".RemoteCall");
-    Topic sendResponse = PerfAnalyzer.getInstance().getTopic(className() + ".SendResponse");
-  }  
 }

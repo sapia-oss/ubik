@@ -1,98 +1,90 @@
 package org.sapia.ubik.rmi.server.command;
 
-import org.sapia.ubik.net.PooledThread;
-import org.sapia.ubik.net.ThreadPool;
-import org.sapia.ubik.rmi.server.Log;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import org.sapia.ubik.concurrent.NamedThreadFactory;
+import org.sapia.ubik.log.Category;
+import org.sapia.ubik.log.Log;
 import org.sapia.ubik.rmi.server.ShutdownException;
+import org.sapia.ubik.rmi.server.stats.Stats;
+import org.sapia.ubik.rmi.server.stats.Timer;
 
 
 /**
- * Implements the queue into which incoming <code>Executable</code>
- * instances are inserted before being processed in separate threads.
+ * Implements the queue into which incoming {@link AsyncCommand} instances are inserted before 
+ * being processed asynchronously
  * <p>
- * The <code>Executable</code> instances are in this case expected to be
- * <code>AsyncCommand</code> instances.
+ * As an {@link AsyncCommand} is enqueued, an available processing thread executes the command. 
+ * If no thread is available, then the command sits in the queue until a thread becomes available 
+ * - and until the command's turn comes - i.e.: this is a queue and commands are treated in a FIFO fashion.
  * <p>
- * As an <code>AsyncCommand</code> is enqueued, an available processing thread
- * handles the command is executed. If no thread is available, then the command
- * sits in the queue until a thread becomes available - and until the command's
- * turn comes - i.e.: this is a queue and commands are treated in a FIFO fashion.
+ * After execution of a command, the resulting response is internally dispatched to the {@link OutQueue}
+ * that corresponds to the host (i.e.: {@link Destination}) from which the command originates. The
+ * {@link OutqueueManager} is used to acquire the {@link OutQueue} that corresponds to the destination.   
  *
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 public class InQueue extends ExecQueue<AsyncCommand> {
-  CmdProcessorThreadPool _pool;
+
+  private Category        log             = Log.createCategory(getClass());
+  private ExecutorService pool;
+  private OutqueueManager outqueues;
+  private Timer           commandExecTime = Stats.getInstance().createTimer(
+                                              getClass(), 
+                                              "AsyncCommandExecTime", 
+                                              "Avg callback command execution time"
+                                            );
 
   /**
-   * Creates a new instance of this clas with one internal processor thread.
-   */
-  InQueue() throws Exception {
-    this(1);
-  }
-
-  /**
-   * Creates a new instance of this clas with the given number of processor threads.
+   * Creates a new instance of this class with the given number of processor threads.
    *
    * @param maxThreads the maximum number of internal threads created by this queue.
+   * @param outqueues the {@link OutqueueManager} that is internally used to acquire the {@link OutQueue} instances
+   * to which {@link Response}s are queued, on a per-destination basis.
    */
-  InQueue(int maxThreads) throws Exception {
-    super();
-
-    if (maxThreads <= 0) {
-      maxThreads = 1;
-    }
-
-    _pool = new CmdProcessorThreadPool(maxThreads);
-    _pool.fill(maxThreads);
-
-    PooledThread pt;
-
+  InQueue(int maxThreads, OutqueueManager outqueues) {
+    pool = Executors.newFixedThreadPool(
+        maxThreads, 
+        NamedThreadFactory.createWith("ubik.rmi.callback.inqueue.thread").setDaemon(true)
+    );
     for (int count = 0; count < maxThreads; count++) {
-      pt = (PooledThread) _pool.acquire();
-      pt.exec(this);
+      pool.execute(new InQueueProcessor());
     }
+    this.outqueues = outqueues;
   }
 
-  public void shutdown(long timeout) throws InterruptedException {
-    super.shutdown(timeout);
-    _pool.shutdown(timeout);
+  public void shutdown(long timeout) {
+    pool.shutdownNow();
   }
 
-  /*////////////////////////////////////////////////////////////////////
-                               INNER CLASSES
-  ////////////////////////////////////////////////////////////////////*/
-  static class CmdProcessorThread extends PooledThread {
-    /**
-     * @see org.sapia.ubik.net.PooledThread#doExec(Object)
-     */
-    protected void doExec(Object task) {
-      InQueue queue = (InQueue) task;
-
+  // --------------------------------------------------------------------------
+  
+  class InQueueProcessor implements Runnable {
+    
+    @Override
+    public void run() {
       while (true) {
         AsyncCommand async;
         Object       toReturn;
 
         try {
-          async = (AsyncCommand) queue.remove();
+          async = remove();
 
           try {
+            commandExecTime.start();
             toReturn = async.execute();
+            commandExecTime.end();
           } catch (ShutdownException e) {
-            Log.warning(getName(), "Shutting down...");
+            log.warning("Shutting down...");
 
             break;
           } catch (Throwable t) {
             toReturn = t;
           }
 
-          OutQueue.getQueueFor(new Destination(async.getFrom(),
-              async.getCallerVmId())).add(new Response(async.getCmdId(),
-              toReturn));
+          outqueues.getQueueFor(new Destination(async.getFrom(), async.getCallerVmId()))
+            .add(new Response(async.getCmdId(), toReturn));
           Thread.yield();
         } catch (InterruptedException e) {
           break;
@@ -100,35 +92,5 @@ public class InQueue extends ExecQueue<AsyncCommand> {
       }
     }
     
-    @Override
-    protected void handleExecutionException(Exception e) {
-      Log.warning(getClass(), "Error executing thread", e);
-    }
-
-    /**
-     * @see org.sapia.ubik.net.PooledThread#shutdown()
-     */
-    public void shutdown() {
-      Log.warning(getName(), "Shut down signal received...");
-      super.shutdown();
-    }
-  }
-
-  static class CmdProcessorThreadPool extends ThreadPool {
-    /**
-     * Constructor for CmdProcessorThreadPool.
-     * @param name
-     * @param maxSize
-     */
-    public CmdProcessorThreadPool(int maxSize) {
-      super("ubik.rmi.CallbackThread", true, maxSize);
-    }
-
-    /**
-     * @see org.sapia.ubik.net.ThreadPool#newThread()
-     */
-    protected PooledThread newThread() throws Exception {
-      return new CmdProcessorThread();
-    }
   }
 }

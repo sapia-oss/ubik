@@ -14,15 +14,10 @@ import simple.util.parse.URIParser;
  * An instance of this class maps context paths to Simple services (as specified by the Simple API).
  *
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2004 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 public class ServiceMapper implements ProtocolHandler {
   
-  private Map<String, ProtocolHandler> _services = new HashMap<String, ProtocolHandler>();
+  private Map<String, ProtocolHandler> services = new HashMap<String, ProtocolHandler>();
 
   public ServiceMapper() {
   }
@@ -32,7 +27,7 @@ public class ServiceMapper implements ProtocolHandler {
    * context path.
    *
    * @param contextPath the path that follows the host:port in a HTTP URL.
-   * @param svc a <code>Service</code> instance, as specified by the Simple API.
+   * @param svc a {@link Service} instance, as specified by the Simple API.
    */
   public void addService(String contextPath, ProtocolHandler svc) {
     if (contextPath == null) {
@@ -43,7 +38,7 @@ public class ServiceMapper implements ProtocolHandler {
       contextPath = "/" + contextPath;
     }
 
-    _services.put(contextPath, svc);
+    services.put(contextPath, svc);
   }
 
   public void addService(String contextPath, Service svc) {
@@ -55,7 +50,7 @@ public class ServiceMapper implements ProtocolHandler {
       contextPath = "/" + contextPath;
     }
 
-    _services.put(contextPath, new ProtocolHandlerAdapter(svc));
+    services.put(contextPath, new ProtocolHandlerAdapter(svc));
   }
   
   /**
@@ -66,7 +61,7 @@ public class ServiceMapper implements ProtocolHandler {
     uri.parse(req.getURI());
 
     if (uri.getPath() != null) {
-      ProtocolHandler svc = (ProtocolHandler) _services.get(uri.getPath().getPath());
+      ProtocolHandler svc = (ProtocolHandler) services.get(uri.getPath().getPath());
 
       if (svc != null) {
         svc.handle(req, res);

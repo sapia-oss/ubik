@@ -3,8 +3,9 @@ package org.sapia.ubik.rmi.examples.time;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+
+import org.sapia.ubik.log.Log;
 import org.sapia.ubik.rmi.server.Hub;
-import org.sapia.ubik.rmi.server.Log;
 
 
 /**

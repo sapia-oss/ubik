@@ -14,8 +14,8 @@ import java.net.UnknownHostException;
 import java.util.Enumeration;
 import java.util.regex.Pattern;
 
+import org.sapia.ubik.log.Log;
 import org.sapia.ubik.rmi.Consts;
-import org.sapia.ubik.rmi.server.Log;
 
 /**
  * This class provides a utility method that can be used to retrieve the
@@ -33,7 +33,7 @@ import org.sapia.ubik.rmi.server.Log;
  *
  * @author yduchesne
  */
-public class Localhost {
+public final class Localhost {
   
   private static String LOCALHOST = "0.0.0.0";
   private static String LOOPBACK  = "127.0";
@@ -47,6 +47,9 @@ public class Localhost {
       }
       _pattern = Pattern.compile(patternStr);
     }
+  }
+  
+  private Localhost() {
   }
   
   public static boolean isIpPatternDefined() {

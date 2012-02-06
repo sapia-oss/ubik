@@ -6,53 +6,35 @@ import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
-import javax.management.ObjectName;
-
-import org.sapia.ubik.jmx.MBeanContainer;
-import org.sapia.ubik.jmx.MBeanFactory;
+import org.sapia.ubik.log.Category;
+import org.sapia.ubik.log.Log;
+import org.sapia.ubik.module.Module;
+import org.sapia.ubik.module.ModuleContext;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
-import org.sapia.ubik.rmi.PropUtil;
-import org.sapia.ubik.rmi.server.Hub;
-import org.sapia.ubik.rmi.server.Log;
 import org.sapia.ubik.rmi.server.OID;
-import org.sapia.ubik.rmi.server.perf.HitStatFactory;
-import org.sapia.ubik.rmi.server.perf.HitsPerHourStatistic;
-import org.sapia.ubik.rmi.server.perf.HitsPerMinStatistic;
-import org.sapia.ubik.rmi.server.perf.Statistic;
+import org.sapia.ubik.rmi.server.stats.Hits;
+import org.sapia.ubik.rmi.server.stats.Stats;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
 import org.sapia.ubik.rmi.server.transport.TransportManager;
 import org.sapia.ubik.taskman.Task;
 import org.sapia.ubik.taskman.TaskContext;
 import org.sapia.ubik.taskman.TaskManager;
+import org.sapia.ubik.util.Props;
 
 
 /**
- * This class implements a the client-side distributed garbage
- * collection algorithm.
+ * This class implements a the client-side distributed garbage collection algorithm.
  *
  * @author Yanick Duchesne
- * 2002-09-02
  */
-public class ClientGC implements Task, ClientGCMBean, MBeanFactory {
-
-  class RemoteObjectCountStat extends Statistic {
-    RemoteObjectCountStat(){
-      super("ClientGcRemoteObjectCount");
-    }
-    public double getStat() {
-      int total = 0;
-      // Create a new list with value of map to avoid concurrent modification exception
-      for (Map<OID, Reference<Object>> refsForHost: new ArrayList<Map<OID, Reference<Object>>>(_objByHosts.values())) {
-        total += refsForHost.size();
-      }
-      return total;
-    }
-  }
+public class ClientGC implements Module, Task, ClientGCMBean {
   
   /* time at which GC checks for unreferenced objects */
   public static final long GC_CLEAN_INTERVAL = 10000;
@@ -60,278 +42,345 @@ public class ClientGC implements Task, ClientGCMBean, MBeanFactory {
   /* size of OID batches sent to the server */
   public static final int GC_CLEAN_SIZE = 1000;
   
-  private long            _gcInterval  = GC_CLEAN_INTERVAL;
-  private int             _gcBatchSize = GC_CLEAN_SIZE;
-  private Map<ServerAddress, Map<OID, Reference<Object>>> _objByHosts  = new ConcurrentHashMap<ServerAddress, Map<OID, Reference<Object>>>();
-  private long            _lastGlobalPingTime = System.currentTimeMillis();
-  private int             _threshold, _lastGcCount;
-  private HitsPerMinStatistic  _gcRefPerMin;
-  private HitsPerMinStatistic  _gcDerefPerMin;
-  private HitsPerMinStatistic  _gcConnectionsPerMin;
-  private HitsPerHourStatistic _forcedGcPerHour;
-  private Statistic            _objectCount = new RemoteObjectCountStat();
+  private static Category    log                = Log.createCategory(ClientGC.class);
   
-  private TaskManager     _taskMan;
+  private HostReferenceTable objByHosts         = new HostReferenceTable();
+  private TaskManager        taskMan;
+  private TransportManager   transport;
 
-  /**
-   * Creates a new {@link ClientGC} instance.
-   *
-   * @param taskman
-   */
-  public ClientGC(TaskManager taskman) {
-    PropUtil props = new PropUtil().addProperties(System.getProperties());
-    _taskMan = taskman;
+  private long               gcInterval         = GC_CLEAN_INTERVAL;
+  private int                gcBatchSize        = GC_CLEAN_SIZE;
+  private int                threshold; 
+  private int                lastGcCount;
+  private long               lastGcTime;  
+  
+  private Hits               gcRefPerMin;
+  private Hits               gcDerefPerMin;
+  private Hits               gcConnectionsPerMin;
+  private Hits               forcedGcPerHour;
+  
+  
+  @Override
+  public void init(ModuleContext context) {
+    Props props = new Props().addProperties(System.getProperties());
+  
+    this.gcInterval            = props.getLongProperty(Consts.CLIENT_GC_INTERVAL, GC_CLEAN_INTERVAL);
+    this.gcBatchSize           = props.getIntProperty(Consts.CLIENT_GC_BATCHSIZE, GC_CLEAN_SIZE);
+    this.threshold             = props.getIntProperty(Consts.CLIENT_GC_THRESHOLD, 0);
+    
+    log.info("Will run every %s ms.", gcInterval);
+  }
+  
+  @Override
+  public void start(ModuleContext context) {
+    taskMan   = context.lookup(TaskManager.class);
+    taskMan.addTask(new TaskContext("ubik.rmi.client.GC", gcInterval), this);
+    transport = context.lookup(TransportManager.class);
+    
+    this.gcConnectionsPerMin   = Stats.getInstance().getHitsBuilder(
+                                   getClass(), 
+                                   "ConnectionsPerMin", 
+                                   "The number of connections per minute create to send GC commands")
+                                   .sampleRate(gcInterval)
+                                   .perMinute().build();
+    
+    this.gcRefPerMin           = Stats.getInstance().getHitsBuilder(
+                                   getClass(),
+                                   "RefPerMin",
+                                   "The number of remote object references that are referenced per minute")
+                                   .sampleRate(gcInterval)
+                                   .perMinute().build();
 
-    _gcInterval       = props.getLongProperty(Consts.CLIENT_GC_INTERVAL, GC_CLEAN_INTERVAL);
-    _gcBatchSize      = props.getIntProperty(Consts.CLIENT_GC_BATCHSIZE, GC_CLEAN_SIZE);
-    _threshold        = props.getIntProperty(Consts.CLIENT_GC_THRESHOLD, 0);
+    this.gcDerefPerMin         = Stats.getInstance().getHitsBuilder(
+                                   getClass(), 
+                                   "DerefPerMin",
+                                   "The number of remote object references that are dereferenced per minute")
+                                   .sampleRate(gcInterval)
+                                   .perMinute().build();
     
-    _gcConnectionsPerMin   = HitStatFactory.createHitsPerMin("ClientGcConnectionsPerMin", _gcInterval, Hub.statsCollector);     
-    _gcRefPerMin           = HitStatFactory.createHitsPerMin("ClientGcRefPerMin", _gcInterval, Hub.statsCollector);
-    _gcDerefPerMin        = HitStatFactory.createHitsPerMin("ClientGcDerefPerMin", _gcInterval, Hub.statsCollector);
-    _forcedGcPerHour       = HitStatFactory.createHitsPerHour("ClientGcForcedPerHour", _gcInterval, Hub.statsCollector);
+    this.forcedGcPerHour       = Stats.getInstance().getHitsBuilder(
+                                   getClass(),
+                                  "ForcedGcPerHour",
+                                  "The number of forced JVM gc per hour")
+                                  .sampleRate(gcInterval)
+                                  .perHour().build();
     
-    Hub.statsCollector.addStat(_objectCount);
-    
-    _taskMan.addTask(new TaskContext("UbikRMI.ClientGC", _gcInterval), this);
-    
-    Log.info(getClass(), "Will run every " + _gcInterval + " ms.");
+    context.registerMbean(this);
+  }
+  
+  @Override
+  public void stop() {
   }
 
   /**
    * Registers an object identifier, associated to a stub. These mappings are
    * kept by server(every remote object is kept internally on a per-server basis).
    *
-   * @param address the <code>ServerAddress</code> representing the server from which
+   * @param address the {@link ServerAddress} representing the server from which
    * the remote instance comes from.
-   * @param oid the <code>OID</code> of the remote instance to keep.
+   * @param oid the {@link OID} of the remote instance to keep.
    * @param remote the remote instance (a stub) to track.
    */
-  public boolean register(ServerAddress address, OID oid, Object remote) {
-    
-    if (Log.isDebug()) {
-      Log.debug(getClass(), "Registering remote object: " + oid + " from " + address);
-    }
+  public void register(ServerAddress address, OID oid, Object remote) {
+    HostReference ref = objByHosts.getHostReferenceFor(address);
+    gcRefPerMin.hit();
+    int count = ref.add(oid, remote);
+    log.debug("Registered remote object: %s from %s - got %s ref count for this OID", oid, address, count);
 
-    synchronized (_objByHosts) {
-      Map<OID, Reference<Object>> hostMap = _objByHosts.get(address);
-
-      if (hostMap == null) {
-        hostMap = new ConcurrentHashMap<OID, Reference<Object>>();
-        _objByHosts.put(address, hostMap);
-      }
-      
-      if (hostMap.containsKey(oid)) {
-        return false;
-      }
-      
-      if (_gcRefPerMin.isEnabled()) {
-        _gcRefPerMin.hit();
-      }
-  
-      hostMap.put(oid, new WeakReference<Object>(remote));
-  
-      return true;
-    }
   }
   
-  /* (non-Javadoc)
-   * @see org.sapia.ubik.taskman.Task#exec(org.sapia.ubik.taskman.TaskContext)
-   */
   public void exec(TaskContext ctx) {
-    Set<ServerAddress> keySet;
-    ServerAddress[] addresses;
-    OID[]           oids;
-    ArrayList<OID>  oidsToSend = new ArrayList<OID>(_gcBatchSize);
-    int             totalCount = 0;
-    int             remoteObjectCount = 0;
-    Map<OID, Reference<Object>> refs;
 
-    if(Log.isDebug()) {
-      Log.debug(getClass(), "running client GC...");
-    }
-
-    try {
-      keySet = _objByHosts.keySet();
-      addresses = keySet.toArray(new ServerAddress[keySet.size()]);
-  
-      if (Log.isDebug()) {
-        Log.debug(getClass(), "host count: " + addresses.length);
-      }
-  
-      for (int i = 0; i < addresses.length; i++) {
-        if (Log.isDebug()) {
-          Log.debug(getClass(), "host address: " + addresses[i]);
-        }
-        
-        refs = _objByHosts.get(addresses[i]);
-        oids = refs.keySet().toArray(new OID[refs.size()]);
-        remoteObjectCount += refs.size();
-  
-        if (Log.isDebug()) {
-          Log.debug(getClass(), addresses[i] + " oids: " + oids.length);
-        }
-  
-        synchronized (_objByHosts) {
-          if (oids.length == 0) {
-            _objByHosts.remove(addresses[i]);
-  
-            break;
-          }
-        }
-        
-        boolean sent = true;
-  
-        for (int j = 0; j < oids.length; j++) {
-          Reference<Object> ref = refs.get(oids[j]);
-          if (ref.get() == null) {
-            if (Log.isDebug()) {
-              Log.debug(getClass(), oids[j] + " is null");
-            }
-  
-            refs.remove(oids[j]);
-            oidsToSend.add(oids[j]);
-            totalCount++;
-  
-            if (oidsToSend.size() >= _gcBatchSize) {
-              sent = doSend(oidsToSend.toArray(new OID[oidsToSend.size()]), oidsToSend.size(), addresses[i]);
-              oidsToSend.clear();
-            }
-          }
-           
-        }
-  
-        if (sent) {
-          doSend(oidsToSend.toArray(new OID[oidsToSend.size()]), oidsToSend.size(), addresses[i]);
-        }
-        if (totalCount > 0) {
-          _lastGcCount = totalCount;
-        }
-        totalCount = 0;
-        if (_threshold > 0 && refs.size() >= _threshold) {
-          _forcedGcPerHour.hit();
-          Runtime.getRuntime().gc();
-        }      
-      }
-    } finally {
-      _lastGlobalPingTime = System.currentTimeMillis();
-    }
+    log.debug("Running client GC...");
+    log.debug("Host count: %s", objByHosts.getHostAddresses().size());
+    lastGcTime  = System.currentTimeMillis(); 
+    lastGcCount = objByHosts.gc();
+    
+    if (threshold > 0 && objByHosts.getRemoteObjectCount() >= threshold) {
+      forcedGcPerHour.hit();
+      Runtime.getRuntime().gc();
+    }      
   }
   
   /////// JMX-Related
   
   public void setBatchSize(int size) {
-    _gcBatchSize = size;
+    gcBatchSize = size;
   }
   
   public int getBatchSize() {
-    return _gcBatchSize;
+    return gcBatchSize;
   }
   
   public void setThreshold(int t) {
-    _threshold = t;
+    threshold = t;
   }
 
   public int getThreshold() {
-    return _threshold;
+    return threshold;
   }
 
   public long getInterval() {
-    return _gcInterval;
+    return gcInterval;
   }
   
   public int getRemoteObjectCount() {
-    Set<ServerAddress> keySet = _objByHosts.keySet();
-    ServerAddress[] addresses = keySet.toArray(new ServerAddress[keySet.size()]);
-    int total = 0;
-    for (int i = 0; i < addresses.length; i++) {
-      Map<OID, Reference<Object>> refs  = _objByHosts.get(addresses[i]);
-      total += refs.size();
-    } 
-    return total;
+    return objByHosts.getRemoteObjectCount();
   }
   
-  public Date getLastPingDate() {
+  public Date getLastGcTime() {
     Calendar cal = Calendar.getInstance();
-    cal.setTimeInMillis(_lastGlobalPingTime);
+    cal.setTimeInMillis(lastGcTime);
     return cal.getTime();
   }
   
   public double getGcPerMin() {
-    return _gcDerefPerMin.getStat();
+    return gcDerefPerMin.getValue();
   }
   
   public double getForcedGcPerHour() {
-    return _forcedGcPerHour.getStat();
+    return forcedGcPerHour.getValue();
   }
   
   public int getLastGcCount() {
-    return _lastGcCount;
+    return lastGcCount;
   }
   
-  //////// MBeanFactory
+  // ==========================================================================
+  //                               INNER CLASSES     
+  // ==========================================================================
   
-  public MBeanContainer createMBean() throws Exception{
-    ObjectName name = new ObjectName("sapia.ubik.rmi:type=ClientGC");
-    return new MBeanContainer(name, this);
-  }
-  
-  //////// Private methods  
-
-  private boolean doSend(OID[] toSend, int count, ServerAddress addr) {
-    if ((count == 0) && ((System.currentTimeMillis() - _lastGlobalPingTime) < _gcInterval)) {
-      Log.info(getClass(), "Skipping Client GC command to " + addr + " bacause interval " + _gcInterval + " not met");
+  class ObjectReference {
+    
+    private List<Reference<Object>>   references = new CopyOnWriteArrayList<Reference<Object>>();
+    
+    ObjectReference() {
+    }
+    
+    int count() {
+      return references.size();
+    }
+    
+    void addReferenceTo(Object referent) {
+      references.add(new WeakReference<Object>(referent));
+    }
+    
+    boolean isNull() {
+      for(Reference<Object> ref : references) {
+        if(ref.get() != null) {
+          return false;
+        }
+      }
       return true;
     }
-    Log.info(getClass(), "Sending Client GC command to " + addr);
     
-    RmiConnection conn = null;
+  }
+  
+  /**
+   * Keeps the remote objects coming from a given host.
+   */
+  class HostReference {
+    
+    private HostReferenceTable          owner;
+    private ServerAddress               hostAddress;
+    private Map<OID, ObjectReference>   remoteReferences = new ConcurrentHashMap<OID, ObjectReference>();
+    
+    HostReference(HostReferenceTable owner, ServerAddress hostAddress) {
+      this.owner       = owner;
+      this.hostAddress = hostAddress;
+    }
+    
+    ServerAddress getHostAddress() {
+      return hostAddress;
+    }
+    
+    synchronized int add(OID oid, Object remoteObject) {
+      ObjectReference ref = remoteReferences.get(oid);
+      if(ref == null) {
+        ref = new ObjectReference();
+        remoteReferences.put(oid, ref);
+      }
+      
+      
+      ref.addReferenceTo(remoteObject);
+      return ref.count();
+    }
+    
+    int count() {
+      return remoteReferences.size();
+    }
+    
+    int gc() {
+     
+      log.debug("%s remote objects from %s", remoteReferences.size(), hostAddress);
 
-    try {
-      if (count > 0) {
-        if (Log.isDebug()) {
-          Log.debug(getClass(), "sending GC command to " + addr + "; cleaning " + count + " objects");
-        }
+      if (remoteReferences.size() == 0) {
+        log.debug("No remote objects associated to host %s", hostAddress);
+        owner.removeHostReferenceFor(hostAddress);
+        return 0;
+      } else {
         
-        if(Log.isInfo()){
-          for(int i = 0; i < toSend.length; i++){
-            Log.info(getClass(), "Dereferencing: " + toSend[i]);
+        List<OID> collected = new ArrayList<OID>();
+        int collectedCount  = 0;
+        
+        
+        log.trace("Got the following remote references for remote host %s", hostAddress);
+        for(OID oid : remoteReferences.keySet()) { 
+          ObjectReference remoteRef = remoteReferences.get(oid);
+          
+          if(log.isTrace()) {
+            log.trace("  => OID: %s", oid);
+            for(Reference<Object> ref : remoteRef.references) {
+              log.trace("    %s", ref.get());
+            }
+          }
+          
+          if (remoteRef.isNull()) {
+            log.debug("Remote object %s is null, adding to stale references (will be cleared)", oid);
+            remoteReferences.remove(oid);
+            collected.add(oid);
+            collectedCount++;
+            if(collected.size() >= gcBatchSize) {
+              doSend(collected, hostAddress);
+              collected.clear();
+            }
           }
         }
-      } else {
-        if (Log.isDebug()) {
-          Log.debug(getClass(), "no garbage; pinging server...");
+        
+        // making sure we send the remaining ones,
+        // or that we ping the remote host (otherwise it will 
+        // clear the references to this client)
+        if(collected.size() > 0 || collectedCount == 0) {
+          doSend(collected, hostAddress);
         }
+        return collectedCount;
       }
-      
-      conn = TransportManager.getConnectionsFor(addr).acquire();
-      if(_gcConnectionsPerMin.isEnabled()){
-        _gcDerefPerMin.hit(count);
-        _gcConnectionsPerMin.hit();
-      }
-      conn.send(new CommandGc(toSend, count));
-      conn.receive();
-      TransportManager.getConnectionsFor(addr).release(conn);
-    } catch (Throwable e) {
-      if (e instanceof RemoteException) {
-        Log.info(ClientGC.class, "Error sending GC command to server " + addr + " - cleaning up corresponding remote objects", e);
-        synchronized (_objByHosts) {
-          _objByHosts.remove(addr);
-        }
-      }
-      
-      if (conn != null) {
-        conn.close();
-      }
-      
-      return false;
-    }
-
-    for (int k = 0; k < count; k++) {
-      toSend[k] = null;
     }
     
-    return true;
+    private void doSend(List<OID> toSend, ServerAddress addr) {
+      
+      log.debug("Sending GC command to %s; cleaning %s objects", addr, toSend.size());
+      
+      RmiConnection conn = null;
+
+      try {
+        
+        conn = transport.getConnectionsFor(addr).acquire();
+        gcDerefPerMin.hit(toSend.size());
+        gcConnectionsPerMin.hit();
+        
+        conn.send(new CommandGc(toSend.toArray(new OID[toSend.size()]), toSend.size()));
+        conn.receive();
+        transport.getConnectionsFor(addr).release(conn);
+      } catch (Throwable e) {
+        if (e instanceof RemoteException) {
+          log.info("Error sending GC command to server %s - cleaning up corresponding remote objects", e, addr);
+          owner.forceRemoveHostReferenceFor(addr);
+        }
+        if (conn != null) {
+          conn.close();
+        }
+      }
+    }
+  }
+  
+  // --------------------------------------------------------------------------
+  
+  class HostReferenceTable {
+   
+    private Map<ServerAddress, HostReference> hostRefs = new ConcurrentHashMap<ServerAddress, HostReference>();
+    private Object                            lock     = new Object();
+    
+    HostReferenceTable() {
+    }
+    
+    HostReference getHostReferenceFor(ServerAddress hostAddress) {
+      synchronized(lock) {
+        HostReference ref = hostRefs.get(hostAddress);
+        if(ref == null) {
+          ref = new HostReference(this, hostAddress);
+          hostRefs.put(hostAddress, ref);
+        }
+        return ref;
+      }
+    }
+    
+    void removeHostReferenceFor(ServerAddress hostAddress) {
+      synchronized(lock) {
+        HostReference ref = hostRefs.get(hostAddress);
+        if(ref != null && ref.count() == 0) {
+          hostRefs.remove(hostAddress);
+        }
+      }
+    }
+    
+    void forceRemoveHostReferenceFor(ServerAddress hostAddress) {
+      synchronized(lock) {
+        hostRefs.remove(hostAddress);
+      }      
+    }
+    
+    Set<ServerAddress> getHostAddresses() {
+      return hostRefs.keySet();
+    }
+    
+    int getRemoteObjectCount() {
+      int count = 0;
+      for(HostReference ref : hostRefs.values()) {
+        count += ref.count();
+      }
+      return count;
+    }
+    
+    int gc() {
+      int gcCount = 0;
+      for(HostReference ref : hostRefs.values()) {
+        log.debug("Performing GC for %s", ref.getHostAddress());
+        gcCount += ref.gc();
+      }
+      return gcCount;
+    }
+    
   }
 
 }

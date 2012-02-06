@@ -33,7 +33,7 @@ public interface ClientGCMBean {
   /**
    * @return the {@link Date} at which the Client GC last contacted the server(s).
    */
-  public Date getLastPingDate();
+  public Date getLastGcTime();
   
   /**
    * @return the number of remote objects that were GC'ed at the last run.

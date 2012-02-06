@@ -8,20 +8,23 @@ import java.util.List;
  * Models a list of {@link Response} objects.
  *
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 public class RespList {
-  private List<Response> _resps;
+  private List<Response> resps;
 
   /**
-   * Constructor for RespList.
+   * @param capacity the initial capacity of the {@link List} that is internally
+   * created to hold {@link Response} instances.
    */
   public RespList(int capacity) {
-    _resps = new ArrayList<Response>(capacity);
+    resps = new ArrayList<Response>(capacity);
+  }
+  
+  /**
+   * @param responses a {@link List} of {@link Response} instances.
+   */
+  public RespList(List<Response> responses) {
+    this.resps = responses;
   }
 
   /**
@@ -30,7 +33,7 @@ public class RespList {
    * @param resp a {@link Response} object.
    */
   public void addResponse(Response resp) {
-    _resps.add(resp);
+    resps.add(resp);
   }
 
   /**
@@ -41,7 +44,7 @@ public class RespList {
    * @return a {@link Response} object.
    */
   public Response get(int index) {
-    return (Response) _resps.get(index);
+    return (Response) resps.get(index);
   }
 
   /**
@@ -55,8 +58,8 @@ public class RespList {
   public boolean containsError() {
     Response r;
 
-    for (int i = 0; i < _resps.size(); i++) {
-      r = (Response) _resps.get(i);
+    for (int i = 0; i < resps.size(); i++) {
+      r = (Response) resps.get(i);
 
       if (r.isError()) {
         return true;
@@ -78,8 +81,8 @@ public class RespList {
   public boolean containsSuspect() {
     Response r;
 
-    for (int i = 0; i < _resps.size(); i++) {
-      r = (Response) _resps.get(i);
+    for (int i = 0; i < resps.size(); i++) {
+      r = (Response) resps.get(i);
 
       if (r.isError()) {
         return true;
@@ -95,6 +98,6 @@ public class RespList {
    * @return the number of responses within this instance.
    */
   public int count() {
-    return _resps.size();
+    return resps.size();
   }
 }

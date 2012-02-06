@@ -6,14 +6,14 @@ import java.net.UnknownHostException;
 import java.rmi.RemoteException;
 import java.util.Properties;
 
+import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
-import org.sapia.ubik.rmi.PropUtil;
-import org.sapia.ubik.rmi.server.Log;
 import org.sapia.ubik.rmi.server.Server;
 import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.TransportProvider;
 import org.sapia.ubik.util.Localhost;
+import org.sapia.ubik.util.Props;
 
 /**
  * This transport provider is implemented on top of the <a href="http://mina.apache.org">Mina</a> 
@@ -91,14 +91,13 @@ public class NioTcpTransportProvider implements TransportProvider {
    * @see org.sapia.ubik.rmi.server.transport.TransportProvider#newServer(java.util.Properties)
    */
   public Server newServer(Properties props) throws RemoteException {
-    PropUtil pu = new PropUtil().addProperties(props).addProperties(System.getProperties());  
+    Props pu = new Props().addProperties(props).addProperties(System.getProperties());  
     int port = 0;
     if(props.getProperty(PORT) != null) {
       try {
         port = Integer.parseInt(props.getProperty(PORT));
       } catch(NumberFormatException e) {
-        Log.error(getClass(), "Could not parse integer from property "
-            + BIND_ADDRESS + ": " + PORT);
+        Log.error(getClass(), "Could not parse integer from property " + BIND_ADDRESS + ": " + PORT);
       }
     }
     InetSocketAddress addr;

@@ -1,12 +1,13 @@
 package org.sapia.ubik.net.mplex;
 
 import java.io.IOException;
-
 import java.net.Socket;
 import java.net.SocketException;
-
+import java.net.SocketTimeoutException;
 import java.util.Iterator;
 import java.util.LinkedList;
+
+import org.sapia.ubik.net.ThreadInterruptedException;
 
 
 /**
@@ -30,13 +31,6 @@ import java.util.LinkedList;
  * </ul><p>
  *
  * @author <a href="mailto:jc@sapia-oss.org">Jean-Cedric Desrochers</a>
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2004 <a href="http://www.sapia-oss.org">
- *     Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *     <a href="http://www.sapia-oss.org/license.html" target="sapia-license">license page</a>
- *     at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 public class SocketQueue {
   /** The list that act as a queue. */
@@ -47,6 +41,8 @@ public class SocketQueue {
 
   /** The reference over the last exception that occured. */
   private IOException _theLastException;
+  
+  private volatile long _soTimeout;
 
   /**
    * Creates a new SocketQueue instance.
@@ -54,6 +50,14 @@ public class SocketQueue {
   public SocketQueue() {
     _theSockets   = new LinkedList<Socket>();
     _isClosed     = false;
+  }
+
+  /**
+   * 
+   * @param soTimeout
+   */
+  public void setSoTimeout(long soTimeout) {
+    _soTimeout = soTimeout;
   }
 
   /**
@@ -78,15 +82,50 @@ public class SocketQueue {
    *
    * @return The next available socket.
    */
-  public synchronized Socket getSocket() throws IOException {
-    if (_isClosed) {
-      throw new SocketException(
-        "No socket available - the socket queue is closed");
-    } else if (_theSockets.isEmpty()) {
-      try {
-        wait();
-      } catch (InterruptedException ie) {
-        // noop
+  public synchronized Socket getSocket() throws IOException, SocketTimeoutException, ThreadInterruptedException {
+    
+    checkState();
+    
+    while(_theSockets.isEmpty()) {
+      if(_soTimeout <= 0) {
+        try {
+          wait();
+        } catch (InterruptedException ie) {
+          throw new ThreadInterruptedException();
+        }
+        checkState();
+      } else {
+        long start = System.currentTimeMillis();
+        try {
+          wait(_soTimeout);
+        } catch (InterruptedException ie) {
+          throw new ThreadInterruptedException();
+        }
+        checkState();
+        if(System.currentTimeMillis() - start >= _soTimeout &&_theSockets.isEmpty()) {
+          throw new SocketTimeoutException();
+        }
+      }
+    }
+    return (Socket) _theSockets.removeFirst();
+    
+    /*else if (_theSockets.isEmpty()) {
+      if(_soTimeout <= 0) {
+        try {
+          wait();
+        } catch (InterruptedException ie) {
+          throw new ThreadInterruptedException();
+        }
+      } else {
+        long start = System.currentTimeMillis();
+        try {
+          wait(_soTimeout);
+        } catch (InterruptedException ie) {
+          throw new ThreadInterruptedException();
+        }
+        if(System.currentTimeMillis() - start >= _soTimeout &&_theSockets.isEmpty()) {
+          throw new SocketTimeoutException();
+        }
       }
     }
 
@@ -101,9 +140,22 @@ public class SocketQueue {
       return getSocket();
     } else {
       return (Socket) _theSockets.removeFirst();
-    }
+    }*/
   }
 
+  private void checkState() throws IOException {
+    if (_isClosed) {
+      throw new SocketException("No socket available - the socket queue is closed");
+    } 
+
+    if (_theLastException != null) {
+      IOException ioe = _theLastException;
+      _theLastException = null;
+      throw ioe;
+    }
+    
+  }
+  
   /**
    * Close this queue.
    */

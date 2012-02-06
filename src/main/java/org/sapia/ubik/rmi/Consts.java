@@ -3,6 +3,13 @@ package org.sapia.ubik.rmi;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
+import org.sapia.ubik.mcast.BroadcastDispatcher;
+import org.sapia.ubik.mcast.EventChannel;
+import org.sapia.ubik.mcast.UnicastDispatcher;
+import org.sapia.ubik.rmi.server.transport.TransportProvider;
+
+import com.sun.corba.se.pept.transport.TransportManager;
+
 
 /**
  * This class conveniently holds constants that correspond to the
@@ -10,11 +17,6 @@ import java.io.ObjectOutputStream;
  * behavior.
  *
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 public interface Consts {
   
@@ -68,11 +70,74 @@ public interface Consts {
   public static final String MCAST_BUFSIZE_KEY = "ubik.rmi.naming.mcast.bufsize";  
   
   /**
+   * This constant corresponds to the 'ubik.rmi.naming.mcast.sender.count' property key. It
+   * is used to set the number of sender threads that may be used in {@link UnicastDispatcher} or {@link BroadcastDispatcher}
+   * implementations.
+   */
+  public static final String MCAST_SENDER_COUNT = "ubik.rmi.naming.mcast.sender.count";
+  
+  /**
+   * This constant corresponds to the 'ubik.rmi.naming.mcast.response.timeout' property key. The value
+   * is expected to indicate the timeout (in millis) when waiting for synchronous responses.
+   */
+  public static final String MCAST_SYNC_RESPONSE_TIMEOUT = "ubik.rmi.naming.mcast.response.timeout";
+  
+  /**
    * This constant corresponds to the 'ubik.rmi.naming.mcast.heartbeat.timeout' property key. It
    * is used to determine the interval (in millis) after which nodes that haven't sent a heartbeat
    * are considered down (defaults to 60000).
    */
-  public static final String MCAST_HEARTBEAT_TIMEOUT = "ubik.rmi.naming.mcast.heartbeat.timeout";    
+  public static final String MCAST_HEARTBEAT_TIMEOUT = "ubik.rmi.naming.mcast.heartbeat.timeout";
+  
+  /**
+   * Identifies the unicast provider to use as part of {@link EventChannel}s.
+   */
+  public static final String UNICAST_PROVIDER  = "ubik.rmi.naming.unicast.provider";
+
+  /**
+   * Identifies the UPD unicast provider.
+   */
+  public static final String UNICAST_PROVIDER_UDP = "ubik.rmi.naming.unicast.udp";
+  
+  /**
+   * Identifies the TCP unicast provider.
+   */
+  public static final String UNICAST_PROVIDER_TCP = "ubik.rmi.naming.unicast.tcp";
+  
+  /**
+   * Identifies the in-memory unicast provider.
+   */
+  public static final String UNICAST_PROVIDER_MEMORY = "ubik.rmi.naming.unicast.memory";  
+  
+  /**
+   * Identifies the broadcast provider to use as part of {@link EventChannel}s.
+   */
+  public static final String BROADCAST_PROVIDER  = "ubik.rmi.naming.broadcast.provider";
+
+  /**
+   * Identifies the UPD broadcast provider.
+   */
+  public static final String BROADCAST_PROVIDER_UDP = "ubik.rmi.naming.broadcast.udp";
+  
+  /**
+   * Identifies the Avis broadcast provider.
+   */
+  public static final String BROADCAST_PROVIDER_AVIS = "ubik.rmi.naming.broadcast.avis";
+  
+  /**
+   * Identifies the Avis URL.
+   */
+  public static final String BROADCAST_AVIS_URL = "ubik.rmi.naming.broadcast.avis.url";
+  
+  /**
+   * Identifies the in-memory broadcast provider.
+   */
+  public static final String BROADCAST_PROVIDER_MEMORY = "ubik.rmi.naming.broadcast.mem";
+  
+  /**
+   * Identifies the node of the broadcast memory address.
+   */
+  public static final String BROADCAST_MEMORY_NODE = "ubik.rmi.naming.broadcast.memory.node";  
   
   /**
    * This constant corresponds to the 'ubik.rmi.naming.mcast.heartbeat.interval' property key. It
@@ -106,12 +171,6 @@ public interface Consts {
   public static final String CALLBACK_ENABLED = "ubik.rmi.callback.enabled";
   
   /**
-   * Specifies if dynamic code download is allows in this VM (true) or not (false) 
-   * - system property name: <code>ubik.rmi.code-download.enabled</code>. Defaults to "false".
-   */
-  public static final String ALLOW_CODE_DOWNLOAD = "ubik.rmi.code-download.enabled";  
-
-  /**
    * Interval (in millis) at which the server-side distributed garbage collector wakes up -
    * system property name: <code>ubik.rmi.server.gc.interval</code>. Defaults to 10 secs.
    */
@@ -134,6 +193,13 @@ public interface Consts {
    * - system property name: code>ubik.rmi.server.callback.max-threads</code>. Defaults to 5.
    */
   public static final String SERVER_CALLBACK_MAX_THREADS = "ubik.rmi.server.callback.max-threads";
+  
+  /**
+   * Specifies the maximum number of threads that process method invocation callback
+   * responses waiting on the outgoing queue.
+   * - system property name: code>ubik.rmi.server.callback.outqueue.max-threads</code>. Defaults to 2.
+   */
+  public static final String SERVER_CALLBACK_OUTQUEUE_THREADS = "ubik.rmi.server.callback.outqueue.threads";  
   
   /**
    * This constant corresponds to the <code>ubik.rmi.server.reset-interval</code>
@@ -175,10 +241,15 @@ public interface Consts {
   public static final String CLIENT_CALLBACK_TIMEOUT = "ubik.rmi.client.callback.timeout";
   
   /**
+   * Specifies if colocated calls should be supported or not (defaults to <code>true</code>).
+   * System property: System property: <code>ubik.rmi.colocated.calls.enabled</code>.
+   */
+  public static final String ENABLE_COLOCATED_CALLS  = "ubik.rmi.colocated.calls.enabled";
+  
+  /**
    * This constant corresponds to the system property that defines the load factor
    * of the hashmap used by the <code>ObjectTable</code> to keep remote objects 
    * - system property: <code>ubik.rmi.object-table.load-factor</code>.
-   * 
    */
   public static final String OBJECT_TABLE_LOAD_FACTOR = "ubik.rmi.object-table.load-factor";
   
@@ -186,7 +257,6 @@ public interface Consts {
    * This constant corresponds to the system property that defines the initial capacity
    * of the hashmap used by the <code>ObjectTable</code> to keep remote objects 
    * - system property: <code>ubik.rmi.object-table.initial-capacity</code>.
-   * 
    */
   public static final String OBJECT_TABLE_INITCAPACITY = "ubik.rmi.object-table.initial-capacity";  
 
@@ -219,7 +289,7 @@ public interface Consts {
 
   /**
    * This constant corresponds to the system property that prefixes the configured
-   * <code>TransportProvider</code>s to plug into the <code>TransportManager</code>.
+   * {@link TransportProvider}s to plug into the {@link TransportManager}.
    * When it initializes, the latter indeed looks for all system properties starting
    * with the <code>ubik.rmi.transport.provider</code> prefix. This prefix must be suffixed
    * with an arbitrary value - so that multiple provider definitions do not overwrite each other.
@@ -228,7 +298,7 @@ public interface Consts {
    * the property could be: <code>ubik.rmi.transport.provider.socket</code>; the associated value
    * would be the above-mentioned class name.
    * <p>
-   * At initialization, the <code>TransportManager</code> will dynamically instantiate all
+   * At initialization, the {@link TransportManager} will dynamically instantiate all
    * providers that have been thus defined and register them internally.
    *
    * @see org.sapia.ubik.rmi.server.transport.TransportProvider#getTransportType()

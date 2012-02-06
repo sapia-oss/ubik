@@ -1,48 +1,38 @@
 package org.sapia.ubik.net;
 
-import junit.framework.TestCase;
-
+import static org.junit.Assert.*;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.junit.Test;
 
-/**
- * @author Yanick Duchesne
- *
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2004 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
- */
-public class TCPAddressTest extends TestCase {
-  public TCPAddressTest(String name) {
-    super(name);
-  }
-
+public class TCPAddressTest {
+  
+  @Test
   public void testEquals() {
     TCPAddress addr1 = new TCPAddress("localhost", 2222);
     TCPAddress addr2 = new TCPAddress("localhost", 2223);
 
-    super.assertTrue(addr1.equals(addr1));
-    super.assertTrue(!addr1.equals(addr2));
+    assertTrue(addr1.equals(addr1));
+    assertTrue(!addr1.equals(addr2));
   }
 
+  @Test
   public void testSet() {
     TCPAddress addr1 = new TCPAddress("localhost", 2222);
     TCPAddress addr2 = new TCPAddress("localhost", 2223);
-    Set        set1  = new HashSet();
-    Set        set2  = new HashSet();
+    Set<TCPAddress> set1  = new HashSet<TCPAddress>();
+    Set<TCPAddress> set2  = new HashSet<TCPAddress>();
 
     set1.add(addr1);
     set2.add(addr2);
 
     set1.removeAll(set2);
-    super.assertTrue(set1.contains(addr1));
+    assertTrue(set1.contains(addr1));
     set1.retainAll(set2);
-    super.assertTrue(!set1.contains(addr1));
+    assertTrue(!set1.contains(addr1));
     set1.add(addr1);
     set1.removeAll(set1);
-    super.assertTrue(!set1.contains(addr1));
+    assertTrue(!set1.contains(addr1));
   }
 }

@@ -1,36 +1,32 @@
 package org.sapia.ubik.rmi.server.transport.http;
 
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.rmi.RemoteException;
 
-import org.sapia.ubik.net.Pool;
 import org.sapia.ubik.net.Uri;
-import org.sapia.ubik.net.UriSyntaxException;
 import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
+import org.sapia.ubik.util.pool.Pool;
 
 
 /**
  * This class implements the <code>Connections</code> interface over the JDK's
- * HTTP support classes (<code>URL</code>, <code>HttpURLConnection</code>). It is
+ * HTTP support classes ({@link URL}, {@link HttpURLConnection}). It is
  * a sub-optimal implementation used only if the Jakarta HTTP client classes are not
  * in the classpath.
  *
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2004 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 public class JdkClientConnectionPool implements Connections {
-  private HttpAddress  _address;
-  private InternalPool _pool = new InternalPool();
+  private HttpAddress  address;
+  private InternalPool pool = new InternalPool();
 
   /**
    * @param address the address of the target server.
    */
-  public JdkClientConnectionPool(HttpAddress address) throws UriSyntaxException {
-    _address = address;
+  public JdkClientConnectionPool(HttpAddress address) {
+    this.address = address;
   }
 
   /**
@@ -38,7 +34,7 @@ public class JdkClientConnectionPool implements Connections {
    * @param serverUri the address of the target server.
    */
   public JdkClientConnectionPool(String transportType, Uri serverUri) {
-    _address = new HttpAddress(serverUri);
+    this(new HttpAddress(serverUri));
   }
 
   /**
@@ -46,7 +42,7 @@ public class JdkClientConnectionPool implements Connections {
    */
   public RmiConnection acquire() throws RemoteException {
     try {
-      return ((JdkRmiClientConnection) _pool.acquire()).setUp(_address);
+      return pool.acquire().setUp(address);
     } catch (Exception e) {
       if (e instanceof RemoteException) {
         throw (RemoteException) e;
@@ -66,19 +62,20 @@ public class JdkClientConnectionPool implements Connections {
    * @see org.sapia.ubik.rmi.server.transport.Connections#getTransportType()
    */
   public String getTransportType() {
-    return _address.getTransportType();
+    return address.getTransportType();
   }
   
   @Override
   public void release(RmiConnection conn) {
     conn.close();
-    _pool.release((JdkRmiClientConnection)conn);
+    pool.release((JdkRmiClientConnection)conn);
   }
 
   ///// INNER CLASS /////////////////////////////////////////////////////////////
+  
   static class InternalPool extends Pool<JdkRmiClientConnection> {
     /**
-     * @see org.sapia.ubik.net.Pool#doNewObject()
+     * @see org.sapia.ubik.util.pool.Pool#doNewObject()
      */
     protected JdkRmiClientConnection doNewObject() throws Exception {
       return new JdkRmiClientConnection();

@@ -1,21 +1,18 @@
 package org.sapia.ubik.rmi.examples.replication;
 
-import org.sapia.ubik.net.Connection;
+import java.io.IOException;
+import java.lang.reflect.Method;
+import java.rmi.RemoteException;
+import java.util.Set;
+
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.examples.Foo;
 import org.sapia.ubik.rmi.replication.ReplicatedCommand;
 import org.sapia.ubik.rmi.replication.ReplicatedInvoker;
+import org.sapia.ubik.rmi.server.Hub;
 import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
 import org.sapia.ubik.rmi.server.transport.TransportManager;
-
-import java.io.IOException;
-
-import java.lang.reflect.Method;
-
-import java.rmi.RemoteException;
-
-import java.util.Set;
 
 
 /**
@@ -67,7 +64,7 @@ public class ReplicatedInvokerImpl implements ReplicatedInvoker {
     throws RemoteException {
     System.out.println("Dispatching replicated command");
 
-    Connections conns    = TransportManager.getConnectionsFor(addr);
+    Connections conns    = Hub.getModules().getTransportManager().getConnectionsFor(addr);
     RmiConnection conn   = conns.acquire();
     Object      toReturn;
 

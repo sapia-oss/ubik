@@ -1,7 +1,6 @@
 package org.sapia.ubik.rmi.examples.time;
 
 import java.text.SimpleDateFormat;
-
 import java.util.Date;
 
 

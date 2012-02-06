@@ -1,6 +1,6 @@
 package org.sapia.ubik.mcast;
 
-import org.sapia.ubik.net.Pool;
+import org.sapia.ubik.util.pool.Pool;
 
 /**
  * This class implements a pool of byte arrays.
@@ -9,24 +9,24 @@ import org.sapia.ubik.net.Pool;
  */
 public class ByteArrayPool extends Pool<byte[]>{
   
-  private int _bufSize;
+  private volatile int bufSize;
   
   /** Creates a new instance of ByteArrayPool */
   public ByteArrayPool(int bufSize) {
-    _bufSize = bufSize;
+    this.bufSize = bufSize;
   }
   
   public void setBufSize(int bufSize){
-    _bufSize = bufSize;
+    this.bufSize = bufSize;
   }
   
   public int getBufSize(){
-    return _bufSize;
+    return bufSize;
   }
   
   protected byte[] onAcquire(byte[] bytes) throws Exception {
-    if(bytes.length != _bufSize){
-      return new byte[_bufSize];
+    if(bytes.length != bufSize){
+      return new byte[bufSize];
     }
     else{
       return bytes;
@@ -34,7 +34,7 @@ public class ByteArrayPool extends Pool<byte[]>{
   }  
   
   protected byte[] doNewObject() throws Exception{
-    return new byte[_bufSize];
+    return new byte[bufSize];
   }
   
 }

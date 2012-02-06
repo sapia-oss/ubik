@@ -1,13 +1,13 @@
 package org.sapia.ubik.rmi.examples;
 
+import java.util.Properties;
+
+import javax.naming.InitialContext;
+
 import org.sapia.ubik.rmi.naming.remote.RemoteInitialContextFactory;
 import org.sapia.ubik.rmi.naming.remote.discovery.ServiceDiscoListener;
 import org.sapia.ubik.rmi.naming.remote.discovery.ServiceDiscoveryEvent;
 import org.sapia.ubik.rmi.naming.remote.proxy.ReliableLocalContext;
-
-import java.util.*;
-
-import javax.naming.*;
 
 
 /**

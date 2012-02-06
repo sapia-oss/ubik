@@ -1,7 +1,6 @@
 package org.sapia.ubik.net;
 
 import java.io.IOException;
-
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -9,50 +8,93 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 
-import org.sapia.ubik.rmi.server.perf.Statistic;
+import org.sapia.ubik.concurrent.ThreadStartup;
+import org.sapia.ubik.log.Category;
+import org.sapia.ubik.log.Log;
 
 
 /**
  * Implements a socket server.
  *
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 public abstract class SocketServer implements Runnable {
-  private ServerSocket              _server;
-  protected SocketConnectionFactory _fac;
-  private String                    _address;
-  private ThreadPool                _tp;
-  private boolean                   _started;
-  private SocketException           _startExc;
+  
+  private static final long STARTUP_DELAY = 10000;
+  
+  protected Category                  log = Log.createCategory(getClass());
+  private   ServerSocket              server;
+  protected SocketConnectionFactory   fac;
+  private   String                    address;
+  private   ThreadPool<Request>       tp;
+  private   ThreadStartup             startupBarrier = new ThreadStartup();
 
-  protected SocketServer(int port, ThreadPool tp,
-    UbikServerSocketFactory socketFactory) throws java.io.IOException {
+  /**
+   * @param port the port that this server should listen on.
+   * @param tp the {@link ThreadPool} to use to create worker threads for request processing.
+   * @param socketFactory the {@link UbikServerSocketFactory} that will be used to create this instance's
+   * {@link ServerSocket}.
+   * @throws java.io.IOException if an IO problem occurs construction this instance.
+   */
+  protected SocketServer(
+      int port, 
+      ThreadPool<Request> tp,
+      UbikServerSocketFactory socketFactory) throws java.io.IOException {
     this(port, new SocketConnectionFactory(), tp, socketFactory);
   }
 
-  protected SocketServer(String bindAddr, int port, ThreadPool tp,
-    UbikServerSocketFactory socketFactory) throws java.io.IOException {
+  /**
+   * @param bindAddr the address to which the server should be bound.
+   * @param port the port that this server should listen on.
+   * @param tp the {@link ThreadPool} to use to create worker threads for request processing.
+   * @param socketFactory the {@link UbikServerSocketFactory} that will be used to create this instance's
+   * {@link ServerSocket}.
+   * @throws java.io.IOException if an IO problem occurs construction this instance.
+   */
+  protected SocketServer(
+      String bindAddr, 
+      int port, 
+      ThreadPool<Request> tp,
+      UbikServerSocketFactory socketFactory) throws java.io.IOException {
     this(bindAddr, port, new SocketConnectionFactory(), tp, socketFactory);
   }
 
-  protected SocketServer(int port, SocketConnectionFactory fac, ThreadPool tp,
-    UbikServerSocketFactory socketFactory) throws java.io.IOException {
-    _server   = socketFactory.createServerSocket(port);
-    _fac      = fac;
-    _tp       = tp;
+  /**
+   * @param port the port that this server should listen on.
+   * @param fac the {@link SocketConnectionFactory} for which to create server-side {@link Connection} instances.
+   * @param tp the {@link ThreadPool} to use to create worker threads for request processing.
+   * @param socketFactory the {@link UbikServerSocketFactory} that will be used to create this instance's
+   * {@link ServerSocket}.
+   * @throws java.io.IOException if an IO problem occurs construction this instance.
+   */
+  protected SocketServer(
+      int port, 
+      SocketConnectionFactory fac, 
+      ThreadPool<Request> tp,
+      UbikServerSocketFactory socketFactory) throws java.io.IOException {
+    server   = socketFactory.createServerSocket(port);
+    this.fac      = fac;
+    this.tp       = tp;
   }
 
-  protected SocketServer(String bindAddr, int port,
-    SocketConnectionFactory fac, ThreadPool tp,
-    UbikServerSocketFactory socketFactory) throws java.io.IOException {
-    _server   = socketFactory.createServerSocket(port, bindAddr);
-    _fac      = fac;
-    _tp       = tp;
+  /**
+   * @param bindAddr the address to which the server should be bound.
+   * @param port the port that this server should listen on.
+   * @param fac the {@link SocketConnectionFactory} for which to create server-side {@link Connection} instances.
+   * @param tp the {@link ThreadPool} to use to create worker threads for request processing.
+   * @param socketFactory the {@link UbikServerSocketFactory} that will be used to create this instance's
+   * {@link ServerSocket}.
+   * @throws java.io.IOException if an IO problem occurs construction this instance.
+   */
+  protected SocketServer(
+      String bindAddr, 
+      int port,
+      SocketConnectionFactory fac, 
+      ThreadPool<Request> tp,
+      UbikServerSocketFactory socketFactory) throws java.io.IOException {
+    this.server = socketFactory.createServerSocket(port, bindAddr);
+    this.fac    = fac;
+    this.tp     = tp;
   }
 
   /**
@@ -62,7 +104,7 @@ public abstract class SocketServer implements Runnable {
    * @param server
    * @throws IOException
    */
-  protected SocketServer(ThreadPool tp, ServerSocket server)
+  protected SocketServer(ThreadPool<Request> tp, ServerSocket server)
     throws IOException {
     this(new SocketConnectionFactory(), tp, server);
   }
@@ -75,20 +117,22 @@ public abstract class SocketServer implements Runnable {
    * @param server
    * @throws IOException
    */
-  protected SocketServer(SocketConnectionFactory fac, ThreadPool tp,
-    ServerSocket server) throws IOException {
-    _server   = server;
-    _fac      = fac;
-    _tp       = tp;
+  protected SocketServer(
+      SocketConnectionFactory fac, 
+      ThreadPool<Request> tp,
+      ServerSocket server) throws IOException {
+    this.server = server;
+    this.fac    = fac;
+    this.tp     = tp;
   }
 
   public String getAddress() {
-    if (_address == null) {
-      _address = _server.getInetAddress().getHostAddress();
+    if (address == null) {
+      address = server.getInetAddress().getHostAddress();
 
-      if (_address.equals("0.0.0.0")) {
+      if (address.equals("0.0.0.0")) {
         try {
-          _address = InetAddress.getLocalHost().getHostAddress();
+          address = InetAddress.getLocalHost().getHostAddress();
         } catch (UnknownHostException e) {
           throw new IllegalStateException(e.getClass().getName() +
             " caught - msg " + e.getMessage());
@@ -96,48 +140,31 @@ public abstract class SocketServer implements Runnable {
       }
     }
 
-    return _address;
-  }
-
-  public void enableStats(){
-    _tp.enabledStats();
-  }  
-  
-  public void disableStats(){
-    _tp.disableStats();
+    return address;
   }
 
   public int getPort() {
-    return _server.getLocalPort();
-  }
-  
-  public Statistic getRequestsPerSecondStat(){
-    return _tp.getRpsStat();
-  }
-  
-  public Statistic getRequestDurationStat(){
-    return _tp.getDurationStat();
+    return server.getLocalPort();
   }
   
   public int getThreadCount(){
-    return _tp.getThreadCount();
+    return tp.getThreadCount();
   }
 
   public void close() {
     try {
-      _tp.shutdown();
-      _server.close();
+      tp.shutdown();
+      server.close();
     } catch (Throwable t) {
-      t.printStackTrace();
+      log.error("Error caught while closing server", t);
     }
   }
 
   public void run() {
     try {
-      _tp.fill(1);
+      tp.fill(1);
     } catch (Throwable t) {
-      t.printStackTrace();
-
+      log.error("Error while trying to start server; aborting", t);
       return;
     }
 
@@ -146,42 +173,41 @@ public abstract class SocketServer implements Runnable {
         Socket client = null;
 
         try {
-          if (!_started) {
+          if (!startupBarrier.isStarted()) {
             try {
-              _server.setSoTimeout(1);
-              client = _server.accept();
+              server.setSoTimeout(1);
+              client = server.accept();
             } catch (SocketTimeoutException e) {
               //noop;
             }
 
-            _started = true;
-            _server.setSoTimeout(0);
-            notifyStarted();
+            server.setSoTimeout(0);
+            startupBarrier.started();
 
             if (client == null) {
               continue;
             }
           } else {
-            client = _server.accept();
+            client = server.accept();
           }
         } catch (SocketTimeoutException ste) {
           //noop;
           continue;
         } catch (SocketException e) {
-          if (!_started) {
-            _startExc   = e;
-            _started    = true;
-            notifyStarted();
+          if (!startupBarrier.isStarted()) {
+            log.error("Error accepting client connections", e);            
+            startupBarrier.failed(e);
+          } else {
+            log.info("Shutting down");
           }
 
           break;
         }
 
-        final Connection conn = _fac.newConnection(client);
+        final Connection conn = fac.newConnection(client);
 
-        Request          req = new Request(conn,
-            new TCPAddress(getAddress(), getPort()));
-        ((PooledThread) _tp.acquire()).exec(req);
+        Request req = new Request(conn, new TCPAddress(getAddress(), getPort()));
+        tp.acquire().exec(req);
       } catch (Throwable t) {
         if (handleError(t)) {
           close();
@@ -197,26 +223,16 @@ public abstract class SocketServer implements Runnable {
    * has been started.
    *
    * @throws InterruptedException if the calling thread is interrupted while waiting.
-   * @throws SocketException if an exception occurs while internally performing startup.
+   * @throws SocketException if a socket-related exception occurs while starting up.
+   * @throws Exception if a generic exception occurs while starting up.
    */
   public synchronized void waitStarted()
-    throws InterruptedException, SocketException {
-    while (!_started) {
-      wait();
-    }
-
-    if (_startExc != null) {
-      throw _startExc;
-    }
-  }
-
-  protected synchronized void notifyStarted() {
-    notifyAll();
+    throws InterruptedException, SocketException, Exception {
+    startupBarrier.await(STARTUP_DELAY);
   }
 
   protected boolean handleError(Throwable t) {
-    t.printStackTrace();
-
+    log.error("Error while handling request", t);
     return true;
   }
 }

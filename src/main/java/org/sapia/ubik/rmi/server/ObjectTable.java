@@ -5,54 +5,83 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.management.ObjectName;
-
-import org.sapia.ubik.jmx.MBeanContainer;
-import org.sapia.ubik.jmx.MBeanFactory;
+import org.sapia.ubik.log.Category;
+import org.sapia.ubik.log.Log;
+import org.sapia.ubik.module.Module;
+import org.sapia.ubik.module.ModuleContext;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.NoSuchObjectException;
-import org.sapia.ubik.rmi.PropUtil;
-import org.sapia.ubik.rmi.server.perf.Statistic;
+import org.sapia.ubik.rmi.server.stats.Hits;
+import org.sapia.ubik.rmi.server.stats.Statistic;
+import org.sapia.ubik.rmi.server.stats.Stats;
+import org.sapia.ubik.util.Props;
 
 /**
  * A server-side class that performs reference counting and that is used
  * in distributed garbage collection.
  *
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
-public class ObjectTable implements ObjectTableMBean, MBeanFactory{
+public class ObjectTable implements ObjectTableMBean, Module {
   
   class RefCountStat extends Statistic{
     
     public RefCountStat() {
-      super("ObjectTableRefCount");
+      super("ObjectTable", "ReferenceCount", "Number of object references");
     }
     public double getStat() {
-      if(_refs == null) return 0;
-      return _refs.size();
+      if(refs == null) return 0;
+      return refs.size();
     }
     
   }
   
-  static final float DEFAULT_LOAD_FACTOR = 0.75f;
-  static final int DEFAULT_INIT_CAPACITY = 2000;
+  private static final float DEFAULT_LOAD_FACTOR   = 0.75f;
+  private static final int   DEFAULT_INIT_CAPACITY = 2000;
   
-  Map<OID, Ref> _refs;
-  Statistic _refCount = new RefCountStat();
+  private Category      log = Log.createCategory(getClass());
+  private Map<OID, Ref> refs;
   
-  ObjectTable(){
-    float loadFactor = DEFAULT_LOAD_FACTOR;
-    int initCapacity = DEFAULT_INIT_CAPACITY;
-    PropUtil pu = new PropUtil().addProperties(System.getProperties());
-    loadFactor = pu.getFloat(Consts.OBJECT_TABLE_LOAD_FACTOR, DEFAULT_LOAD_FACTOR);
-    initCapacity = pu.getIntProperty(Consts.OBJECT_TABLE_INITCAPACITY, DEFAULT_INIT_CAPACITY);
-    _refs = new ConcurrentHashMap<OID, Ref>(initCapacity, loadFactor);
-    Hub.statsCollector.addStat(_refCount);
+  private Hits          refPerMin        = Stats.getInstance().getHitsBuilder(
+                                                "ObjectTable", 
+                                                "RefPerMin", 
+                                                "Number of object references created per minute")
+                                                .perMinute().build();
+  
+  private Hits          derefPerMin      = Stats.getInstance().getHitsBuilder(
+                                                "ObjectTable", 
+                                                "DerefPerMin", 
+                                                "Number of objects dereferenced per minute")
+                                                .perMinute().build();
+  
+  private Hits          objectReadPerSec = Stats.getInstance().getHitsBuilder(
+                                                 "ObjectTable", 
+                                                 "ReadPerSec", 
+                                                 "Number of object references that are read per second")
+                                                 .perSecond().build();
+                                                 
+  private Statistic     refCount         = new RefCountStat();
+  
+  
+  public ObjectTable(){
+  }
+  
+  @Override
+  public void init(ModuleContext context) {
+    Props pu         = new Props().addProperties(System.getProperties());
+    float loadFactor = pu.getFloat(Consts.OBJECT_TABLE_LOAD_FACTOR, DEFAULT_LOAD_FACTOR);
+    int initCapacity = pu.getIntProperty(Consts.OBJECT_TABLE_INITCAPACITY, DEFAULT_INIT_CAPACITY);
+    refs             = new ConcurrentHashMap<OID, Ref>(initCapacity, loadFactor);
+    Stats.getInstance().add(refCount);
+    context.registerMbean(this);
+  }
+  
+  @Override
+  public void start(ModuleContext context) {
+  }
+  
+  @Override
+  public void stop() {
   }
 
   /**
@@ -63,18 +92,14 @@ public class ObjectTable implements ObjectTableMBean, MBeanFactory{
    * @param o the object whose stub will be sent to the client.
    */
   public synchronized void register(OID oid, Object o) {
-    if (Log.isDebug()) {
-      Log.debug(ObjectTable.class, "registering: " + oid);
-    }
-
-    Ref ref = (Ref) _refs.get(oid);
-
+    Ref ref = (Ref) refs.get(oid);
     if (ref == null) {
       ref = new Ref(oid, o);
-      _refs.put(oid, ref);
+      refs.put(oid, ref);
     }
-
-    ref.inc(); /* TO DO: REMOVE CLEAN OBJECTS */
+    refPerMin.hit();
+    ref.inc(); 
+    log.debug("Created reference to %s (%s). Got %s", ref.oid, ref.obj, ref.count.get());
   }
 
   /**
@@ -85,47 +110,39 @@ public class ObjectTable implements ObjectTableMBean, MBeanFactory{
    * should be incremented.
    */
   public synchronized void reference(OID oid){
-    if (Log.isDebug()) {
-      Log.debug(ObjectTable.class, "referencing to: " + oid);
-    }
-
-    Ref ref = (Ref) _refs.get(oid);
-
+    Ref ref = (Ref) refs.get(oid);
     if (ref == null) {
-      if(Log.isDebug()){
-        Log.debug(getClass(), "No object reference for: " + oid);
-        Log.debug(getClass(), "Current objects: " + _refs);
-      }
-      throw new NoSuchObjectException("no object reference for: " + oid);
+      log.debug("Could not create reference to: %s (no such OID)", oid);
+      throw new NoSuchObjectException("No object reference for: " + oid);
     }
-
+    refPerMin.hit();
     ref.inc();
+    log.debug("Referred to %s (%s). Got %s", ref.oid, ref.obj, ref.count.get());
+
   }
 
   /**
    * Decrements the reference count of the object whose identifier is given.
    *
-   * @param oid the <code>OID</code> of an object whose reference count is
+   * @param oid the {@link OID} of an object whose reference count is
    * to be decremented.
    * @param decrement the value that should be substracted from the OID's reference count.
    */
   public synchronized void dereference(OID oid, int decrement) {
-    Ref ref = (Ref) _refs.get(oid);
-
+    Ref ref = (Ref) refs.get(oid);
     if (ref != null) {
+      log.debug("Dereferencing %s (%s) by %s (current count is %s)", oid, ref.obj, decrement, ref.count());
       ref.dec(decrement);
-
       if (ref.count() <= 0) {
-        if (Log.isDebug()) {
-          Log.debug(ObjectTable.class,
-            "dereferencing: " + oid + " - available for GC");
-        }
+        log.debug("%s (%s) available for GC", oid, ref.obj);
+        derefPerMin.hit(decrement);
+        refs.remove(oid);
 
-        _refs.remove(oid);
-
-        if (ref._obj instanceof Unreferenced) {
-          ((Unreferenced) ref._obj).unreferenced();
+        if (ref.obj instanceof Unreferenced) {
+          ((Unreferenced) ref.obj).unreferenced();
         }
+      } else {
+        log.debug("%s (%s) still has %s remote references", oid, ref.obj, ref.count());
       }
     }
   }
@@ -138,6 +155,7 @@ public class ObjectTable implements ObjectTableMBean, MBeanFactory{
    * @throws NoSuchObjectException if no object exists for the given identifier
    */
   public Object getObjectFor(OID oid) throws NoSuchObjectException {
+    objectReadPerSec.hit();
     return getRefFor(oid).get();
   }
   
@@ -149,16 +167,12 @@ public class ObjectTable implements ObjectTableMBean, MBeanFactory{
    * @throws NoSuchObjectException if no object exists for the given identifier
    */
   public Ref getRefFor(OID oid) throws NoSuchObjectException{
-    Ref ref = (Ref) _refs.get(oid);
+    Ref ref = (Ref) refs.get(oid);
     if ((ref != null) && (ref.count() > 0)) {
       return ref;
     }
-    if(Log.isDebug()){
-      Log.debug(getClass(), "No object reference for: " + oid);
-      Log.debug(getClass(), "Current objects: " + _refs);
-    }      
-    throw new NoSuchObjectException("no object reference for: " + oid);    
-    
+    log.debug("No object reference for: %s", oid);
+    throw new NoSuchObjectException("No object reference for: " + oid);    
   }
 
   /**
@@ -167,12 +181,12 @@ public class ObjectTable implements ObjectTableMBean, MBeanFactory{
    * @return <code>true</code> if the given object was removed from this instance.
    */
   public boolean remove(Object o) {
-    Ref[]   refs    = (Ref[]) _refs.values().toArray(new Ref[_refs.size()]);
+    Ref[]   refArray = (Ref[]) refs.values().toArray(new Ref[refs.size()]);
     boolean removed = false;
 
-    for (int i = 0; i < refs.length; i++) {
-      if (refs[i]._obj.equals(o)) {
-        _refs.remove(refs[i]._oid);
+    for (int i = 0; i < refArray.length; i++) {
+      if (refArray[i].obj.equals(o)) {
+        refs.remove(refArray[i].oid);
         removed = true;
       }
     }
@@ -190,15 +204,15 @@ public class ObjectTable implements ObjectTableMBean, MBeanFactory{
    * given classloader.
    */
   public boolean remove(ClassLoader loader) {
-    Ref[]   refs    = (Ref[]) _refs.values().toArray(new Ref[_refs.size()]);
+    Ref[]   refArray    = (Ref[]) refs.values().toArray(new Ref[refs.size()]);
     boolean removed = false;
 
-    for (int i = 0; i < refs.length; i++) {
-      if (refs[i]._obj.getClass().getClassLoader().equals(loader)) {
-        _refs.remove(refs[i]._oid);
+    for (int i = 0; i < refArray.length; i++) {
+      if (refArray[i].obj.getClass().getClassLoader().equals(loader)) {
+        refs.remove(refArray[i].oid);
 
-        if (refs[i]._obj instanceof Unreferenced) {
-          ((Unreferenced) refs[i]._obj).unreferenced();
+        if (refArray[i].obj instanceof Unreferenced) {
+          ((Unreferenced) refArray[i].obj).unreferenced();
         }
 
         removed = true;
@@ -215,7 +229,7 @@ public class ObjectTable implements ObjectTableMBean, MBeanFactory{
    * {@link OID} passed in.
    */
   public int getRefCount(OID oid) {
-    Ref ref = (Ref) _refs.get(oid);
+    Ref ref = (Ref) refs.get(oid);
 
     if (ref == null) {
       return 0;
@@ -231,10 +245,10 @@ public class ObjectTable implements ObjectTableMBean, MBeanFactory{
    * {@link OID} passed in.
    */  
   public int getRefCount(){
-    Ref[]   refs    = (Ref[]) _refs.values().toArray(new Ref[_refs.size()]);
+    Ref[]   refArray    = (Ref[]) refs.values().toArray(new Ref[refs.size()]);
     int total = 0;
-    for(int i = 0; i < refs.length; i++){
-      total = total += refs[i].count();
+    for(int i = 0; i < refArray.length; i++){
+      total = total += refArray[i].count();
     }
     return total;
   }
@@ -243,7 +257,7 @@ public class ObjectTable implements ObjectTableMBean, MBeanFactory{
    * Clears this instance's internal {@link Ref}s.
    */
   public synchronized void clear() {
-    _refs.clear();
+    refs.clear();
   }
 
   /**
@@ -253,60 +267,46 @@ public class ObjectTable implements ObjectTableMBean, MBeanFactory{
    * @param oid an {@link OID}
    */
   public synchronized void clear(OID oid) {
-    Ref ref = (Ref) _refs.get(oid);
+    Ref ref = (Ref) refs.get(oid);
 
     if (ref != null) {
-      ref._count.set(0);
+      ref.count.set(0);
     }
-  }
-  
-
-  /*
-  Map<OID, Ref> getRefs() {
-    return _refs;
-  }*/
-
-  
-  //////// MBeanFactory
-  
-  public MBeanContainer createMBean() throws Exception{
-    ObjectName name = new ObjectName("sapia.ubik.rmi:type=ObjectTable");
-    return new MBeanContainer(name, this);
   }
 
   /*////////////////////////////////////////////////////////////////////
                               INNER CLASSES
   ////////////////////////////////////////////////////////////////////*/
   protected static class Ref {
-    AtomicInteger _count = new AtomicInteger();
-    Object _obj;
-    OID    _oid;
+    AtomicInteger count = new AtomicInteger();
+    Object        obj;
+    OID           oid;
 
     Ref(OID oid, Object o) {
-      _obj   = o;
-      _oid   = oid;
+      this.obj   = o;
+      this.oid   = oid;
     }
 
     void dec() {
-      _count.decrementAndGet();
+      count.decrementAndGet();
     }
 
-    void dec(int count) {
-      if(_count.addAndGet(-count) < 0){
-        _count.set(0);
+    void dec(int value) {
+      if(count.addAndGet(-value) < 0){
+        count.set(0);
       }
     }
 
     void inc() {
-      _count.incrementAndGet();
+      count.incrementAndGet();
     }
 
     int count() {
-      return _count.get();
+      return count.get();
     }
 
     Object get() {
-      return _obj;
+      return obj;
     }
   }
 }

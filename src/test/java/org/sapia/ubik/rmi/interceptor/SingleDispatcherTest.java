@@ -1,6 +1,6 @@
 package org.sapia.ubik.rmi.interceptor;
 
-import junit.framework.*;
+import junit.framework.TestCase;
 
 
 /**

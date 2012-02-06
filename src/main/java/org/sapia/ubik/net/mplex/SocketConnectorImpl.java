@@ -1,11 +1,12 @@
 package org.sapia.ubik.net.mplex;
 
 import java.io.IOException;
-
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
+
+import org.sapia.ubik.net.ThreadInterruptedException;
 
 
 /**
@@ -151,7 +152,13 @@ public class SocketConnectorImpl implements MultiplexSocketConnector {
    * @exception IOException If an I/O error occurs when waiting for a connection.
    */
   public Socket accept() throws IOException {
-    return _theQueue.getSocket();
+    try {
+      return _theQueue.getSocket();
+    } catch (ThreadInterruptedException e) {
+      SocketException se = new SocketException("Thread interrupted while waiting for socket");
+      se.fillInStackTrace();
+      throw e;
+    }
   }
 
   /**

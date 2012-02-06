@@ -20,14 +20,7 @@ public class TaskManagerFactory {
    * separate threads.
    */
   public static TaskManager createMultithreadedTaskManager(){
-    return new MultithreadedTaskManager();
+    return new MultiThreadedTaskManager();
   }
   
-  /**
-   * @return a {@link TaskManager} that executes all tasks using
-   * a single thread.
-   */
-  public static TaskManager createSingleThreadedTaskManager(){
-    return new DefaultTaskManager();
-  }
 }

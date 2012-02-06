@@ -24,11 +24,6 @@ import org.sapia.ubik.net.ServerAddress;
  *
  *
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 public class RemoteEvent implements java.io.Serializable {
   
@@ -36,18 +31,18 @@ public class RemoteEvent implements java.io.Serializable {
   
   // CLASS VARIABLES
   static final int BUFSZ   = 1048;
-  static int       _inc    = 0;
+  static int       inc     = 0;
   static final int MAX_INC = 1000;
 
   // MEMBER VARIABLES
-  private String  _domain;
-  private String  _type;
-  private long    _id       = generateId();
-  private String  _node;
-  private byte[]  _data;
-  private boolean _wasBytes;
-  private boolean _sync;
-  private ServerAddress _unicastAddress;
+  private String        domain;
+  private String        type;
+  private long          id = generateId();
+  private String        node;
+  private byte[]        data;
+  private boolean       wasBytes;
+  private boolean       sync;
+  private ServerAddress unicastAddress;
 
   /**
    * Creates an instance of this class.
@@ -58,16 +53,12 @@ public class RemoteEvent implements java.io.Serializable {
    */
   public RemoteEvent(String domain, String type, Object data)
     throws IOException {
-    _domain   = domain;
-    _type     = type;
+    this.domain   = domain;
+    this.type     = type;
 
-    //		if (data == null){
-    //			//noop;
-    //		}
-    //    else 
     if ((data != null) && data instanceof byte[]) {
-      _wasBytes   = true;
-      _data       = (byte[]) data;
+      this.wasBytes   = true;
+      this.data       = (byte[]) data;
     } else {
       ByteArrayOutputStream bos = new ByteArrayOutputStream(BUFSZ);
       ObjectOutputStream    ous = new ObjectOutputStream(bos);
@@ -75,7 +66,7 @@ public class RemoteEvent implements java.io.Serializable {
       ous.writeObject(data);
       ous.flush();
       ous.close();
-      _data = bos.toByteArray();
+      this.data = bos.toByteArray();
     }
   }
 
@@ -96,7 +87,7 @@ public class RemoteEvent implements java.io.Serializable {
    * be connected to directly).
    */
   public ServerAddress getUnicastAddress() {
-    return _unicastAddress;
+    return unicastAddress;
   }
   
   /**
@@ -105,7 +96,7 @@ public class RemoteEvent implements java.io.Serializable {
    * @param addr a {@link ServerAddress}.
    */
   public void setUnicastAddress(ServerAddress addr){
-    _unicastAddress = addr;
+    unicastAddress = addr;
   }
   
   /**
@@ -115,16 +106,16 @@ public class RemoteEvent implements java.io.Serializable {
    * is not targeted at a single domain.
    */
   public String getDomainName() {
-    return _domain;
+    return domain;
   }
 
   /**
-   * Returns this instance's logical typeentifier.
+   * Returns this instance's logical type identifier.
    *
-   * @return a logical typeentifier.
+   * @return a logical type identifier.
    */
   public String getType() {
-    return _type;
+    return type;
   }
 
   /**
@@ -133,7 +124,7 @@ public class RemoteEvent implements java.io.Serializable {
    * @return a unique ID, as a string.
    */
   public long getId() {
-    return _id;
+    return id;
   }
 
   /**
@@ -143,11 +134,11 @@ public class RemoteEvent implements java.io.Serializable {
    * instance has no data.
    */
   public Object getData() throws IOException {
-    if (_data != null) {
-      if (_wasBytes) {
-        return (byte[]) _data;
+    if (data != null) {
+      if (wasBytes) {
+        return (byte[]) data;
       } else {
-        ByteArrayInputStream bis = new ByteArrayInputStream((byte[]) _data);
+        ByteArrayInputStream bis = new ByteArrayInputStream((byte[]) data);
         ObjectInputStream    ois = new ObjectInputStream(bis);
         
 
@@ -163,7 +154,7 @@ public class RemoteEvent implements java.io.Serializable {
       }
     }
 
-    return _data;
+    return data;
   }
 
   /**
@@ -173,7 +164,7 @@ public class RemoteEvent implements java.io.Serializable {
    * @return <code>true</code> if this instance has a domain name.
    */
   public boolean hasDomainName() {
-    return _domain != null;
+    return domain != null;
   }
 
   /**
@@ -181,8 +172,18 @@ public class RemoteEvent implements java.io.Serializable {
    * that necessitates a synchronous response.
    */
   public boolean isSync() {
-    return _sync;
+    return sync;
   }
+  
+  /**
+   * @return sets this instance's <code>sync</code> flag to true.
+   * @see {@link #isSync()}.
+   */
+  public RemoteEvent setSync() {
+    sync = true;
+
+    return this;
+  }  
 
   /**
    * Returns the identifier of the node that sent this event.
@@ -190,26 +191,24 @@ public class RemoteEvent implements java.io.Serializable {
    * @return a node identifier,
    */
   public String getNode() {
-    return _node;
+    return node;
   }
 
-  RemoteEvent setNode(String node) {
-    _node = node;
-
-    return this;
-  }
-
-  RemoteEvent setSync() {
-    _sync = true;
+  /**
+   * @param node a node identifier.
+   * @return this instance.
+   */
+  public RemoteEvent setNode(String node) {
+    this.node = node;
 
     return this;
   }
 
   private static synchronized long generateId() {
-    if (_inc++ > MAX_INC) {
-      _inc = 0;
+    if (inc++ > MAX_INC) {
+      inc = 0;
     }
 
-    return Long.parseLong("" + System.currentTimeMillis() + _inc);
+    return Long.parseLong("" + System.currentTimeMillis() + inc);
   }
 }

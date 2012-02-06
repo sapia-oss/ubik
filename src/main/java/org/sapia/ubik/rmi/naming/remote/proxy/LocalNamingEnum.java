@@ -11,19 +11,14 @@ import org.sapia.ubik.rmi.naming.remote.RemoteContext;
 
 /**
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 @SuppressWarnings(value="unchecked")
 public class LocalNamingEnum extends EnumProxy {
-  private String _url;
+  private String url;
 
   public LocalNamingEnum(String url, Name ctxName, NamingEnumeration en) {
     super(ctxName, en);
-    _url = url;
+    this.url = url;
   }
 
   public Object onNextElement(Name contextName, Object next)
@@ -31,11 +26,11 @@ public class LocalNamingEnum extends EnumProxy {
     if (next instanceof Binding &&
           ((Binding) next).getObject() instanceof RemoteContext) {
       Binding b = (Binding) next;
-      b.setObject(new LocalContext(_url, (RemoteContext) b.getObject()));
+      b.setObject(new LocalContext(url, (RemoteContext) b.getObject()));
 
       return b;
     } else if (next instanceof RemoteContext) {
-      return new LocalContext(_url, (RemoteContext) next);
+      return new LocalContext(url, (RemoteContext) next);
     } else {
       return next;
     }

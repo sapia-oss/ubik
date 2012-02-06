@@ -1,30 +1,25 @@
 package org.sapia.ubik.net.udp;
 
-import java.io.*;
-
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
 
 
 /**
+ * Provides UDP-related utility methods.
+ * 
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
-public class Util {
-  /**
-   * Constructor for Util.
-   */
-  public Util() {
-    super();
+public final class Util {
+  
+  private Util() {
   }
 
-  public static Object fromDatagram(DatagramPacket pack)
-    throws IOException, ClassNotFoundException {
-    ByteArrayInputStream bis = new ByteArrayInputStream(pack.getData(),
-        pack.getOffset(), pack.getLength());
+  public static Object fromDatagram(DatagramPacket pack) throws IOException, ClassNotFoundException {
+    ByteArrayInputStream bis = new ByteArrayInputStream(pack.getData(), pack.getOffset(), pack.getLength());
     ObjectInputStream    ois = null;
 
     try {

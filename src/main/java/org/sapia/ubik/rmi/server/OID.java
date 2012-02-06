@@ -5,24 +5,20 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
+import org.sapia.ubik.util.Strings;
+
 
 /**
  * This class models a unique remote object identifier. An instance of this
  * class uniquely identifies a remote object, even among multiple VMs.
  *
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 public class OID implements Externalizable, Comparable<OID> {
   static final long serialVersionUID = 1L;
-  private static final Object _unique = new Object();
-  private long      _id;
-  private int       _hashCode;
-  private String    _codebase = System.getProperty("java.rmi.server.codebase");
+  private static final Object unique = new Object();
+  private long      id;
+  private int       hashCode;
 
   /** Do not call; used for externalization only. */
   public OID() {
@@ -32,8 +28,8 @@ public class OID implements Externalizable, Comparable<OID> {
    * Creates an instance of this class with the given identifier string.
    */
   public OID(long id) {
-    _id         = id;
-    _hashCode   = (int) (id ^ (id >>> 32)) ^ _unique.hashCode();
+    this.id    = id;
+    hashCode   = (int) (id ^ (id >>> 32)) ^ unique.hashCode();
   }
 
   /**
@@ -42,7 +38,7 @@ public class OID implements Externalizable, Comparable<OID> {
    * @return a hashcode
    */
   public int hashCode() {
-    return _hashCode;
+    return hashCode;
   }
 
   /**
@@ -50,11 +46,10 @@ public class OID implements Externalizable, Comparable<OID> {
    * representing the same remote reference has this.
    */
   public boolean equals(Object o) {
-    try {
-      return (((OID) o)._id == _id) && (_hashCode == o.hashCode());
-    } catch (ClassCastException e) {
-      return false;
+    if(o instanceof OID) {
+      return (((OID) o).id == id) && (hashCode == o.hashCode());
     }
+    return false;
   }
 
   /**
@@ -62,40 +57,29 @@ public class OID implements Externalizable, Comparable<OID> {
    */
   public void readExternal(ObjectInput in)
     throws IOException, ClassNotFoundException {
-    _id         = in.readLong();
-    _hashCode   = in.readInt();
-    _codebase   =(String)in.readObject();
+    id         = in.readLong();
+    hashCode   = in.readInt();
   }
 
   /**
    * @see java.io.Externalizable#writeExternal(ObjectOutput)
    */
   public void writeExternal(ObjectOutput out) throws IOException {
-    out.writeLong(_id);
-    out.writeInt(_hashCode);
-    out.writeObject(_codebase);
+    out.writeLong(id);
+    out.writeInt(hashCode);
   }
   
-  /**
-   * @return the remote codebase of the object to which this instance corresponds,
-   * or <code>null</code> if no such codebase has been set.
-   */
-  public String getCodebase(){
-    return _codebase;
-  }
-
   public String toString() {
-    return new StringBuffer().append("[id=").append(_id).append(", hashCode=")
-                             .append(_hashCode).append("]").toString();
+    return Strings.toString("id", id, "hashCode", hashCode);
   }
 
   public int compareTo(OID other) {
-    long diff = _id - other._id;
+    long diff = id - other.id;
 
     if (diff < 0) {
       return -1;
     } else if (diff == 0) {
-      return _hashCode - other.hashCode();
+      return hashCode - other.hashCode();
     } else {
       return 1;
     }

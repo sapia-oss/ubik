@@ -5,7 +5,7 @@ import java.io.InputStream;
 
 
 /**
- * This class implements an <code>InputStream</code> over the <code>ByteVector</code>
+ * This class implements an {@link InputStream} over the {@link ByteVector}
  * class.
  * <p>
  * The <code>close()</code> method has no effect on an instance of this class. The
@@ -18,28 +18,23 @@ import java.io.InputStream;
  *
  * @author Yanick Duchesne
  *
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2005 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 public class ByteVectorInputStream extends InputStream{
   
-  private ByteVector _bytes;
+  private ByteVector bytes;
   
   public ByteVectorInputStream(ByteVector bytes){
-    _bytes = bytes;
+    this.bytes = bytes;
   }
   public ByteVector getByteVector(){
-    return _bytes;
+    return bytes;
   }
   
   /**
    * @see java.io.InputStream#available()
    */
   public int available() throws IOException {
-    return _bytes.remaining();
+    return bytes.remaining();
   }
   
   /**
@@ -52,7 +47,7 @@ public class ByteVectorInputStream extends InputStream{
    * @see java.io.InputStream#mark(int)
    */
   public synchronized void mark(int readlimit) {
-    _bytes.mark(readlimit);
+    bytes.mark(readlimit);
   }
   
   /**
@@ -66,14 +61,14 @@ public class ByteVectorInputStream extends InputStream{
    * @see java.io.InputStream#read()
    */
   public int read() throws IOException {
-    return _bytes.read();
+    return bytes.read();
   }
   
   /**
    * @see java.io.InputStream#read(byte[], int, int)
    */
   public int read(byte[] b, int off, int len) throws IOException {
-    int read = _bytes.read(b, off, len);
+    int read = bytes.read(b, off, len);
     return read == 0 ? -1 : read;
   }
   
@@ -81,7 +76,7 @@ public class ByteVectorInputStream extends InputStream{
    * @see java.io.InputStream#read(byte[])
    */
   public int read(byte[] b) throws IOException {
-    int read = _bytes.read(b);
+    int read = bytes.read(b);
     return read == 0 ? -1 : read;    
   }
   
@@ -89,13 +84,13 @@ public class ByteVectorInputStream extends InputStream{
    * @see java.io.InputStream#reset()
    */
   public synchronized void reset() throws IOException {
-    _bytes.reset();
+    bytes.reset();
   }
   
   /**
    * @see java.io.InputStream#skip(long)
    */
   public long skip(long n) throws IOException {
-    return _bytes.skip(n);
+    return bytes.skip(n);
   }
 }

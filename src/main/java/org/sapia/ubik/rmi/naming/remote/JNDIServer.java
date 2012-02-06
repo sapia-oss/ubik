@@ -1,35 +1,33 @@
 package org.sapia.ubik.rmi.naming.remote;
 
+import org.sapia.ubik.log.Log;
+import org.sapia.ubik.mcast.EventChannel;
+import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.Hub;
-import org.sapia.ubik.rmi.server.Log;
+import org.sapia.ubik.util.Props;
 
 
 /**
- * This class implements a <code>JNDIServer</code> by exporting a root
- * <code>javax.naming.Context</code> as a remote object. It has the following
+ * This class implements a JNDI server by exporting a root
+ * {@link javax.naming.Context} as a remote object. It has the following
  * characteristics:
  *
  * <ul>
  *   <li>It sends notifications to new clients that appear on the network, allowing these
  *       clients to benefit from the dynamic discovery of JNDI servers.
  *   <li>It sends notifications to clients every time a service is bound to them. This allows
- *       clients to benefit from the dynamic discovry of new services that appear on the
+ *       clients to benefit from the dynamic discovery of new services that appear on the
  *       network.
  * </ul>
  *
  * To benefit from these features, clients must connect to this server by using a
- * <code>RemoteInitialContextFactory</code>.
+ * {@link RemoteInitialContextFactory}.
  *
  *
  * @see org.sapia.ubik.rmi.naming.remote.JNDIServer
  * @see org.sapia.ubik.rmi.naming.remote.RemoteInitialContextFactory
  *
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 public class JNDIServer {
   /**
@@ -56,11 +54,24 @@ public class JNDIServer {
     JNDIServerHelper.Args argsObj = JNDIServerHelper.parseArgs(args);
     if (argsObj != null) {
       try {
-        EmbeddableJNDIServer server = new EmbeddableJNDIServer(argsObj.domain,
-            argsObj.port, argsObj.mcastAddress, argsObj.mcastPort);
-
+        
+        Props props              = Props.getSystemProperties();
+        String broadcastProvider = props.getProperty(Consts.BROADCAST_PROVIDER);
+        String unicastProvider   = props.getProperty(Consts.UNICAST_PROVIDER);
+        
+        EmbeddableJNDIServer server;
+        if(broadcastProvider != null || unicastProvider != null) {
+          EventChannel channel = new EventChannel(argsObj.domain, props);
+          server = new EmbeddableJNDIServer(channel);
+        } else {
+          server = new EmbeddableJNDIServer(
+                         argsObj.domain,
+                         argsObj.port, 
+                         argsObj.mcastAddress, 
+                         argsObj.mcastPort
+                       );
+        }
         server.start(false);
-
         Runtime.getRuntime().addShutdownHook(new ShutdownHook(server));
       } catch (Throwable t) {
         t.printStackTrace();
@@ -69,17 +80,18 @@ public class JNDIServer {
   }
 
   public static final class ShutdownHook extends Thread {
-    private EmbeddableJNDIServer _svr;
+    
+    private EmbeddableJNDIServer svr;
 
     ShutdownHook(EmbeddableJNDIServer svr) {
-      _svr = svr;
+      this.svr = svr;
     }
 
     /**
      * @see java.lang.Thread#run()
      */
     public void run() {
-      _svr.stop();
+      svr.stop();
       try{
         Hub.shutdown(30000);
       }catch(InterruptedException e){

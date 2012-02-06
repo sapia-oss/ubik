@@ -1,85 +1,48 @@
 package org.sapia.ubik.rmi.server.command;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.*;
 
-import org.sapia.ubik.net.ServerAddress;
+import java.util.List;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.sapia.ubik.concurrent.BlockingRef;
 import org.sapia.ubik.rmi.server.VmId;
+import org.sapia.ubik.rmi.server.transport.memory.InMemoryAddress;
 
 
-/**
- * @author Yanick Duchesne
- * 10-Sep-2003
- */
-public class OutQueueTest extends TestCase {
-  /**
-   * Constructor for OutQueueTest.
-   */
-  public OutQueueTest(String name) {
-    super(name);
+public class OutQueueTest {
+    
+  private Destination destination;
+  private OutQueue    queue;
+  
+  @Before
+  public void setUp() throws Exception {
+    destination = new Destination(new InMemoryAddress("test"), VmId.getInstance());
+    queue = new OutQueue(destination);
+
   }
 
-  public void testShutdownAll() throws Exception {
-    OutQueue.setResponseSender(new TestResponseSender());
-
-    CommandProcessor proc = new CommandProcessor(1);
-    VmId             vmid = VmId.getInstance();
-    ServerAddress    addr = new TestAddress("testAddress");
-    proc.processAsyncCommand("cmdId", vmid, addr,
-      new TestCommand() {
-        public Object execute() throws Throwable {
-          try {
-            Thread.sleep(500);
-          } catch (InterruptedException e) {
-          }
-
-          return null;
-        }
-      });
-    proc.shutdown(2000);
-
-    OutQueue queue = OutQueue.getQueueFor(new Destination(addr, vmid));
-    super.assertEquals(0, queue.size());
+  @Test
+  public void testAddResponseAndNotification() throws Exception {
+    final BlockingRef<Destination>    destinationRef  = new BlockingRef<Destination>();
+    final BlockingRef<List<Response>> responseListRef = new BlockingRef<List<Response>>();
+    queue.addQueueListener(new OutQueue.OutQueueListener() {
+      @Override
+      public void onResponses(Destination destination, List<Response> responses) {
+        destinationRef.set(destination);
+        responseListRef.set(responses);
+      }
+    });
+    
+    Response res = new Response(1, "response");
+    queue.add(res);
+    assertEquals(1, responseListRef.await(3000).size());
   }
-
-  public static class TestAddress implements ServerAddress {
-    String _id;
-
-    TestAddress(String id) {
-      _id = id;
-    }
-
-    /**
-     * @see org.sapia.ubik.net.ServerAddress#getTransportType()
-     */
-    public String getTransportType() {
-      return "testTransport";
-    }
-
-    public int hashCode() {
-      return _id.hashCode();
-    }
-
-    /**
-     * @see org.sapia.ubik.net.ServerAddress#equals(Object)
-     */
-    public boolean equals(Object o) {
-      return _id.equals(o);
-    }
-  }
-
-  static class TestCommand extends Command {
-    /**
-     * Constructor for TestCommand.
-     */
-    public TestCommand() {
-      super();
-    }
-
-    /**
-     * @see org.sapia.ubik.rmi.server.command.Command#execute()
-     */
-    public Object execute() throws Throwable {
-      return null;
-    }
+  
+  @Test
+  public void testShutdown() throws InterruptedException {
+    queue.shutdown(1000);
+    assertTrue(queue.isShutdown());
   }
 }

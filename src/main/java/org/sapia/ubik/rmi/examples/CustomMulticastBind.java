@@ -5,7 +5,7 @@ import java.util.Properties;
 
 import javax.naming.InitialContext;
 
-import org.sapia.ubik.rmi.naming.remote.Consts;
+import org.sapia.ubik.rmi.naming.remote.JndiConsts;
 import org.sapia.ubik.rmi.naming.remote.RemoteInitialContextFactory;
 
 public class CustomMulticastBind implements Foo, Bar{
@@ -25,8 +25,8 @@ public class CustomMulticastBind implements Foo, Bar{
     Properties props = new Properties();
     props.setProperty(InitialContext.PROVIDER_URL, "ubik://localhost:1099");
     props.setProperty(InitialContext.INITIAL_CONTEXT_FACTORY, RemoteInitialContextFactory.class.getName());
-    props.setProperty(Consts.MCAST_ADDR_KEY, CustomMulticastJndiRunner.CUSTOM_MCAST_ADDRESS);
-    props.setProperty(Consts.MCAST_PORT_KEY, Integer.toString(CustomMulticastJndiRunner.CUSTOM_MCAST_PORT));
+    props.setProperty(JndiConsts.MCAST_ADDR_KEY, CustomMulticastJndiRunner.CUSTOM_MCAST_ADDRESS);
+    props.setProperty(JndiConsts.MCAST_PORT_KEY, Integer.toString(CustomMulticastJndiRunner.CUSTOM_MCAST_PORT));
     InitialContext       ctx = new InitialContext(props);
     ctx.bind("foo", new CustomMulticastBind());
     

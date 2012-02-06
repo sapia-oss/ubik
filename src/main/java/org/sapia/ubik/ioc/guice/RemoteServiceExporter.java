@@ -2,6 +2,8 @@ package org.sapia.ubik.ioc.guice;
 
 import javax.naming.NamingException;
 
+import org.sapia.ubik.ioc.NamingService;
+
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 
@@ -49,33 +51,39 @@ import com.google.inject.Provider;
  * @see #get()
  * @see RemoteServiceImporter 
  */
-public class RemoteServiceExporter<T> implements Provider<T>{
+public class RemoteServiceExporter<T> implements Provider<T> {
   
-  @Inject(optional=false)
-  private NamingService _naming;
-  private String _jndiName;
-  private T _toExport;
-  private boolean _isBound;
+  @Inject(optional = false)
+  private NamingService  naming;
+  private String         jndiName;
+  private T              toExport;
+  private boolean        isBound;
   
-  public RemoteServiceExporter(T toExport, String jndiName){
-    _toExport = toExport;
-    _jndiName = jndiName;
+  /**
+   * @param toExport the {@link Object} to export.
+   * @param jndiName the JNDI name under which to bind the given object.
+   */
+  public RemoteServiceExporter(T toExport, String jndiName) {
+    this.toExport = toExport;
+    this.jndiName = jndiName;
   }
   
   /**
    * This method returns the object that must be exported. At its first invocation, this method will export its 
    * encapsulated object to Ubik's JNDI. 
+   * 
+   * @return the object that must be exported.
    */
   public T get() {
-    if(!_isBound){
-      try{
-        _naming.bind(_jndiName, _toExport);
-      }catch(NamingException e){
-        throw new IllegalStateException("Could not export " + _toExport + " under " + _jndiName, e);
+    if (!isBound) {
+      try {
+        naming.bind(jndiName, toExport);
+      } catch (NamingException e) {
+        throw new IllegalStateException(String.format("Could not export %s under %s", toExport, jndiName), e);
       }
-      _isBound = true;
+      isBound = true;
     }
-    return _toExport;
+    return toExport;
   }
 
 }

@@ -7,12 +7,15 @@
 
 package org.sapia.ubik.rmi.naming.remote.proxy;
 
+import javax.naming.Context;
+
 import org.sapia.ubik.rmi.naming.remote.RemoteContext;
 import org.sapia.ubik.rmi.naming.remote.RemoteContextProvider;
 import org.sapia.ubik.rmi.server.Hub;
 
-/**
- *
+/** 
+ * A default {@link Context} resolver.
+ * 
  * @author yduchesne
  */
 public class DefaultContextResolver implements ContextResolver{

@@ -1,68 +1,88 @@
 package org.sapia.ubik.rmi.server.command;
 
-import org.sapia.ubik.net.Timer;
-import org.sapia.ubik.rmi.server.ShutdownException;
-
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.sapia.ubik.rmi.server.ShutdownException;
+import org.sapia.ubik.rmi.server.stats.Hits;
+import org.sapia.ubik.rmi.server.stats.Stats;
+import org.sapia.ubik.util.Delay;
+
 
 /**
- * Models a queue of <code>Executable</code> instances.
+ * Models a queue of {@link Executable} instances.
  *
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 public class ExecQueue<T extends Executable> {
-  private LinkedList<T> _queue    = new LinkedList<T>();
-  private boolean    _shutdown;
-
-  /**
-   * Constructor for CommandQueue.
-   */
+  
+  private LinkedList<T>    queue    = new LinkedList<T>();
+  private volatile boolean shutdown;
+  private Hits             insertionsBerSecond = Stats.getInstance().getHitsBuilder(
+                                                   getClass(), 
+                                                   "InserstionsPerSec", 
+                                                   "Number of queue insertions per second")
+                                                   .perSecond().build();
+  
+  private Hits             removalsBerSecond   = Stats.getInstance().getHitsBuilder(
+                                                   getClass(), 
+                                                   "InserstionsPerSec", 
+                                                   "Number of queue insertions per second")
+                                                   .perSecond().build();  
+  
   public ExecQueue() {
     super();
   }
 
   /**
-   * Adds an <code>Executable</code> to this queue.
+   * Adds an {@link Executable} to this queue.
    *
-   * @param toExecute an <code>Executable</code>.
+   * @param toExecute an {@link Executable}.
    */
   public synchronized void add(T toExecute) {
-    if (_shutdown) {
+    if (shutdown) {
       throw new ShutdownException();
     }
-
-    _queue.add(toExecute);
-    notifyAll();
+    insertionsBerSecond.hit();
+    queue.add(toExecute);
+    notify();
   }
 
   /**
-   * Removes all the <code>Executable</code> from this queue and
+   * Removes all the {@link Executable} from this queue and
    * returns them; if the queue is empty, this method blocks until
    * a new item is added.
    *
-   * @return a <code>List</code> of <code>Executable</code>.
+   * @return a {@link List} of {@link Executable}s.
    */
   public synchronized List<T> removeAll()
     throws InterruptedException, ShutdownException {
-    while (_queue.size() == 0) {
-      if (_shutdown) {
+    while (queue.size() == 0) {
+      if (shutdown) {
         notify();
         throw new ShutdownException();
       }
-
       wait();
     }
 
-    List<T> toReturn = new ArrayList<T>(_queue);
-    _queue.clear();
+    List<T> toReturn = new ArrayList<T>(queue);
+    removalsBerSecond.hit(toReturn.size());
+    queue.clear();
+
+    return toReturn;
+  }
+  
+  /**
+   * Returns this instance's queued item (upon returning, this instance's queue
+   * is cleared from all its items).
+   * @return the {@link List} of {@link Executable}s that this instance 
+   * holds.
+   */
+  public synchronized List<T> getAll() {
+    List<T> toReturn = new ArrayList<T>(queue);
+    removalsBerSecond.hit(toReturn.size());
+    queue.clear();
 
     return toReturn;
   }
@@ -74,17 +94,11 @@ public class ExecQueue<T extends Executable> {
    * objects after the timeout is reached, this method returns.
    */
   public synchronized void shutdown(long timeout) throws InterruptedException {
-    _shutdown = true;
-    notifyAll();
-
-    Timer timer = new Timer(timeout);
-
-    while (_queue.size() > 0) {
-      wait(timeout);
-
-      if (timer.isOver()) {
-        break;
-      }
+    shutdown = true;
+    notify();
+    Delay timer = new Delay(timeout);
+    while (queue.size() > 0 && !timer.isOver()) {
+      wait(timer.remainingNotZero());
     }
   }
 
@@ -94,18 +108,18 @@ public class ExecQueue<T extends Executable> {
    * @return this queue's size (the number of items in this queue).
    */
   public int size() {
-    return _queue.size();
+    return queue.size();
   }
 
   /**
-   * Removes the first <code>Executable</code> from this queue and returns it.
+   * Removes the first {@link Executable} from this queue and returns it.
    *
-   * @return an <code>Executable</code>.
+   * @return an {@link Executable}.
    */
-  public synchronized Executable remove()
+  public synchronized T remove()
     throws InterruptedException, ShutdownException {
-    while (_queue.size() == 0) {
-      if (_shutdown) {
+    while (queue.size() == 0) {
+      if (shutdown) {
         notify();
         throw new ShutdownException();
       }
@@ -113,6 +127,7 @@ public class ExecQueue<T extends Executable> {
       wait();
     }
 
-    return _queue.remove(0);
+    removalsBerSecond.hit();
+    return queue.remove(0);
   }
 }

@@ -1,21 +1,16 @@
 package org.sapia.ubik.rmi.replication;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import junit.framework.TestCase;
 
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.TCPAddress;
 
-import java.util.HashSet;
-import java.util.Set;
-
 
 /**
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2004 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 public class ReplicationStrategyTest extends TestCase {
   public ReplicationStrategyTest(String arg0) {
@@ -28,13 +23,13 @@ public class ReplicationStrategyTest extends TestCase {
     TCPAddress addr3 = new TCPAddress("test", 3);
     TCPAddress addr4 = new TCPAddress("test", 4);
 
-    Set        siblings = new HashSet();
+    Set<ServerAddress> siblings = new HashSet<ServerAddress>();
     siblings.add(addr1);
     siblings.add(addr2);
     siblings.add(addr3);
     siblings.add(addr4);
 
-    Set                 visited = new HashSet();
+    Set<ServerAddress> visited = new HashSet<ServerAddress>();
     ReplicationStrategy st   = new ReplicationStrategy(visited, null, siblings);
     ServerAddress       next;
 
@@ -65,19 +60,18 @@ public class ReplicationStrategyTest extends TestCase {
     TCPAddress addr3 = new TCPAddress("test", 3);
     TCPAddress addr4 = new TCPAddress("test", 4);
 
-    Set        siblings = new HashSet();
+    Set<ServerAddress> siblings = new HashSet<ServerAddress>();
     siblings.add(addr1);
     siblings.add(addr2);
     siblings.add(addr3);
     siblings.add(addr4);
 
-    Set targets = new HashSet();
+    Set<ServerAddress> targets = new HashSet<ServerAddress>();
     targets.add(addr2);
     targets.add(addr4);
 
-    Set                 visited = new HashSet();
-    ReplicationStrategy st   = new ReplicationStrategy(visited, targets,
-        siblings);
+    Set<ServerAddress> visited = new HashSet<ServerAddress>();
+    ReplicationStrategy st   = new ReplicationStrategy(visited, targets, siblings);
     ServerAddress       next;
 
     next = st.selectNextSibling();

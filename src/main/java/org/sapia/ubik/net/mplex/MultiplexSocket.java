@@ -4,30 +4,22 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PushbackInputStream;
-
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketImpl;
 
 
 /**
- * The <code>MultiplesSocket</code> is the implementation of client socket that is
- * used in Ubik's multiplex logic. It extends the traditionnal <code>Socket</code>
+ * This class is the implementation of client socket that is
+ * used in Ubik's multiplex logic. It extends the traditionnal {@link Socket}
  * of the <code>java.net</code> package to add a read-ahead functionality on the
  * input stream of the socket.<p>
  *
  * This class has the following limitation were a maximum number of bytes that
  * can be read in advanced and put back in the input stream of the socket has to
- * be set when creating a new <code>MultiplexSocket</code> instance.
+ * be set when creating a new {@link MultiplexSocket} instance.
  *
  * @author <a href="mailto:jc@sapia-oss.org">Jean-Cedric Desrochers</a>
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2004 <a href="http://www.sapia-oss.org">
- *     Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *     <a href="http://www.sapia-oss.org/license.html" target="sapia-license">license page</a>
- *     at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 public class MultiplexSocket extends Socket {
   

@@ -1,24 +1,22 @@
 package org.sapia.ubik.rmi.server.transport.udp;
 
+import java.io.IOException;
+import java.net.DatagramSocket;
+import java.net.SocketException;
+
+import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.Request;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.udp.UDPServer;
 import org.sapia.ubik.net.udp.UDPServerAddress;
 import org.sapia.ubik.rmi.server.Config;
-import org.sapia.ubik.rmi.server.Log;
-import org.sapia.ubik.rmi.server.RMICommand;
 import org.sapia.ubik.rmi.server.Server;
+import org.sapia.ubik.rmi.server.command.RMICommand;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
-
-import java.io.IOException;
-
-import java.net.DatagramSocket;
-import java.net.SocketException;
 
 
 /**
  * @author Yanick Duchesne
- * 17-Jun-2003
  */
 public class UdpRmiServer extends UDPServer implements Server {
   /**
@@ -32,7 +30,7 @@ public class UdpRmiServer extends UDPServer implements Server {
    * @see org.sapia.ubik.rmi.server.Server#getServerAddress()
    */
   public ServerAddress getServerAddress() {
-    return new UDPServerAddress(_server.getInetAddress(), _server.getPort());
+    return new UDPServerAddress(server.getInetAddress(), server.getPort());
   }
 
   /**

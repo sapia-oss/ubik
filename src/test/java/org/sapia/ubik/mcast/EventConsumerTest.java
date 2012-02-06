@@ -1,55 +1,88 @@
 package org.sapia.ubik.mcast;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import org.junit.Test;
+import org.sapia.ubik.concurrent.BlockingCompletionQueue;
 
 
 /**
  * @author Yanick Duchesne
  *
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
-public class EventConsumerTest extends TestCase {
-  public EventConsumerTest(String arg0) {
-    super(arg0);
-  }
+public class EventConsumerTest {
 
+  @Test
   public void testMatchesAll() throws Exception {
     EventConsumer cons = new EventConsumer("123", "default");
     DomainName other = DomainName.parse("local");
     DomainName thisDomain = DomainName.parse("default");
-    super.assertTrue(!cons.matchesAll(other, "456"));
-    super.assertTrue(!cons.matchesAll(thisDomain, "456"));
-    super.assertTrue(cons.matchesAll(null, "456"));    
-    super.assertTrue(!cons.matchesAll(null, "123"));        
+    assertTrue(!cons.matchesAll(other, "456"));
+    assertTrue(!cons.matchesAll(thisDomain, "456"));
+    assertTrue(cons.matchesAll(null, "456"));    
+    assertTrue(!cons.matchesAll(null, "123"));        
   }
 
+  @Test
   public void testMatchesThis() throws Exception {
     EventConsumer cons = new EventConsumer("123", "default");
     DomainName other = DomainName.parse("local");
     DomainName thisDomain = DomainName.parse("default");
-    super.assertTrue(!cons.matchesThis(other, "456"));
-    super.assertTrue(cons.matchesThis(thisDomain, "456"));
-    super.assertTrue(!cons.matchesThis(thisDomain, "123"));
+    assertTrue(!cons.matchesThis(other, "456"));
+    assertTrue(cons.matchesThis(thisDomain, "456"));
+    assertTrue(!cons.matchesThis(thisDomain, "123"));
   }
-  
-  public void testUnregisterAsyncListener() throws Exception {
+
+  @Test
+  public void testRegisterAsyncListener() throws Exception {
     EventConsumer     cons     = new EventConsumer("node", "domain");
     TestEventListener listener = new TestEventListener();
     cons.registerAsyncListener("test", listener);
+    assertTrue("Should contain AsyncEventListener", cons.containsAsyncListener(listener));
     cons.unregisterListener((AsyncEventListener) listener);
-    super.assertTrue(!cons.containsAsyncListener(listener));
-    super.assertEquals(0, cons.getCount());
+    assertTrue("Should contain AsyncEventListener that has been removed", !cons.containsAsyncListener(listener));
+    assertEquals("Listener count should be 0", 0, cons.getListenerCount());
   }
 
-  public void testUnregisterSyncListener() throws Exception {
+  @Test
+  public void testRegisterSyncListener() throws Exception {
     EventConsumer     cons     = new EventConsumer("node", "domain");
     SyncEventListener listener = new TestEventListener();
     cons.registerSyncListener("test", listener);
+    assertTrue("Should contain SyncEventListener", cons.containsSyncListener(listener));
     cons.unregisterListener(listener);
-    super.assertEquals(0, cons.getCount());
+    assertTrue("Should not contain SyncEventListener", !cons.containsSyncListener(listener));
+    assertEquals("Listener count should be 0", 0, cons.getListenerCount());
+  }
+
+  @Test
+  public void testOnAsyncEvent() throws Exception {
+    EventConsumer                         cons  = new EventConsumer("node", "domain");
+    final BlockingCompletionQueue<String> queue = new BlockingCompletionQueue<String>(5);
+    for(int i = 0; i < queue.getExpectedCount(); i++) {
+      cons.registerAsyncListener("test", new AsyncEventListener() {
+        @Override
+        public void onAsyncEvent(RemoteEvent evt) {
+          queue.add("ASYNC_LISTENER_RESPONSE");
+        }
+      });
+    }
+    cons.onAsyncEvent(new RemoteEvent("test", "TEST").setNode("123"));
+    assertEquals("Expected " + queue.getExpectedCount() + " listeners to have been notified", queue.getExpectedCount(), queue.await(3000).size());
+  }
+
+  @Test
+  public void testOnSyncEvent() throws Exception {
+    EventConsumer           cons  = new EventConsumer("node", "domain");
+    cons.registerSyncListener("test", new SyncEventListener() {
+      @Override
+      public Object onSyncEvent(RemoteEvent evt) {
+        return "SYNC_LISTENER_RESPONSE";
+      }
+    });
+    
+    Object response = cons.onSyncEvent(new RemoteEvent("test", "TEST").setNode("123"));
+    assertTrue("SyncEventListener was not notified", response != null);
   }
 }

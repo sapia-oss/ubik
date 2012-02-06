@@ -14,24 +14,23 @@ import org.sapia.ubik.rmi.server.VmId;
  * @see org.sapia.ubik.rmi.server.gc.ServerGC
  *
  * @author Yanick
- * 2002-03-12
  */
 public class GcEvent implements Event {
-  private VmId          _originId;
-  private ServerAddress _originAddress;
-  private int           _count;
+  private VmId          originId;
+  private ServerAddress originAddress;
+  private int           count;
 
   /**
    * Creates an instance of this class with the given parameters.
    *
-   * @param origin the <code>HostID</code> of the client from which
+   * @param originAddr the {@link ServerAddress} of the client from which
    * the GC event comes.
    *
    */
   GcEvent(VmId id, ServerAddress originAddr, int objCount) {
-    _originId = id;
-    _originAddress   = originAddr;
-    _count    = objCount;
+    this.originId      = id;
+    this.originAddress = originAddr;
+    this.count         = objCount;
   }
 
   /**
@@ -41,7 +40,7 @@ public class GcEvent implements Event {
    * @return a {@link ServerAddress}
    */
   public ServerAddress getOriginAddress() {
-    return _originAddress;
+    return originAddress;
   }
   
   /**
@@ -49,7 +48,7 @@ public class GcEvent implements Event {
    * triggered.
    */
   public VmId getOriginId(){
-    return _originId;
+    return originId;
   }
 
   /**
@@ -59,6 +58,6 @@ public class GcEvent implements Event {
    * @return a number of GC'ed objects.
    */
   public int getCleanedCount() {
-    return _count;
+    return count;
   }
 }

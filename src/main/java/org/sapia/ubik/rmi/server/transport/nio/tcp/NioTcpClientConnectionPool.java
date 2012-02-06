@@ -1,56 +1,46 @@
 package org.sapia.ubik.rmi.server.transport.nio.tcp;
 
 import java.rmi.RemoteException;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.ConnectionPool;
-import org.sapia.ubik.net.DefaultClientSocketFactory;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.TCPAddress;
+import org.sapia.ubik.net.ThreadInterruptedException;
 import org.sapia.ubik.rmi.server.Hub;
-import org.sapia.ubik.rmi.server.Log;
 import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
 import org.sapia.ubik.taskman.Task;
 import org.sapia.ubik.taskman.TaskContext;
+import org.sapia.ubik.util.pool.NoObjectAvailableException;
+import org.sapia.ubik.util.pool.PooledObjectCreationException;
 
 /**
- * Implements a pool of client-side <code>SocketConnection</code> instances.
+ * Implements a pool of client-side {@link NioTcpRmiClientConnection} instances.
  * It multiplexes the pooled connections among multiple callers.
  * 
  * @author Yanick Duchesne
- *         <dl>
- *         <dt><b>Copyright: </b>
- *         <dd>Copyright &#169; 2002-2005 <a
- *         href="http://www.sapia-oss.org">Sapia Open Source Software </a>. All
- *         Rights Reserved.</dd>
- *         </dt>
- *         <dt><b>License: </b>
- *         <dd>Read the license.txt file of the jar or visit the <a
- *         href="http://www.sapia-oss.org/license.html">license page </a> at the
- *         Sapia OSS web site</dd>
- *         </dt>
- *         </dl>
  */
 public class NioTcpClientConnectionPool implements Connections {
   
-  private static Map<ServerAddress, NioTcpClientConnectionPool> _pools = new ConcurrentHashMap<ServerAddress, NioTcpClientConnectionPool>();
-  private static boolean _started;
-  ConnectionPool         _pool;
+  private static Map<ServerAddress, NioTcpClientConnectionPool> pools = new ConcurrentHashMap<ServerAddress, NioTcpClientConnectionPool>();
+  private static volatile boolean started;
+  ConnectionPool                  pool;
 
   /**
-   * Constructor for RMIClientConnectionPool.
-   * 
    * @param host
    *          the host of the server to connect to.
    * @param port
    *          the port of the server.
    */
   NioTcpClientConnectionPool(String host, int port, int bufsize) {
-    _pool = new ConnectionPool(host, port, new NioRmiConnectionFactory(bufsize),
-        new DefaultClientSocketFactory());
+    pool = new ConnectionPool.Builder()
+      .host(host)
+      .port(port)
+      .connectionFactory(new NioRmiConnectionFactory(bufsize))
+      .build();
   }
 
   /**
@@ -58,22 +48,26 @@ public class NioTcpClientConnectionPool implements Connections {
    */
   public RmiConnection acquire() throws RemoteException {
     try {
-      return (RmiConnection) _pool.acquire();
-    } catch(java.io.IOException e) {
-      throw new RemoteException("Could not acquire a connection", e);
+      return (RmiConnection) pool.acquire();
+    } catch (PooledObjectCreationException e) {
+      throw new RemoteException("Could not create connection", e);
+    } catch (NoObjectAvailableException e) {
+      throw new RemoteException("No connection available", e);
+    } catch (InterruptedException e) {
+      throw new ThreadInterruptedException();
     }
   }
 
   @Override
   public void release(RmiConnection conn) {
-    _pool.release(conn);
+    pool.release(conn);
   }
 
   /**
    * @see org.sapia.ubik.rmi.server.transport.Connections#clear()
    */
   public void clear() {
-    _pool.shrinkTo(0);
+    pool.shrinkTo(0);
   }
 
   /**
@@ -84,76 +78,66 @@ public class NioTcpClientConnectionPool implements Connections {
   }
 
   ConnectionPool internalPool() {
-    return _pool;
+    return pool;
   }
 
   static synchronized void shutdown() {
-    NioTcpClientConnectionPool pool;
-    Iterator<NioTcpClientConnectionPool> pools;
 
-    if(_started) {
-      synchronized(_pools) {
-        pools = _pools.values().iterator();
-
-        while(pools.hasNext()) {
-          pool = (NioTcpClientConnectionPool) pools.next();
-          pool.internalPool().shrinkTo(0);
-        }
+    if(started) {
+      for(NioTcpClientConnectionPool pool : pools.values()) {
+        pool.internalPool().shrinkTo(0);
       }
     }
   }
 
   static synchronized NioTcpClientConnectionPool getInstance(
       ServerAddress address, int bufsize) {
-    if(!_started) {
-      _started = true;
+    if(!started) {
+      started = true;
 
-      Hub.taskMan.addTask(
+      Hub.getModules().getTaskManager().addTask(
           new TaskContext(NioTcpClientConnectionPool.class.getName(), PoolCleaner.INTERVAL),
-          new PoolCleaner(_pools)
+          new PoolCleaner(pools)
       );
     }
 
-    NioTcpClientConnectionPool pool = (NioTcpClientConnectionPool) _pools
-        .get(address);
+    NioTcpClientConnectionPool pool = (NioTcpClientConnectionPool) pools.get(address);
 
     if(pool == null) {
       pool = new NioTcpClientConnectionPool(((NioAddress) address).getHost(),
           ((NioAddress) address).getPort(), bufsize);
-      _pools.put(address, pool);
+      pools.put(address, pool);
     }
 
     return pool;
   }
 
   static synchronized void invalidate(TCPAddress id) {
-    _pools.remove(id);
+    pools.remove(id);
   }
+  
+  // --------------------------------------------------------------------------
 
-  /*
-   * ////////////////////////////////////////////////// INNER CLASSES
-   * //////////////////////////////////////////////////
-   */
   static final class PoolCleaner implements Task {
+    
     static final long INTERVAL = 5000;
-    Map<ServerAddress, NioTcpClientConnectionPool> _pools;
+    
+    Map<ServerAddress, NioTcpClientConnectionPool> pools;
 
     PoolCleaner(Map<ServerAddress, NioTcpClientConnectionPool> pools) {
-      _pools = pools;
+      this.pools = pools;
     }
 
     public void exec(TaskContext context) {
-      NioTcpClientConnectionPool[] pools;
+      NioTcpClientConnectionPool[] toClean;
 
-      pools = (NioTcpClientConnectionPool[]) _pools.values().toArray(
-          new NioTcpClientConnectionPool[_pools.size()]);
+      toClean = (NioTcpClientConnectionPool[]) pools.values().toArray(new NioTcpClientConnectionPool[pools.size()]);
 
-      for(int i = 0; i < pools.length; i++) {
-        if((System.currentTimeMillis() - pools[i].internalPool()
+      for(int i = 0; i < toClean.length; i++) {
+        if((System.currentTimeMillis() - toClean[i].internalPool()
             .getLastUsageTime()) > INTERVAL) {
-          Log.debug(getClass(),
-              "Shrinking nio socket client connection pool...");
-          pools[i].internalPool().shrinkTo(0);
+          Log.debug(getClass(), "Shrinking nio socket client connection pool...");
+          toClean[i].internalPool().shrinkTo(0);
         }
       }
     }

@@ -1,52 +1,48 @@
 package org.sapia.ubik.rmi.server.transport.http.servlet;
 
-import org.sapia.ubik.net.ServerAddress;
-import org.sapia.ubik.rmi.server.VmId;
-import org.sapia.ubik.rmi.server.transport.MarshalInputStream;
-import org.sapia.ubik.rmi.server.transport.MarshalOutputStream;
-import org.sapia.ubik.rmi.server.transport.RmiConnection;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.OutputStream;
-
 import java.rmi.RemoteException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.sapia.ubik.net.ServerAddress;
+import org.sapia.ubik.rmi.server.VmId;
+import org.sapia.ubik.rmi.server.transport.MarshalStreamFactory;
+import org.sapia.ubik.rmi.server.transport.RmiConnection;
+import org.sapia.ubik.rmi.server.transport.RmiObjectOutput;
+
 
 /**
- * Implements the <code>RmiConnection</code> interface over HTTP - more precisely,
- * over <code>HttpServletRequest</code> and <code>HttpServletResponse</code> instances - from the Servlet
+ * Implements the {@link RmiConnection} interface over HTTP - more precisely,
+ * over {@link HttpServletRequest} and {@link HttpServletResponse} instances - from the Servlet
  * API.
  * </p>
  * An instance of this class is used on the servlet-side only.
  *
  * @author Yanick Duchesne
- *
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2004 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 public class ServletRmiConnection implements RmiConnection {
+  
   static final int            DEFAULT_BUFSZ = 1024;
-  private int                 _bufsz   = DEFAULT_BUFSZ;
-  private HttpServletRequest  _req;
-  private HttpServletResponse _res;
-  private ServletAddress      _address;
+  
+  private volatile int        bufsz   = DEFAULT_BUFSZ;
+  private HttpServletRequest  req;
+  private HttpServletResponse res;
+  private ServletAddress      address;
 
   /**
    * Creates an instance of this class with the given request and
    * response objects, as well as http server address.
    */
-  ServletRmiConnection(ServletAddress address, HttpServletRequest req,
-    HttpServletResponse res) {
-    _req       = req;
-    _res       = res;
-    _address   = address;
+  ServletRmiConnection(ServletAddress address, HttpServletRequest req, HttpServletResponse res) {
+    this.req       = req;
+    this.res       = res;
+    this.address   = address;
   }
 
   /**
@@ -55,11 +51,11 @@ public class ServletRmiConnection implements RmiConnection {
   public void send(Object o, VmId associated, String transportType)
     throws IOException, RemoteException {
     try {
-      ByteArrayOutputStream bos = new ByteArrayOutputStream(_bufsz);
-      MarshalOutputStream   mos = new MarshalOutputStream(bos);
+      ByteArrayOutputStream bos = new ByteArrayOutputStream(bufsz);
+      ObjectOutputStream    mos = MarshalStreamFactory.createOutputStream(bos);
 
       if ((associated != null) && (transportType != null)) {
-        mos.setUp(associated, transportType);
+        ((RmiObjectOutput)mos).setUp(associated, transportType);
       }
 
       mos.writeObject(o);
@@ -68,19 +64,18 @@ public class ServletRmiConnection implements RmiConnection {
 
       byte[] data = bos.toByteArray();
 
-      if (data.length > _bufsz) {
-        _bufsz = data.length;
+      if (data.length > bufsz) {
+        bufsz = data.length;
       }
 
-      _res.setContentLength(data.length);
+      res.setContentLength(data.length);
 
-      OutputStream os = _res.getOutputStream();
+      OutputStream os = res.getOutputStream();
       os.write(data);
       os.flush();
       os.close();
     } catch (java.net.SocketException e) {
-      throw new RemoteException("communication with server interrupted; server probably disappeared",
-        e);
+      throw new RemoteException("communication with server interrupted; server probably disappeared", e);
     }
   }
 
@@ -89,7 +84,7 @@ public class ServletRmiConnection implements RmiConnection {
    */
   public void close() {
     try {
-      _res.getOutputStream().close();
+      res.getOutputStream().close();
     } catch (Exception e) {
       // noop
     }
@@ -99,7 +94,7 @@ public class ServletRmiConnection implements RmiConnection {
    * @see org.sapia.ubik.net.Connection#getServerAddress()
    */
   public ServerAddress getServerAddress() {
-    return _address;
+    return address;
   }
 
   /**
@@ -107,7 +102,7 @@ public class ServletRmiConnection implements RmiConnection {
    */
   public Object receive()
     throws IOException, ClassNotFoundException, RemoteException {
-    MarshalInputStream is = new MarshalInputStream(_req.getInputStream());
+    ObjectInputStream is = MarshalStreamFactory.createInputStream(req.getInputStream());
 
     return is.readObject();
   }
@@ -117,12 +112,11 @@ public class ServletRmiConnection implements RmiConnection {
    */
   public void send(Object o) throws IOException, RemoteException {
     try {
-      MarshalOutputStream os = new MarshalOutputStream(_res.getOutputStream());
+      ObjectOutputStream os = MarshalStreamFactory.createOutputStream(res.getOutputStream());
       os.writeObject(o);
       os.flush();
     } catch (java.net.SocketException e) {
-      throw new RemoteException("communication with server interrupted; server probably disappeared",
-        e);
+      throw new RemoteException("communication with server interrupted; server probably disappeared", e);
     }
   }
 }

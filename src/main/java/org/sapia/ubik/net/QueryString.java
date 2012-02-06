@@ -14,15 +14,10 @@ import java.util.Map;
  * </pre>
  *
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 public class QueryString {
-  private String _path       = "/";
-  private Map<String, String>    _properties = new HashMap<String, String>();
+  private String              path = "/";
+  private Map<String, String> properties = new HashMap<String, String>();
 
   /**
    * Constructor for QueryString.
@@ -38,7 +33,7 @@ public class QueryString {
    * @param path a path
    */
   public QueryString(String path) {
-    _path = path;
+    this.path = path;
   }
 
   /**
@@ -47,7 +42,7 @@ public class QueryString {
    * @return a path.
    */
   public String getPath() {
-    return _path;
+    return this.path;
   }
 
   /**
@@ -56,7 +51,7 @@ public class QueryString {
    * @return a {@link Map} containing name/value pairs.
    */
   public Map<String,String> getParameters() {
-    return _properties;
+    return properties;
   }
 
   /**
@@ -66,7 +61,7 @@ public class QueryString {
    * @param value an object attribute value.
    */
   public void addParameter(String name, String value) {
-    _properties.put(name, value);
+    properties.put(name, value);
   }
 
   /**
@@ -78,7 +73,7 @@ public class QueryString {
    * if no such value exists.
    */
   public String getParameter(String name) {
-    return (String) _properties.get(name);
+    return (String) properties.get(name);
   }
 
   /**
@@ -87,7 +82,7 @@ public class QueryString {
    * @param path a path.
    */
   void setPath(String path) {
-    _path = path;
+    this.path = path;
   }
 
   /**
@@ -102,13 +97,13 @@ public class QueryString {
   }
 
   public String toString() {
-    StringBuffer buf = new StringBuffer(_path);
+    StringBuffer buf = new StringBuffer(path);
 
-    if (_properties.size() > 0) {
+    if (properties.size() > 0) {
       Map.Entry<String, String> entry;
       buf.append(QueryStringParser.QMARK);
 
-      Iterator<Map.Entry<String, String>> itr   = _properties.entrySet().iterator();
+      Iterator<Map.Entry<String, String>> itr  = properties.entrySet().iterator();
       int      count = 0;
 
       while (itr.hasNext()) {

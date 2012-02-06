@@ -1,13 +1,13 @@
 package org.sapia.ubik.rmi.examples;
 
-import org.sapia.ubik.rmi.Consts;
-import org.sapia.ubik.rmi.naming.remote.RemoteInitialContextFactory;
-import org.sapia.ubik.rmi.server.Hub;
-import org.sapia.ubik.rmi.server.Log;
-
 import java.util.Properties;
 
 import javax.naming.InitialContext;
+
+import org.sapia.ubik.log.Log;
+import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.naming.remote.RemoteInitialContextFactory;
+import org.sapia.ubik.rmi.server.Hub;
 
 
 /**

@@ -1,30 +1,35 @@
 package org.sapia.ubik.rmi.server.gc;
 
-import org.sapia.ubik.jmx.MBeanContainer;
-import org.sapia.ubik.jmx.MBeanFactory;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.sapia.ubik.log.Category;
+import org.sapia.ubik.log.Log;
+import org.sapia.ubik.module.Module;
+import org.sapia.ubik.module.ModuleContext;
 import org.sapia.ubik.rmi.Consts;
-import org.sapia.ubik.rmi.PropUtil;
-import org.sapia.ubik.rmi.server.*;
-import org.sapia.ubik.rmi.server.perf.HitStatFactory;
-import org.sapia.ubik.rmi.server.perf.HitsPerMinStatistic;
+import org.sapia.ubik.rmi.server.OID;
+import org.sapia.ubik.rmi.server.ObjectTable;
+import org.sapia.ubik.rmi.server.VmId;
+import org.sapia.ubik.rmi.server.stats.Hits;
+import org.sapia.ubik.rmi.server.stats.Stats;
 import org.sapia.ubik.taskman.Task;
 import org.sapia.ubik.taskman.TaskContext;
 import org.sapia.ubik.taskman.TaskManager;
-
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-
-import javax.management.ObjectName;
-
+import org.sapia.ubik.util.Collections2;
+import org.sapia.ubik.util.Condition;
+import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.Strings;
 
 /**
- * This class implements the server-side distributed garbage
- * collection algorithm.
+ * This class implements the server-side distributed garbage collection algorithm.
  *
  * @author Yanick Duchesne
- * 2002-08-09
  */
-public class ServerGC implements Task, ServerGCMBean, MBeanFactory {
+public class ServerGC implements Module, Task, ServerGCMBean {
 
   /* delay after which client that haved not performed a ping are considered down. */
   public static final long GC_TIMEOUT = ClientGC.GC_CLEAN_INTERVAL * 3 * 15;
@@ -32,30 +37,55 @@ public class ServerGC implements Task, ServerGCMBean, MBeanFactory {
   /* interval at which GC checks timed-out clients. */
   public static final long GC_INTERVAL  = ClientGC.GC_CLEAN_INTERVAL * 3;
   
-  private static long      _gcTimeout   = GC_TIMEOUT;
-  private static long      _gcInterval  = GC_INTERVAL;
-  private static HitsPerMinStatistic _gcRefPerMin;
-  private static HitsPerMinStatistic _gcDerefPerMin;  
+  private Category      log         = Log.createCategory(getClass());
+  private ObjectTable   objectTable;
+  private long          gcTimeout   = GC_TIMEOUT;
+  private long          gcInterval  = GC_INTERVAL;
   
-  private Map<VmId, ClientInfo> _clientTable = new ConcurrentHashMap<VmId, ClientInfo>();
+  private Hits          gcRefPerMin    = Stats.getInstance().getHitsBuilder(
+                                           getClass(), 
+                                           "RefPerMin", 
+                                           "The number of remote references registered per minute")
+                                           .sampleRate(TimeUnit.MILLISECONDS.convert(2, TimeUnit.MINUTES))
+                                           .perMinute().build();
+  
+  private Hits          gcDerefPerMin  = Stats.getInstance().getHitsBuilder(
+                                           getClass(), 
+                                           "DeRefPerMin", 
+                                           "The number of remote references that are de registered per minute")
+                                           .sampleRate(TimeUnit.MILLISECONDS.convert(2, TimeUnit.MINUTES))
+                                           .perMinute().build();
 
-  /**
-   * Creates a new {@link ServerGC} instance.
-   *
-   * @param taskman
-   */
-  public ServerGC(TaskManager taskman) {
-    PropUtil pu = new PropUtil().addProperties(System.getProperties());
-    _gcInterval = pu.getLongProperty(Consts.SERVER_GC_INTERVAL, GC_INTERVAL);
-    _gcTimeout  = pu.getLongProperty(Consts.SERVER_GC_TIMEOUT, GC_TIMEOUT); 
-    if (_gcInterval > 0) {
-      taskman.addTask(new TaskContext("UbikRMI.ServerGC", _gcInterval), this);
+  
+  
+  private Map<VmId, ClientInfo> clientTable = new ConcurrentHashMap<VmId, ClientInfo>();
+  
+  
+  @Override
+  public void init(ModuleContext context) {
+    
+    objectTable         = context.lookup(ObjectTable.class);
+    TaskManager taskman = context.lookup(TaskManager.class);
+    
+    Props props = new Props().addProperties(System.getProperties());
+    gcInterval = props.getLongProperty(Consts.SERVER_GC_INTERVAL, GC_INTERVAL);
+    gcTimeout  = props.getLongProperty(Consts.SERVER_GC_TIMEOUT, GC_TIMEOUT); 
+    if (gcInterval > 0) {
+      taskman.addTask(new TaskContext("ubik.rmi.server.GC", gcInterval), this);
     } else {
-      Log.warning(getClass(), "Will be disabled; client timeouts will not be monitored");
+      log.warning("Will be disabled; client timeouts will not be monitored");
     }
     
-    _gcRefPerMin = HitStatFactory.createHitsPerMin("ServerGCRefPerMin", 0, Hub.statsCollector);
-    _gcDerefPerMin = HitStatFactory.createHitsPerMin("ServerGCDerefPerMin", 0, Hub.statsCollector);
+    context.registerMbean(getClass(), this);
+    
+  }
+  
+  @Override
+  public void start(ModuleContext context) {
+  }
+  
+  @Override
+  public void stop() {
   }
 
   /**
@@ -90,7 +120,7 @@ public class ServerGC implements Task, ServerGCMBean, MBeanFactory {
    * {@link VmId}.
    */
   public boolean containsClient(VmId id) {
-    return _clientTable.containsKey(id);
+    return clientTable.containsKey(id);
   }
 
   /**
@@ -102,11 +132,9 @@ public class ServerGC implements Task, ServerGCMBean, MBeanFactory {
    * should be incremented.
    */
   public void reference(VmId id, OID oid) {
-    if (Log.isDebug()) {
-      Log.debug(ServerGC.class, "referencing from: " + id + " on object: " + oid);
-    }
+    log.debug("Referencing from: %s on object: %s ", id, oid);
     
-    _gcRefPerMin.hit();
+    gcRefPerMin.hit();
     ClientInfo inf = getClientInfo(id);
     inf.reference(oid);
   }
@@ -123,11 +151,9 @@ public class ServerGC implements Task, ServerGCMBean, MBeanFactory {
    * @param o the {@link Object} for which a stub is eventually returned to the client.
    */
   public void registerRef(VmId id, OID oid, Object o) {
-    if (Log.isInfo()) {
-      Log.info(ServerGC.class, "reference created from: " + id + " on object: " + oid + " - " + o.getClass().getName());
-    }
+    log.info("Reference created from: %s on object: %s - %s", id, oid, o.getClass().getName());
     
-    _gcRefPerMin.hit();
+    gcRefPerMin.hit();
     ClientInfo inf = getClientInfo(id);
     inf.registerRef(oid, o);
   }
@@ -140,12 +166,13 @@ public class ServerGC implements Task, ServerGCMBean, MBeanFactory {
    * @param oid the {@link OID} to dereference.
    */
   public void dereference(VmId id, OID oid) {
-    if (Log.isDebug()) {
-      Log.debug(ServerGC.class, "dereferencing from: " + id + " on object: " + oid);
-    }
-    
-    _gcDerefPerMin.hit();
+    gcDerefPerMin.hit();
     ClientInfo inf = getClientInfo(id);
+    if(log.isDebug()) {
+      Object toDereference = objectTable.getObjectFor(oid);
+      log.debug("Dereferencing from JVM: %s, on object: %s (OID: %s)", id, toDereference, oid);
+    }
+
     inf.dereference(oid);
   }
 
@@ -155,40 +182,38 @@ public class ServerGC implements Task, ServerGCMBean, MBeanFactory {
    * @param id a {@link VmId}
    */
   public void touch(VmId id) {
-    if (Log.isDebug()) {
-      Log.debug(getClass(), "touching client info of vm id " + id);
-    }
+    log.debug("Touching client info of vm id %s", id);
     
-    synchronized (_clientTable) {
-      ClientInfo info = _clientTable.get(id);
+    synchronized (clientTable) {
+      ClientInfo info = clientTable.get(id);
       
       if (info != null) {
         info.touch();
       } else {
-        Log.warning(getClass(), "NO CLIENT INFO FOUND FOR vm id " + id);
+        log.warning("No client info found for vm id", id);
       }
     }
   }
 
   public void exec(TaskContext ctx) {
-    Log.debug(getClass(), "runner server GC...");
+    log.debug("Runner server GC...");
     removeTimedOutClients();
   }
 
   public void clear() {
-    synchronized (_clientTable) {
-      _clientTable.clear();
-      Hub.serverRuntime.objectTable.clear();
+    synchronized (clientTable) {
+      clientTable.clear();
+      objectTable.clear();
     }
   }
 
   ClientInfo getClientInfo(VmId id) {
-    synchronized (_clientTable) {
-      ClientInfo inf = _clientTable.get(id);
+    synchronized (clientTable) {
+      ClientInfo inf = clientTable.get(id);
   
       if (inf == null) {
         inf = new ClientInfo(id);
-        _clientTable.put(id, inf);
+        clientTable.put(id, inf);
       }
   
       return inf;
@@ -198,27 +223,20 @@ public class ServerGC implements Task, ServerGCMBean, MBeanFactory {
   ////// JMX-related
   
   public long getInterval() {
-    return _gcInterval;
+    return gcInterval;
   }
   
   public long getTimeout() {
-    return _gcTimeout;
+    return gcTimeout;
   }
   
   public void setTimeout(long timeout) {
-    _gcTimeout = timeout;
+    gcTimeout = timeout;
   }
   
   public int getClientCount() {
-    return _clientTable.size();
+    return clientTable.size();
   }
-  
-  //////// MBeanFactory
-  
-  public MBeanContainer createMBean() throws Exception{
-    ObjectName name = new ObjectName("sapia.ubik.rmi:type=ServerGC");
-    return new MBeanContainer(name, this);
-  }  
   
   ////// Private methods
 
@@ -228,121 +246,127 @@ public class ServerGC implements Task, ServerGCMBean, MBeanFactory {
    * property.
    */
   private synchronized void removeTimedOutClients() {
-    synchronized (_clientTable) {
-      ClientInfo[] infos = _clientTable.values().toArray(new ClientInfo[_clientTable.size()]);
+    synchronized (clientTable) {
+      final ClientInfo[] infos = clientTable.values().toArray(new ClientInfo[clientTable.size()]);
 
-      for (int i = 0; i < infos.length; i++) {
-        if (!infos[i].isValid(_gcTimeout)) {
-          if (Log.isInfo()) {
-            Log.info(getClass(), "removing timed-out client's references " + infos[i].vmid());
+      Collections2.forEach(infos, new Condition<ClientInfo>() {
+        @Override
+        public boolean apply(ClientInfo item) {
+          if(!item.isValid(gcTimeout)) {
+            log.info("Removing timed-out client's references %s", item.vmid());
+            item.unregisterRefs();
+            clientTable.remove(item.vmid());
           }
-
-          infos[i].unregisterRefs();
-          _clientTable.remove(infos[i].vmid());
+          
+          if(log.isTrace()) {
+            log.trace("Got the following objects for client JVM %s", item.id);
+            for(OID oid : item.oids.keySet()) {
+              log.trace("  => OID: %s, Object=%s", oid, objectTable.getObjectFor(oid));
+            }
+          }
+          return true;
         }
-      }
+      });
     }
   }
 
   ////////////////////////////////////////////////////////////
   //        						INNER CLASSES
   ////////////////////////////////////////////////////////////	
-  static class Count {
-    int count = 0;
-  }
 
-  static class ClientInfo {
-    private Map<OID, Count> _oids = new HashMap<OID, Count>();
-    private long _lastAccess = System.currentTimeMillis();
-    private VmId _id;
+  class ClientInfo {
+    private Map<OID, AtomicInteger> oids       = new HashMap<OID, AtomicInteger>();
+    private volatile long           lastAccess = System.currentTimeMillis();
+    private VmId                    id;
 
     ClientInfo(VmId id) {
-      _id = id;
-      if (Log.isInfo()) {
-        Log.info(getClass(), "Created a new client info for vmId " + _id);
-      }
+      this.id = id;
+      log.info("Created a new client info for vmId %s", id);
     }
 
     VmId vmid() {
-      return _id;
+      return id;
     }
 
     void touch() {
-      _lastAccess = System.currentTimeMillis();
-      if (Log.isDebug()) {
-        Log.debug(getClass(), "Touched this client info: " + toString());
-      }
+      lastAccess = System.currentTimeMillis();
+      log.debug("Touched this client info: %s", toString());
     }
 
     boolean isValid(long timeout) {
-      return (System.currentTimeMillis() - _lastAccess) < timeout;
+      return (System.currentTimeMillis() - lastAccess) < timeout;
     }
 
     void reference(OID oid) {
-      synchronized (_oids) {
-        Count count = _oids.get(oid);
+      synchronized (oids) {
+        AtomicInteger count = oids.get(oid);
   
         if (count == null) {
-          count = new Count();
-          _oids.put(oid, count);
+          count = new AtomicInteger();
+          oids.put(oid, count);
         }
   
-        count.count++;
-        Hub.serverRuntime.objectTable.reference(oid);
+        count.incrementAndGet();
+        objectTable.reference(oid);
       }
     }
 
     void registerRef(OID oid, Object obj) {
-      synchronized (_oids) {
-        Count c = new Count();
-        c.count++;
-        _oids.put(oid, c);
-        Hub.serverRuntime.objectTable.register(oid, obj);
+      synchronized (oids) {
+        AtomicInteger count = new AtomicInteger();
+        count.incrementAndGet();
+        oids.put(oid, count);
+        objectTable.register(oid, obj);
       }
     }
 
     void dereference(OID oid) {
-      synchronized (_oids) {
-        Count count;
+      synchronized (oids) {
+        AtomicInteger count;
   
-        if ((count = _oids.get(oid)) != null) {
-          Hub.serverRuntime.objectTable.dereference(oid, count.count);
-          _oids.remove(oid);
+        if ((count = oids.get(oid)) != null) {
+          objectTable.dereference(oid, count.get());
+          oids.remove(oid);
         }
       }
     }
 
     void unregisterRefs() {
-      synchronized (_oids) {
-        OID[] oids = _oids.keySet().toArray(new OID[_oids.size()]);
+      synchronized (oids) {
+        OID[] oidsArray = this.oids.keySet().toArray(new OID[this.oids.size()]);
   
-        for (int i = 0; i < oids.length; i++) {
-          if(Log.isDebug()){
-            Log.debug(getClass(), "Dereferencing: " + oids[i]);
+        Collections2.forEach(oidsArray, new Condition<OID>() {
+          @Override
+          public boolean apply(OID oid) {
+            log.debug("Dereferencing: %s", oid);
+            AtomicInteger count = oids.get(oid);
+            if(count != null) {
+              objectTable.dereference(oid, count.get());
+            }
+            return true;
           }
-          Hub.serverRuntime.objectTable.dereference(oids[i], (_oids.get(oids[i])).count);
-        }
+        });
   
-        _oids.clear();
+        oids.clear();
       }
     }
 
     int getSpecificCount(OID oid) {
-      Count c = _oids.get(oid);
+      AtomicInteger c = oids.get(oid);
 
       if (c == null) {
         return 0;
       } else {
-        return c.count;
+        return c.get();
       }
     }
 
     int getRefCount(OID oid) {
-      return Hub.serverRuntime.objectTable.getRefCount(oid);
+      return objectTable.getRefCount(oid);
     }
     
     public String toString() {
-      return super.toString() + "[vmId=" + _id + " oidCount=" + _oids.size() + " lastAccess=" + _lastAccess;
+      return Strings.toStringFor(this, "vmId", id, "oidCount", oids.size(), "lastAccess", lastAccess);
     }
   }
   

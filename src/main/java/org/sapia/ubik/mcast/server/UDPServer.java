@@ -3,56 +3,55 @@ package org.sapia.ubik.mcast.server;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InterruptedIOException;
-
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 
-import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.log.Category;
+import org.sapia.ubik.log.Log;
+import org.sapia.ubik.mcast.Defaults;
 import org.sapia.ubik.util.Localhost;
 
 
 /**
+ * Implements a basic UDP server.
+ * 
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 public abstract class UDPServer extends Thread {
-  static final int         DEFAULT_BUFSZ = 1000;
-  protected DatagramSocket _sock;
-  private int              _bufsize = DEFAULT_BUFSZ;
+  
+  private Category         log     = Log.createCategory(getClass());
+  protected DatagramSocket sock;
+  private int              bufsize = Defaults.DEFAULT_UDP_PACKET_SIZE;
 
   /**
    * Constructor for UDPServer.
    */
-  public UDPServer(String name, int soTimeout) throws java.net.SocketException {
-    this(name, soTimeout, 0);
+  public UDPServer(String name) throws java.net.SocketException {
+    this(name, 0);
   }
 
-  public UDPServer(String name, int soTimeout, int port)
+  public UDPServer(String name, int port)
     throws java.net.SocketException {
     super(name);
     super.setDaemon(true);
     try{
-      _sock = createSocket(port);
+      sock = createSocket(port);
     }catch(UnknownHostException e){
       throw new IllegalStateException("Could not bind to local address", e);
     }
-    _sock.setSoTimeout(soTimeout);
   }
 
   public void setBufsize(int size) {
-    _bufsize = size;
+    bufsize = size;
   }
   
   
   private static DatagramSocket createSocket(int port) throws UnknownHostException, SocketException{
     DatagramSocket socket;
-    if(System.getProperty(Consts.IP_PATTERN_KEY) != null){
+    if(Localhost.isIpPatternDefined()){
       socket = new DatagramSocket(port, Localhost.getAnyLocalAddress());
     }
     else{
@@ -62,7 +61,7 @@ public abstract class UDPServer extends Thread {
   }
 
   public int getPort() {
-    return _sock.getLocalPort();
+    return sock.getLocalPort();
   }
 
   public void run() {
@@ -70,28 +69,31 @@ public abstract class UDPServer extends Thread {
 
     while (true) {
       try {
-        pack = new DatagramPacket(new byte[_bufsize], _bufsize);
-        _sock.receive(pack);
-        handle(pack, _sock);
+        pack = new DatagramPacket(new byte[bufsize], bufsize);
+        sock.receive(pack);
+        handle(pack, sock);
+      } catch (SocketTimeoutException e) {
+        log.warning("Socket timeout out error while waiting for request", e);
       } catch (InterruptedIOException e) {
-        handleSoTimeout();
+        if(!sock.isClosed()) {
+          sock.close();
+        }
+        break;
       } catch (SocketException e) {
-        if (_sock.isClosed()) {
+        if (sock.isClosed()) {
           break;
         }
       } catch (EOFException e) {
         handlePacketSizeToShort(pack);
       } catch (IOException e) {
-        e.printStackTrace();
+        log.error("IO Exception while waiting for request", e);
       }
     }
   }
 
   protected int bufSize() {
-    return _bufsize;
+    return bufsize;
   }
-
-  protected abstract void handleSoTimeout();
 
   protected abstract void handlePacketSizeToShort(DatagramPacket pack);
 

@@ -1,9 +1,5 @@
 package org.sapia.ubik.rmi.server.transport.nio.tcp;
 
-import java.io.ByteArrayInputStream;
-
-import org.sapia.ubik.rmi.server.transport.MarshalInputStream;
-
 import junit.framework.TestCase;
 
 public class NioResponseEncoderTest extends TestCase {

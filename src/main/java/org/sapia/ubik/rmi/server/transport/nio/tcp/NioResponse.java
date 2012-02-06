@@ -11,7 +11,7 @@ import org.sapia.ubik.rmi.server.VmId;
  */
 public class NioResponse {
   
-  private VmId associatedVmId;
+  private VmId   associatedVmId;
   private Object object;
   private String transportType;
   

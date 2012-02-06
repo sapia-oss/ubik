@@ -1,13 +1,13 @@
 package org.sapia.ubik.rmi.examples.replication;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import org.sapia.ubik.net.TCPAddress;
 import org.sapia.ubik.rmi.examples.Foo;
 import org.sapia.ubik.rmi.examples.UbikFoo;
 import org.sapia.ubik.rmi.replication.ReplicationEvent;
 import org.sapia.ubik.rmi.server.Hub;
-
-import java.util.HashSet;
-import java.util.Set;
 
 
 /**
@@ -32,7 +32,7 @@ public class FooServer1 {
     try {
       Foo                   f          = new UbikFoo();
       ServerSideInterceptor serverSide = new ServerSideInterceptor(siblings, f);
-      Hub.serverRuntime.addInterceptor(ReplicationEvent.class, serverSide);
+      Hub.getModules().getServerRuntime().getDispatcher().addInterceptor(ReplicationEvent.class, serverSide);
 
       Hub.exportObject(f, addr.getPort());
 

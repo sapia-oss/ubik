@@ -1,29 +1,27 @@
 package org.sapia.ubik.rmi.server.transport.udp;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.rmi.RemoteException;
+
 import org.sapia.ubik.net.udp.ObjectStreamFactory;
 import org.sapia.ubik.net.udp.UDPConnection;
 import org.sapia.ubik.net.udp.UDPServerAddress;
 import org.sapia.ubik.rmi.server.VmId;
 import org.sapia.ubik.rmi.server.transport.MarshalOutputStream;
+import org.sapia.ubik.rmi.server.transport.MarshalStreamFactory;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.io.OutputStream;
-
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-
-import java.rmi.RemoteException;
 
 
 /**
  * @author Yanick Duchesne
- * 17-Jun-2003
  */
 public class UdpRmiConnection extends UDPConnection implements RmiConnection {
-  private ObjectStreamFactory _fac = new UdpObjectStreamFactory();
+  private ObjectStreamFactory fac = new UdpObjectStreamFactory();
 
   /**
    * Constructor for UdpRmiConnection.
@@ -53,7 +51,7 @@ public class UdpRmiConnection extends UDPConnection implements RmiConnection {
   public void send(Object o, VmId associated, String transportType)
     throws IOException, RemoteException {
     ByteArrayOutputStream bos = new ByteArrayOutputStream(_bufsz);
-    MarshalOutputStream   ous = (MarshalOutputStream) _fac.toOutput(bos);
+    MarshalOutputStream   ous = (MarshalOutputStream) fac.toOutput(bos);
     ous.setUp(associated, transportType);
     ous.writeObject(o);
     ous.flush();
@@ -65,7 +63,7 @@ public class UdpRmiConnection extends UDPConnection implements RmiConnection {
    * @see org.sapia.ubik.net.udp.UDPConnection#getFactory()
    */
   protected ObjectStreamFactory getFactory() {
-    return _fac;
+    return fac;
   }
 
   /*////////////////////////////////////////////////////////////////////
@@ -78,7 +76,7 @@ public class UdpRmiConnection extends UDPConnection implements RmiConnection {
      */
     public ObjectOutputStream toOutput(OutputStream os)
       throws IOException {
-      return new MarshalOutputStream(os);
+      return MarshalStreamFactory.createOutputStream(os);
     }
   }
 }

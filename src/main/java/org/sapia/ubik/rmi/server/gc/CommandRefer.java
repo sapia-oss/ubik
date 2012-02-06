@@ -1,10 +1,13 @@
 package org.sapia.ubik.rmi.server.gc;
 
-import org.sapia.ubik.rmi.server.*;
-
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+
+import org.sapia.ubik.log.Log;
+import org.sapia.ubik.rmi.server.Hub;
+import org.sapia.ubik.rmi.server.OID;
+import org.sapia.ubik.rmi.server.command.RMICommand;
 
 
 /**
@@ -12,10 +15,10 @@ import java.io.ObjectOutput;
  * object living on the server side.
  *
  * @author Yanick Duchesne
- * 2002-08-25
  */
 public class CommandRefer extends RMICommand {
-  private OID _oid;
+  
+  private OID oid;
 
   /** Do not call; used for externalization only */
   public CommandRefer() {
@@ -28,32 +31,34 @@ public class CommandRefer extends RMICommand {
    * @param oid an {@link OID}
    */
   public CommandRefer(OID oid) {
-    _oid = oid;
+    this.oid = oid;
   }
 
   /**
-   * @see org.sapia.ubik.rmi.server.RMICommand#execute()
+   * @see org.sapia.ubik.rmi.server.command.RMICommand#execute()
    */
   public Object execute() throws Throwable {
-    Hub.serverRuntime.gc.reference(_vmId, _oid);
-
+    if(Log.isDebug()) {
+      Log.debug(getClass(), String.format("Referring to %s from client VM: %s ", oid, vmId));
+    }
+    Hub.getModules().getServerTable().getGc().reference(vmId, oid);
     return null;
   }
 
   /**
-   * @see org.sapia.ubik.rmi.server.RMICommand#readExternal(ObjectInput)
+   * @see org.sapia.ubik.rmi.server.command.RMICommand#readExternal(ObjectInput)
    */
   public void readExternal(ObjectInput in)
     throws IOException, ClassNotFoundException {
     super.readExternal(in);
-    _oid = (OID) in.readObject();
+    oid = (OID) in.readObject();
   }
 
   /**
-   * @see org.sapia.ubik.rmi.server.RMICommand#writeExternal(ObjectOutput)
+   * @see org.sapia.ubik.rmi.server.command.RMICommand#writeExternal(ObjectOutput)
    */
   public void writeExternal(ObjectOutput out) throws IOException {
     super.writeExternal(out);
-    out.writeObject(_oid);
+    out.writeObject(oid);
   }
 }

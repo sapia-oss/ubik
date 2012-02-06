@@ -6,9 +6,10 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.rmi.NoSuchObjectException;
 
+import org.sapia.ubik.ioc.NamingService;
+import org.sapia.ubik.log.Log;
 import org.sapia.ubik.rmi.naming.remote.discovery.ServiceDiscoListener;
 import org.sapia.ubik.rmi.naming.remote.discovery.ServiceDiscoveryEvent;
-import org.sapia.ubik.rmi.server.Log;
 
 import com.google.inject.Inject;
 import com.google.inject.Provider;
@@ -56,13 +57,10 @@ import com.google.inject.Provider;
 public class RemoteServiceImporter<T> implements Provider<T>{
 
   @Inject
-  private NamingService _naming;
-
-  private String _name;
-
-  private T _remote;
-
-  private Class<T> _type;
+  private NamingService naming;
+  private String        name;
+  private T             remote;
+  private Class<T>      type;
 
   /**
    * Creates a new instance of {@link RemoteServiceImporter}.
@@ -72,36 +70,35 @@ public class RemoteServiceImporter<T> implements Provider<T>{
    * Ubik's JNDI server(s).
    */
   public RemoteServiceImporter(Class<T> type, String jndiName) {
-    _type = type;
-    _name = jndiName;
+    this.type = type;
+    this.name = jndiName;
   }
 
   public T get() {
-    if (_name == null) {
+    if (name == null) {
       throw new IllegalStateException("JNDI name not set on this provider");
     }
-    if (_naming == null) {
+    if (naming == null) {
       throw new IllegalStateException(NamingService.class.getName()
           + " instance not set on this provider");
     }
 
     try {
-      _remote = _type.cast(_naming.lookup(_name));
+      remote = type.cast(naming.lookup(name));
       if (Log.isInfo()) {
-        Log.info(getClass(), "Resolved remote service: " + _name);
+        Log.info(getClass(), "Resolved remote service: " + name);
       }
       
       // returning the remote object that was found
-      return _remote;
+      return remote;
     } catch (Exception e) {
-      Log.warning(getClass(), "Could not resolve remote service: " + _name
-          + "; attempting discovery");
+      Log.warning(getClass(), "Could not resolve remote service: " + name + "; attempting discovery");
       Log.error(getClass(), e);
-      _naming.register(new ServiceDiscoListenerImpl());
+      naming.register(new ServiceDiscoListenerImpl());
       
       // not found remote object, returning lazy proxy
-      return _type.cast(Proxy.newProxyInstance(Thread.currentThread()
-          .getContextClassLoader(), new Class[] { _type },
+      return type.cast(Proxy.newProxyInstance(Thread.currentThread()
+          .getContextClassLoader(), new Class[] { type },
           new ProxyInvocationHandler(this)));
     }
   }
@@ -112,15 +109,14 @@ public class RemoteServiceImporter<T> implements Provider<T>{
 
     public void onServiceDiscovered(ServiceDiscoveryEvent anEvent) {
       // Matching service name as-is or without the initial '/' character
-      if (anEvent.getName().equals(_name)
+      if (anEvent.getName().equals(name)
           || (anEvent.getName().charAt(0) == '/' && anEvent.getName()
-              .substring(1).equals(_name))) {
+              .substring(1).equals(name))) {
         try {
-          _remote = _type.cast(anEvent.getService());
-          _naming.unregister(this);
-  
+          remote = type.cast(anEvent.getService());
+          naming.unregister(this);
         } catch (Exception e) {
-          Log.error(getClass(), "Could not resolve remote service: " + _name, e);
+          Log.error(getClass(), "Could not resolve remote service: " + name, e);
         }
       }
     }
@@ -131,18 +127,18 @@ public class RemoteServiceImporter<T> implements Provider<T>{
    */
   public class ProxyInvocationHandler implements InvocationHandler {
 
-    private RemoteServiceImporter<T> _owner;
+    private RemoteServiceImporter<T> owner;
 
     ProxyInvocationHandler(RemoteServiceImporter<T> owner) {
-      _owner = owner;
+      this.owner = owner;
     }
 
     public Object invoke(Object proxy, Method method, Object[] args)
         throws Throwable {
       // Forward Service life-cycle calls to the proxy service
-      if (_owner._remote != null) {
+      if (owner.remote != null) {
         try {
-          Object result = method.invoke(_owner._remote, args);
+          Object result = method.invoke(owner.remote, args);
           return result;
         } catch (InvocationTargetException e) {
           throw e.getTargetException();
@@ -156,7 +152,7 @@ public class RemoteServiceImporter<T> implements Provider<T>{
         } catch (Exception e) {
         }
 
-        throw new NoSuchObjectException(_owner._name);
+        throw new NoSuchObjectException(owner.name);
       }
     }
   }

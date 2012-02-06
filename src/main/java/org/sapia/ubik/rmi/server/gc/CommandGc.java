@@ -1,78 +1,79 @@
 package org.sapia.ubik.rmi.server.gc;
 
-import org.sapia.ubik.rmi.server.*;
-
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
+import org.sapia.ubik.log.Log;
+import org.sapia.ubik.rmi.server.Hub;
+import org.sapia.ubik.rmi.server.OID;
+import org.sapia.ubik.rmi.server.command.RMICommand;
+
 
 /**
- * This command is sent by clients (<code>ClientGC</code> instances) that wish
- * to notify the server that they have garbage-collected remote references.
- * The server-side GC (<code>ServerGC</code>) updates the reference count
- * for all object identifiers it receives (which are passed in through this
- * command).
+ * This command is sent by clients ({@link ClientGC} instances) that wish to notify the server that 
+ * they have garbage-collected remote references. The server-side GC ({@link ServerGC}) updates the 
+ * reference count for all object identifiers it receives (which are passed in through this command).
  *
  * @author Yanick Duchesne
- * 2002-09-11
  */
 public class CommandGc extends RMICommand {
-  private int   _count;
-  private OID[] _oids;
+  
+  private int   count;
+  private OID[] oids;
 
   /** Do not call; used for externalization only. */
   public CommandGc() {
   }
 
   CommandGc(OID[] oids, int count) {
-    _oids    = oids;
-    _count   = count;
+    this.oids    = oids;
+    this.count   = count;
   }
 
   /**
-   * @see org.sapia.ubik.rmi.server.RMICommand#execute()
+   * @see org.sapia.ubik.rmi.server.command.RMICommand#execute()
    */
   public Object execute() throws Throwable {
     int i = 0;
 
-    for (; i < _count; i++) {
-      Hub.serverRuntime.gc.dereference(_vmId, _oids[i]);
+    for (; i < count; i++) {
+      Hub.getModules().getServerTable().getGc().dereference(vmId, oids[i]);
     }
     
-    Hub.serverRuntime.dispatchEvent(
+    Hub.getModules().getServerRuntime().dispatchEvent(
       new GcEvent(
         super.getVmId(),
         super.getServerAddress(), 
-        _count
+        count
       )
     );
 
-    Hub.serverRuntime.gc.touch(_vmId);
+    Hub.getModules().getServerTable().getGc().touch(vmId);
 
     if (Log.isDebug()) {
-      Log.debug(getClass(), "cleaned " + i + " objects");
+      Log.debug(getClass(), "Cleaned " + i + " objects");
     }
 
     return null;
   }
 
   /**
-   * @see org.sapia.ubik.rmi.server.RMICommand#readExternal(ObjectInput)
+   * @see org.sapia.ubik.rmi.server.command.RMICommand#readExternal(ObjectInput)
    */
   public void readExternal(ObjectInput in)
     throws IOException, ClassNotFoundException {
     super.readExternal(in);
-    _count   = in.readInt();
-    _oids    = (OID[]) in.readObject();
+    count   = in.readInt();
+    oids    = (OID[]) in.readObject();
   }
 
   /**
-   * @see org.sapia.ubik.rmi.server.RMICommand#writeExternal(ObjectOutput)
+   * @see org.sapia.ubik.rmi.server.command.RMICommand#writeExternal(ObjectOutput)
    */
   public void writeExternal(ObjectOutput out) throws IOException {
     super.writeExternal(out);
-    out.writeInt(_count);
-    out.writeObject(_oids);
+    out.writeInt(count);
+    out.writeObject(oids);
   }
 }

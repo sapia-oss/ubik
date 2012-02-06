@@ -13,7 +13,7 @@ import org.sapia.ubik.rmi.naming.remote.proxy.JNDIHandler;
 
 /**
  * This class implements the Service Locator pattern. It acts as a universal
- * lookup "helper", in conjunction with pluggable <code>ServiceHandler</code>
+ * lookup "helper", in conjunction with pluggable {@link ServiceHandler}
  * instances. The ServiceLocator encapsulates one to many service handlers;
  * for a given lookup, the locator retrieves the appropriate locator and then
  * delegates the lookup to the latter, returning the result to the caller.
@@ -51,11 +51,6 @@ import org.sapia.ubik.rmi.naming.remote.proxy.JNDIHandler;
  * if configured after the ServiceLocator class' initialization.
  *
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 public class ServiceLocator {
   /**
@@ -81,7 +76,7 @@ public class ServiceLocator {
    *
    * @see JNDIHandler
    */
-  private static Map<String, ServiceHandler> _handlers = new ConcurrentHashMap<String, ServiceHandler>();
+  private static Map<String, ServiceHandler> handlers = new ConcurrentHashMap<String, ServiceHandler>();
 
   static {
     registerHandler(UBIK_SCHEME, new JNDIHandler());
@@ -142,7 +137,7 @@ public class ServiceLocator {
       throw exc;
     }
 
-    ServiceHandler handler = (ServiceHandler) _handlers.get(uri.getScheme());
+    ServiceHandler handler = (ServiceHandler) handlers.get(uri.getScheme());
 
     if (handler == null) {
       throw new NamingException("no handler found for: " + uri.getScheme());
@@ -156,16 +151,25 @@ public class ServiceLocator {
    * Registers the given handler with the passed in scheme.
    *
    * @param scheme a URI scheme.
-   * @param handler a <code>ServiceHandler</code>.
+   * @param handler a {@link ServiceHandler}.
    * @throws IllegalStateException if a handler is already registered with the given scheme.
    */
   public static void registerHandler(String scheme, ServiceHandler handler)
     throws IllegalStateException {
-    if (_handlers.get(scheme) != null) {
+    if (handlers.get(scheme) != null) {
       throw new IllegalStateException(
         "service handler already registered for :" + scheme);
     }
 
-    _handlers.put(scheme, handler);
+    handlers.put(scheme, handler);
+  }
+  
+  /**
+   * Removes the handler associated to the given URI scheme.
+   * 
+   * @param scheme the URI scheme of the handler to remove from the {@link ServiceLocator}.
+   */
+  public static void unregisterHandler(String scheme) {
+    handlers.remove(scheme);
   }
 }

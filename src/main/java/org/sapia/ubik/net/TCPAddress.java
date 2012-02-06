@@ -9,19 +9,13 @@ import java.io.ObjectOutput;
  * This class models a TCP "server address". This class encapsulates host and port information.
  *
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 public class TCPAddress implements java.io.Externalizable, ServerAddress {
   static final long          serialVersionUID = 1L;
   public static final String TRANSPORT_TYPE = "tcp/socket";
-  private String             _host;
-  private int                _port;
-  private int                _hashCode;
-  protected String           _transportType = TRANSPORT_TYPE;
+  private String             host;
+  private int                port;
+  protected String           transportType = TRANSPORT_TYPE;
 
   /** Do not call; used for externalization only. */
   public TCPAddress() {
@@ -36,9 +30,8 @@ public class TCPAddress implements java.io.Externalizable, ServerAddress {
    *
    */
   public TCPAddress(String host, int port) {
-    _host       = host;
-    _port       = port;
-    _hashCode   = (host + port).hashCode();
+    this.host       = host;
+    this.port       = port;
   }
 
   /**
@@ -53,7 +46,7 @@ public class TCPAddress implements java.io.Externalizable, ServerAddress {
     try {
       other = (TCPAddress) obj;
 
-      return (other._port == _port) && other._host.equals(_host);
+      return (other.port == port) && other.host.equals(host);
     } catch (ClassCastException e) {
       return false;
     }
@@ -65,7 +58,7 @@ public class TCPAddress implements java.io.Externalizable, ServerAddress {
    * @return this instance's host address.
    */
   public String getHost() {
-    return _host;
+    return host;
   }
 
   /**
@@ -74,7 +67,7 @@ public class TCPAddress implements java.io.Externalizable, ServerAddress {
    * @return a server port..
    */
   public int getPort() {
-    return _port;
+    return port;
   }
 
   /**
@@ -83,7 +76,7 @@ public class TCPAddress implements java.io.Externalizable, ServerAddress {
    * @return a hash code, as an <code>int</code>.
    */
   public int hashCode() {
-    return _hashCode;
+    return host.hashCode() * 31 ^ port * 31;
   }
 
   /**
@@ -91,27 +84,25 @@ public class TCPAddress implements java.io.Externalizable, ServerAddress {
    */
   public void readExternal(ObjectInput in)
     throws IOException, ClassNotFoundException {
-    _host            = in.readUTF();
-    _port            = in.readInt();
-    _hashCode        = in.readInt();
-    _transportType   = in.readUTF();
+    host            = in.readUTF();
+    port            = in.readInt();
+    transportType   = in.readUTF();
   }
 
   /**
    * @see java.io.Externalizable#writeExternal(ObjectOutput)
    */
   public void writeExternal(ObjectOutput out) throws IOException {
-    out.writeUTF(_host);
-    out.writeInt(_port);
-    out.writeInt(_hashCode);
-    out.writeUTF(_transportType);
+    out.writeUTF(host);
+    out.writeInt(port);
+    out.writeUTF(transportType);
   }
 
   /**
    * @see org.sapia.ubik.net.ServerAddress#getTransportType()
    */
   public String getTransportType() {
-    return _transportType;
+    return transportType;
   }
 
   /**
@@ -120,7 +111,6 @@ public class TCPAddress implements java.io.Externalizable, ServerAddress {
    * @return a <code>String</code>.
    */
   public String toString() {
-    return "[ host=" + _host + ", port=" + _port + ", type=" + _transportType +
-    " ]";
+    return "[ host=" + host + ", port=" + port + ", type=" + transportType + " ]";
   }
 }

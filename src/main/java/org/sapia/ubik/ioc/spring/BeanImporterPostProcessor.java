@@ -7,9 +7,9 @@ import java.lang.reflect.Proxy;
 import java.rmi.NoSuchObjectException;
 
 import org.sapia.ubik.ioc.NamingService;
+import org.sapia.ubik.log.Log;
 import org.sapia.ubik.rmi.naming.remote.discovery.ServiceDiscoListener;
 import org.sapia.ubik.rmi.naming.remote.discovery.ServiceDiscoveryEvent;
-import org.sapia.ubik.rmi.server.Log;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.FatalBeanException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
@@ -36,28 +36,28 @@ import org.springframework.beans.factory.config.BeanPostProcessor;
  */
 public class BeanImporterPostProcessor implements BeanPostProcessor{
 
-  private NamingService _naming;
+  private NamingService naming;
 
   @Override
   public Object postProcessAfterInitialization(Object bean, String name)
       throws BeansException {
     
     if(bean instanceof NamingService){
-      _naming = (NamingService)bean;
+      naming = (NamingService)bean;
     }
     else if(bean instanceof RemoteBeanRef){
       RemoteBeanRef ref = (RemoteBeanRef)bean;
       if(ref.getName() == null){
         throw new FatalBeanException("'name' property not set on remote bean reference");
       }
-      if (_naming == null) {
+      if (naming == null) {
         throw new IllegalStateException(NamingService.class.getName()
             + " not passed to this post processor; make sure you declare a " 
             + NamingServiceBean.class.getName());
       }
       Object remote = null;
       try {
-        remote = _naming.lookup(ref.getName());
+        remote = naming.lookup(ref.getName());
         if (Log.isInfo()) {
           Log.info(getClass(), "Resolved remote service: " + ref.getName());
         }
@@ -70,7 +70,7 @@ public class BeanImporterPostProcessor implements BeanPostProcessor{
         Log.error(getClass(), e);
         
         ProxyInvocationHandler handler = new ProxyInvocationHandler(ref.getName());
-        _naming.register(new ServiceDiscoListenerImpl(handler));
+        naming.register(new ServiceDiscoListenerImpl(handler));
 
         if(ref.getInterfaces() == null){
           throw new FatalBeanException("'interfaces' property not set on remote bean reference: " 
@@ -97,23 +97,22 @@ public class BeanImporterPostProcessor implements BeanPostProcessor{
   
   class ServiceDiscoListenerImpl implements ServiceDiscoListener{ 
     
-    private ProxyInvocationHandler _handler;
+    private ProxyInvocationHandler handler;
     
     public ServiceDiscoListenerImpl(ProxyInvocationHandler handler) {
-      _handler = handler;
+      this.handler = handler;
     }
 
     public void onServiceDiscovered(ServiceDiscoveryEvent anEvent) {
       // Matching service name as-is or without the initial '/' character
-      if (anEvent.getName().equals(_handler.getName())
+      if (anEvent.getName().equals(handler.getName())
           || (anEvent.getName().charAt(0) == '/' && anEvent.getName()
-              .substring(1).equals(_handler.getName()))) {
+              .substring(1).equals(handler.getName()))) {
         try {
-          _handler.setRemoteObject(anEvent.getService());
-          _naming.unregister(this);
-  
+          handler.setRemoteObject(anEvent.getService());
+          naming.unregister(this);
         } catch (Exception e) {
-          Log.error(getClass(), "Could not resolve remote service: " + _handler.getName(), e);
+          Log.error(getClass(), "Could not resolve remote service: " + handler.getName(), e);
         }
       }
     }
@@ -124,27 +123,27 @@ public class BeanImporterPostProcessor implements BeanPostProcessor{
    */
   public class ProxyInvocationHandler implements InvocationHandler {
 
-    Object _remote;
-    String _name;
+    Object remote;
+    String name;
 
     ProxyInvocationHandler(String name) {
-      _name = name;
+      this.name = name;
     }
     
     public void setRemoteObject(Object remote) {
-      _remote = remote;
+      this.remote = remote;
     }
     
     public String getName() {
-      return _name;
+      return name;
     }
 
     public Object invoke(Object proxy, Method method, Object[] args)
         throws Throwable {
       // Forward Service life-cycle calls to the proxy service
-      if (_remote != null) {
+      if (remote != null) {
         try {
-          Object result = method.invoke(_remote, args);
+          Object result = method.invoke(remote, args);
           return result;
         } catch (InvocationTargetException e) {
           throw e.getTargetException();
@@ -158,7 +157,7 @@ public class BeanImporterPostProcessor implements BeanPostProcessor{
         } catch (Exception e) {
         }
 
-        throw new NoSuchObjectException(_name);
+        throw new NoSuchObjectException(name);
       }
     }
   }

@@ -1,255 +1,276 @@
 package org.sapia.ubik.rmi.server;
 
 import java.rmi.RemoteException;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.sapia.ubik.jmx.JmxHelper;
-import org.sapia.ubik.jmx.MBeanContainer;
-import org.sapia.ubik.jmx.MBeanFactory;
+import org.sapia.ubik.log.Category;
+import org.sapia.ubik.log.Log;
+import org.sapia.ubik.module.Module;
+import org.sapia.ubik.module.ModuleContext;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
-import org.sapia.ubik.rmi.Remote;
+import org.sapia.ubik.rmi.server.gc.ServerGC;
+import org.sapia.ubik.rmi.server.stats.Stats;
+import org.sapia.ubik.rmi.server.stats.Timer;
+import org.sapia.ubik.rmi.server.stub.RemoteRefContext;
+import org.sapia.ubik.rmi.server.stub.Stub;
+import org.sapia.ubik.rmi.server.stub.StubInvocationHandler;
 import org.sapia.ubik.rmi.server.transport.TransportManager;
-import org.sapia.ubik.rmi.server.transport.socket.SocketTransportProvider;
+import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.TypeCache;
+
+import com.google.inject.cglib.proxy.Callback;
 
 /**
- * This class is a singleton that implements the <code>Server</code> interface.
- * It internally keeps a table of running servers, on a per-transport-type-to-server-instance
- * basis. There can only be a single server instance per transport type.
+ * An instance of this class internally keeps a table of running servers, on a per-transport-type-to-server-instance
+ * basis. There can only be a single {@link Server} instance per transport type.
  * <p>
- * This class holds methods  pertaining to stub creations, etc. It and delegates the <code>Server</code> interface's
- * methods to the internal <coce>Server</code> implementation(s).
+ * This class holds methods  pertaining to stub creations, etc. 
  * <p>
- * For example, calling shutdown on this singleton will trigger the shutdown of all internal server instances.
  *
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
-public class ServerTable implements Server {
-  static final String DEFAULT_TRANSPORT_TYPE = SocketTransportProvider.TRANSPORT_TYPE;
-
-  // A "cache" of class-to-interfaces mappings.
-  private static Map<Class<?>, Class<?>[]> _interfaceCache = new ConcurrentHashMap<Class<?>, Class<?>[]>();
-  Map<String, ServerRef> _serversByType = new ConcurrentHashMap<String, ServerRef>();
-
-  /*////////////////////////////////////////////////////////////////////
-                      Server interface methods
-  ////////////////////////////////////////////////////////////////////*/
-
-  /**
-   * @see org.sapia.ubik.rmi.server.Server#start()
-   */
-  public void start() {
-    //noop
+public class ServerTable implements Module {
+  
+  private Category                  log             = Log.createCategory(ServerTable.class);
+  private TypeCache                 typeCache       = new TypeCache();
+  private Map<String, ServerRef>    serversByType   = new ConcurrentHashMap<String, ServerRef>();
+  private ObjectTable               objectTable;
+  private ServerGC                  gc;
+  private TransportManager          transport;
+  private StubProcessor             stubProcessor   = new StubProcessor(this);
+  private boolean                   callbackEnabled;
+  private Object                    serverCreationLock = new Object();
+  
+  private Timer                     remoteObjectCreation = Stats.getInstance().createTimer(
+      getClass(), 
+      "RemoteObjectCreation", 
+      "Avg remote object creation time");
+  
+  @Override
+  public void init(ModuleContext context) {
+    callbackEnabled = Props.getSystemProperties().getBooleanProperty(Consts.CALLBACK_ENABLED, true);
   }
-
-  /**
-   * @see org.sapia.ubik.rmi.server.Server#close()
-   */
-  public void close() {
-    Iterator<ServerRef>  itr = _serversByType.values().iterator();
-    ServerRef ref;
-
-    while (itr.hasNext()) {
-      ref = itr.next();
-      ref.server.close();
+  
+  @Override
+  public void start(ModuleContext context) {
+    objectTable = context.lookup(ObjectTable.class);
+    gc          = context.lookup(ServerGC.class);
+    transport   = context.lookup(TransportManager.class);
+  }
+  
+  @Override
+  public void stop() {
+    for(ServerRef ref : serversByType.values()) {
+      ref.getServer().close();
     }
+    typeCache.clear();
+    serversByType.clear();
   }
 
   /**
-   * Returns the adress of the server corresponding to the default transport type.
-   *
-   * @see org.sapia.ubik.rmi.server.Server#getServerAddress()()
+   * Returns the address of the server corresponding to the given transport type.
+   * 
+   * @param transportType the identifier of a transport type.
+   * @return a {@link ServerAddress}.
    */
-  public ServerAddress getServerAddress() {
-    return getServerRef(DEFAULT_TRANSPORT_TYPE).server.getServerAddress();
-  }
-
   public ServerAddress getServerAddress(String transportType) {
-    return getServerRef(transportType).server.getServerAddress();
+    return getServerRef(transportType).getServer().getServerAddress();
   }
-
-  /*////////////////////////////////////////////////////////////////////
-                          Decorator methods
-  ////////////////////////////////////////////////////////////////////*/
-
+  
   /**
-   * Returns the remote reference of this instance.
-   *
-   * @return a <code>RemoteRef</code>.
+   * @return this instance's {@link ServerGC}.
    */
-  public RemoteRef getRemoteRef(String transportType) {
-    return getServerRef(transportType).ref;
+  public ServerGC getGc() {
+    return gc;
+  }
+  
+  /**
+   * @return this instance's {@link StubProcessor}.
+   */
+  public StubProcessor getStubProcessor() {
+    return stubProcessor;
   }
 
   /**
    * Returns the unique object identifier of this instance.
    *
-   * @return an <code>OID</code>.
+   * @return an {@link OID}.
    */
   public OID getOID(String transportType) {
-    return getServerRef(transportType).oid;
+    return getServerRef(transportType).getOid();
   }
-
-  /*////////////////////////////////////////////////////////////////////
-                      Restricted Access Methods.
-  ////////////////////////////////////////////////////////////////////*/
-  boolean isInit(String transportType) {
-    return _serversByType.get(transportType) != null;
+  
+  /**
+   * @return the {@link TypeCache}, which holds the cached interfaces for classes of remote objects.
+   */
+  public TypeCache getTypeCache() {
+    return typeCache;
   }
+  
+  // --------------------------------------------------------------------------
+  // exportObject()
 
-  ServerAddress init(Object remote, String transportType)
-    throws RemoteException, IllegalStateException {
-    Server s = TransportManager.getProviderFor(transportType).newDefaultServer();
-    s.start();
-
-    return doInit(remote, s, transportType);
-  }
-
-  ServerAddress init(Object remote)
-    throws RemoteException, IllegalStateException {
-    return init(remote, 0);
-  }
-
-  ServerAddress init(Object remote, int port)
-    throws RemoteException, IllegalStateException {
-    return doInit(remote, port, ServerTable.DEFAULT_TRANSPORT_TYPE);
-  }
-
-  ServerAddress init(Object remote, String transportType, Properties props)
-    throws RemoteException, IllegalStateException {
+  /**
+   * @param toExport the object to export as a remote object.
+   * @param properties the transport configuration properties.
+   * @return the stub that was created.
+   * @throws RemoteException if a problem occurs attempting to export the given object.
+   */
+  public Object exportObject(Object toExport, Properties properties) throws RemoteException {
+    if(toExport instanceof Stub) {
+      return toExport;
+    }
     
-    if(Log.isDebug()){
-      Log.debug(getClass(), "Getting server for transport : " + transportType + 
-        ": properties: " + props);
+    String transportType = properties.getProperty(Consts.TRANSPORT_TYPE);
+    if(transportType == null) {
+      throw new RemoteException(String.format("%s property not specified", Consts.TRANSPORT_TYPE));
     }
-    Server s = TransportManager.getProviderFor(transportType).newServer(props);
-
-    s.start();
-
-    return doInit(remote, s, transportType);
-  }
-
-  private synchronized ServerAddress doInit(Object remote, int port,
-    String transportType) throws RemoteException, IllegalStateException {
-    if (_serversByType.get(transportType) != null) {
-      throw new IllegalStateException("server already created");
-    }
-
-    if (Log.isDebug()) {
-      Log.debug(ServerTable.class, "initializing server");
-    }
-
-    Server s;
-
-    try {
-      s = TransportManager.getDefaultProvider().newServer(port);
-    } catch (java.io.IOException e) {
-      throw new java.rmi.RemoteException("could not create singleton server", e);
-    }
-
-    s.start();
-
-    return doInit(remote, s, transportType);
-  }
-
-  private synchronized ServerAddress doInit(Object remote, Server s,
-    String transportType) throws RemoteException, IllegalStateException {
-    if (_serversByType.get(transportType) != null) {
-      throw new IllegalStateException("server already created");
-    }
-
-    ServerRef serverRef = new ServerRef();
-    serverRef.server = s;
-
-    if (Log.isDebug()) {
-      Log.debug(ServerTable.class,
-        "server listening on: " + serverRef.server.getServerAddress());
-    }
-
-    if (remote != null) {
-      serverRef.oid   = generateOID();
-
-      serverRef.ref    = initRef(remote, serverRef.oid, serverRef);
-      serverRef.stub   = (Stub) Hub.getStubFor(serverRef.ref, remote);
-    }
-
-    _serversByType.put(transportType, serverRef);
     
-    if(s instanceof MBeanFactory){
-      try{      
-        MBeanContainer mbc = ((MBeanFactory)s).createMBean();
-        JmxHelper.registerMBean(mbc.getName(), mbc.getMBean());
-      }catch(Exception e){
-        throw new RemoteException("Could not create MBean", e);
-      }
-    }
-
-    return serverRef.server.getServerAddress();
-  }
-
-  final RemoteRef initStub(Object remote, String transportType) {
-    return initRef(remote, generateOID(), getServerRef(transportType));
-  }
-
-  static Class<?>[] getInterfacesFor(Class<?> clazz) {
-    Class<?>[] cachedInterfaces = _interfaceCache.get(clazz);
-
-    if (cachedInterfaces == null) {
-      Class<?>   current = clazz;
-      Remote remoteAnno = current.getAnnotation(Remote.class);
-      if(remoteAnno != null){
-        Class<?>[] remoteInterfaces = remoteAnno.interfaces();
-        HashSet<Class<?>> set     = new HashSet<Class<?>>();
-        set.add(Stub.class);
-        for(Class<?> remoteInterface: remoteInterfaces){
-          set.add(remoteInterface);
+    ServerRef serverRef = serversByType.get(transportType);
+    if(serverRef == null) {
+      synchronized(serverCreationLock) {
+        serverRef = serversByType.get(transportType);
+        if(serverRef == null) {
+          return doExportObjectAndCreateServer(toExport, transportType, properties);
+        } else {
+          return doExportObject(toExport, transportType, serverRef.getServer().getServerAddress());
         }
-        cachedInterfaces = set.toArray(new Class[set.size()]);
       }
-      else{
-        HashSet<Class<?>> set     = new HashSet<Class<?>>();
-        appendInterfaces(current, set);
-        set.add(Stub.class);
-        cachedInterfaces = set.toArray(new Class[set.size()]);
-      }
-      _interfaceCache.put(clazz, cachedInterfaces);
-    }
-
-    return cachedInterfaces;
-  }
-
-  static void appendInterfaces(Class<?> current, Set<Class<?>> interfaces) {
-    Class<?>[] ifs = current.getInterfaces();
-
-    for (int i = 0; i < ifs.length; i++) {
-      appendInterfaces(ifs[i], interfaces);
-      interfaces.add(ifs[i]);
-    }
-
-    current = current.getSuperclass();
-
-    if (current != null) {
-      appendInterfaces(current, interfaces);
+    } else {
+      return doExportObject(toExport, transportType, serverRef.getServer().getServerAddress());
     }
   }
+  
+  private Object doExportObjectAndCreateServer(Object toExport, String transportType, Properties properties) 
+    throws RemoteException {
+    log.info("Starting new server for transport %s, and exporting object %s", transportType, toExport);
+    OID       oid               = generateOID();
+    Server    server;
+    if(properties == null) {
+      server = transport.getProviderFor(transportType).newDefaultServer();
+    } else {
+      server = transport.getProviderFor(transportType).newServer(properties);
+    }
+    RemoteRefContext refContext   = new RemoteRefContext(oid, server.getServerAddress());
+    refContext.setCallback(callbackEnabled && 
+                           typeCache.getAnnotationsFor(toExport.getClass()).contains(Callback.class));
+    
+    StubInvocationHandler handler   = stubProcessor.createInvocationHandlerFor(toExport, refContext);
+    Stub                  stub      = (Stub) stubProcessor.createStubFor(toExport, handler);
+    ServerRef             serverRef = new ServerRef(server, toExport, handler, stub, oid);
+    server.start();
+    serversByType.put(transportType, serverRef);
+    objectTable.register(oid, toExport);
+    return stub;
+  }
+  
+  private Object doExportObject(Object toExport, String transportType, ServerAddress address) 
+    throws RemoteException {
+    
+    log.info("Server already bound for transport %s, exporting object %s", transportType, toExport);
 
+    OID              oid        = generateOID();
+    RemoteRefContext refContext = new RemoteRefContext(oid, address);
+    refContext.setCallback(callbackEnabled && 
+                           typeCache.getAnnotationsFor(toExport.getClass()).contains(Callback.class));
+    
+    StubInvocationHandler handler = stubProcessor.createInvocationHandlerFor(toExport, refContext);
+    Stub                  stub    = (Stub) stubProcessor.createStubFor(toExport, handler);
+    objectTable.register(oid, toExport);
+    return stub;
+  }
+  
+  /**
+   * @param transport a transport type.
+   * @return <code>true</code> if this instance has a server for the given transport type.
+   */
+  public boolean hasServerFor(String transportType) {
+    return serversByType.containsKey(transportType);
+  }
+
+  // --------------------------------------------------------------------------
+  // Remote object creation
+
+  /**
+   * Returns a stub for the given object. This method is usually
+   * not called by client application. It is meant for use by the different
+   * transport layers.
+   *
+   * @param toRemote an object.
+   * @param caller the JVM identifier of the remote client that triggered the creation
+   * of the returned remote reference.
+   * @param transportType the "transport type" for which to return a remote reference.
+   * @return a stub.
+   * @throws RemoteException
+   *
+   * @see #asRemoteRef(Object, VmId, String)
+   */
+  public Object createRemoteObject(Object toRemote, VmId caller, String transportType)
+    throws RemoteException {
+    if (toRemote instanceof Stub) {
+      return toRemote;
+    }
+  
+    ServerRef serverRef = serversByType.get(transportType);
+    if(serverRef == null) {
+      synchronized(serverCreationLock) {
+        serverRef = serversByType.get(transportType);
+        if(serverRef == null) {
+          return doCreateRemoteObjectAndServer(toRemote, caller, transportType);
+        } else {
+          return doCreateRemoteObject(toRemote, caller, transportType, serverRef.getServer().getServerAddress());
+        }
+      }
+    } else {
+      return doCreateRemoteObject(toRemote, caller, transportType, serverRef.getServer().getServerAddress());
+    }
+    
+  }  
+  
+  private Object doCreateRemoteObjectAndServer(Object toExport, VmId caller, String transportType) 
+    throws RemoteException {
+    remoteObjectCreation.start();
+    log.info("Creating server and remote object (transport %s) : %s", transportType, toExport);
+    OID       oid                 = generateOID();
+    Server    server              = transport.getProviderFor(transportType).newDefaultServer();
+    RemoteRefContext refContext   = new RemoteRefContext(oid, server.getServerAddress());
+    refContext.setCallback(callbackEnabled && 
+        typeCache.getAnnotationsFor(toExport.getClass()).contains(Callback.class));
+    
+    StubInvocationHandler handler   = stubProcessor.createInvocationHandlerFor(toExport, refContext);
+    Stub                  stub      = (Stub) stubProcessor.createStubFor(toExport, handler);
+    ServerRef             serverRef = new ServerRef(server, toExport, handler, stub, oid);
+    server.start();
+    serversByType.put(transportType, serverRef);
+    gc.registerRef(caller, oid, toExport);
+    remoteObjectCreation.end();  
+    return stub;
+  }
+  
+  private Object doCreateRemoteObject(Object toExport, VmId caller, String transportType, ServerAddress address) 
+    throws RemoteException {
+    remoteObjectCreation.start();
+    log.debug("Creating remote object (transport %s): %s", transportType, toExport);
+    OID              oid          = generateOID();
+    RemoteRefContext refContext   = new RemoteRefContext(oid, address);
+    refContext.setCallback(callbackEnabled && 
+        typeCache.getAnnotationsFor(toExport.getClass()).contains(Callback.class));
+    
+    StubInvocationHandler handler = stubProcessor.createInvocationHandlerFor(toExport, refContext);
+    Stub                  stub    = (Stub) stubProcessor.createStubFor(toExport, handler);
+    gc.registerRef(caller, oid, toExport);
+    remoteObjectCreation.end();  
+    return stub;
+  }
+ 
   ServerRef getServerRef(String transportType) throws IllegalArgumentException {
-    ServerRef ref = (ServerRef) _serversByType.get(transportType);
-
+    ServerRef ref = (ServerRef) serversByType.get(transportType);
     if (ref == null) {
       throw new IllegalStateException("No server for type: " + transportType);
     }
-
     return ref;
   }
 
@@ -257,21 +278,4 @@ public class ServerTable implements Server {
     return new OID(UIDGenerator.createdUID());
   }
 
-  private final RemoteRef initRef(Object remote, OID oid, ServerRef serverRef) {
-    RemoteRefEx rmiHandler = new RemoteRefEx(oid,
-        serverRef.server.getServerAddress());
-
-    rmiHandler.setCallBack((System.getProperty(Consts.CALLBACK_ENABLED) != null) &&
-      System.getProperty(Consts.CALLBACK_ENABLED).equalsIgnoreCase("true"));
-
-    if (Log.isDebug()) {
-      Log.debug(ServerTable.class,
-        remote + " is call-back: " + rmiHandler.isCallBack());
-    }
-
-    //    Object  proxy = Hub.getStubFor(rmiHandler);
-    Hub.serverRuntime.objectTable.register(oid, remote);
-
-    return rmiHandler;
-  }
 }

@@ -1,12 +1,15 @@
 package org.sapia.ubik.rmi.server.transport.nio.tcp;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 
 import org.apache.mina.common.ByteBuffer;
 import org.apache.mina.common.IoSession;
 import org.apache.mina.filter.codec.ProtocolEncoder;
 import org.apache.mina.filter.codec.ProtocolEncoderOutput;
-import org.sapia.ubik.rmi.server.transport.MarshalOutputStream;
+import org.sapia.ubik.rmi.server.transport.MarshalStreamFactory;
+import org.sapia.ubik.rmi.server.transport.RmiObjectOutput;
 
 /**
  * An encoder of Ubik server responses.
@@ -16,10 +19,19 @@ import org.sapia.ubik.rmi.server.transport.MarshalOutputStream;
  */
 public class NioResponseEncoder implements ProtocolEncoder{
   
+  
+  private static final int BUFFER_CAPACITY  = 1024;
+  
   static class EncoderState{
     
-    ByteArrayOutputStream bos = new ByteArrayOutputStream(4000);
-    MarshalOutputStream mos;
+    
+    ByteArrayOutputStream bos = new ByteArrayOutputStream(BUFFER_CAPACITY);
+    ObjectOutputStream    mos;
+    
+    
+    public EncoderState() throws IOException {
+      mos = MarshalStreamFactory.createOutputStream(bos);
+    }
     
   }
   
@@ -30,7 +42,6 @@ public class NioResponseEncoder implements ProtocolEncoder{
     EncoderState es = (EncoderState)sess.getAttribute(ENCODER_STATE);
     if(es == null){
       es = new EncoderState();
-      es.mos = new MarshalOutputStream(es.bos);
       sess.setAttribute(ENCODER_STATE, es);
     }
     else{
@@ -38,7 +49,7 @@ public class NioResponseEncoder implements ProtocolEncoder{
     }
     
     NioResponse resp = (NioResponse)toEncode;
-    es.mos.setUp(resp.getAssociatedVmId(), resp.getTransportType());
+    ((RmiObjectOutput)es.mos).setUp(resp.getAssociatedVmId(), resp.getTransportType());
     es.mos.writeObject(resp.getObject());
     es.mos.flush();
     byte[] toSend = es.bos.toByteArray();

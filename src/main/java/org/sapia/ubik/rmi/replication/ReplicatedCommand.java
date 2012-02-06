@@ -1,17 +1,15 @@
 package org.sapia.ubik.rmi.replication;
 
-import org.sapia.ubik.net.ServerAddress;
-import org.sapia.ubik.rmi.server.Hub;
-import org.sapia.ubik.rmi.server.invocation.InvokeCommand;
-
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-
 import java.rmi.RemoteException;
-
 import java.util.HashSet;
 import java.util.Set;
+
+import org.sapia.ubik.net.ServerAddress;
+import org.sapia.ubik.rmi.server.Hub;
+import org.sapia.ubik.rmi.server.command.InvokeCommand;
 
 
 /**
@@ -19,19 +17,14 @@ import java.util.Set;
  * servers in a domain or cluster.
  *
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2004 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 public abstract class ReplicatedCommand extends InvokeCommand {
-  private Set<ServerAddress>               _visited     = new HashSet<ServerAddress>();
-  private Set<ServerAddress>               _targets;
-  private ReplicatedInvoker _invoker;
-  private boolean           _executed;
-  private boolean           _synchronous;
-  private boolean           _disabled;
+  private Set<ServerAddress>  visited     = new HashSet<ServerAddress>();
+  private Set<ServerAddress>  targets;
+  private ReplicatedInvoker   invoker;
+  private boolean             executed;
+  private boolean             synchronous;
+  private boolean             disabled;
 
   /** Do not call; used for externalization only. */
   public ReplicatedCommand() {
@@ -44,55 +37,55 @@ public abstract class ReplicatedCommand extends InvokeCommand {
    * @param invoker the {@link ReplicatedInvoker} implementation in charge of
    * performing replicated method invocations.
    */
-  public ReplicatedCommand(InvokeCommand cmd, Set<ServerAddress> targets,
-    ReplicatedInvoker invoker, boolean synchronous) {
-    super(cmd.getOID(), cmd.getMethodName(), cmd.getParams(),
-      cmd.getParameterTypes(), null);
-    _targets       = targets;
-    _invoker       = invoker;
-    _synchronous   = synchronous;
+  public ReplicatedCommand(
+      InvokeCommand cmd, 
+      Set<ServerAddress> targets,
+      ReplicatedInvoker invoker, 
+      boolean synchronous) {
+    super(cmd.getOID(), cmd.getMethodName(), cmd.getParams(), cmd.getParameterTypes(), null);
+    this.targets       = targets;
+    this.invoker       = invoker;
+    this.synchronous   = synchronous;
   }
 
   /**
-   * @see org.sapia.ubik.rmi.server.RMICommand#execute()
+   * @see org.sapia.ubik.rmi.server.command.RMICommand#execute()
    */
   public Object execute() throws Throwable {
-    if (_disabled) {
+    if (disabled) {
       return super.execute();
     }
 
     Object toReturn;
-    Hub.serverRuntime.dispatchEvent(new ReplicationEvent(this));
+    Hub.getModules().getServerRuntime().getDispatcher().dispatch(new ReplicationEvent(this));
 
-    Set<ServerAddress>  siblings = _invoker.getSiblings();
-    ReplicationStrategy strat   = new ReplicationStrategy(_visited, _targets,
-        siblings);
+    Set<ServerAddress>  siblings = invoker.getSiblings();
+    ReplicationStrategy strat    = new ReplicationStrategy(visited, targets, siblings);
     ServerAddress       addr;
-    ServerAddress       current = getServerAddress();
+    ServerAddress       current  = getServerAddress();
 
-    if (_executed) {
-      convertParams(_invoker.getClass().getClassLoader());
-      toReturn = _invoker.invoke(super.getMethodName(),
-          super.getParameterTypes(), super.getParams());
+    if (executed) {
+      convertParams(invoker.getClass().getClassLoader());
+      toReturn = invoker.invoke(super.getMethodName(), super.getParameterTypes(), super.getParams());
     } else {
-      if (_targets != null) {
-        if (_targets.contains(current)) {
+      if (targets != null) {
+        if (targets.contains(current)) {
           toReturn    = super.execute();
-          _executed   = true;
-          _targets.remove(current);
+          executed   = true;
+          targets.remove(current);
         } else {
-          _executed   = true;
+          executed   = true;
           toReturn    = send(strat.selectNextSibling());
 
           return toReturn;
         }
       } else {
         toReturn    = super.execute();
-        _executed   = true;
+        executed   = true;
       }
 
       if ((addr = strat.selectNextSibling()) != null) {
-        if (!_disabled) {
+        if (!disabled) {
           send(addr);
         }
       }
@@ -102,10 +95,10 @@ public abstract class ReplicatedCommand extends InvokeCommand {
   }
 
   /**
-   * @return the <code>ReplicatedInvoker</code> that this instance holds.
+   * @return the {@link ReplicatedInvoker} that this instance holds.
    */
   public ReplicatedInvoker getReplicatedInvoker() {
-    return _invoker;
+    return invoker;
   }
 
   /**
@@ -113,35 +106,35 @@ public abstract class ReplicatedCommand extends InvokeCommand {
    * <code>InvokeCommand</code>).
    */
   public void disable() {
-    _disabled = true;
+    disabled = true;
   }
 
   /**
-   * @see org.sapia.ubik.rmi.server.invocation.InvokeCommand#readExternal(java.io.ObjectInput)
+   * @see org.sapia.ubik.rmi.server.command.InvokeCommand#readExternal(java.io.ObjectInput)
    */
   @SuppressWarnings(value="unchecked")
   public void readExternal(ObjectInput in)
     throws IOException, ClassNotFoundException {
     super.readExternal(in);
-    _visited       = (Set<ServerAddress>) in.readObject();
-    _targets       = (Set<ServerAddress>) in.readObject();
-    _invoker       = (ReplicatedInvoker) in.readObject();
-    _executed      = in.readBoolean();
-    _synchronous   = in.readBoolean();
-    _disabled      = in.readBoolean();
+    visited       = (Set<ServerAddress>) in.readObject();
+    targets       = (Set<ServerAddress>) in.readObject();
+    invoker       = (ReplicatedInvoker) in.readObject();
+    executed      = in.readBoolean();
+    synchronous   = in.readBoolean();
+    disabled      = in.readBoolean();
   }
 
   /**
-   * @see org.sapia.ubik.rmi.server.invocation.InvokeCommand#writeExternal(java.io.ObjectOutput)
+   * @see org.sapia.ubik.rmi.server.command.InvokeCommand#writeExternal(java.io.ObjectOutput)
    */
   public void writeExternal(ObjectOutput out) throws IOException {
     super.writeExternal(out);
-    out.writeObject(_visited);
-    out.writeObject(_targets);
-    out.writeObject(_invoker);
-    out.writeBoolean(_executed);
-    out.writeBoolean(_synchronous);
-    out.writeBoolean(_disabled);
+    out.writeObject(visited);
+    out.writeObject(targets);
+    out.writeObject(invoker);
+    out.writeBoolean(executed);
+    out.writeBoolean(synchronous);
+    out.writeBoolean(disabled);
   }
 
   /**
@@ -153,9 +146,9 @@ public abstract class ReplicatedCommand extends InvokeCommand {
    * @throws RemoteException if a problem occurs sending this instance.
    */
   protected Object send(ServerAddress next) throws RemoteException {
-    SendHelper helper = new SendHelper(this, next, _synchronous);
+    SendHelper helper = new SendHelper(this, next, synchronous);
 
-    if (_synchronous) {
+    if (synchronous) {
       try {
         return helper.send();
       } catch (Throwable t) {
@@ -181,10 +174,10 @@ public abstract class ReplicatedCommand extends InvokeCommand {
   }
   
   protected Set<ServerAddress> getVisitedAddresses(){
-    return _visited;
+    return visited;
   }
   
   protected Set<ServerAddress> getTargetAddresses(){
-    return _targets;
+    return targets;
   }  
 }

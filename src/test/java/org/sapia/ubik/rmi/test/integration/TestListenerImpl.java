@@ -1,11 +1,11 @@
 package org.sapia.ubik.rmi.test.integration;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import junit.framework.AssertionFailedError;
 import junit.framework.Test;
 import junit.framework.TestListener;
-
-import java.util.ArrayList;
-import java.util.List;
 
 
 /**

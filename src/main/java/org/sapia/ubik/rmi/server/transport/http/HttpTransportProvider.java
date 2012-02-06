@@ -8,48 +8,43 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.Uri;
 import org.sapia.ubik.net.UriSyntaxException;
 import org.sapia.ubik.rmi.Consts;
-import org.sapia.ubik.rmi.server.Log;
 import org.sapia.ubik.rmi.server.Server;
 import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.TransportProvider;
 
 
 /**
- * An instance of this class creates <code>HttpRmiServer</code> instances,
+ * An instance of this class creates {@link HttpRmiServer} instances,
  * as well as client-side connections (using Jakartas HTTP client). It is the
  * entry-point into Ubik's HTTP tranport layer.
  * <p>
  * For the properties that an instance of this class takes (and their default values),
- * see the <code>HttpConsts</code> interface.
+ * see the {@link HttpConsts} interface.
  *
  * @see org.sapia.ubik.rmi.server.transport.http.HttpConsts
  * @see org.sapia.ubik.rmi.server.transport.http.HttpRmiServer
  *
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2004 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 public class HttpTransportProvider implements TransportProvider, HttpConsts {
-  private static boolean _usesJakarta;
+  private static boolean usesJakarta;
 
   static {
     try {
       Class.forName("org.apache.commons.httpclient.HttpClient");
-      _usesJakarta = true;
+      usesJakarta = true;
     } catch (Exception e) {
     }
   }
 
-  private String        _transportType;
-  private ServiceMapper _services = new ServiceMapper();
-  private Map<ServerAddress, Connections> _pools = new ConcurrentHashMap<ServerAddress, Connections>();
+  private String                          transportType;
+  private ServiceMapper                   services = new ServiceMapper();
+  private Map<ServerAddress, Connections> pools = new ConcurrentHashMap<ServerAddress, Connections>();
 
   public HttpTransportProvider() {
     this(HttpConsts.DEFAULT_HTTP_TRANSPORT_TYPE,
@@ -67,15 +62,15 @@ public class HttpTransportProvider implements TransportProvider, HttpConsts {
    * @param transportType a "transport type" identifier.
    */
   public HttpTransportProvider(String transportType, File baseDir) {
-    _transportType = transportType;
+    this.transportType = transportType;
   }
   
   /**
-   * @return the <code>ServiceMapper</code> that holds this instance`s request handlers ("services", in
+   * @return the {@link ServiceMapper} that holds this instance`s request handlers ("services", in
    * the Simple API's terms).
    */
   public ServiceMapper getServices() {
-    return _services;
+    return services;
   }
 
   /**
@@ -85,15 +80,15 @@ public class HttpTransportProvider implements TransportProvider, HttpConsts {
     throws RemoteException {
     Connections conns;
 
-    if ((conns = (Connections) _pools.get(address)) == null) {
+    if ((conns = pools.get(address)) == null) {
       try {
-        if (_usesJakarta) {
+        if (usesJakarta) {
           conns = new HttpClientConnectionPool((HttpAddress) address);
         } else {
           conns = new JdkClientConnectionPool((HttpAddress) address);
         }
 
-        _pools.put(address, conns);
+        pools.put(address, conns);
       } catch (UriSyntaxException e) {
         throw new RemoteException("Could not process given address", e);
       }
@@ -106,7 +101,7 @@ public class HttpTransportProvider implements TransportProvider, HttpConsts {
    * @see org.sapia.ubik.rmi.server.transport.TransportProvider#getTransportType()
    */
   public String getTransportType() {
-    return _transportType;
+    return transportType;
   }
 
   /**
@@ -176,8 +171,7 @@ public class HttpTransportProvider implements TransportProvider, HttpConsts {
       }
     }
 
-    HttpRmiServer svr = new HttpRmiServer(_services, serverUrl,
-        contextPath, port);
+    HttpRmiServer svr = new HttpRmiServer(services, serverUrl, contextPath, port);
     svr.setMaxThreads(max);
 
     return svr;
@@ -195,9 +189,9 @@ public class HttpTransportProvider implements TransportProvider, HttpConsts {
    * other types of requests (non-Ubik ones) to be processed by the same HTTP
    * server.
    *
-   * @return the <code>ServiceMapper</code> that this instance holds.
+   * @return the {@link ServiceMapper} that this instance holds.
    */
   public ServiceMapper getServiceMapper() {
-    return _services;
+    return services;
   }
 }

@@ -1,6 +1,7 @@
 package org.sapia.ubik.rmi.server.invocation;
 
 import org.sapia.ubik.rmi.interceptor.Event;
+import org.sapia.ubik.rmi.server.command.InvokeCommand;
 
 
 /**
@@ -8,17 +9,12 @@ import org.sapia.ubik.rmi.interceptor.Event;
  * on the server-side.
  *
  * @author Yanick
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 public class ServerPostInvokeEvent implements Event {
-  private long          _invokeDelay;
-  private InvokeCommand _cmd;
-  private Object        _target, _result;
-  private Throwable     _error;
+  private long          invokeDelay;
+  private InvokeCommand cmd;
+  private Object        target, result;
+  private Throwable     error;
 
   /**
    * Creates an instance of this class with the given parameters.
@@ -27,10 +23,8 @@ public class ServerPostInvokeEvent implements Event {
    * @param cmd the command representing the method invocation.
    * @param invokeDelay the time taken by the invocation (in millis).
    */
-  ServerPostInvokeEvent(Object target, InvokeCommand cmd, long invokeDelay) {
-    _invokeDelay   = invokeDelay;
-    _cmd           = cmd;
-    _target        = target;
+  public ServerPostInvokeEvent(Object target, InvokeCommand cmd, long invokeDelay) {
+    this(target, cmd, invokeDelay, null);
   }
   
   /**
@@ -38,29 +32,29 @@ public class ServerPostInvokeEvent implements Event {
    * 
    * @see #ServerPostInvokeEvent(Object, InvokeCommand, long)
    */
-  ServerPostInvokeEvent(Object target, InvokeCommand cmd, long invokeDelay, Throwable err) {
-    _invokeDelay   = invokeDelay;
-    _cmd           = cmd;
-    _target        = target;
-    _error         = err;
+  public ServerPostInvokeEvent(Object target, InvokeCommand cmd, long invokeDelay, Throwable err) {
+    this.invokeDelay   = invokeDelay;
+    this.cmd           = cmd;
+    this.target        = target;
+    this.error         = err;
   }  
 
   /**
    * Returns the command representing the invocation that was made.
    *
-   * @return an <code>InvokeCommand</code>.
+   * @return an {@link InvokeCommand}.
    */
   public InvokeCommand getInvokeCommand() {
-    return _cmd;
+    return cmd;
   }
 
   /**
    * Returns the object on which the method invocation was performed.
    *
-   * @return an <code>Object</code>.
+   * @return an {@link Object}.
    */
   public Object getTarget() {
-    return _target;
+    return target;
   }
 
   /**
@@ -70,7 +64,7 @@ public class ServerPostInvokeEvent implements Event {
    * @return a delay in milliseconds.
    */
   public long getInvokeDelay() {
-    return _invokeDelay;
+    return invokeDelay;
   }
   
   /**
@@ -78,7 +72,7 @@ public class ServerPostInvokeEvent implements Event {
    * to this instance generated, or <code>null</code> if such event occurred.
    */
   public Throwable getError(){
-    return _error;
+    return error;
   }
   
   /**
@@ -86,13 +80,13 @@ public class ServerPostInvokeEvent implements Event {
    * result exists.
    */
   public Object getResultObject(){
-    return _result;
+    return result;
   }
   
   /**
    * @param result the result of the invocation.
    */
   public void setResultObject(Object result){
-    _result = result;
+    this.result = result;
   }
 }

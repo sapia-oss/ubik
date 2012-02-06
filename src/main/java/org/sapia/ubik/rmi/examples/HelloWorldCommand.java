@@ -1,14 +1,13 @@
 package org.sapia.ubik.rmi.examples;
 
-import org.sapia.ubik.net.Connection;
+import java.io.IOException;
+import java.rmi.RemoteException;
+
 import org.sapia.ubik.net.TCPAddress;
-import org.sapia.ubik.rmi.server.RMICommand;
+import org.sapia.ubik.rmi.server.Hub;
+import org.sapia.ubik.rmi.server.command.RMICommand;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
 import org.sapia.ubik.rmi.server.transport.TransportManager;
-
-import java.io.IOException;
-
-import java.rmi.RemoteException;
 
 
 /**
@@ -21,7 +20,7 @@ import java.rmi.RemoteException;
  */
 public class HelloWorldCommand extends RMICommand {
   /**
-   * @see org.sapia.ubik.rmi.server.RMICommand#execute()
+   * @see org.sapia.ubik.rmi.server.command.RMICommand#execute()
    */
   public Object execute() throws Throwable {
     return "Hello World";
@@ -35,7 +34,7 @@ public class HelloWorldCommand extends RMICommand {
 
     try {
       // acquiring connection
-      conn = TransportManager.getConnectionsFor(addr).acquire();
+      conn = Hub.getModules().getTransportManager().getConnectionsFor(addr).acquire();
     } catch (RemoteException e) {
       e.printStackTrace();
       System.exit(1);
@@ -64,7 +63,7 @@ public class HelloWorldCommand extends RMICommand {
       // Very important: allows transport 
       // providers to implement connection
       // pooling.
-      TransportManager.getConnectionsFor(addr).release(conn);
+      Hub.getModules().getTransportManager().getConnectionsFor(addr).release(conn);
     } catch (RemoteException e) {
       e.printStackTrace();
       System.exit(1);

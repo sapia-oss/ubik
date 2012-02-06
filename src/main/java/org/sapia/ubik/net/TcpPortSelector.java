@@ -15,8 +15,8 @@ import java.util.Random;
  */
 public class TcpPortSelector {
   
-  private static final int MIN_PORT = 1025;
-  private static final int MAX_PORT = 65535;
+  private static final int MIN_PORT    = 1025;
+  private static final int MAX_PORT    = 65535;
   private static final int MAX_ATTEMPS = 100;
 
   /**
@@ -34,7 +34,7 @@ public class TcpPortSelector {
    * @return the port that was selected.
    * @throws IOException if a problem occurred while acquiring the port.
    */
-  public int select(String host) throws IOException{
+  public int select(String host) throws IOException {
     int port = doSelect(host);
     try{
       Thread.sleep(new Random().nextInt(100));

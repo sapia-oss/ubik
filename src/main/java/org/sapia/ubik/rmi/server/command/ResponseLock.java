@@ -1,6 +1,8 @@
 package org.sapia.ubik.rmi.server.command;
 
-import org.sapia.ubik.net.Timer;
+import org.sapia.ubik.rmi.server.stats.Stats;
+import org.sapia.ubik.rmi.server.stats.Timer;
+import org.sapia.ubik.util.Delay;
 
 
 /**
@@ -8,41 +10,43 @@ import org.sapia.ubik.net.Timer;
  * waits for the corresponding call-back's response.
  *
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 public class ResponseLock {
-  private static int    _count    = 0;
-  private Object        _response;
-  private ResponseQueue _queue;
-  private String        _id;
-  private boolean       _ready;
-
+  
+  private static volatile int   count            = 0;
+  private static Timer          callBackExecTime = Stats.getInstance().createTimer(
+                                                     ResponseLock.class, 
+                                                     "CallbackExecTime", 
+                                                     "Avg callback execution time"
+                                                   );
+  private Object                response;
+  private CallbackResponseQueue queue;
+  private long                  id;
+  private volatile boolean      ready;
+  private long                  creationTime     = System.currentTimeMillis();
+  
   /**
    * Constructor for ResponseLock.
    */
-  ResponseLock(ResponseQueue parent) {
-    _queue   = parent;
-    _id      = generateId();
+  ResponseLock(CallbackResponseQueue parent) {
+    queue   = parent;
+    id      = generateId();
   }
 
   /**
    * Returns this lock's unique identifier.
    *
-   * @return a unique identifier as a <code>String</code>.
+   * @return a this instance's unique identifier.
    */
-  public String getId() {
-    return _id;
+  public long getId() {
+    return id;
   }
 
   /**
    * Releases this lock (clears it from memory).
    */
   public void release() {
-    _queue.removeLock(_id);
+    queue.removeLock(id);
   }
 
   /***
@@ -56,22 +60,24 @@ public class ResponseLock {
    * @throws InterruptedException if the caller is interrupted while waiting for the response.
    * @return a response, as an {@link Object}.
    */
-  public synchronized Object waitResponse(long timeout)
+  public synchronized Object await(long timeout)
     throws InterruptedException, ResponseTimeOutException {
-    Timer timer = new Timer(timeout);
+    Delay timer = new Delay(timeout);
 
-    while (!_ready) {
-      wait(timeout);
+    while (!ready) {
+      wait(timer.remainingNotZero());
 
-      if (timer.isOver() && !_ready) {
+      if (timer.isOver() && !ready) {
         release();
+        callBackExecTime.increase(System.currentTimeMillis() - creationTime);
         throw new ResponseTimeOutException();
       }
     }
 
     release();
 
-    return _response;
+    callBackExecTime.increase(System.currentTimeMillis() - creationTime);
+    return response;
   }
 
   /**
@@ -80,16 +86,16 @@ public class ResponseLock {
    * @param r an {@link Object} corresponding to an asynchronous response.
    */
   public synchronized void setResponse(Object r) {
-    _response   = r;
-    _ready      = true;
+    response   = r;
+    ready      = true;
     notify();
   }
 
-  private static synchronized String generateId() {
-    if (_count > 999) {
-      _count = 0;
+  private static synchronized long generateId() {
+    if (count == Long.MAX_VALUE) {
+      count = 0;
     }
 
-    return "" + System.currentTimeMillis() + (_count++);
+    return count++;
   }
 }

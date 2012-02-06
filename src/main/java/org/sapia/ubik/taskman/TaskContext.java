@@ -8,23 +8,22 @@ package org.sapia.ubik.taskman;
  */
 public class TaskContext {
   
-  private String _name;
-  
-  private long _interval;
-  private long _nextExec;
-  private boolean _aborted;
+  private String  name;
+  private long    interval;
+  private long    nextExec;
+  private boolean aborted;
   
   public TaskContext(String name, long interval){
-    _name = name;
-    _interval = interval;
-    _nextExec = System.currentTimeMillis()+_interval;
+    this.name     = name;
+    this.interval = interval;
+    this.nextExec = System.currentTimeMillis()+interval;
   }
   
   /**
    * @return the name of the corresponding task.
    */
   public String getName(){
-    return _name;
+    return name;
   }
   
   /**
@@ -32,33 +31,33 @@ public class TaskContext {
    * be executed.
    */
   public long getInterval(){
-    return _interval;
+    return interval;
   }
   
   /**
    * @return the next execution time of the task.
    */
   public long getNextExecTime(){
-    return _nextExec;
+    return nextExec;
   }
   
   /**
    * Flags this task so that it is no more executed. 
    */
   public void abort(){
-    _aborted = true;
+    aborted = true;
   }
 
   boolean isAborted(){
-    return _aborted;
+    return aborted;
   }
   
   boolean isDue(){
-    return System.currentTimeMillis() >= _nextExec;
+    return System.currentTimeMillis() >= nextExec;
   }
   
   long calcNextExecTime(){
-    _nextExec = System.currentTimeMillis() + _interval;
-    return _nextExec;
+    nextExec = System.currentTimeMillis() + interval;
+    return nextExec;
   }
 }

@@ -1,26 +1,39 @@
 package org.sapia.ubik.taskman;
 
-import junit.framework.TestCase;
+import static org.mockito.Mockito.*;
+import static org.junit.Assert.*;
 
-public class TaskManagerTest extends TestCase {
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.sapia.ubik.module.ModuleContext;
 
-  public TaskManagerTest(String arg0) {
-    super(arg0);
+public class TaskManagerTest { 
+
+  MultiThreadedTaskManager tm;
+
+  @Before
+  public void setUp() throws Exception {
+    tm = new MultiThreadedTaskManager();
+    ModuleContext ctx = mock(ModuleContext.class);
+    tm.init(mock(ModuleContext.class));
+    tm.start(ctx);
+  }
+  
+  @After
+  public void tearDown() throws Exception {
+    tm.stop();
   }
 
-  protected void setUp() throws Exception {
-    super.setUp();
-  }
-
+  @Test
   public void testProcessTasks() throws Exception{
-    TaskManager tm = new MultithreadedTaskManager();
     TestTask tt = new TestTask();
     TestTask tt2 = new TestTask();
     long time = System.currentTimeMillis();
     tm.addTask(new TaskContext("Test1", 1000), tt);
     tm.addTask(new TaskContext("Test2", 2000), tt2);
     Thread.sleep(6000);
-    tm.shutdown();
+    tm.stop();
     assertTrue(tt.count > 3);
     assertTrue(tt.time > time+1000);
     assertTrue(tt2.count > 1);    

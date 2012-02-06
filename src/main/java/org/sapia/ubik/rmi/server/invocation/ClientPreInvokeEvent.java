@@ -1,6 +1,7 @@
 package org.sapia.ubik.rmi.server.invocation;
 
 import org.sapia.ubik.rmi.interceptor.Event;
+import org.sapia.ubik.rmi.server.command.InvokeCommand;
 
 
 /**
@@ -19,17 +20,13 @@ import org.sapia.ubik.rmi.interceptor.Event;
  * </pre>
  *
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 public class ClientPreInvokeEvent implements Event {
-  private InvokeCommand _cmd;
+  
+  private InvokeCommand cmd;
 
   public ClientPreInvokeEvent(InvokeCommand cmd) {
-    _cmd = cmd;
+    this.cmd = cmd;
   }
 
   /**
@@ -38,7 +35,7 @@ public class ClientPreInvokeEvent implements Event {
    * @return an {@link InvokeCommand} instance.
    */
   public InvokeCommand getCommand() {
-    return _cmd;
+    return cmd;
   }
 
   /**
@@ -47,6 +44,6 @@ public class ClientPreInvokeEvent implements Event {
    * @param cmd an {@link InvokeCommand}.
    */
   public void setCommand(InvokeCommand cmd) {
-    _cmd = cmd;
+    this.cmd = cmd;
   }
 }

@@ -8,7 +8,7 @@ package org.sapia.ubik.ioc.spring;
  */
 public class RemoteBeanRef{
   
-  private String name;
+  private String     name;
   private Class<?>[] interfaces;
   
   public void setName(String name) {

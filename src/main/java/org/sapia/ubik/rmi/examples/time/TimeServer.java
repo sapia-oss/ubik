@@ -1,13 +1,13 @@
 package org.sapia.ubik.rmi.examples.time;
 
 import java.net.UnknownHostException;
-import org.sapia.ubik.rmi.Consts;
-import org.sapia.ubik.rmi.naming.remote.RemoteInitialContextFactory;
-
 import java.util.Properties;
 
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
+
+import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.naming.remote.RemoteInitialContextFactory;
 import org.sapia.ubik.util.Localhost;
 
 

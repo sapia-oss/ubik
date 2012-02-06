@@ -3,6 +3,8 @@ package org.sapia.ubik.rmi.server.transport.nio.tcp;
 import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.net.SocketException;
@@ -10,39 +12,25 @@ import java.rmi.RemoteException;
 
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.server.VmId;
-import org.sapia.ubik.rmi.server.transport.MarshalInputStream;
 import org.sapia.ubik.rmi.server.transport.MarshalOutputStream;
+import org.sapia.ubik.rmi.server.transport.MarshalStreamFactory;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
+import org.sapia.ubik.rmi.server.transport.RmiObjectOutput;
 import org.sapia.ubik.util.ByteVector;
 import org.sapia.ubik.util.ByteVectorOutputStream;
 
 /**
- * A connection over a <code>Socket</code>- the connection uses the
- * <code>MarshalOutputStream</code> class to serialize outgoing objects.
- * 
- * @author Yanick Duchesne
- *         <dl>
- *         <dt><b>Copyright: </b>
- *         <dd>Copyright &#169; 2002-2003 <a
- *         href="http://www.sapia-oss.org">Sapia Open Source Software </a>. All
- *         Rights Reserved.</dd>
- *         </dt>
- *         <dt><b>License: </b>
- *         <dd>Read the license.txt file of the jar or visit the <a
- *         href="http://www.sapia-oss.org/license.html">license page </a> at the
- *         Sapia OSS web site</dd>
- *         </dt>
- *         </dl>
+ * A connection over a Socket the connection uses the {@link MarshalOutputStream} class to serialize outgoing objects.
  */
 public class NioTcpRmiClientConnection implements RmiConnection {
   
   static final int MAX_INCREMENT = 8000;
   
-  private Socket                _sock;
-  private ServerAddress         _address;
-  private ByteVector            _vector;
-  private MarshalInputStream    _mis;
-  private MarshalOutputStream   _mos;
+  private Socket                sock;
+  private ServerAddress         address;
+  private ByteVector            vector;
+  private ObjectInputStream     mis;
+  private ObjectOutputStream    mos;
 
   /**
    * Constructor for RMIConnection.
@@ -50,18 +38,16 @@ public class NioTcpRmiClientConnection implements RmiConnection {
    * @param sock
    */
   public NioTcpRmiClientConnection(Socket sock, int bufsize) throws IOException {
-    _sock = sock;
-    _address = new NioAddress(sock.getInetAddress().getHostAddress(), sock
-        .getPort());
-    
-    _vector = new ByteVector(bufsize, bufsize > MAX_INCREMENT ? MAX_INCREMENT : bufsize);
+    this.sock = sock;
+    this.address = new NioAddress(sock.getInetAddress().getHostAddress(), sock.getPort());
+    vector = new ByteVector(bufsize, bufsize > MAX_INCREMENT ? MAX_INCREMENT : bufsize);
   }
 
   /**
    * @see org.sapia.ubik.net.Connection#getServerAddress()
    */
   public ServerAddress getServerAddress() {
-    return _address;
+    return address;
   }
 
   /**
@@ -70,16 +56,16 @@ public class NioTcpRmiClientConnection implements RmiConnection {
    */
   public void send(Object o, VmId vmId, String transportType)
       throws IOException, RemoteException {
-    _vector.clear(false);
-    if(_mos == null){
-      _mos = new MarshalOutputStream(new ByteVectorOutputStream(_vector));
+    vector.clear(false);
+    if(mos == null){
+      mos = MarshalStreamFactory.createOutputStream(new ByteVectorOutputStream(vector));
     }
-    _mos.setUp(vmId, transportType);
-    _mos.writeObject(o);
-    _mos.flush();
+    ((RmiObjectOutput)mos).setUp(vmId, transportType);
+    mos.writeObject(o);
+    mos.flush();
 
     try {
-      doSend(_vector);
+      doSend(vector);
     } catch(java.net.SocketException e) {
       throw new RemoteException(
           "communication with server interrupted; server probably disappeared",
@@ -91,15 +77,15 @@ public class NioTcpRmiClientConnection implements RmiConnection {
    * @see org.sapia.ubik.net.Connection#send(java.lang.Object)
    */
   public void send(Object o) throws IOException, RemoteException {
-    _vector.clear(false);
-    if(_mos == null){
-      _mos = new MarshalOutputStream(new ByteVectorOutputStream(_vector));
+    vector.clear(false);
+    if(mos == null){
+      mos = MarshalStreamFactory.createOutputStream(new ByteVectorOutputStream(vector));
     }
-    _mos.writeObject(o);
-    _mos.flush();
+    mos.writeObject(o);
+    mos.flush();
     
     try {
-      doSend(_vector);
+      doSend(vector);
     } catch(java.net.SocketException e) {
       throw new RemoteException(
           "communication with server interrupted; server probably disappeared",
@@ -113,12 +99,10 @@ public class NioTcpRmiClientConnection implements RmiConnection {
   public Object receive() throws IOException, ClassNotFoundException,
       RemoteException {
     try {
-      if(_mis == null){
-      //DataInputStream dis = new DataInputStream(_sock.getInputStream());
-      //dis.readI
-        _mis = new MarshalInputStream(_sock.getInputStream());
+      if(mis == null){
+        mis = MarshalStreamFactory.createInputStream(sock.getInputStream());
       }
-      return _mis.readObject();
+      return mis.readObject();
     } catch(EOFException e) {
       throw new RemoteException(
           "Communication with server interrupted; server probably disappeared",
@@ -134,14 +118,14 @@ public class NioTcpRmiClientConnection implements RmiConnection {
    */
   public void close() {
     try {
-      _sock.close();
+      sock.close();
     } catch(Throwable t) {
       //noop
     }
   }
   
   private void doSend(ByteVector vector) throws IOException{
-    OutputStream sos = _sock.getOutputStream();
+    OutputStream sos     = sock.getOutputStream();
     DataOutputStream dos = new DataOutputStream(sos);
     dos.writeInt(vector.length());
     vector.reset();

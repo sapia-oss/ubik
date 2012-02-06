@@ -1,9 +1,9 @@
 package org.sapia.ubik.rmi.examples.jndi;
 
+import javax.naming.Context;
+
 import org.sapia.ubik.rmi.naming.remote.discovery.DiscoveryHelper;
 import org.sapia.ubik.rmi.naming.remote.discovery.JndiDiscoListener;
-
-import javax.naming.Context;
 
 
 /**

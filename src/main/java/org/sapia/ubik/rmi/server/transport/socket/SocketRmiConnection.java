@@ -10,21 +10,17 @@ import java.rmi.RemoteException;
 
 import org.sapia.ubik.net.SocketConnection;
 import org.sapia.ubik.rmi.server.VmId;
-import org.sapia.ubik.rmi.server.transport.MarshalInputStream;
 import org.sapia.ubik.rmi.server.transport.MarshalOutputStream;
+import org.sapia.ubik.rmi.server.transport.MarshalStreamFactory;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
+import org.sapia.ubik.rmi.server.transport.RmiObjectOutput;
 
 
 /**
- * A connection over a <code>Socket</code> - the connection uses the
- * <code>MarshalOutputStream</code> class to serialize outgoing objects.
+ * A connection over a {@link Socket} - the connection uses the
+ * {@link MarshalOutputStream} class to serialize outgoing objects.
  *
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 public class SocketRmiConnection extends SocketConnection
   implements RmiConnection {
@@ -51,9 +47,9 @@ public class SocketRmiConnection extends SocketConnection
   public void send(Object o, VmId vmId, String tranportType)
     throws IOException, RemoteException {
     try {
-      writeHeader(_sock.getOutputStream(), _loader);
-      ((MarshalOutputStream) _os).setUp(vmId, tranportType);
-      super.doSend(o, _os);
+      writeHeader(sock.getOutputStream(), loader);
+      ((RmiObjectOutput) os).setUp(vmId, tranportType);
+      super.doSend(o, os);
     } catch (java.net.SocketException e) {
       throw new RemoteException("communication with server interrupted; server probably disappeared",
         e);
@@ -65,7 +61,7 @@ public class SocketRmiConnection extends SocketConnection
    */
   protected ObjectOutputStream newOutputStream(OutputStream os,
     ClassLoader loader) throws IOException {
-    return new MarshalOutputStream(os);
+    return MarshalStreamFactory.createOutputStream(os);
   }
 
   /**
@@ -73,6 +69,6 @@ public class SocketRmiConnection extends SocketConnection
    */
   protected ObjectInputStream newInputStream(InputStream is, ClassLoader loader)
     throws IOException {
-    return new MarshalInputStream(is);
+    return MarshalStreamFactory.createInputStream(is);
   }
 }

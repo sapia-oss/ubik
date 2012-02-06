@@ -1,56 +1,41 @@
 package org.sapia.ubik.net;
 
-import org.sapia.ubik.rmi.server.perf.HitsPerSecStatistic;
-import org.sapia.ubik.rmi.server.perf.Statistic;
+import org.sapia.ubik.util.pool.Pool;
+
 
 /**
  * Implements a pooled thread. Inheriting classes need only implementing
- * the <code>doExec</code> template method.
+ * the {@link #doExec(Object)} template method.
  *
  * @see ThreadPool
  * @see #doExec(Object)
  *
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
-public abstract class PooledThread extends Thread {
-  private Pool<PooledThread>    _pool;
-  private Object                _task;
-  private boolean               _shutdown;
-  private boolean               _aquired;
-  protected HitsPerSecStatistic _tps;
-  protected Statistic    _duration;  
+public abstract class PooledThread<T> extends Thread {
+  
+  private Pool<PooledThread<T>> pool;
+  private T                     task;
+  private volatile boolean      shutdown;
+  private boolean               aquired;
 
-  protected PooledThread() {
+  protected PooledThread(String name) {
+    super(name);
   }
-  
-  void setTpsStat(HitsPerSecStatistic stat){
-    _tps = stat;
-  }
-  
-  void setDurationStat(Statistic stat){
-    _duration = stat;
-  }  
   
 
   /** Sets the pool that owns this thread */
-  final void setOwner(Pool<PooledThread> pool) {
-    _pool = pool;
+  final void setOwner(Pool<PooledThread<T>> pool) {
+    this.pool = pool;
   }
 
   /**
    * Sets this pool's task, which represents a unit of work to
    * perform. This wakes up the thread, which then calls
-   * its own <code>doExec</code> method.
-   *
-   * @see #doExec(Object)
+   * its own {@link #doExec(Object)} method.
    */
-  public final synchronized void exec(Object task) {
-    _task = task;
+  public final synchronized void exec(T task) {
+    this.task = task;
     notify();
   }
 
@@ -58,57 +43,59 @@ public abstract class PooledThread extends Thread {
    * Stops this thread.
    */
   public void shutdown() {
-    _shutdown = true;
+    shutdown = true;
     interrupt();
   }
 
+  /**
+   * @return <code>true</code> if this instance's {@link #shutdown()} method has been invoked.
+   */
   boolean isShutdown() {
-    return _shutdown;
+    return shutdown;
   }
 
   void acquire() {
-    _aquired = true;
+    aquired = true;
   }
 
   void release() {
-    _aquired = false;
+    aquired = false;
   }
 
   public final synchronized void run() {
     while (true) {
-      while ((_task == null) && !_shutdown) {
+      while ((task == null) && !shutdown) {
         try {
           wait();
         } catch (InterruptedException e) {
-          _task = null;
+          task = null;
 
-          if (_aquired) {
-            _pool.release(this);
+          if (aquired) {
+            pool.release(this);
 
             return;
           }
         }
       }
 
-      if (_shutdown) {
-        _task = null;
+      if (shutdown) {
+        task = null;
 
-        if (_aquired) {
-          _pool.release(this);
+        if (aquired) {
+          pool.release(this);
         }
 
-        return;
-      }
+      } else {
       
-      try {
-        doExec(_task);
-      } catch (Exception e) {
-        handleExecutionException(e);
-        // noop
+        try {
+          doExec(task);
+        } catch (Exception e) {
+          handleExecutionException(e);
+        } 
+        
+        task = null;
+        pool.release(this);
       }
-      
-      _task = null;
-      _pool.release(this);
     }
   }
 
@@ -124,7 +111,13 @@ public abstract class PooledThread extends Thread {
    *
    * @param task a task to execute, or data on which this method should act.
    */
-  protected abstract void doExec(Object task);
+  protected abstract void doExec(T task);
   
+  /**
+   * Internally called from {@link #run()} when an exception is thrown when invoking the {@link #doExec(Object)}
+   * method.
+   * 
+   * @param e the {@link Exception} that was thrown from {@link #doExec(Object)} and internally caught.
+   */
   protected abstract void handleExecutionException(Exception e);
 }

@@ -19,7 +19,7 @@ import org.sapia.ubik.rmi.server.transport.http.HttpTransportProvider;
 public class HttpFooClient {
   public static void main(String[] args) {
     try {
-      TransportManager.registerProvider(new HttpTransportProvider());
+      Hub.getModules().getTransportManager().registerProvider(new HttpTransportProvider());
 
       Foo foo = (Foo) Hub.connect(new HttpAddress(Uri.parse(
               "http://localhost:8080/ubik")));

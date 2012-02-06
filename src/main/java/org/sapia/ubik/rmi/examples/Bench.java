@@ -1,14 +1,13 @@
 package org.sapia.ubik.rmi.examples;
 
-import org.sapia.ubik.rmi.naming.remote.*;
-import org.sapia.ubik.rmi.server.Log;
-
 import java.rmi.Naming;
 import java.rmi.RemoteException;
-
 import java.util.Properties;
 
-import javax.naming.*;
+import javax.naming.InitialContext;
+
+import org.sapia.ubik.log.Log;
+import org.sapia.ubik.rmi.naming.remote.RemoteInitialContextFactory;
 
 
 /**

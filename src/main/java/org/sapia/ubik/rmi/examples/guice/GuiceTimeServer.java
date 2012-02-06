@@ -1,6 +1,6 @@
 package org.sapia.ubik.rmi.examples.guice;
 
-import org.sapia.ubik.ioc.guice.NamingService;
+import org.sapia.ubik.ioc.NamingService;
 import org.sapia.ubik.ioc.guice.NamingServiceImpl;
 import org.sapia.ubik.ioc.guice.RemoteServiceExporter;
 import org.sapia.ubik.rmi.examples.time.TimeServiceIF;

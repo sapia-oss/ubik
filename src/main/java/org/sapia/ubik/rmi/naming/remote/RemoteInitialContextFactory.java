@@ -3,12 +3,14 @@ package org.sapia.ubik.rmi.naming.remote;
 import java.io.IOException;
 import java.rmi.RemoteException;
 import java.util.Hashtable;
+import java.util.Map;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.naming.spi.InitialContextFactory;
 
+import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.AsyncEventListener;
 import org.sapia.ubik.mcast.EventChannel;
 import org.sapia.ubik.mcast.RemoteEvent;
@@ -16,14 +18,15 @@ import org.sapia.ubik.net.TCPAddress;
 import org.sapia.ubik.net.Uri;
 import org.sapia.ubik.net.UriSyntaxException;
 import org.sapia.ubik.rmi.naming.ServiceLocator;
+import org.sapia.ubik.rmi.naming.remote.discovery.ServiceDiscoListener;
 import org.sapia.ubik.rmi.naming.remote.proxy.ContextResolver;
 import org.sapia.ubik.rmi.naming.remote.proxy.DefaultContextResolver;
 import org.sapia.ubik.rmi.naming.remote.proxy.ReliableLocalContext;
-import org.sapia.ubik.rmi.server.Log;
+import org.sapia.ubik.util.Props;
 
 
 /**
- * Implements a factory that allows to register <code>ServiceDiscoveryListener</code>s
+ * Implements a factory that allows to register {@link ServiceDiscoListener}s
  * that are notified when a service is bound to the JNDI servers.
  *
  * <p>
@@ -68,7 +71,7 @@ import org.sapia.ubik.rmi.server.Log;
  *   ctx.close();
  * </pre>
  *
- * An instance of this class instantiates an <code>EventChannel</code> to receive
+ * An instance of this class instantiates an {@link EventChannel} to receive
  * notifications from the Ubik JNDI servers on the network, through UDP multicast.
  * The multicast address and port can be specified through the following properties:
  *
@@ -106,15 +109,10 @@ import org.sapia.ubik.rmi.server.Log;
  * @see org.sapia.ubik.rmi.naming.remote.proxy.ReliableLocalContext
  *
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 
 @SuppressWarnings(value="unchecked")
-public class RemoteInitialContextFactory implements InitialContextFactory, Consts {
+public class RemoteInitialContextFactory implements InitialContextFactory, JndiConsts {
   private String _scheme = ServiceLocator.UBIK_SCHEME;
   
   public RemoteInitialContextFactory() {
@@ -128,7 +126,11 @@ public class RemoteInitialContextFactory implements InitialContextFactory, Const
    * @see javax.naming.spi.InitialContextFactory#getInitialContext(Hashtable)
    */
   public Context getInitialContext(Hashtable props) throws NamingException {
+    
+    Props allProps = new Props().addMap((Map<String, String>)props).addProperties(System.getProperties());
+    
     String url = (String) props.get(InitialContext.PROVIDER_URL);
+
     
     if (url == null) {
       throw new NamingException(InitialContext.PROVIDER_URL +
@@ -146,35 +148,14 @@ public class RemoteInitialContextFactory implements InitialContextFactory, Const
     
     uri.setScheme(_scheme);
     
-    String domain;
-    
-    if (props.get(UBIK_DOMAIN_NAME) == null) {
-      domain = JNDIServerHelper.DEFAULT_DOMAIN;
-    } else {
-      domain = (String) props.get(UBIK_DOMAIN_NAME);
-    }
-    
-    String mcastAddr = org.sapia.ubik.rmi.Consts.DEFAULT_MCAST_ADDR;
-    int    mcastPort = org.sapia.ubik.rmi.Consts.DEFAULT_MCAST_PORT;
-    
-    if (props.containsKey(Consts.MCAST_ADDR_KEY)) {
-      mcastAddr = (String) props.get(MCAST_ADDR_KEY);
-    }
-    
-    if (props.containsKey(MCAST_PORT_KEY)) {
-      try {
-        mcastPort = Integer.parseInt((String) props.get(MCAST_PORT_KEY));
-      } catch (NumberFormatException e) {
-        throw new NamingException("Invalid multicast port: " + mcastPort);
-      }
-    }
+    String domain = allProps.getProperty(UBIK_DOMAIN_NAME, JndiConsts.DEFAULT_DOMAIN);
     
     EventChannel ec = null;
     RemoteContext ctx = null;
     ContextResolver resolver = doGetResolver();    
     
     try{
-      ec = new EventChannel(domain, mcastAddr, mcastPort);
+      ec = new EventChannel(domain, allProps);
       ec.start();
     }catch(IOException e){
       NamingException ne = new NamingException("Could not start event channel");
@@ -194,7 +175,7 @@ public class RemoteInitialContextFactory implements InitialContextFactory, Const
         ec.dispatch(JNDI_CLIENT_PUBLISH, "");
         
         RemoteEvent evt = listener.waitForEvent(10000);
-        ec.unregisterListener(listener);
+        ec.unregisterAsyncListener(listener);
         
         if (evt == null) {
           NamingException ne = new NamingException(
@@ -227,11 +208,6 @@ public class RemoteInitialContextFactory implements InitialContextFactory, Const
   protected ContextResolver doGetResolver(){
     return new DefaultContextResolver();
   }
-  /*
-  protected RemoteContext doGetRemoteContext(String host, int port)
-  throws RemoteException {
-    return (RemoteContext) Hub.connect(host, port);
-  }*/
   
   static final class BlockingEventListener implements AsyncEventListener {
     private RemoteEvent  _evt;

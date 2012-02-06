@@ -3,30 +3,29 @@ package org.sapia.ubik.net;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.sapia.ubik.rmi.server.perf.HitStatFactory;
-import org.sapia.ubik.rmi.server.perf.HitsPerSecStatistic;
-import org.sapia.ubik.rmi.server.perf.Statistic;
+import org.sapia.ubik.util.Delay;
+import org.sapia.ubik.util.pool.Pool;
 
 
 /**
- * A pool of <code>PooledThread</code> instances. Inheriting classes
- * must implement the <code>newThread()</code> method, which must return
- * an application-specific <code>PooledThread</code> instance.
+ * A pool of {@link PooledThread} instances. Inheriting classes
+ * must implement the {@link #newThread()} method, which must return
+ * an application-specific {@link PooledThread} instance.
  * <p>
  * Applications must use the pool in the following manner:
  *
  * <pre>
  *
- * PooledThread thread = (PooledThread)threadPool.acquire();
+ * PooledThread thread = threadPool.acquire();
  *
  * thread.exec(someData);
  *
  * </pre>
  *
- * Upon the <code>exec()</code> method being called, the thread
+ * Upon the {@link PooledThread#exec(Object)} method being called, the thread
  * immediately:
  * <ul>
- * <li>calls its own <code>doExec</code> method;
+ * <li>calls its own doExec</code> method;
  * <li>releases itself to its "owning" pool after the doExec() method returns.
  * </ul>
  *
@@ -39,19 +38,12 @@ import org.sapia.ubik.rmi.server.perf.Statistic;
  * @see PooledThread
  * @see PooledThread#doExec(Object)
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
-public abstract class ThreadPool extends Pool<PooledThread> {
-  private String  _name;
-  private boolean _daemon;
-  private boolean _shuttingDown;
-  private List<PooledThread>    _busy = new ArrayList<PooledThread>();
-  private HitsPerSecStatistic _tps = HitStatFactory.createHitsPerSec("TPC", -0, null);
-  private Statistic    _duration = new Statistic("Duration");  
+public abstract class ThreadPool<T> extends Pool<PooledThread<T>> {
+  private String                 name;
+  private boolean                daemon;
+  private volatile boolean       shuttingDown;
+  private List<PooledThread<T>>  busy = new ArrayList<PooledThread<T>>();
 
   /**
    * Creates a thread pool.
@@ -67,8 +59,8 @@ public abstract class ThreadPool extends Pool<PooledThread> {
    */
   protected ThreadPool(String name, boolean daemon, int maxSize) {
     super(maxSize);
-    _name     = name;
-    _daemon   = daemon;
+    this.name     = name;
+    this.daemon   = daemon;
   }
 
   /**
@@ -82,65 +74,41 @@ public abstract class ThreadPool extends Pool<PooledThread> {
    * be set as daemon.
    */
   protected ThreadPool(String name, boolean daemon) {
-    _name     = name;
-    _daemon   = daemon;
+    this.name     = name;
+    this.daemon   = daemon;
   }  
 
   /**
-   * @see org.sapia.ubik.net.Pool#onAcquire(Object)
+   * @see org.sapia.ubik.util.pool.Pool#onAcquire(Object)
    *
    * @throws IllegalStateException if this instance is shutting down or is shut down.
    */
-  protected PooledThread onAcquire(PooledThread o) throws Exception, IllegalStateException {
-    if (_shuttingDown) {
+  protected PooledThread<T> onAcquire(PooledThread<T> o) throws Exception, IllegalStateException {
+    if (shuttingDown) {
       throw new IllegalStateException(
         "Could not acquire thread; pool is shutting down");
     }
 
     o.acquire();
-    _busy.add(o);
+    busy.add(o);
 
     return o;
   }
 
   /**
-   * @see org.sapia.ubik.net.Pool#onRelease(Object)
+   * @see org.sapia.ubik.util.pool.Pool#onRelease(Object)
    */
-  protected synchronized void onRelease(PooledThread o) {
-    ((PooledThread) o).release();
-    _busy.remove(o);
-    notifyAll();
+  protected synchronized void onRelease(PooledThread<T> thread) {
+    if(shuttingDown) {
+      thread.shutdown();
+      notifyAll();
+    } else {
+      thread.release();
+      busy.remove(thread);
+      notifyAll();
+    }
   }
   
-  /**
-   * @return this instance's requests-per-second {@link Statistic}.
-   */
-  public Statistic getRpsStat(){
-    return _tps;
-  }
-  
-  /**
-   * @return this instance's duration {@link Statistic}.
-   */
-  public Statistic getDurationStat(){
-    return _duration;
-  }
-  
-  /**
-   * Enables statistics
-   */
-  public void enabledStats(){
-    _tps.setEnabled(true);
-    _duration.setEnabled(true);
-  }
-  
-  /**
-   * Disables statistics
-   */
-  public void disableStats(){
-    _tps.setEnabled(false);
-    _duration.setEnabled(false);
-  }
 
   /**
    * Cleanly shuts down this instance.
@@ -155,7 +123,7 @@ public abstract class ThreadPool extends Pool<PooledThread> {
    * @return the number of active threads in this instance.
    */
   public int getThreadCount(){
-    return _busy.size();
+    return busy.size();
   }
 
   /**
@@ -171,26 +139,22 @@ public abstract class ThreadPool extends Pool<PooledThread> {
    * executing.
    */
   public synchronized void shutdown(long timeout) {
-    _shuttingDown = true;
+     shuttingDown = true;
 
-    for (int i = 0; i < _objects.size(); i++) {
-      _objects.get(i).shutdown();
+    for (int i = 0; i < objects.size(); i++) {
+      objects.get(i).shutdown();
     }
 
-    if (_busy.size() > 0) {
-      for (int i = 0; i < _busy.size(); i++) {
-        _busy.get(i).shutdown();
+    if (busy.size() > 0) {
+      for (int i = 0; i < busy.size(); i++) {
+        busy.get(i).shutdown();
       }
 
-      Timer timer = new Timer(timeout);
+      Delay timer = new Delay(timeout);
 
-      while (_busy.size() != 0) {
+      while (busy.size() != 0 && !timer.isOver()) {
         try {
-          wait(timeout);
-
-          if (timer.isOver()) {
-            break;
-          }
+          wait(timer.remainingNotZero());
         } catch (InterruptedException e) {
           return;
         }
@@ -199,15 +163,12 @@ public abstract class ThreadPool extends Pool<PooledThread> {
   }
 
   /**
-   * @see org.sapia.ubik.net.Pool#doNewObject()
+   * @see org.sapia.ubik.util.pool.Pool#doNewObject()
    */
-  protected final PooledThread doNewObject() throws Exception {
-    PooledThread th = newThread();
-    th.setTpsStat(_tps);
-    th.setDurationStat(_duration);
+  protected final PooledThread<T> doNewObject() throws Exception {
+    PooledThread<T> th = newThread(name + "-" + super.getCreatedCount());
     th.setOwner(this);
-    th.setName("[" + _name + " - " + super.getCreatedCount() + "]");
-    th.setDaemon(_daemon);
+    th.setDaemon(daemon);
     th.start();
 
     return th;
@@ -218,7 +179,7 @@ public abstract class ThreadPool extends Pool<PooledThread> {
    * thread must not be started by this method; the pool implements this
    * behavior.
    *
-   * @return a <code>PooledThread</code> instance.
+   * @return a {@link PooledThread} instance.
    */
-  protected abstract PooledThread newThread() throws Exception;
+  protected abstract PooledThread<T> newThread(String name) throws Exception;
 }

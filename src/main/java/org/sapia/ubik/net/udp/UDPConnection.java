@@ -1,14 +1,12 @@
 package org.sapia.ubik.net.udp;
 
-import org.sapia.ubik.net.Connection;
-import org.sapia.ubik.net.ServerAddress;
-
 import java.io.IOException;
-
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-
 import java.rmi.RemoteException;
+
+import org.sapia.ubik.net.Connection;
+import org.sapia.ubik.net.ServerAddress;
 
 
 /**

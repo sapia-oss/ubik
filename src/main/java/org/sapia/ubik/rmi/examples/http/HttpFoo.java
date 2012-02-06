@@ -1,14 +1,14 @@
 package org.sapia.ubik.rmi.examples.http;
 
+import java.util.Properties;
+
+import org.sapia.ubik.log.Log;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.examples.UbikFoo;
 import org.sapia.ubik.rmi.server.Hub;
-import org.sapia.ubik.rmi.server.Log;
 import org.sapia.ubik.rmi.server.transport.TransportManager;
 import org.sapia.ubik.rmi.server.transport.http.HttpConsts;
 import org.sapia.ubik.rmi.server.transport.http.HttpTransportProvider;
-
-import java.util.Properties;
 
 
 /**
@@ -22,7 +22,7 @@ import java.util.Properties;
 public class HttpFoo {
   public static void main(String[] args) {
     try {
-      TransportManager.registerProvider(new HttpTransportProvider());
+      Hub.getModules().getTransportManager().registerProvider(new HttpTransportProvider());
 			Log.setDebug();
       Properties props = new Properties();
       props.setProperty(Consts.TRANSPORT_TYPE,

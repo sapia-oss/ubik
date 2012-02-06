@@ -1,85 +1,94 @@
 package org.sapia.ubik.rmi.server;
 
-import junit.framework.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.rmi.server.Unreferenced;
 
+import org.junit.Before;
+import org.junit.Test;
+import org.sapia.ubik.module.TestModuleContext;
 import org.sapia.ubik.rmi.NoSuchObjectException;
+import org.sapia.ubik.rmi.server.stats.Stats;
 
-
-/**
- * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
- */
-public class ObjectTableTest extends TestCase {
-  public ObjectTableTest(String name) {
-    super(name);
+public class ObjectTableTest {
+  
+  private ObjectTable objectTable;
+  
+  @Before
+  public void setUp() throws Exception {
+    Stats.getInstance().clear();
+    objectTable = new ObjectTable();
+    TestModuleContext context = new TestModuleContext();
+    objectTable.init(context);
+    objectTable.start(context);
   }
 
+  @Test
   public void testRegister() throws Exception {
     OID oid = new OID(1);
-    Hub.serverRuntime.objectTable.clear(oid);
-    Hub.serverRuntime.objectTable.register(oid, "anObject");
-    super.assertEquals(1, Hub.serverRuntime.objectTable.getRefCount(oid));
+    objectTable.clear(oid);
+    objectTable.register(oid, "anObject");
+    assertEquals(1, objectTable.getRefCount(oid));
   }
 
+  @Test
   public void testRemove() {
     OID oid = new OID(1);
-    Hub.serverRuntime.objectTable.clear(oid);
-    Hub.serverRuntime.objectTable.register(oid, "anObject");
-    super.assertTrue(Hub.serverRuntime.objectTable.remove("anObject"));
+    objectTable.clear(oid);
+    objectTable.register(oid, "anObject");
+    assertTrue(objectTable.remove("anObject"));
   }
-
+  
+  @Test
   public void testRemoveForClassLoader() {
     OID oid = new OID(1);
-    Hub.serverRuntime.objectTable.clear(oid);
+    objectTable.clear(oid);
 
     TestRemoteObj obj = new TestRemoteObj();
-    Hub.serverRuntime.objectTable.register(oid, obj);
-    super.assertTrue(Hub.serverRuntime.objectTable.remove(
-        obj.getClass().getClassLoader()));
+    objectTable.register(oid, obj);
+    assertTrue(objectTable.remove(obj.getClass().getClassLoader()));
   }
 
+  @Test
   public void testUnreferenced() {
     OID oid = new OID(1);
-    Hub.serverRuntime.objectTable.clear(oid);
+    objectTable.clear(oid);
 
     TestRemoteObj obj = new TestRemoteObj();
-    Hub.serverRuntime.objectTable.register(oid, obj);
-    Hub.serverRuntime.objectTable.dereference(oid, 1);
-    super.assertTrue(obj.unreferenced);
+    objectTable.register(oid, obj);
+    objectTable.dereference(oid, 1);
+    assertTrue(obj.unreferenced);
   }
-
+  
+  @Test
   public void testUnregister() throws Exception {
     OID oid = new OID(1);
-    Hub.serverRuntime.objectTable.clear(oid);
-    Hub.serverRuntime.objectTable.register(oid, "anObject");
-    super.assertEquals(Hub.serverRuntime.objectTable.getRefCount(oid), 1);
-    Hub.serverRuntime.objectTable.reference(oid);
-    super.assertEquals(Hub.serverRuntime.objectTable.getRefCount(oid), 2);
-    Hub.serverRuntime.objectTable.dereference(oid, 1);
-    super.assertEquals(Hub.serverRuntime.objectTable.getRefCount(oid), 1);
-    Hub.serverRuntime.objectTable.dereference(oid, 1);
-    super.assertEquals(Hub.serverRuntime.objectTable.getRefCount(oid), 0);
+    objectTable.clear(oid);
+    objectTable.register(oid, "anObject");
+    assertEquals(objectTable.getRefCount(oid), 1);
+    objectTable.reference(oid);
+    assertEquals(objectTable.getRefCount(oid), 2);
+    objectTable.dereference(oid, 1);
+    assertEquals(objectTable.getRefCount(oid), 1);
+    objectTable.dereference(oid, 1);
+    assertEquals(objectTable.getRefCount(oid), 0);
   }
 
+  @Test
   public void testGetObjectFor() throws Exception {
     OID oid = new OID(1);
-    Hub.serverRuntime.objectTable.clear(oid);
+    objectTable.clear(oid);
 
     try {
-      Hub.serverRuntime.objectTable.getObjectFor(oid);
-      throw new Exception("instance should be null");
+      objectTable.getObjectFor(oid);
+      throw new Exception("NoSuchObjectException should be thrown");
     } catch (NoSuchObjectException e) {
       //ok
     }
 
-    Hub.serverRuntime.objectTable.register(oid, "anObject");
-    Hub.serverRuntime.objectTable.getObjectFor(oid);
+    objectTable.register(oid, "anObject");
+    objectTable.getObjectFor(oid);
   }
 
   public static class TestRemoteObj implements Unreferenced {

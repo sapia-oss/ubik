@@ -1,10 +1,10 @@
 package org.sapia.ubik.rmi.examples.replication;
 
+import java.util.Set;
+
 import org.sapia.ubik.rmi.examples.Foo;
 import org.sapia.ubik.rmi.interceptor.Interceptor;
 import org.sapia.ubik.rmi.replication.ReplicationEvent;
-
-import java.util.Set;
 
 
 /**

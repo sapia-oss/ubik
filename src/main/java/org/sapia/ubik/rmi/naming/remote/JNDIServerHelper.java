@@ -12,13 +12,8 @@ import org.sapia.ubik.rmi.naming.remote.archie.UbikRemoteContext;
 
 /**
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
-public class JNDIServerHelper implements Consts {
+class JNDIServerHelper implements JndiConsts {
 
   /**
    * Parses the given command-line arguments and returns their object representation, or
@@ -27,7 +22,7 @@ public class JNDIServerHelper implements Consts {
    *
    * @return an <code>Args</code> instance holding command-line arguments.
    */
-  public static Args parseArgs(String[] args) {
+  static Args parseArgs(String[] args) {
     int    port         = DEFAULT_PORT;
     String domain       = DEFAULT_DOMAIN;
 
@@ -64,7 +59,7 @@ public class JNDIServerHelper implements Consts {
     String mcastAddress;
     
     try {
-      portProp = System.getProperty(org.sapia.ubik.rmi.Consts.MCAST_PORT_KEY, Integer.toString(Consts.DEFAULT_MCAST_PORT));
+      portProp = System.getProperty(org.sapia.ubik.rmi.Consts.MCAST_PORT_KEY, Integer.toString(JndiConsts.DEFAULT_MCAST_PORT));
       mcastPort = Integer.parseInt(portProp);
       
     } catch (NumberFormatException e) {
@@ -73,7 +68,7 @@ public class JNDIServerHelper implements Consts {
       return null;
     }
 
-    mcastAddress = System.getProperty(org.sapia.ubik.rmi.Consts.MCAST_ADDR_KEY, Consts.DEFAULT_MCAST_ADDR);
+    mcastAddress = System.getProperty(org.sapia.ubik.rmi.Consts.MCAST_ADDR_KEY, JndiConsts.DEFAULT_MCAST_ADDR);
 
     return new Args(port, domain, mcastAddress, mcastPort);
   }
@@ -83,12 +78,12 @@ public class JNDIServerHelper implements Consts {
     return UbikRemoteContext.newInstance(ec);
   }
 
-  public static ClientListener createClientListener(EventChannel ec,
-    ServerAddress addr) throws NamingException, IOException {
-    ClientListener listener = new ClientListener(ec, addr);
-    ec.registerAsyncListener(Consts.JNDI_CLIENT_PUBLISH, listener);
+  public static ClientListener createClientListener(EventChannel ec, ServerAddress addr) 
+    throws NamingException, IOException {
 
-    ec.dispatch(Consts.JNDI_SERVER_PUBLISH, addr);
+    ClientListener listener = new ClientListener(ec, addr);
+    ec.registerAsyncListener(JndiConsts.JNDI_CLIENT_PUBLISH, listener);
+    ec.dispatch(JndiConsts.JNDI_SERVER_PUBLISH, addr);
 
     return listener;
   }

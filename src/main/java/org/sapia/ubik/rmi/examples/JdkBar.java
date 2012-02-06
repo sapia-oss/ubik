@@ -1,7 +1,6 @@
 package org.sapia.ubik.rmi.examples;
 
 import java.rmi.server.UnicastRemoteObject;
-
 import java.util.HashMap;
 
 

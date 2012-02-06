@@ -1,10 +1,10 @@
 package org.sapia.ubik.rmi.examples.replication;
 
+import java.util.Set;
+
 import org.sapia.ubik.rmi.replication.ReplicatedCommand;
 import org.sapia.ubik.rmi.replication.ReplicatedInvoker;
-import org.sapia.ubik.rmi.server.invocation.InvokeCommand;
-
-import java.util.Set;
+import org.sapia.ubik.rmi.server.command.InvokeCommand;
 
 
 /**

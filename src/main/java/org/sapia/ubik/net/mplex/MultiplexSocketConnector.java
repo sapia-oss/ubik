@@ -1,7 +1,6 @@
 package org.sapia.ubik.net.mplex;
 
 import java.io.IOException;
-
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
@@ -9,20 +8,20 @@ import java.net.SocketException;
 
 
 /**
- * The <code>MultiplexSocketConnector</code> class is the access point to get client
- * socket connections in the multiplex logic. Its functionality is similar to the
- * traditional server socket, which gives you the next socket connection upon calling
- * the <code>accept()</code> method.<p>
+ * This class is the entry point to get client socket connections in the multiplex logic. 
+ * Its functionality is similar to the traditional server socket, which gives you the next 
+ * socket connection upon calling the {@link #accept()} method.<p>
  *
- * A connector instance can be created using the <code>createSocketConnector()</code>
- * method of the class <code>MultiplexServerSocket</code>, providing a <code>StreamSelector</code>
- * object. Upon this call, the server socket will create a new connector instance that will
- * be associated to the server socket. The selector passed in will be used to determine
- * if this connector will handle or not a new client socket connection. After you need to call
- * the <code>accept()</code> to get the next client socket connection (blocking call). Finally
- * when you are done with this socket connector a call to the <code>close()</code> method is
- * required to release all the resource used by this socket connector. Note that closing the
- * socket connector will not close the underlying server socket.<p>
+ * A connector instance can be created using the 
+ * {@link MultiplexServerSocket#createSocketConnector(StreamSelector)}
+ * providing a {@link StreamSelector} object. Upon this call, the server socket will 
+ * create a new connector instance that will be associated to the server socket. 
+ * The selector passed in will be used to determine if this connector will handle or not a 
+ * new client socket connection. After you need to call the <code>accept()</code> to get the 
+ * next client socket connection (blocking call). Finally when you are done with this socket 
+ * connector a call to the <code>close()</code> method is required to release all the resource 
+ * used by this socket connector. Note that closing the socket connector will not close the 
+ * underlying server socket.<p>
  *
  * All the accessor methods that returns a state delegates the call to the underlying
  * server socket. For example a call to get the port number on which is connector is bound
@@ -32,13 +31,6 @@ import java.net.SocketException;
  * @see MultiplexServerSocket
  * @see StreamSelector
  * @author <a href="mailto:jc@sapia-oss.org">Jean-Cedric Desrochers</a>
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2004 <a href="http://www.sapia-oss.org">
- *     Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *     <a href="http://www.sapia-oss.org/license.html" target="sapia-license">license page</a>
- *     at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 public interface MultiplexSocketConnector {
   /**
@@ -61,7 +53,7 @@ public interface MultiplexSocketConnector {
    * Returns the address of the endpoint this socket is bound to, or
    * <code>null</code> if it is not bound yet.
    *
-   * @return A <code>SocketAddress</code> representing the local endpoint of this
+   * @return A {@link SocketAddress} representing the local endpoint of this
    *         socket, or <code>null</code> if it is not bound yet.
    */
   public SocketAddress getLocalSocketAddress();

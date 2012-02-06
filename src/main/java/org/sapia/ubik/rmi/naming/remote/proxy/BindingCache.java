@@ -7,6 +7,7 @@ import java.io.ObjectOutput;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
+import java.rmi.RemoteException;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -14,41 +15,42 @@ import javax.naming.Context;
 import javax.naming.Name;
 import javax.naming.NamingException;
 
+import org.sapia.ubik.log.Category;
+import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.DomainName;
-import org.sapia.ubik.rmi.naming.remote.StubTweaker;
-import org.sapia.ubik.rmi.server.Stub;
-import org.sapia.ubik.rmi.server.StubInvocationHandler;
+import org.sapia.ubik.mcast.MulticastAddress;
+import org.sapia.ubik.rmi.server.Hub;
+import org.sapia.ubik.rmi.server.stub.Stub;
+import org.sapia.ubik.rmi.server.stub.StubInvocationHandler;
+import org.sapia.ubik.rmi.server.stub.enrichment.StubEnrichmentStrategy.JndiBindingInfo;
 
 
 /**
+ * A client-side binding cache.
+ * 
  * @author Yanick Duchesne
- *
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 public class BindingCache implements Externalizable {
-  
-  private List<BoundRef> _services = new CopyOnWriteArrayList<BoundRef>();
+
+  private Category       log      = Log.createCategory(getClass());
+  private List<BoundRef> services = new CopyOnWriteArrayList<BoundRef>();
 
   public BindingCache() {
   }
 
   public synchronized void add(String domainName, Name name, Object o) {
-    _services.add(new BoundRef(domainName, name, o));
+    services.add(new BoundRef(domainName, name, o));
   }
 
   public synchronized List<BoundRef> cachedRefs() {
-    return _services;
+    return services;
   }
 
-  public void copyTo(Context ctx, DomainName domain, String baseUrl, String mcastAddress, int mcastPort) {
+  public void copyTo(Context ctx, DomainName domain, String baseUrl, MulticastAddress mcastAddress) {
     BoundRef ref;
 
-    for (int i = 0; i < _services.size(); i++) {
-      ref = (BoundRef) _services.get(i);
+    for (int i = 0; i < services.size(); i++) {
+      ref = (BoundRef) services.get(i);
 
       if (ref.obj == null) {
         continue;
@@ -64,13 +66,13 @@ public class BindingCache implements Externalizable {
             toBind = ref.obj;
           }
           if(toBind != null){
-            toBind = StubTweaker.tweak(baseUrl, 
-                ref.name, 
-                ref.domainName, 
-                mcastAddress, 
-                mcastPort, 
-                toBind);
-            ctx.rebind(ref.name, toBind);
+            JndiBindingInfo info = new JndiBindingInfo(baseUrl, ref.name, ref.domainName, mcastAddress);
+            try {
+              toBind = Hub.getModules().getServerTable().getStubProcessor().enrichForJndiBinding(toBind, info);
+              ctx.rebind(ref.name, toBind);
+            } catch (RemoteException e) {
+              log.error("Could not enrich stub", e);
+            }
           }
         }
       } catch (NamingException e) {
@@ -82,28 +84,28 @@ public class BindingCache implements Externalizable {
   @SuppressWarnings(value="unchecked")
   public void readExternal(ObjectInput in)
     throws IOException, ClassNotFoundException {
-    _services = (List<BoundRef>) in.readObject();
+    services = (List<BoundRef>) in.readObject();
   }
 
   public void writeExternal(ObjectOutput out) throws IOException {
     BoundRef ref;
 
-    synchronized (_services) {
-      for (int i = 0; i < _services.size(); i++) {
-        ref = (BoundRef) _services.get(i);
+    synchronized (services) {
+      for (int i = 0; i < services.size(); i++) {
+        ref = (BoundRef) services.get(i);
 
         if (ref.isNull()) {
-          _services.remove(i);
+          services.remove(i);
           --i;
         }
       }
     }
 
-    out.writeObject(_services);
+    out.writeObject(services);
   }
 
   public static class BoundRef implements Externalizable {
-    public Name     name;
+    public Name       name;
     public Object     obj;
     public DomainName domainName;
 

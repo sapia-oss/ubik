@@ -5,42 +5,41 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.UUID;
 
+import org.sapia.ubik.util.Strings;
+
 
 /**
- * A VM unique identifier.
+ * An instance of this class identifies a JVM uniquely.
  *
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 public class VmId implements java.io.Externalizable {
+  
   public static final long serialVersionUID = 1L;
-  private static VmId      _instance;
+  
+  private static VmId     instance;
 
   static {
       UUID uuid = UUID.randomUUID();
-      _instance = new VmId(uuid.getLeastSignificantBits(), uuid.getMostSignificantBits());
+      instance = new VmId(uuid.getLeastSignificantBits(), uuid.getMostSignificantBits());
   }
 
-  private long _left, _right;
+  private long left, right;
 
   /** Do not use; meant for externalization only. */
   public VmId() {
   }
 
   VmId(long left, long right) {
-    _left = left;
-    _right = right;
+    this.left = left;
+    this.right = right;
   }
 
   /**
    * @return the singleton instance of this VM's VmId.
    */
   public static VmId getInstance() {
-    return _instance;
+    return instance;
   }
 
   /**
@@ -49,22 +48,18 @@ public class VmId implements java.io.Externalizable {
   public boolean equals(Object other) {
     if(other instanceof VmId){
       VmId otherId = (VmId)other;
-      return _left == otherId._left && _right == otherId._right;
+      return left == otherId.left && right == otherId.right;
     }
     else{
       return false;
     }
   }
-    
-  public boolean equals(VmId otherId) {
-    return _left == otherId._left && _right == otherId._right;
-  } 
 
   /**
    * @see java.lang.Object#hashCode()
    */
   public int hashCode() {
-    return (int)(_right + _left * 31);
+    return (int)((right + left) * 31);
   }
 
   /**
@@ -72,19 +67,19 @@ public class VmId implements java.io.Externalizable {
    */
   public void readExternal(ObjectInput in)
     throws IOException, ClassNotFoundException {
-    _left  = in.readLong();
-    _right = in.readInt();
+    left  = in.readLong();
+    right = in.readLong();
   }
 
   /**
    * @see java.io.Externalizable#writeExternal(ObjectOutput)
    */
   public void writeExternal(ObjectOutput out) throws IOException {
-    out.writeLong(_left);
-    out.writeLong(_right);
+    out.writeLong(left);
+    out.writeLong(right);
   }
 
   public String toString() {
-    return "[ id=" + _left + _right + " ]";
+    return Strings.toString("id", Long.toHexString(Math.abs(left)) + Long.toHexString(Math.abs(right)));
   }
 }

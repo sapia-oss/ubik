@@ -1,8 +1,12 @@
 package org.sapia.ubik.rmi.server;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.io.IOException;
+import java.rmi.RemoteException;
 
+import org.sapia.ubik.log.Category;
+import org.sapia.ubik.log.Log;
+import org.sapia.ubik.module.Module;
+import org.sapia.ubik.module.ModuleContext;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.interceptor.Event;
@@ -10,10 +14,9 @@ import org.sapia.ubik.rmi.interceptor.Interceptor;
 import org.sapia.ubik.rmi.interceptor.InvalidInterceptorException;
 import org.sapia.ubik.rmi.interceptor.MultiDispatcher;
 import org.sapia.ubik.rmi.server.gc.ClientGC;
-import org.sapia.ubik.rmi.server.invocation.InvocationDispatcher;
-import org.sapia.ubik.taskman.TaskManager;
-
-import com.google.inject.Singleton;
+import org.sapia.ubik.rmi.server.gc.CommandRefer;
+import org.sapia.ubik.rmi.server.transport.Connections;
+import org.sapia.ubik.rmi.server.transport.RmiConnection;
 
 
 /**
@@ -21,39 +24,55 @@ import com.google.inject.Singleton;
  * task is to manage remote references and client-side interceptors.
  *
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
-public class ClientRuntime {
+public class ClientRuntime implements Module{
+  
+  private Category log = Log.createCategory(getClass());
+  
   /**
-   * The dispatcher of method invocations to remote servers.
-   */
-  static final InvocationDispatcher invoker = new InvocationDispatcher();
-
-  /**
-   * Address of the singleton server that will receive call-backs.
-   *
-   * @see Singleton
-   */
-  private static Map<String, ServerAddress> _serverAddresses = new ConcurrentHashMap<String, ServerAddress>();
-
-  /**
-   * The dispatcher of events destined to be intercepted by <code>Interceptor</code> instances.
+   * The dispatcher of events destined to be intercepted by {@link Interceptor} instances.
    * Dispatches client-side events. This mechanism can conveniently be used by client apps
    * to dispatch their own custom events.
    *
    * @see Interceptor
    */
-  public final MultiDispatcher dispatcher = new MultiDispatcher();
+  private final MultiDispatcher dispatcher = new MultiDispatcher();
+  
+  /**
+   * The {@link ServerTable}.
+   */
+  private ServerTable serverTable;
 
   /** The client-side part of the distributed garbage-collection mechanism */
-  final ClientGC gc;
-
-  ClientRuntime(TaskManager taskman) {
-    gc = new ClientGC(taskman);
+  private ClientGC gc;
+  
+  @Override
+  public void init(ModuleContext context) {
+    serverTable = context.lookup(ServerTable.class);
+  }
+  
+  @Override
+  public void start(ModuleContext context) {
+    gc = context.lookup(ClientGC.class);
+  }
+  
+  @Override
+  public void stop() {
+  }
+ 
+  /**
+   *  @return this instance's {@link MultiDispatcher}.
+   *  @see #dispatcher.
+   */
+  public MultiDispatcher getDispatcher() {
+    return dispatcher;
+  }
+  
+  /**
+   * @return the {@link ClientGC} instance.
+   */
+  public ClientGC getGc() {
+    return gc;
   }
 
   /**
@@ -65,12 +84,8 @@ public class ClientRuntime {
    *
    * @return <code>true</code> if this server supports call-back mode.
    */
-  boolean isCallback(String transportType) {
-    if (_serverAddresses.get(transportType) == null) {
-      doInit(transportType);
-    }
-
-    return _serverAddresses.get(transportType) != null;
+  public boolean isCallback(String transportType) {
+    return serverTable.hasServerFor(transportType);
   }
 
   void shutdown(long timeout) throws InterruptedException {
@@ -80,21 +95,22 @@ public class ClientRuntime {
    * Returns this client's call-back server address (corresponds to the
    * this client's singleton server, which will process incoming responses).
    *
-   * @see Consts#CALLBACK_ENABLED
-   *
-   * @return this client's <code>ServerAddress</code> for call-backs.
+   * @param transportType a the transport type for which to return the callback address.
+   * @return the {@link ServerAddress} corresponding to the given transport type, and that should
+   * be used as the callback address.
    * @throws IllegalStateException if this client does not allow call-backs.
+   * @see Consts#CALLBACK_ENABLED
    */
   public ServerAddress getCallbackAddress(String transportType)
     throws IllegalStateException {
-    if (_serverAddresses.get(transportType) == null) {
+    if (!serverTable.hasServerFor(transportType)) {
       throw new IllegalStateException(
-        "no callback server was instantiated; make sure " +
+        "No callback server was instantiated; make sure " +
         "the following system property is set to 'true' upon VM startup: " +
         Consts.CALLBACK_ENABLED);
     }
 
-    return _serverAddresses.get(transportType);
+    return serverTable.getServerAddress(transportType);
   }
 
   /**
@@ -117,33 +133,54 @@ public class ClientRuntime {
   public void dispatchEvent(Event event) {
     dispatcher.dispatch(event);
   }
-
-  /***
-   * Performs initialization of this instance.
+  
+  /**
+   * This method is meant to increase the reference count of a remote object, whose corresponding stub
+   * has reached the current JVM.
+   * 
+   * @param address the {@link ServerAddress} of the remote server to connect to.
+   * @param oid the {@link OID} for which to create a reference.
+   * @throws RemoteException
    */
-  synchronized void doInit(String transportType) {
-    if ((System.getProperty(Consts.CALLBACK_ENABLED) != null) &&
-          System.getProperty(Consts.CALLBACK_ENABLED).equalsIgnoreCase("true")) {
-      if (_serverAddresses.get(transportType) != null) {
-        return;
+  public void createReference(ServerAddress address, OID oid)
+  throws RemoteException {
+    Connections conns = Hub.getModules().getTransportManager().getConnectionsFor(address);
+  
+    try {
+      doSend(conns, oid);
+    } catch (ClassNotFoundException e) {
+      throw new RemoteException("could not refer to object: " + oid + "@" +
+        address, e);
+    } catch (RemoteException e) {
+      conns.clear();
+  
+      try {
+        doSend(conns, oid);
+      } catch (RemoteException e2) {
+        log.warning("Could not refer to object: " + oid + "@" + 
+            address + "; server probably down");
+      } catch (Exception e2) {
+        throw new RemoteException("Could not refer to object: " + oid + "@" +
+          address, e2);
       }
-
-      Log.warning(getClass(),
-        "Creating server to receive callbacks on transport: " + transportType);
-
-      ServerAddress serverAddress = null;
-
-      if (Hub.serverRuntime.server.isInit(transportType)) {
-        serverAddress = Hub.serverRuntime.server.getServerAddress(transportType);
-      } else {
-        try {
-          serverAddress = Hub.serverRuntime.server.init(transportType);
-        } catch (java.rmi.RemoteException e) {
-          Log.error(ClientRuntime.class, e);
-        }
-      }
-
-      _serverAddresses.put(transportType, serverAddress);
+    } catch (IOException e) {
+      throw new RemoteException("Could not refer to object: " + oid + "@" +
+        address, e);
     }
   }
+
+  private static void doSend(Connections conns, OID oid)
+  throws RemoteException, IOException, ClassNotFoundException {
+    RmiConnection conn = null;
+  
+    try {
+      conn = conns.acquire();
+      conn.send(new CommandRefer(oid));
+      conn.receive();
+    } finally {
+      if (conn != null) {
+        conns.release(conn);
+      }
+    }
+  }  
 }

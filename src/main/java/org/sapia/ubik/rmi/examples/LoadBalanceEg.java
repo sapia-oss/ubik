@@ -1,10 +1,10 @@
 package org.sapia.ubik.rmi.examples;
 
-import org.sapia.ubik.rmi.naming.remote.RemoteInitialContextFactory;
-
 import java.util.Properties;
 
 import javax.naming.InitialContext;
+
+import org.sapia.ubik.rmi.naming.remote.RemoteInitialContextFactory;
 
 
 /**

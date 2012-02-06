@@ -13,8 +13,4 @@ public interface TaskManager {
    */
   public void addTask(TaskContext ctx, Task task);
   
-  /**
-   * Shuts down this instance (task processing halts).
-   */  
-  public void shutdown();
 }

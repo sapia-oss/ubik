@@ -1,9 +1,9 @@
 package org.sapia.ubik.mcast;
 
-import org.sapia.ubik.net.ServerAddress;
-
 import java.io.IOException;
 import java.util.List;
+
+import org.sapia.ubik.net.ServerAddress;
 
 
 /**
@@ -13,11 +13,6 @@ import java.util.List;
  * and server (for their siblings).
  *
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 public interface UnicastDispatcher {
   /**
@@ -28,9 +23,9 @@ public interface UnicastDispatcher {
    * @param type the logical type of the data that is sent - allows the
    * receiver to perform logic according to the "type".
    * @param data the {@link Object} to send.
+   * @throws IOException if there was an  IO issue performing this operation.
    */
-  public void dispatch(ServerAddress addr, String type, Object data)
-    throws IOException;
+  public void dispatch(ServerAddress addr, String type, Object data) throws IOException;
 
   /**
    * Sends the given data to the node whose address is given, returning the
@@ -41,8 +36,10 @@ public interface UnicastDispatcher {
    * @param type the logical type of the data that is sent - allows the
    * receiver to perform logic according to the "type".
    * @param data the {@link Object} to send.
-   *
    * @return a {@link Response}.
+   * @throws IOException if there was an  IO issue performing this operation.
+   * @throws InterruptedException if the calling thread is interrupted while internally 
+   * waiting for the responses.
    */
   public Response send(ServerAddress addr, String type, Object data)
     throws IOException;
@@ -56,10 +53,13 @@ public interface UnicastDispatcher {
    * receiver to perform logic according to the "type".
    * @param data the {@link Object} to send.
    *
-   * @return a <code>RespList</code>.
+   * @return a {@link RespList}.
+   * @throws IOException if there was an  IO issue performing this operation.
+   * @throws InterruptedException if the calling thread is interrupted while internally 
+   * waiting for the responses.
    */
-  public RespList send(java.util.List<ServerAddress> addresses, String type, Object data)
-    throws IOException;
+  public RespList send(java.util.List<ServerAddress> addresses, String type, Object data) 
+    throws IOException, InterruptedException;
 
   /**
    * Starts this instance - should be called prior to using this instance.
@@ -72,24 +72,6 @@ public interface UnicastDispatcher {
   public void close();
 
   /**
-   * Sets this instance's "buffer size". The size is specified in bytes, and can
-   * be interpreted differently from one implementation to another - for example, for
-   * UDP-based implementation, it can correspond to the datagram packet size.
-   *
-   * @param size the size of this instance's internal buffer, in bytes.
-   */
-  public void setBufsize(int size);
-
-  /**
-   * Allows implementations to notify the passed in listener when a socket timeout occurs - this
-   * applies if the underlying implementation uses a server restricted to blocking IO.
-   *
-   * @see java.net.DatagramSocket#setSoTimeout(int)
-   * @see java.net.ServerSocket#setSoTimeout(int)
-   */
-  public void setSoTimeoutListener(SocketTimeoutListener listener);
-
-  /**
    * Returns the address of this instance.
    *
    * @return a {@link ServerAddress}.
@@ -99,6 +81,7 @@ public interface UnicastDispatcher {
    * therefore, always call {@link #start()} before calling this method.
    *
    * @see #start()
+   * @throws IllegalStateException if this instance's address cannot be obtained.
    */
   public ServerAddress getAddress() throws IllegalStateException;
 }

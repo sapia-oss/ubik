@@ -6,19 +6,16 @@ import java.io.PrintWriter;
 
 
 /**
+ * An {@link IOException} that wraps a {@link Throwable} instance. 
+ * 
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 public class NestedIOException extends IOException {
   
   static final long serialVersionUID = 1L;
   
   /** The source error that is encapsulated in this composite exception. */
-  private Throwable _theSourceError;
+  private Throwable theSourceError;
 
   /**
    * Creates a new CompositeRuntimeException instance with the arguments passed in.
@@ -28,7 +25,7 @@ public class NestedIOException extends IOException {
    */
   public NestedIOException(String aMessage, Throwable aSourceError) {
     super(aMessage);
-    _theSourceError = aSourceError;
+    theSourceError = aSourceError;
   }
 
   /**
@@ -50,7 +47,7 @@ public class NestedIOException extends IOException {
    * @return The source error encapsulated in this composite exception.
    */
   public Throwable getSourceError() {
-    return _theSourceError;
+    return theSourceError;
   }
 
   /////////////////////////////////////////////////////////////////////////////////////////
@@ -70,9 +67,9 @@ public class NestedIOException extends IOException {
   public void printStackTrace(PrintWriter anOutput) {
     super.printStackTrace(anOutput);
 
-    if (_theSourceError != null) {
+    if (theSourceError != null) {
       anOutput.print("\n---> NESTED EXCEPTION IS: ");
-      _theSourceError.printStackTrace(anOutput);
+      theSourceError.printStackTrace(anOutput);
     }
   }
 
@@ -82,9 +79,9 @@ public class NestedIOException extends IOException {
   public void printStackTrace(PrintStream anOutput) {
     super.printStackTrace(anOutput);
 
-    if (_theSourceError != null) {
+    if (theSourceError != null) {
       anOutput.print("\n---> NESTED EXCEPTION IS: ");
-      _theSourceError.printStackTrace(anOutput);
+      theSourceError.printStackTrace(anOutput);
     }
   }
 }

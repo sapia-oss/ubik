@@ -1,15 +1,14 @@
 package org.sapia.ubik.test;
 
-import org.sapia.ubik.rmi.server.Stub;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-
 import java.util.HashSet;
 import java.util.Set;
+
+import org.sapia.ubik.rmi.server.stub.Stub;
 
 
 /**

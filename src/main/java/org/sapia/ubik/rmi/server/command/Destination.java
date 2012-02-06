@@ -5,60 +5,51 @@ import org.sapia.ubik.rmi.server.VmId;
 
 
 /**
- * Models a destination: a <code>ServerAddress</code> and a <code>VmId</code>.
+ * Models a destination: a {@link ServerAddress} and a {@link VmId}. An instance
+ * of this class corresponds to a remote endpoint to which asynchronous {@link Response}s
+ * are to be sent. 
  *
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 public class Destination {
-  private ServerAddress _addr;
-  private VmId          _vmId;
-  private int           _hashCode;
-
+  private ServerAddress addr;
+  private VmId          vmId;
+  
   public Destination(ServerAddress addr, VmId vmId) {
-    _addr       = addr;
-    _vmId       = vmId;
-    _hashCode   = _vmId.toString().hashCode();
+    this.addr       = addr;
+    this.vmId       = vmId;
   }
 
   /**
-   * Returns this instance's server address.
-   *
-   * @return a <code>ServerAddress</code>.
+   * @return this instance's {@link ServerAddress}.
    */
   public ServerAddress getServerAddress() {
-    return _addr;
+    return addr;
   }
 
   /**
-   * Returns a <code>VmId</code>.
-   *
-   * @return a <code>VmId</code>.
+   * @return this instance's {@link VmId}.
    */
   public VmId getVmId() {
-    return _vmId;
+    return vmId;
   }
 
+  /**
+   * @return this instance's hash code.
+   */
   public int hashCode() {
-    return _hashCode;
+    return vmId.hashCode();
   }
 
   public boolean equals(Object obj) {
-    try {
+    if(obj instanceof Destination) {
       Destination other = (Destination) obj;
-
-      return (_addr.hashCode() == other._addr.hashCode()) &&
-      (_vmId.hashCode() == other._vmId.hashCode());
-    } catch (ClassCastException e) {
-      return false;
+      return addr.equals(other.addr) && vmId.equals(other.vmId);
     }
+    return false;
   }
 
   public String toString() {
-    return "[ vmId=" + _vmId + ", address=" + _addr + " ]";
+    return "[ vmId=" + vmId + ", address=" + addr + " ]";
   }
 }

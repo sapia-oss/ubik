@@ -1,12 +1,14 @@
 package org.sapia.ubik.util;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
 /**
  * This class can conveniently be used as a replacement for the JDK's 
- * <code>ByteArrayInputStream</code> and <code>ByteArrayOutputStream</code>
+ * {@link ByteArrayInputStream} and {@link ByteArrayOutputStream}
  * classes.
  * <p>
  * This class implements a vector of byte arrays (it encapsulates an array of
@@ -26,8 +28,8 @@ import java.nio.ByteBuffer;
  * arrays that have been created. Similarly, reading bytes from the instance
  * does not require copying the whole bytes that the instance stores to an 
  * intermediary array that is returned to the caller - instead, this instance
- * directly supports reads (this is a workaround to the JDK's ByteArrayOutputStream
- * class and its <code>toByteArray()</code> method.
+ * directly supports reads (this is a workaround to the JDK's {@link ByteArrayOutputStream#toByteArray()}
+ * method.
  * <p>
  * <b>WARNING: THIS CLASS IS NOT THREAD-SAFE</b>.
  *
@@ -36,23 +38,17 @@ import java.nio.ByteBuffer;
  *
  * @see ByteVectorInputStream
  * @see ByteVectorOutputStream
- *
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2005 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 public class ByteVector {
   
   public static final int DEFAULT_ARRAY_CAPACITY = 200;
   public static final int DEFAULT_INCREMENT      = 10;  
   
-  protected int _arrayPos, _markPos, _markOffset, _arrayCount;
-  protected int _capacity  = DEFAULT_ARRAY_CAPACITY;
-  protected int _increment = DEFAULT_INCREMENT;  
+  protected int arrayPos, markPos, markOffset, arrayCount;
+  protected int capacity  = DEFAULT_ARRAY_CAPACITY;
+  protected int increment = DEFAULT_INCREMENT;  
   
-  protected ByteArray[] _arrays = new ByteArray[_increment];
+  protected ByteArray[] arrays = new ByteArray[increment];
 
   /**
    * Creates an instance of this class with the default capacity and increment.
@@ -61,7 +57,7 @@ public class ByteVector {
   
   /**
    * Creates an instance of this class with the given capacity and increment. 
-   * The capacity corresponds to the size of the internal bytes arrays (that are
+   * The capacity corresponds to the size of the internal byte arrays (that are
    * created to store data). The increment corresponds to the amount of internal
    * byte arrays that will be created when this instance will grow.
    *
@@ -69,8 +65,8 @@ public class ByteVector {
    * @param increment some increment.
    */  
   public ByteVector(int capacity, int increment){
-    _capacity = capacity;
-    _increment = increment;
+    this.capacity  = capacity;
+    this.increment = increment;
   }
   
   
@@ -83,18 +79,18 @@ public class ByteVector {
    * @see #reset()
    */
   public void mark(int mark){
-    if(mark < _capacity){
-      _markPos = 0;
-      _markOffset = mark; 
+    if(mark < capacity){
+      markPos = 0;
+      markOffset = mark; 
     }
     else{
-      int pos      = mark/_capacity;
-      int offset   = mark%_capacity;
-      if(pos >= _arrayCount){
+      int pos      = mark / capacity;
+      int offset   = mark % capacity;
+      if(pos >= arrayCount){
         throw new IndexOutOfBoundsException(""+mark);
       }
-      _markPos    = pos;
-      _markOffset = offset;
+      markPos    = pos;
+      markOffset = offset;
     }
   }
   
@@ -105,10 +101,10 @@ public class ByteVector {
    * @see #mark(int)
    */
   public void reset(){
-    _arrayPos = _markPos;
-    _arrays[_arrayPos]._pos = _markOffset;
-    for(int i = _arrayPos+1; i < _arrayCount; i++){
-      _arrays[i]._pos = 0;
+    arrayPos = markPos;
+    arrays[arrayPos].pos = markOffset;
+    for(int i = arrayPos + 1; i < arrayCount; i++){
+      arrays[i].pos = 0;
     }
   }
   
@@ -119,29 +115,29 @@ public class ByteVector {
    * been created will be dereferenced (otherwise, they will be reused).
    */
   public void clear(boolean freeMemory){
-    _arrayPos = 0;
-    _markOffset = 0;
-    _markPos = 0;
+    arrayPos   = 0;
+    markOffset = 0;
+    markPos    = 0;
     if(freeMemory){
-      _arrays = new ByteArray[_increment];
+      arrays = new ByteArray[increment];
     }
     else{
-      for(int i = 0; i < _arrayCount; i++){
-        _arrays[i]._pos   = 0;
-        _arrays[i]._limit = 0;        
+      for(int i = 0; i < arrayCount; i++){
+        arrays[i].pos   = 0;
+        arrays[i].limit = 0;        
       }      
     }
-    _arrayCount = 0;
+    arrayCount = 0;
   }
 
   /**
    * Returns the number of bytes that this instance holds.
    */
   public int length(){
-    if(_arrayCount == 0){
+    if(arrayCount == 0){
       return 0;
     }
-    return (_arrayCount-1)*_capacity+_arrays[_arrayCount-1]._limit;    
+    return (arrayCount - 1) * capacity + arrays[arrayCount - 1].limit;    
   }
   
   /**
@@ -149,17 +145,17 @@ public class ByteVector {
    * bytes it holds.
    */
   public int position(){
-    if(_arrayCount == 0){
+    if(arrayCount == 0){
       return 0;
     }
-    else if(_arrayPos == 0){
-      return _arrays[_arrayPos]._pos;
+    else if(arrayPos == 0){
+      return arrays[arrayPos].pos;
     }
-    if(_arrayPos >= _arrayCount){
-      return (_arrayCount-1) * _capacity  + _arrays[_arrayCount-1]._pos;      
+    if(arrayPos >= arrayCount){
+      return (arrayCount - 1) * capacity + arrays[arrayCount - 1].pos;      
     }
     else{
-      return _arrayPos * _capacity  + _arrays[_arrayPos]._pos;
+      return arrayPos * capacity  + arrays[arrayPos].pos;
     }
   }
   
@@ -173,11 +169,11 @@ public class ByteVector {
   }
   
   int arrayPosition(){
-    return _arrayPos;
+    return arrayPos;
   }
   
   int arrayCount(){
-    return _arrayCount;
+    return arrayCount;
   }  
   
   /**
@@ -185,7 +181,7 @@ public class ByteVector {
    * less than the number of bytes it holds.
    */
   public boolean hasRemaining(){
-    return _arrayPos < _arrayCount && _arrays[_arrayPos]._pos < _arrays[_arrayPos]._limit; 
+    return arrayPos < arrayCount && arrays[arrayPos].pos < arrays[arrayPos].limit; 
   }
   
   /**
@@ -193,14 +189,14 @@ public class ByteVector {
    * current position).
    */
   public byte[] toByteArray(){
-    if(_arrayCount == 0 || _arrays[0] == null){
+    if(arrayCount == 0 || arrays[0] == null){
       return new byte[0];
     }
     byte[] b = new byte[length()];
     int index = 0;
-    for(int i = _arrayPos; i < _arrayCount; i++){
-      for(int j = 0; j < _arrays[i]._limit; j++){
-        b[index] = _arrays[i]._bytes[j];
+    for(int i = arrayPos; i < arrayCount; i++){
+      for(int j = 0; j < arrays[i].limit; j++){
+        b[index] = arrays[i].bytes[j];
         index++;
       }
     }
@@ -212,15 +208,15 @@ public class ByteVector {
    * if this instance holds no more bytes.
    */
   public int read(){
-    if(_arrayCount == 0 || _arrayPos >= _arrayCount){
+    if(arrayCount == 0 || arrayPos >= arrayCount){
       return -1;
     }
-    ByteArray arr = _arrays[_arrayPos];
+    ByteArray arr = arrays[arrayPos];
     if(arr == null) return -1;
-    if(arr._pos < arr._limit){
-      int b = arr._bytes[arr._pos++] & 0xff;
-      if(arr._pos >= arr._limit){
-        _arrayPos++;
+    if(arr.pos < arr.limit){
+      int b = arr.bytes[arr.pos++] & 0xff;
+      if(arr.pos >= arr.limit){
+        arrayPos++;
       }      
       return b;
     }
@@ -246,13 +242,13 @@ public class ByteVector {
   public int read(byte[] b, int off, int len){
     int read = 0;
     int total = 0;
-    while(len > 0 && _arrayPos < _arrayCount){
-      read = _arrays[_arrayPos].get(b, off, len);
+    while(len > 0 && arrayPos < arrayCount){
+      read = arrays[arrayPos].get(b, off, len);
       if(read == 0){
         break;
       }
-      if(_arrays[_arrayPos]._pos >= _arrays[_arrayPos]._limit){
-        _arrayPos++;
+      if(arrays[arrayPos].pos >= arrays[arrayPos].limit){
+        arrayPos++;
       }
       len = len - read;
       off = off + read;
@@ -269,13 +265,13 @@ public class ByteVector {
     int read = 0;
     int total = 0;
     int len = buf.remaining();
-    while(len > 0 && _arrayPos < _arrayCount){
-      read = _arrays[_arrayPos].get(buf, len);
+    while(len > 0 && arrayPos < arrayCount){
+      read = arrays[arrayPos].get(buf, len);
       if(read == 0){
         break;
       }
-      if(_arrays[_arrayPos]._pos >= _arrays[_arrayPos]._limit){
-        _arrayPos++;
+      if(arrays[arrayPos].pos >= arrays[arrayPos].limit){
+        arrayPos++;
       }
       len = len - read;
       total += read;
@@ -291,13 +287,13 @@ public class ByteVector {
    */
   public void read(OutputStream out) throws IOException{
     int read;
-    while(_arrayPos <  _arrayCount){
-      read = _arrays[_arrayPos].get(out);
+    while(arrayPos <  arrayCount){
+      read = arrays[arrayPos].get(out);
       if(read == 0){
         break;
       }
-      if(_arrays[_arrayPos]._pos >= _arrays[_arrayPos]._limit){
-        _arrayPos++;
+      if(arrays[arrayPos].pos >= arrays[arrayPos].limit){
+        arrayPos++;
       }      
     }
   }  
@@ -312,11 +308,11 @@ public class ByteVector {
   }
   
   public void write(int b){
-    if(_arrayPos >= _arrayCount)
+    if(arrayPos >= arrayCount)
       increase();
-    if(!_arrays[_arrayPos++].put((byte)b)){
+    if(!arrays[arrayPos++].put((byte)b)){
       increase();
-      _arrays[_arrayPos-1].put((byte)b);      
+      arrays[arrayPos - 1].put((byte)b);      
     }
   }  
   
@@ -331,12 +327,12 @@ public class ByteVector {
   public void write(byte[] b, int off, int len){
     int put = 0;
     while(put < len){
-      if(_arrayPos >= _arrayCount){
+      if(arrayPos >= arrayCount){
         increase(); 
       }      
-      put = _arrays[_arrayPos].put(b, off, len);
+      put = arrays[arrayPos].put(b, off, len);
       if(put < len){
-        _arrayPos++;
+        arrayPos++;
       }
       off += put;
       len -= put;
@@ -351,13 +347,13 @@ public class ByteVector {
    */
   public void write(ByteBuffer buf){
     while(buf.hasRemaining()){
-      if(_arrayPos >= _arrayCount){
+      if(arrayPos >= arrayCount){
         increase(); 
       }      
       int len = buf.remaining();
-      int put = _arrays[_arrayPos].put(buf);
+      int put = arrays[arrayPos].put(buf);
       if(put < len){
-        _arrayPos++;
+        arrayPos++;
       }
       put = 0;      
     }    
@@ -369,29 +365,29 @@ public class ByteVector {
    * @return the number of bytes that were actually skipped.
    */
   public long skip(long skip){
-    if(_arrayCount == 0){
+    if(arrayCount == 0){
       return 0;
     }
     long total = 0;
-    while(total < skip && _arrayPos < _arrayCount){
-      ByteArray arr = _arrays[_arrayPos];
+    while(total < skip && arrayPos < arrayCount){
+      ByteArray arr = arrays[arrayPos];
       
       if(arr == null)
         break;      
       
-      int size = arr._limit - arr._pos;
+      int size = arr.limit - arr.pos;
       
       if(size <= 0) 
         break;
       
       if(total + size <= skip){
-        arr._pos = arr._limit;
+        arr.pos = arr.limit;
         total = total + size;        
-        _arrayPos++;      
+        arrayPos++;      
       }
       else{
         size = (int)(skip - total);
-        arr._pos = arr._pos + size;
+        arr.pos = arr.pos + size;
         total = total + size;
       }
     }
@@ -399,48 +395,48 @@ public class ByteVector {
   }
   
   private void increase(){
-    if(_arrayPos >= _arrays.length){
-      ByteArray[] newArray = new ByteArray[_arrays.length+_increment];
-      System.arraycopy(_arrays, 0, newArray, 0, _arrays.length);
-      _arrays = newArray;
+    if(arrayPos >= arrays.length){
+      ByteArray[] newArray = new ByteArray[arrays.length + increment];
+      System.arraycopy(arrays, 0, newArray, 0, arrays.length);
+      arrays = newArray;
     }
-    if(_arrays[_arrayPos] == null){
-      _arrays[_arrayPos] = new ByteArray(_capacity);
+    if(arrays[arrayPos] == null){
+      arrays[arrayPos] = new ByteArray(capacity);
     }
-    _arrayCount++;        
+    arrayCount++;        
   }  
   
   ///////////////////////// ByteArray ///////////////////////////
   
   protected static class ByteArray{
-    protected int _pos;
-    protected int _limit;
-    protected byte[] _bytes;
+    protected int    pos;
+    protected int    limit;
+    protected byte[] bytes;
     protected ByteArray(int capacity){
-      _bytes = new byte[capacity];
+      bytes = new byte[capacity];
     }
 
     protected boolean put(byte b){
-      if(_pos < _bytes.length){
-        _bytes[_pos++] = b;
-        _limit++;
+      if(pos < bytes.length){
+        bytes[pos++] = b;
+        limit++;
       }
       return false;
     }
     
     protected int put(byte[] b, int offset, int len){
-      if(_pos < _bytes.length){
-        if(len <= _bytes.length - _pos){
-          System.arraycopy(b, offset, _bytes, _pos, len);
-          _pos += len;
-          _limit += len;
+      if(pos < bytes.length){
+        if(len <= bytes.length - pos){
+          System.arraycopy(b, offset, bytes, pos, len);
+          pos   += len;
+          limit += len;
           return len;
         }
         else{
-          System.arraycopy(b, offset, _bytes, _pos, _bytes.length - _pos);
-          int put = _bytes.length - _pos; 
-          _pos += put;
-          _limit += put;          
+          System.arraycopy(b, offset, bytes, pos, bytes.length - pos);
+          int put = bytes.length - pos; 
+          pos   += put;
+          limit += put;          
           return put;
         }
       }
@@ -448,19 +444,19 @@ public class ByteVector {
     }
     
     protected int put(ByteBuffer buf){
-      if(_pos < _bytes.length){
-        if(buf.remaining() <= _bytes.length - _pos){
+      if(pos < bytes.length){
+        if(buf.remaining() <= bytes.length - pos){
           int len = buf.remaining();
-          buf.get(_bytes, _pos, buf.remaining());
-          _pos += len;
-          _limit += len;
+          buf.get(bytes, pos, buf.remaining());
+          pos   += len;
+          limit += len;
           return len;
         }
         else{
-          buf.get(_bytes, _pos, _bytes.length - _pos);
-          int put = _bytes.length - _pos; 
-          _pos += put;
-          _limit += put;          
+          buf.get(bytes, pos, bytes.length - pos);
+          int put = bytes.length - pos; 
+          pos   += put;
+          limit += put;          
           return put;
         }
       }
@@ -468,16 +464,16 @@ public class ByteVector {
     }    
     
     protected int get(byte[] b, int offset, int len){
-      if(_pos < _limit){
-        if(_limit - _pos <= len){
-          System.arraycopy(_bytes, _pos, b, offset, _limit - _pos);
-          int read = _limit - _pos; 
-          _pos += read;
+      if(pos < limit){
+        if(limit - pos <= len){
+          System.arraycopy(bytes, pos, b, offset, limit - pos);
+          int read = limit - pos; 
+          pos += read;
           return read;
         }
         else{
-          System.arraycopy(_bytes, _pos, b, offset, len);
-          _pos += len;
+          System.arraycopy(bytes, pos, b, offset, len);
+          pos += len;
           return len;
         }
       }
@@ -485,16 +481,16 @@ public class ByteVector {
     }
     
     protected int get(ByteBuffer buf, int len){
-      if(_pos < _limit){
-        if(_limit - _pos <= len){
-          buf.put(_bytes, _pos, _limit - _pos);
-          int read = _limit - _pos; 
-          _pos += read;
+      if(pos < limit){
+        if(limit - pos <= len){
+          buf.put(bytes, pos, limit - pos);
+          int read = limit - pos; 
+          pos += read;
           return read;
         }
         else{
-          buf.put(_bytes, _pos, len);
-          _pos += len;
+          buf.put(bytes, pos, len);
+          pos += len;
           return len;
         }
       }
@@ -502,12 +498,12 @@ public class ByteVector {
     }    
     
     protected int get(OutputStream out) throws IOException{
-      if(_pos >= _limit){
+      if(pos >= limit){
         return 0;
       }
-      out.write(_bytes, _pos, _limit);
-      int read = _limit - _pos;
-      _pos = _pos + read;
+      out.write(bytes, pos, limit);
+      int read = limit - pos;
+      pos = pos + read;
       return read;
     }
   }

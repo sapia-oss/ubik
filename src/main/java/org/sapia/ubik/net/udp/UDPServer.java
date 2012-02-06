@@ -1,40 +1,69 @@
 package org.sapia.ubik.net.udp;
 
-import org.sapia.ubik.net.Request;
-
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 
+import org.sapia.ubik.log.Log;
+import org.sapia.ubik.net.Request;
+
 
 /**
+ * Implements a basic {@link UDPServer}. Inheriting classes must override
+ * {@link #handleRequest(Request, Object)}, which is called by an instance
+ * of this class when receiving a datagram packet.
+ * 
  * @author Yanick Duchesne
- * 16-Jun-2003
  */
-public class UDPServer implements Runnable {
+public abstract class UDPServer implements Runnable {
+  
   protected static final int   DEFAULT_BUFSZ   = 1000;
   protected static final int   DEFAULT_TIMEOUT = 30000;
-  protected DatagramSocket     _server;
-  private int                  _bufsize        = DEFAULT_BUFSZ;
-  private UDPConnectionFactory _fac;
+  
+  protected DatagramSocket     server;
+  private int                  bufsize;
+  private UDPConnectionFactory fac;
 
   /**
-   * Constructor for UDPServer.
+   * @param server the {@link DatagramSocket} that this instance should wrap.
    */
-  public UDPServer(DatagramSocket server) {
-    _server   = server;
-    _fac      = new UDPConnectionFactory(DEFAULT_BUFSZ, DEFAULT_TIMEOUT);
+  protected UDPServer(DatagramSocket server) {
+    this(server, DEFAULT_BUFSZ);
+  }
+  
+  /**
+   * @param server the {@link DatagramSocket} that this instance should wrap.
+   * @param bufsize the internal buffer size to use when reading data packets.
+   */
+  protected UDPServer(DatagramSocket server, int bufsize) {
+    this(server, bufsize, DEFAULT_TIMEOUT);
+  }
+  
+  /**
+   * @param server  the {@link DatagramSocket} that this instance should wrap.
+   * @param bufsize the internal buffer size to use when reading data packets.
+   * @param timeout the connection timeout.
+   */
+  protected UDPServer(DatagramSocket server, int bufsize, int timeout) {
+    this.server  = server;
+    fac          = new UDPConnectionFactory(bufsize, timeout);
+    this.bufsize = bufsize;
   }
 
   public void run() {
     while (true) {
       try {
-        DatagramPacket pack = new DatagramPacket(new byte[_bufsize], _bufsize);
+        DatagramPacket pack = new DatagramPacket(new byte[bufsize], bufsize);
         UDPConnection  conn = null;
-        _server.receive(pack);
-        conn = _fac.newConnection(_server, pack);
-        handleRequest(new Request(conn,
-            new UDPServerAddress(_server.getLocalAddress(),
-              _server.getLocalPort())), Util.fromDatagram(pack));
+        server.receive(pack);
+        conn = fac.newConnection(server, pack);
+          handleRequest(
+              new Request(
+                  conn,
+                  new UDPServerAddress(server.getLocalAddress(), 
+                  server.getLocalPort())
+          ), 
+          Util.fromDatagram(pack)
+        );
       } catch (Throwable t) {
         if (handleError(t)) {
           close();
@@ -45,36 +74,16 @@ public class UDPServer implements Runnable {
     }
   }
 
-  protected void handleRequest(Request req, Object data) {
-    try {
-      System.out.println("received " + data);
-      req.getConnection().send("BAR");
-    } catch (Throwable t) {
-      t.printStackTrace();
-    }
-  }
+  protected abstract void handleRequest(Request req, Object data);
 
   public void close() {
-    if (_server != null) {
-      _server.close();
+    if (server != null) {
+      server.close();
     }
   }
 
   protected boolean handleError(Throwable t) {
-    t.printStackTrace();
-
+    Log.error(UDPServer.class, t);
     return true;
-  }
-
-  public static void main(String[] args) {
-    try {
-      System.out.println("Starting server...");
-
-      UDPServer server = new UDPServer(new DatagramSocket(6666));
-      Thread    t = new Thread(server);
-      t.start();
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
   }
 }

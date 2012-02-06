@@ -5,20 +5,15 @@ import org.sapia.ubik.rmi.server.VmId;
 
 
 /**
- * Models a command that is executed asynchronously.
+ * Wraps a {@link Command} for asynchronous execution.
  *
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 public class AsyncCommand implements Executable {
-  private String        _cmdId;
-  private VmId          _caller;
-  private ServerAddress _from;
-  private Command       _cmd;
+  private long          cmdId;
+  private VmId          caller;
+  private ServerAddress from;
+  private Command       cmd;
 
   /**
    * Constructor for AsyncCommandWrapper.
@@ -29,18 +24,18 @@ public class AsyncCommand implements Executable {
    * the server to call back, and from which this command originates.
    * @param cmd the {@link Command} instance to wrap.
    */
-  public AsyncCommand(String cmdId, VmId caller, ServerAddress from, Command cmd) {
-    _cmdId    = cmdId;
-    _from     = from;
-    _cmd      = cmd;
-    _caller   = caller;
+  public AsyncCommand(long cmdId, VmId caller, ServerAddress from, Command cmd) {
+    this.cmdId    = cmdId;
+    this.from     = from;
+    this.cmd      = cmd;
+    this.caller   = caller;
   }
 
   /**
    * @return the identifier of this command.
    */
-  public String getCmdId() {
-    return _cmdId;
+  public long getCmdId() {
+    return cmdId;
   }
 
   /**
@@ -50,7 +45,7 @@ public class AsyncCommand implements Executable {
    * @return a {@link ServerAddress}.
    */
   public ServerAddress getFrom() {
-    return _from;
+    return from;
   }
 
   /**
@@ -59,7 +54,7 @@ public class AsyncCommand implements Executable {
    * @return a {@link VmId}
    */
   public VmId getCallerVmId() {
-    return _caller;
+    return caller;
   }
 
   /**
@@ -68,13 +63,13 @@ public class AsyncCommand implements Executable {
    * @return a <code>Command</code>.
    */
   public Command getCommand() {
-    return _cmd;
+    return cmd;
   }
 
   /**
    * @see org.sapia.ubik.rmi.server.command.Executable#execute()
    */
   public Object execute() throws Throwable {
-    return _cmd.execute();
+    return cmd.execute();
   }
 }

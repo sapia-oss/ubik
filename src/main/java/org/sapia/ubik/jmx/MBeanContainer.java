@@ -10,12 +10,12 @@ import javax.management.ObjectName;
  */
 public class MBeanContainer {
   
-  private ObjectName _name;
-  private Object _mbean;
+  private ObjectName name;
+  private Object     mbean;
   
   public MBeanContainer(ObjectName name, Object mbean){
-    _name = name;
-    _mbean = mbean;
+    this.name = name;
+    this.mbean = mbean;
   }
   
   /**
@@ -23,14 +23,14 @@ public class MBeanContainer {
    * in this instance.
    */
   public ObjectName getName(){
-    return _name;
+    return this.name;
   }
   
   /**
    * @return a JMX Bean.
    */
   public Object getMBean(){
-    return _mbean;
+    return this.mbean;
   }
 
 }

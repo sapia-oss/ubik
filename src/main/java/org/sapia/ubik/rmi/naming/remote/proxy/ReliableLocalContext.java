@@ -11,23 +11,24 @@ import javax.naming.Context;
 import javax.naming.Name;
 import javax.naming.NamingException;
 
+import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.AsyncEventListener;
 import org.sapia.ubik.mcast.EventChannel;
 import org.sapia.ubik.mcast.RemoteEvent;
+import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.TCPAddress;
-import org.sapia.ubik.rmi.naming.remote.Consts;
+import org.sapia.ubik.rmi.naming.remote.JndiConsts;
 import org.sapia.ubik.rmi.naming.remote.RemoteContext;
 import org.sapia.ubik.rmi.naming.remote.RemoteInitialContextFactory;
 import org.sapia.ubik.rmi.naming.remote.discovery.DiscoveryHelper;
 import org.sapia.ubik.rmi.naming.remote.discovery.JndiDiscoListener;
 import org.sapia.ubik.rmi.naming.remote.discovery.ServiceDiscoListener;
 import org.sapia.ubik.rmi.naming.remote.discovery.ServiceDiscoveryEvent;
-import org.sapia.ubik.rmi.server.Log;
 
 
 /**
- * An instance of this class is created by a <code>ReliableInitialContextFactory</code>. It allows
- * clients to register <code>ServiceDiscoveryListener</code>s that are notified when new services
+ * An instance of this class is created by a {@link RemoteInitialContextFactory}. It allows
+ * clients to register ServiceDiscoveryListener that are notified when new services
  * are bound to the JNDI servers on the network.
  *
  * @see RemoteInitialContextFactory
@@ -35,21 +36,16 @@ import org.sapia.ubik.rmi.server.Log;
  * @see ServiceDiscoveryEvent
  *
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 @SuppressWarnings(value="unchecked")
 public class ReliableLocalContext extends LocalContext
   implements AsyncEventListener {
-  private static ThreadLocal _currentContext = new ThreadLocal();
-  private static String      PING          = "ubik/rmi/naming/ping/test";
-  private BindingCache       _bindings     = new BindingCache();
-  private DiscoveryHelper    _helper;
-  private List               _servers      = Collections.synchronizedList(new ArrayList());
-  private ContextResolver    _resolver;
+  private static ThreadLocal currentContext = new ThreadLocal();
+  private static String      PING           = "ubik/rmi/naming/ping/test";
+  private BindingCache       bindings       = new BindingCache();
+  private DiscoveryHelper    helper;
+  private List               servers        = Collections.synchronizedList(new ArrayList());
+  private ContextResolver    resolver;
 
   /**
    * Constructor for ReliableLocalContext.
@@ -60,18 +56,18 @@ public class ReliableLocalContext extends LocalContext
                               boolean publish,
                               ContextResolver resolver) throws NamingException, IOException {
     super(url, ctx);
-    _helper = new DiscoveryHelper(channel);
-    _resolver = resolver;
-    channel.registerAsyncListener(Consts.JNDI_SERVER_DISCO, this);
-    channel.registerAsyncListener(Consts.JNDI_SERVER_PUBLISH, this);
+    helper        = new DiscoveryHelper(channel);
+    this.resolver = resolver;
+    channel.registerAsyncListener(JndiConsts.JNDI_SERVER_DISCO, this);
+    channel.registerAsyncListener(JndiConsts.JNDI_SERVER_PUBLISH, this);
 
     if (publish) {
       if (!channel.isClosed()) {
-        channel.dispatch(Consts.JNDI_CLIENT_PUBLISH, "");
+        channel.dispatch(JndiConsts.JNDI_CLIENT_PUBLISH, "");
       }
     }
     
-    _currentContext.set(this);
+    currentContext.set(this);
   }
 
   /**
@@ -94,9 +90,8 @@ public class ReliableLocalContext extends LocalContext
   public void rebind(Name n, Object o) throws NamingException {
     super.rebind(n, o);
 
-    if (!_helper.getChannel().isClosed()) {
-      _bindings.add(_helper.getChannel().getDomainName().toString(),
-        n, o);
+    if (!helper.getChannel().isClosed()) {
+      bindings.add(helper.getChannel().getDomainName().toString(), n, o);
     }
   }
 
@@ -106,8 +101,8 @@ public class ReliableLocalContext extends LocalContext
   public void rebind(String n, Object o) throws NamingException {
     super.rebind(n, o);
 
-    if (!_helper.getChannel().isClosed()) {
-      _bindings.add(_helper.getChannel().getDomainName().toString(), super.getNameParser().parse(n), o);
+    if (!helper.getChannel().isClosed()) {
+      bindings.add(helper.getChannel().getDomainName().toString(), super.getNameParser().parse(n), o);
     }
   }
 
@@ -117,8 +112,8 @@ public class ReliableLocalContext extends LocalContext
    * @param listener a {@link ServiceDiscoListener}.
    */
   public void addServiceDiscoListener(ServiceDiscoListener listener) {
-    if (!_helper.getChannel().isClosed()) {
-      _helper.addServiceDiscoListener(listener);
+    if (!helper.getChannel().isClosed()) {
+      helper.addServiceDiscoListener(listener);
     }
   }
 
@@ -128,8 +123,8 @@ public class ReliableLocalContext extends LocalContext
    * @param listener a {@link JndiDiscoListener}.
    */
   public void addJndiDiscoListener(JndiDiscoListener listener) {
-    if (!_helper.getChannel().isClosed()) {
-      _helper.addJndiDiscoListener(new JndiListenerWrapper(listener));
+    if (!helper.getChannel().isClosed()) {
+      helper.addJndiDiscoListener(new JndiListenerWrapper(listener));
     }
   }
 
@@ -137,31 +132,24 @@ public class ReliableLocalContext extends LocalContext
    * @see org.sapia.ubik.mcast.AsyncEventListener#onAsyncEvent(RemoteEvent)
    */
   public void onAsyncEvent(RemoteEvent evt) {
-    TCPAddress tcp;
-
     try {
-      if (evt.getType().equals(Consts.JNDI_SERVER_DISCO)) {
-        tcp = (TCPAddress) evt.getData();
+      ServerAddress serverAddress;      
+      if (evt.getType().equals(JndiConsts.JNDI_SERVER_DISCO)) {
+        serverAddress = (TCPAddress) evt.getData();
+        Context remoteCtx = (Context) resolver.resolve(serverAddress);
+        servers.add(remoteCtx);
+        bindings.copyTo(remoteCtx, domainInfo.getDomainName(), super.url, helper.getChannel().getMulticastAddress());
 
-        Context remoteCtx = (Context) _resolver.resolve(tcp);
-        _servers.add(remoteCtx);
-        _bindings.copyTo(remoteCtx, _domainName, super._url,
-            _helper.getChannel().getMulticastHost(),
-            _helper.getChannel().getMulticastPort());
-
-      } else if (evt.getType().equals(Consts.JNDI_SERVER_PUBLISH) &&
-            (getInternalContext() != null)) {
+      } else if (evt.getType().equals(JndiConsts.JNDI_SERVER_PUBLISH) && (getInternalContext() != null)) {
         Log.info(getClass(), "Discovered naming service; binding cached stubs...");
-        tcp = (TCPAddress) evt.getData();
+        serverAddress = (TCPAddress) evt.getData();
 
-        Context remoteCtx = (Context) _resolver.resolve(tcp);
-        _servers.add(remoteCtx);
-        _bindings.copyTo(remoteCtx, _domainName, super._url,
-        _helper.getChannel().getMulticastHost(),
-        _helper.getChannel().getMulticastPort());
+        Context remoteCtx = (Context) resolver.resolve(serverAddress);
+        servers.add(remoteCtx);
+        bindings.copyTo(remoteCtx, domainInfo.getDomainName(), super.url, helper.getChannel().getMulticastAddress());
       }
     } catch (RemoteException e) {
-      Log.error(getClass(), "Could not connect to naming service", e);
+      Log.warning(getClass(), "Could not connect to naming service; JNDI server probably down");
     } catch (IOException e) {
       Log.error(getClass(), "IO problem trying to bind services", e);
     }
@@ -178,9 +166,9 @@ public class ReliableLocalContext extends LocalContext
 
     RemoteContext server;
 
-    synchronized (_servers) {
-      for (int i = 0; i < _servers.size(); i++) {
-        server = (RemoteContext) _servers.get(i);
+    synchronized (servers) {
+      for (int i = 0; i < servers.size(); i++) {
+        server = (RemoteContext) servers.get(i);
 
         try {
           server.lookup(PING);
@@ -189,7 +177,7 @@ public class ReliableLocalContext extends LocalContext
           return;
         } catch (UndeclaredThrowableException udte) {
           if (udte.getUndeclaredThrowable() instanceof RemoteException) {
-            _servers.remove(i);
+            servers.remove(i);
           }
         } catch (NamingException ne) {
           _ctx = server;
@@ -207,7 +195,7 @@ public class ReliableLocalContext extends LocalContext
    */
   public void close() throws NamingException {
     super.close();
-    _helper.close();
+    helper.close();
   }
 
   /**
@@ -217,7 +205,7 @@ public class ReliableLocalContext extends LocalContext
    */
   public static ReliableLocalContext currentContext()
     throws IllegalStateException {
-    ReliableLocalContext ctx = (ReliableLocalContext) _currentContext.get();
+    ReliableLocalContext ctx = (ReliableLocalContext) currentContext.get();
 
     if (ctx == null) {
       throw new IllegalStateException("No " + ReliableLocalContext.class.getName() + " registered with current thread");
@@ -231,7 +219,7 @@ public class ReliableLocalContext extends LocalContext
    * discovery.
    */
   public EventChannel getEventChannel(){
-    return _helper.getChannel();
+    return helper.getChannel();
   }
 
   /*////////////////////////////////////////////////////////////////////
@@ -249,8 +237,8 @@ public class ReliableLocalContext extends LocalContext
      * @see org.sapia.ubik.rmi.naming.remote.discovery.JndiDiscoListener#onJndiDiscovered(Context)
      */
     public void onJndiDiscovered(Context ctx) {
-      synchronized (_servers) {
-        _servers.add(ctx);
+      synchronized (servers) {
+        servers.add(ctx);
       }
 
       _wrapped.onJndiDiscovered(ctx);

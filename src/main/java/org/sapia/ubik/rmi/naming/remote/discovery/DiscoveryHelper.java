@@ -14,41 +14,37 @@ import org.sapia.archie.Name;
 import org.sapia.archie.impl.AttributeNameParser;
 import org.sapia.archie.impl.AttributeNamePart;
 import org.sapia.archie.impl.DefaultNameParser;
+import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.AsyncEventListener;
 import org.sapia.ubik.mcast.EventChannel;
 import org.sapia.ubik.mcast.RemoteEvent;
 import org.sapia.ubik.net.TCPAddress;
 import org.sapia.ubik.rmi.naming.ServiceLocator;
-import org.sapia.ubik.rmi.naming.remote.Consts;
+import org.sapia.ubik.rmi.naming.remote.JndiConsts;
 import org.sapia.ubik.rmi.naming.remote.RemoteContext;
 import org.sapia.ubik.rmi.naming.remote.archie.SyncPutEvent;
 import org.sapia.ubik.rmi.naming.remote.proxy.ContextResolver;
 import org.sapia.ubik.rmi.naming.remote.proxy.DefaultContextResolver;
 import org.sapia.ubik.rmi.naming.remote.proxy.LocalContext;
-import org.sapia.ubik.rmi.server.Log;
+import org.sapia.ubik.util.Props;
 
 /**
  * An instance of this class can be used by applications to listen for the appearance of
  * a) appearing JNDI servers; b) existing JNDI servers; and c) appearing service bindings.
  *
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 public class DiscoveryHelper implements AsyncEventListener {
-  protected EventChannel  _channel;
-  private List<ServiceDiscoListener>            _svclisteners  = new CopyOnWriteArrayList<ServiceDiscoListener>();
-  private List<JndiDiscoListener>               _jndiListeners = new CopyOnWriteArrayList<JndiDiscoListener>();
-  private ContextResolver _resolver = new DefaultContextResolver();
+  protected EventChannel              channel;
+  private List<ServiceDiscoListener>  svclisteners  = new CopyOnWriteArrayList<ServiceDiscoListener>();
+  private List<JndiDiscoListener>     jndiListeners = new CopyOnWriteArrayList<JndiDiscoListener>();
+  private ContextResolver             resolver = new DefaultContextResolver();
 
   /**
    * Constructor for DiscoveryHelper.
    */
   public DiscoveryHelper(EventChannel ec) {
-    _channel = ec;
+    channel = ec;
     initChannel();
   }
 
@@ -59,10 +55,8 @@ public class DiscoveryHelper implements AsyncEventListener {
    * @param domain the name of a domain.
    */
   public DiscoveryHelper(String domain) throws IOException {
-    _channel = new EventChannel(domain,
-        org.sapia.ubik.rmi.Consts.DEFAULT_MCAST_ADDR,
-        org.sapia.ubik.rmi.Consts.DEFAULT_MCAST_PORT);
-    _channel.start();
+    channel = new EventChannel(domain, Props.getSystemProperties());
+    channel.start();
     initChannel();
   }
   
@@ -76,18 +70,20 @@ public class DiscoveryHelper implements AsyncEventListener {
    */
   public DiscoveryHelper(String domain, String mcastAddr, int mcastPort)
     throws IOException {
-    _channel = new EventChannel(domain,
-        mcastAddr, mcastPort);
-    _channel.start();
+    Properties props = new Properties();
+    props.setProperty(JndiConsts.MCAST_ADDR_KEY, mcastAddr);
+    props.setProperty(JndiConsts.MCAST_PORT_KEY, Integer.toString(mcastPort));
+    channel = new EventChannel(domain, new Props().addProperties(props).addProperties(System.getProperties()));
+    channel.start();
     initChannel();
   }
 
   /**
-   * @param res the <code>ContextResolver</code> that this instance should use
+   * @param res the {@link ContextResolver} that this instance should use
    * when notified about new JNDI servers.
    */
   public void setContextResolver(ContextResolver res){
-    _resolver = res;
+    resolver = res;
   }  
 
   /**
@@ -96,8 +92,8 @@ public class DiscoveryHelper implements AsyncEventListener {
    * @param listener a {@link ServiceDiscoListener}.
    */
   public synchronized void addServiceDiscoListener(ServiceDiscoListener listener) {
-    if(!_svclisteners.contains(listener)){
-      _svclisteners.add(listener);
+    if(!svclisteners.contains(listener)){
+      svclisteners.add(listener);
     }
   }
   
@@ -107,7 +103,7 @@ public class DiscoveryHelper implements AsyncEventListener {
    * @param listener a {@link ServiceDiscoListener}.
    */
   public synchronized void removeServiceDiscoListener(ServiceDiscoListener listener) {
-    _svclisteners.remove(listener);
+    svclisteners.remove(listener);
   }  
 
   /**
@@ -116,10 +112,10 @@ public class DiscoveryHelper implements AsyncEventListener {
    * @param listener a {@link JndiDiscoListener}.
    */
   public synchronized void addJndiDiscoListener(JndiDiscoListener listener) {
-    if(!_jndiListeners.contains(listener)){
-      _jndiListeners.add(listener);
+    if(!jndiListeners.contains(listener)){
+      jndiListeners.add(listener);
       try{
-        _channel.dispatch(Consts.JNDI_CLIENT_PUBLISH, "");
+        channel.dispatch(JndiConsts.JNDI_CLIENT_PUBLISH, "");
       }catch(IOException e){}      
     }
   }
@@ -130,7 +126,7 @@ public class DiscoveryHelper implements AsyncEventListener {
    * @param listener {@link JndiDiscoListener}.
    */
   public synchronized void removeJndiDiscoListener(JndiDiscoListener listener) {
-    _jndiListeners.remove(listener);    
+    jndiListeners.remove(listener);    
   }  
   
   /**
@@ -140,13 +136,13 @@ public class DiscoveryHelper implements AsyncEventListener {
     TCPAddress tcp;
     
     try {
-      if (evt.getType().equals(Consts.JNDI_SERVER_PUBLISH)
-          || evt.getType().equals(Consts.JNDI_SERVER_DISCO)) {
+      if (evt.getType().equals(JndiConsts.JNDI_SERVER_PUBLISH)
+          || evt.getType().equals(JndiConsts.JNDI_SERVER_DISCO)) {
         tcp = (TCPAddress) evt.getData();
 
-        Context remoteCtx = (Context) _resolver.resolve(tcp);
+        Context remoteCtx = (Context) resolver.resolve(tcp);
 
-        List<JndiDiscoListener> listeners = new ArrayList<JndiDiscoListener>(_jndiListeners);
+        List<JndiDiscoListener> listeners = new ArrayList<JndiDiscoListener>(jndiListeners);
          
         /*
          * TODO: this code is a hack and a refactoring will
@@ -183,7 +179,7 @@ public class DiscoveryHelper implements AsyncEventListener {
           ServiceDiscoveryEvent sevt = new ServiceDiscoveryEvent(props, name,
               bevt.getValue());
 
-          List<ServiceDiscoListener> listeners = new ArrayList<ServiceDiscoListener>(_svclisteners);
+          List<ServiceDiscoListener> listeners = new ArrayList<ServiceDiscoListener>(svclisteners);
           for (int i = 0; i < listeners.size(); i++) {
             listener = (ServiceDiscoListener) listeners.get(i);
             listener.onServiceDiscovered(sevt);
@@ -205,20 +201,20 @@ public class DiscoveryHelper implements AsyncEventListener {
    * Closes this instance - should thereafter be discarded.
    */
   public synchronized void close() {
-    _channel.close();
+    channel.close();
   }
 
   /**
    * Returns this instance's event channel.
    */
   public synchronized EventChannel getChannel() {
-    return _channel;
+    return channel;
   }
   
   void initChannel() {
-    _channel.registerAsyncListener(Consts.JNDI_SERVER_PUBLISH, this);
-    _channel.registerAsyncListener(Consts.JNDI_SERVER_DISCO, this);
-    _channel.registerAsyncListener(SyncPutEvent.class.getName(), this);
+    channel.registerAsyncListener(JndiConsts.JNDI_SERVER_PUBLISH, this);
+    channel.registerAsyncListener(JndiConsts.JNDI_SERVER_DISCO, this);
+    channel.registerAsyncListener(SyncPutEvent.class.getName(), this);
   }
   
   

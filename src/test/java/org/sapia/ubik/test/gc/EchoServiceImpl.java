@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
-import org.sapia.ubik.rmi.server.Log;
+import org.sapia.ubik.log.Log;
 
 public class EchoServiceImpl implements Remote, EchoService {
 

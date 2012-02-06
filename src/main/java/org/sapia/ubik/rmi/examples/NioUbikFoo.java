@@ -1,17 +1,16 @@
 package org.sapia.ubik.rmi.examples;
 
+import java.rmi.RemoteException;
+import java.util.Properties;
+
+import javax.naming.InitialContext;
+
+import org.sapia.ubik.log.Log;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.naming.remote.RemoteInitialContextFactory;
 import org.sapia.ubik.rmi.server.Hub;
-import org.sapia.ubik.rmi.server.Log;
 import org.sapia.ubik.rmi.server.transport.nio.tcp.NioAddress;
 import org.sapia.ubik.rmi.server.transport.nio.tcp.NioTcpTransportProvider;
-
-import java.rmi.RemoteException;
-
-import java.util.Properties;
-
-import javax.naming.*;
 
 
 /**

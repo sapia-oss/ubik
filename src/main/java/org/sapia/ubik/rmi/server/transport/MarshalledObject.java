@@ -6,20 +6,17 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
-import org.sapia.ubik.rmi.Utils;
-import org.sapia.ubik.rmi.server.RmiUtils;
 import org.sapia.ubik.rmi.server.VmId;
+import org.sapia.ubik.util.Serialization;
 
 
 /**
  * An instance of this class keeps an object in byte form.
  *
  * @author Yanick Duchesne
- * 17-Sep-2003
  */
 public class MarshalledObject implements Externalizable {
-  private byte[] _bytes;
-  private String _codebase;
+  private byte[] bytes;
 
   /**
    * Do not use. Meant for externalization.
@@ -30,12 +27,11 @@ public class MarshalledObject implements Externalizable {
   /**
    * Constructor for MarshalledObject.
    */
-  public MarshalledObject(Object o, VmId id, String transportType, String codebase)
+  public MarshalledObject(Object o, VmId id, String transportType)
     throws IOException {
     if (o != null) {
-      _bytes = serialize(id, transportType, o);
+      bytes = serialize(id, transportType, o);
     }
-    _codebase = codebase;
   }
 
   /**
@@ -51,15 +47,10 @@ public class MarshalledObject implements Externalizable {
    */
   public Object get(ClassLoader loader)
     throws IOException, ClassNotFoundException {
-    if (_bytes == null) {
-      return _bytes;
+    if (bytes == null) {
+      return bytes;
     }
-    if(_codebase != null && RmiUtils.CODE_DOWNLOAD){
-      return Utils.deserialize(_bytes, loader, _codebase); 
-    }
-    else{
-      return Utils.deserialize(_bytes, loader);
-    }
+    return Serialization.deserialize(bytes, loader);
   }
 
   /**
@@ -67,16 +58,14 @@ public class MarshalledObject implements Externalizable {
    */
   public void readExternal(ObjectInput in)
     throws IOException, ClassNotFoundException {
-    _bytes = (byte[]) in.readObject();
-    _codebase = (String) in.readObject();
+    bytes = (byte[]) in.readObject();
   }
 
   /**
    * @see java.io.Externalizable#writeExternal(ObjectOutput)
    */
   public void writeExternal(ObjectOutput out) throws IOException {
-    out.writeObject(_bytes);
-    out.writeObject(_codebase);
+    out.writeObject(bytes);
   }
 
   private static byte[] serialize(VmId vmid, String transportType, Object o)

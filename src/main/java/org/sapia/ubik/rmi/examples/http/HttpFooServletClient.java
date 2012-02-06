@@ -18,7 +18,7 @@ import org.sapia.ubik.rmi.server.transport.http.servlet.ServletTransportProvider
 public class HttpFooServletClient {
   public static void main(String[] args) {
     try {
-      TransportManager.registerProvider(new ServletTransportProvider());
+      Hub.getModules().getTransportManager().registerProvider(new ServletTransportProvider());
 
       Foo foo = (Foo) Hub.connect(new ServletAddress(
             "http://localhost:8080/ubik"));

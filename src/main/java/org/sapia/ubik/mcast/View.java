@@ -1,39 +1,40 @@
 package org.sapia.ubik.mcast;
 
+import java.lang.ref.SoftReference;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.sapia.ubik.log.Category;
+import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.EventChannelStateListener.EventChannelEvent;
 import org.sapia.ubik.net.ServerAddress;
-
-import java.lang.ref.SoftReference;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
  * Encapsulates the addresses of the nodes that compose an event channel. An
- * instance of this class is encapsulated by an <code>EventChannel</code>. It
+ * instance of this class is encapsulated by an {@link EventChannel}. It
  * provides a "view" of the domain.
  * <p>
  * An instance of this class encapsulates the address of each of the sibling of
  * an {@link EventChannel} node.
  *
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 public class View {
-  private Map<NodeInfo, Long>    _addresses  = new ConcurrentHashMap<NodeInfo, Long>();
-  private Map<String, NodeInfo>  _nodeToAddr = new ConcurrentHashMap<String, NodeInfo>();
-  private long                   _timeout;
-  private List<SoftReference<EventChannelStateListener>> _listeners = Collections.synchronizedList(new ArrayList<SoftReference<EventChannelStateListener>>());
+  
+  private Category               log                   = Log.createCategory(getClass());
+  private Map<String, NodeInfo>  nodeToNodeInfo        = new ConcurrentHashMap<String, NodeInfo>();
+  private volatile long          timeout;
+  private List<SoftReference<EventChannelStateListener>> listeners = Collections.synchronizedList(new ArrayList<SoftReference<EventChannelStateListener>>());
 
   /**
    * Constructor for View.
    */
   public View(long timeout) {
-    _timeout = timeout;
+    this.timeout = timeout;
   }
   
   /**
@@ -42,32 +43,49 @@ public class View {
    * @param listener an {@link EventChannelStateListener}.
    */
   public void addEventChannelStateListener(EventChannelStateListener listener){
-    _listeners.add(new SoftReference<EventChannelStateListener>(listener));
+    listeners.add(new SoftReference<EventChannelStateListener>(listener));
+  }
+  
+  /**
+   * Removes the given listener from this instance.
+   * 
+   * @param listener
+   */
+  public boolean removeEventChannelStateListener(EventChannelStateListener listener) {
+    synchronized(listeners) {
+      for(int i = 0; i < listeners.size(); i++) {
+        SoftReference<EventChannelStateListener> listenerRef = listeners.get(i);
+        EventChannelStateListener registered = listenerRef.get();
+        if(registered != null && registered.equals(listener)) {
+          listeners.remove(i);
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   /**
-   * Returns this instance's <code>List</code> of <code>ServerAddress</code>es.
+   * Returns this instance's {@link List} of {@link ServerAddress}es.
    *
-   * @return a <code>List</code> of <code>ServerAddress</code>es.
+   * @return a {@link List} of {@link ServerAddress}es.
    */
   public List<ServerAddress> getHosts() {
-    synchronized(_addresses){
-      List<ServerAddress> toReturn = new ArrayList<ServerAddress>(_addresses.size());
-      for(NodeInfo info : _addresses.keySet()){
-        toReturn.add(info.addr);
-      }
-      return toReturn;
+    List<ServerAddress> toReturn = new ArrayList<ServerAddress>(nodeToNodeInfo.size());
+    for(NodeInfo info : nodeToNodeInfo.values()){
+      toReturn.add(info.addr);
     }
+    return toReturn;
   }
 
   /**
-   * Returns the <code>ServerAddress</code> corresponding to the given
+   * Returns the {@link ServerAddress} corresponding to the given
    * node.
    *
-   * @return a <code>ServerAddress</code>.
+   * @return a {@link ServerAddress}.
    */
   public ServerAddress getAddressFor(String node) {
-    NodeInfo info = (NodeInfo) _nodeToAddr.get(node);
+    NodeInfo info = (NodeInfo) nodeToNodeInfo.get(node);
 
     return info.addr;
   }
@@ -77,88 +95,82 @@ public class View {
    * are removed from this instance.
    */
   public void setTimeout(long timeout){
-    _timeout = timeout;
+    this.timeout = timeout;
   }
   
   /**
    * @return this instance's heartbeat timeout.
    */
   public long getTimeout() {
-    return _timeout;
+    return timeout;
   }
   
   /**
    * Adds the given address to this instance.
    *
-   * @param addr the <code>ServerAddress</code> corresponding to a remote
-   * <code>EventChannel</code>.
+   * @param addr the {@link ServerAddress} corresponding to a remote {@link EventChannel}.
    * @param node node identifier.
    */
   boolean addHost(ServerAddress addr, String node) {
     NodeInfo info = new NodeInfo(addr, node);
-    synchronized(_addresses){
-      if(_addresses.put(info, new Long(System.currentTimeMillis())) == null){
-        _nodeToAddr.put(node, info);
-        return true;
-      }    
-    }
+    if(nodeToNodeInfo.put(node, info) == null){
+      log.debug("Adding node %s at address %s to view", node, addr);
+      notifyListeners(new EventChannelEvent(node, addr), true);
+      return true;
+    }    
     return false;
   }
 
   /**
-   * Updates the "last access" flag corresponding to the passed in
-   * <code>ServerAddress</code>.
+   * Updates the "last access" flag corresponding to the passed in {@link ServerAddress}.
    *
-   * @param <code>ServerAddress</code>.
+   * @param addr a {@link ServerAddress}.
    * @param node node identifier.
    */
   void heartbeat(ServerAddress addr, String node) {
-    synchronized(_addresses){
-      NodeInfo info = new NodeInfo(addr, node);
-      if(_addresses.put(info, new Long(System.currentTimeMillis())) == null){
-        _nodeToAddr.put(node, info);
-        notifyListeners(new EventChannelEvent(node, addr), true);
-      }
+    NodeInfo info = new NodeInfo(addr, node);
+    log.debug("Received heartbeat from %s", node);
+    if(nodeToNodeInfo.put(node, info) == null){
+      log.debug("Adding node %s at address %s to view", node, addr);
+      notifyListeners(new EventChannelEvent(node, addr), true);
     }
   }
 
   /**
-   * Removes the "dead" (timed-out) hosts from this instance.
+   * Removes the "dead" (timed out) hosts from this instance.
    */
   void removeDeadHosts() {
     
-    synchronized(_addresses){
-    
-      List<NodeInfo> deadNodes = new ArrayList<NodeInfo>(_addresses.size() / 2);
-    
-      for(Map.Entry<NodeInfo, Long> entry:_addresses.entrySet()){
-          if ((System.currentTimeMillis() -
-                entry.getValue().longValue()) > _timeout) {
-            deadNodes.add(entry.getKey());
-          }
+    List<NodeInfo> deadNodes = new ArrayList<NodeInfo>(nodeToNodeInfo.size() / 2);
+  
+    for(NodeInfo node : nodeToNodeInfo.values()){
+      if (node.isTimeoutReached(timeout)) {
+        deadNodes.add(node);
       }
-    
-      for(NodeInfo dead: deadNodes){
-        _addresses.remove(dead);
-        _nodeToAddr.remove(dead.node);
-        notifyListeners(new EventChannelEvent(dead.node, dead.addr), false);
-      }
+    }
+  
+    for(NodeInfo dead: deadNodes){
+      log.debug("Removing dead host %s", dead.node);
+      nodeToNodeInfo.remove(dead.node);
+      notifyListeners(new EventChannelEvent(dead.node, dead.addr), false);
     }
   }
   
   private void notifyListeners(EventChannelEvent event, boolean added){
-    synchronized(_listeners){
-      for(int i = 0; i < _listeners.size(); i++){
-        SoftReference<EventChannelStateListener> listenerRef = _listeners.get(i);
+    synchronized(listeners){
+      for(int i = 0; i < listeners.size(); i++){
+        SoftReference<EventChannelStateListener> listenerRef = listeners.get(i);
         EventChannelStateListener listener = listenerRef.get();
         if(listener == null){
-          _listeners.remove(i);
+          listeners.remove(i--);
         }
         else{
           if(added){
+            log.debug("Node %s is up", event.getNode());
             listener.onUp(event);
           }
           else{
+            log.debug("Node %s is down", event.getNode());
             listener.onDown(event);
           }
         }
@@ -166,26 +178,34 @@ public class View {
     }
   }
 
-  /*//////////////////////////////////////////////////
-                      INNER CLASSES
-  //////////////////////////////////////////////////*/
-  static class NodeInfo {
-    final ServerAddress addr;
-    final String        node;
+  // --------------------------------------------------------------------------
+  
+  private static class NodeInfo {
+    
+    private ServerAddress addr;
+    private String        node;
+    private long          updateTime = System.currentTimeMillis();
 
-    NodeInfo(ServerAddress addr, String node) {
+    private NodeInfo(ServerAddress addr, String node) {
       this.addr   = addr;
       this.node   = node;
     }
+    
+    private boolean isTimeoutReached(long timeout) {
+      return System.currentTimeMillis() - updateTime > timeout;
+    }
 
     public boolean equals(Object obj) {
-      NodeInfo inf = (NodeInfo) obj;
-
-      return inf.addr.equals(addr) && inf.node.equals(node);
+      if (obj instanceof NodeInfo) {
+        NodeInfo inf = (NodeInfo) obj;
+  
+        return inf.addr.equals(addr) && inf.node.equals(node);
+      }
+      return false;
     }
 
     public int hashCode() {
-      return addr.hashCode() * 31 ^ node.hashCode() * 31;
+      return addr.hashCode() * 31 + node.hashCode() * 31;
     }
   }
   

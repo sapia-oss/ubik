@@ -7,18 +7,15 @@ import org.sapia.archie.sync.Synchronizer;
 
 
 /**
+ * A Ubik-specific {@link NodeFactory}.
+ * 
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 public class UbikNodeFactory implements NodeFactory {
-  private Synchronizer _sync;
+  private Synchronizer sync;
 
   UbikNodeFactory(Synchronizer sync) {
-    _sync = sync;
+    this.sync = sync;
   }
 
   /**
@@ -26,7 +23,7 @@ public class UbikNodeFactory implements NodeFactory {
    */
   public Node newNode() throws ProcessingException {
     UbikSyncNode node = new UbikSyncNode(this);
-    node.setSynchronizer(_sync);
+    node.setSynchronizer(sync);
 
     return node;
   }

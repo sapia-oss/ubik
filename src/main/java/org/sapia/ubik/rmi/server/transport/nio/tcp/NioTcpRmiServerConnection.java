@@ -13,28 +13,28 @@ import org.sapia.ubik.rmi.server.transport.RmiConnection;
  */
 public class NioTcpRmiServerConnection implements RmiConnection {
 
-  private IoSession _session;
-  private ServerAddress     _addr;
-  private Object _received;
+  private IoSession     session;
+  private ServerAddress addr;
+  private Object        received;
 
   NioTcpRmiServerConnection(ServerAddress addr, IoSession session, Object received) {
-    _addr = addr;
-    _session = session;
-    _received = received; 
+    this.addr     = addr;
+    this.session  = session;
+    this.received = received; 
   }
 
   /**
    * @see org.sapia.ubik.net.Connection#close()
    */
   public void close() {
-    _received = null;
+    received = null;
   }
 
   /**
    * @see org.sapia.ubik.net.Connection#getServerAddress()
    */
   public ServerAddress getServerAddress() {
-    return _addr;
+    return addr;
   }
 
   /**
@@ -42,7 +42,7 @@ public class NioTcpRmiServerConnection implements RmiConnection {
    */
   public Object receive() throws IOException, ClassNotFoundException,
       RemoteException {
-    return _received;
+    return received;
   }
 
   /**
@@ -65,6 +65,6 @@ public class NioTcpRmiServerConnection implements RmiConnection {
       resp.setAssociatedVmId(associated);
       resp.setTransportType(transportType);
     }    
-    _session.write(resp);
+    session.write(resp);
   }
 }

@@ -1,16 +1,16 @@
 package org.sapia.ubik.rmi.examples.jndi;
 
-import org.sapia.ubik.rmi.Consts;
-import org.sapia.ubik.rmi.examples.Foo;
-import org.sapia.ubik.rmi.examples.ReliableFoo;
-import org.sapia.ubik.rmi.naming.remote.RemoteInitialContextFactory;
-
 import java.util.Properties;
 
 import javax.naming.Binding;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingEnumeration;
+
+import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.examples.Foo;
+import org.sapia.ubik.rmi.examples.ReliableFoo;
+import org.sapia.ubik.rmi.naming.remote.RemoteInitialContextFactory;
 
 
 /**

@@ -9,11 +9,11 @@ import java.util.List;
  * multicast events on a per-domain basis. Supports the notion of domain
  * partition (where a domain can have subdomains - or partitions).
  * <p>
- * Partionning is expressed through a path notation, where the parent domain
+ * Partioning is expressed through a path notation, where the parent domain
  * can "contain" subdomains (that necessarily include their parent's path).
  * <p>
  * This notion of containment is used to determine to which domain or partition in
- * a domain a multicast event is destined. For example, an event that is
+ * a domain a multicast event is targeted. For example, an event that is
  * multicast to domain "parent" will also be received by the following partitions
  * "parent/partition1", "parent/partition2". Yet, the opposite would not be true:
  * an event targeted at "parent/partition2" would not be received by the others - since
@@ -26,21 +26,16 @@ import java.util.List;
  * Specifying subdomains/partitions is not mandatory.
  *
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 public class DomainName implements java.io.Serializable {
   
   static final long serialVersionUID = 1L;
   
   public static final char DELIM     = '/';
-  private List<String> _segments;
+  private List<String> segments;
 
   private DomainName(List<String> segments) {
-    _segments = segments;
+    this.segments = segments;
   }
 
   /**
@@ -49,7 +44,7 @@ public class DomainName implements java.io.Serializable {
     * @return the number of "components" in this instance's name.
     */
   public int size() {
-    return _segments.size();
+    return segments.size();
   }
 
   /**
@@ -59,7 +54,7 @@ public class DomainName implements java.io.Serializable {
     * @return a domain name component.
     */
   public String get(int i) {
-    return _segments.get(i);
+    return segments.get(i);
   }
 
   /**
@@ -96,7 +91,7 @@ public class DomainName implements java.io.Serializable {
    * @param other a <code>DomainName</code>.
    */
   public boolean contains(DomainName other) {
-    if (_segments.size() >= other.size()) {
+    if (segments.size() >= other.size()) {
       for (int i = 0; i < other.size(); i++) {
         if (!other.get(i).equals(get(i))) {
           return false;
@@ -122,7 +117,7 @@ public class DomainName implements java.io.Serializable {
     try {
       DomainName dn = (DomainName) other;
 
-      if (_segments.size() == dn.size()) {
+      if (segments.size() == dn.size()) {
         for (int i = 0; i < dn.size(); i++) {
           if (!dn.get(i).equals(get(i))) {
             return false;
@@ -146,12 +141,12 @@ public class DomainName implements java.io.Serializable {
    * @return this instance's string representation.
    */
   public String toString() {
-    StringBuffer s = new StringBuffer(_segments.size() * 8);
+    StringBuffer s = new StringBuffer(segments.size() * 8);
 
-    for (int i = 0; i < _segments.size(); i++) {
-      s.append((String) _segments.get(i));
+    for (int i = 0; i < segments.size(); i++) {
+      s.append((String) segments.get(i));
 
-      if (i < (_segments.size() - 1)) {
+      if (i < (segments.size() - 1)) {
         s.append(DELIM);
       }
     }

@@ -1,161 +1,232 @@
 package org.sapia.ubik.rmi.server.transport.socket;
 
 import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.net.InetAddress;
 import java.net.ServerSocket;
-import java.net.SocketException;
 import java.rmi.RemoteException;
 
-import javax.management.ObjectName;
-
-import org.sapia.ubik.jmx.MBeanContainer;
-import org.sapia.ubik.jmx.MBeanFactory;
+import org.sapia.ubik.concurrent.NamedThreadFactory;
+import org.sapia.ubik.concurrent.ThreadShutdown;
+import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.DefaultUbikServerSocketFactory;
+import org.sapia.ubik.net.Request;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.SocketConnectionFactory;
 import org.sapia.ubik.net.SocketServer;
 import org.sapia.ubik.net.TCPAddress;
 import org.sapia.ubik.net.ThreadPool;
 import org.sapia.ubik.net.UbikServerSocketFactory;
-import org.sapia.ubik.rmi.server.Hub;
-import org.sapia.ubik.rmi.server.Log;
-import org.sapia.ubik.rmi.server.RMICommand;
 import org.sapia.ubik.rmi.server.Server;
+import org.sapia.ubik.rmi.server.command.RMICommand;
+import org.sapia.ubik.rmi.server.stats.Statistic;
+import org.sapia.ubik.rmi.server.stats.Stats;
+import org.sapia.ubik.util.Localhost;
 
 /**
- * A standard socket server that listens on a given port for
- * incoming {@link RMICommand} instances.
+ * A standard socket server implementation - listening on given port (or on a randomly chosen port) 
+ * for incoming {@link RMICommand} instances.
  *
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
-public class SocketRmiServer extends SocketServer implements Server, SocketRmiServerMBean, MBeanFactory {
-  private ServerAddress _addr;
+public class SocketRmiServer extends SocketServer implements Server, SocketRmiServerMBean {
+    
+  /**
+   * A convenient {@link SocketRmiServer} builder.
+   */
+  public static class Builder {
+    
+    private String                  bindAddress;
+    private int                     port;
+    private long                    resetInterval;
+    private SocketConnectionFactory connectionFactory;
+    private ThreadPool<Request>     threadPool;
+    private int                     maxThreads            = ThreadPool.NO_MAX;
+    private UbikServerSocketFactory serverSocketFactory;
+ 
+    /**
+     * @param bindAddress the address to which the server should be bound (if not specified, the {@link Localhost} class 
+     * is used to select one).
+     * @return this instance.
+     */
+    public Builder setBindAddress(String bindAddress) {
+      this.bindAddress = bindAddress;
+      return this;
+    }
+    
+    /**
+     * @param port the port on which the server should listen - if not specified, a random port is selected.
+     * @return this instance.
+     */
+    public Builder setPort(int port) {
+      this.port = port;
+      return this;
+    }
+    
+    /**
+     * @param maxThreads the maximum number of threads that the {@link ThreadPool} created by this instance
+     * will handle.
+     * @return this instance.
+     */
+    public Builder setMaxThreads(int maxThreads) {
+      this.maxThreads = maxThreads;
+      return this;
+    }
+    
+    /**
+     * If a  {@link #connectionFactory} is explicitely specified, this property will have no effect.
+     * 
+     * @param resetInterval the interval (in millis) at which the MarshalOutputStream will reset it's internal object cache.
+     * @see #setConnectionFactory(SocketConnectionFactory)
+     * @return this instance.
+     */
+    public Builder setResetInterval(long resetInterval) {
+      this.resetInterval = resetInterval;
+      return this;
+    }
+    
+    /**
+     * If the thread pool is specified, any value set by {@link #setMaxThreads(int)} will be ignored.
+     * 
+     * @param threadPool the {@link ThreadPool} that the server will be using.
+     * @return this instance.
+     */
+    public Builder setThreadPool(ThreadPool<Request> threadPool) {
+      this.threadPool = threadPool;
+      return this;
+    }
+
+    /**
+     * @param serverSocketFactory the {@link UbikServerSocketFactory} that the server will be using
+     * to create a {@link ServerSocket} instance.
+     * @return this instance.
+     */
+    public Builder setServerSocketFactory(UbikServerSocketFactory serverSocketFactory) {
+      this.serverSocketFactory = serverSocketFactory;
+      return this;
+    }
+    
+    /**
+     * @param connectionFactory the {@link SocketConnectionFactory} to use on the server-side, to handle 
+     * communication with clients.
+     * @return this instance.
+     */
+    public Builder setConnectionFactory(SocketConnectionFactory connectionFactory) {
+      this.connectionFactory = connectionFactory;
+      return this;
+    }
+    
+    protected Builder() {}
+   
+    public static Builder create() {
+      return new Builder();
+    }
+    
+    // ------------------------------------------------------------------------
+    
+    public SocketRmiServer build() throws IOException {
+      
+      if(maxThreads > 0) {
+        if(threadPool != null) {
+          throw new IllegalStateException("Thread pool should not be assigned if max threads is specified");
+        } 
+        this.threadPool = new SocketRmiServerThreadPool("ubik.rmi.tcp.SocketServerThread", true, maxThreads);
+      } else if (threadPool == null) {
+        this.threadPool = new SocketRmiServerThreadPool("ubik.rmi.tcp.SocketServerThread", true, ThreadPool.NO_MAX);
+      }
+      
+      if(connectionFactory == null) {
+        SocketRmiConnectionFactory rmiConnectionFactory = new SocketRmiConnectionFactory();
+        rmiConnectionFactory.setResetInterval(resetInterval);
+        connectionFactory = rmiConnectionFactory;
+      }
+      
+      if(serverSocketFactory == null) {
+        serverSocketFactory = new DefaultUbikServerSocketFactory();
+      }
+      
+      if(bindAddress != null) {
+        return new SocketRmiServer(bindAddress, port, threadPool, connectionFactory, serverSocketFactory);
+      } else {
+        return new SocketRmiServer(port, threadPool, connectionFactory, serverSocketFactory);
+      }
+      
+    }
+    
+  }
+
+  // --------------------------------------------------------------------------
   
-  public SocketRmiServer(String bindAddr, int port, int maxThreads, long resetInterval)
-    throws IOException {
-    super(bindAddr, port, new SocketRmiConnectionFactory().setResetInterval(resetInterval),
-      new SocketRmiServerThreadPool("ubik.rmi.server.SocketServerThread", true,
-        maxThreads), new DefaultUbikServerSocketFactory());
-    _addr = new TCPAddress(InetAddress.getByName(bindAddr).getHostAddress(), port);        
+  private Statistic     threadCountStatistic;
+  private ServerAddress addr;
+  private Thread        serverThread;
+  
+  protected SocketRmiServer(
+      String bindAddr, 
+      int port, 
+      ThreadPool<Request> tp,
+      SocketConnectionFactory connectionFactory,
+      UbikServerSocketFactory serverSocketFactory) throws IOException {
+    super(bindAddr, 
+          port, 
+          connectionFactory,
+          tp, 
+          serverSocketFactory);
+    addr = new TCPAddress(getAddress(), getPort());            
   }
-
-  public SocketRmiServer(String bindAddr, int port, int maxThreads, long resetInterval,
-    UbikServerSocketFactory factory) throws IOException {
-    super(bindAddr, port, new SocketRmiConnectionFactory().setResetInterval(resetInterval),
-      new SocketRmiServerThreadPool("ubik.rmi.server.SocketServerThread", true,
-        maxThreads), factory);
-    _addr = new TCPAddress(InetAddress.getByName(bindAddr).getHostAddress(), port);            
+    
+    protected SocketRmiServer(
+        int port, 
+        ThreadPool<Request> tp,
+        SocketConnectionFactory connectionFactory,
+        UbikServerSocketFactory serverSocketFactory) throws IOException {
+      super(port, 
+            connectionFactory,
+            tp, 
+            serverSocketFactory);
+    addr = new TCPAddress(getAddress(), getPort());            
   }
-
-  /**
-   * Creates a new SocketRmiServer instance
-   *
-   * @param tp
-   * @param server
-   * @throws IOException
-   */
-  protected SocketRmiServer(ThreadPool tp, ServerSocket server, long resetInterval)
-    throws IOException {
-    super(new SocketRmiConnectionFactory().setResetInterval(resetInterval), tp, server);
-    _addr = new TCPAddress(server.getInetAddress().getHostAddress(), server.getLocalPort());
-  }
-
-  /**
-   * Creates a new SocketRmiServer instance
-   *
-   * @param maxThreads the max number of threads in the underlying pool.
-   * @param server a {@link ServerSocket}
-   * @param resetInterval the interval (in millis) at which the underlying {@link ObjectOutputStream}
-   * should be reset.
-   * @throws IOException
-   */
-  protected SocketRmiServer(int maxThreads, ServerSocket server, long resetInterval)
-    throws IOException {
-    super(new SocketRmiConnectionFactory().setResetInterval(resetInterval),
-      new SocketRmiServerThreadPool("ubik.rmi.server.SocketServerThread", true,
-        maxThreads), server);
-    _addr = new TCPAddress(server.getInetAddress().getHostAddress(), server.getLocalPort());    
-  }
-
-  /**
-   * Creates a new SocketRmiServer instance.
-   *
-   * @param fac a {@link SocketConnectionFactory}
-   * @param tp a {@link ThreadPool}
-   * @param server a {@link SocketServer}
-   * @throws IOException
-   */
-  protected SocketRmiServer(SocketConnectionFactory fac, ThreadPool tp,
-    ServerSocket server) throws IOException {
-    super(fac, tp, server);
-    _addr = new TCPAddress(server.getInetAddress().getHostAddress(), server.getLocalPort());
-  }
-
+  
   /**
    * @see org.sapia.ubik.rmi.server.Server#getServerAddress()()
    */
   public ServerAddress getServerAddress() {
-    return _addr;
+    return addr;
   }
 
   /**
    * @see org.sapia.ubik.rmi.server.Server#start()
    */
   public void start() throws RemoteException {
-    Hub.statsCollector.addStat(super.getRequestDurationStat());
-    Hub.statsCollector.addStat(super.getRequestsPerSecondStat());
-    Log.debug(this.getClass(), "starting server");
+    Log.debug(this.getClass(), "Starting server");
 
-    Thread t = new Thread(this);
-    t.setName("ubik.rmi.server.SocketServer");
-    t.setDaemon(true);
-    t.start();
+    serverThread = NamedThreadFactory.createWith("rmi.tcp.SocketServer").setDaemon(true).newThread(this);
+    serverThread.start();
 
     try {
       waitStarted();
     } catch (InterruptedException e) {
-      RemoteException re = new RemoteException("Thread interrupted during server startup",
-          e);
+      RemoteException re = new RemoteException("Thread interrupted during server startup", e);
       throw re;
-    } catch (SocketException e) {
+    } catch (Exception e) {
       RemoteException re = new RemoteException("Error while starting up", e);
       throw re;
     }
+    
+    threadCountStatistic = new Statistic(getClass().getSimpleName(), "ThreadCount", "Number of currently active threads") {
+      public double getStat() {
+        return SocketRmiServer.this.getThreadCount();
+      }
+    };
+    
+    Stats.getInstance().add(threadCountStatistic);
   }
   
-  ////// MBean interface
-  
-  public int getThreadCount() {
-    return super.getThreadCount();
+  @Override
+  public void close() {
+    try {
+      super.close();
+    } finally {
+      ThreadShutdown.create(serverThread).shutdownLenient();
+    }
   }
   
-  public double getRequestDurationSeconds() {
-    return super.getRequestDurationStat().getStat()/1000;
-  }
-  
-  public double getRequestsPerSecond() {
-    return super.getRequestsPerSecondStat().getStat();
-  }
-  
-  ////// MBeanFactory
-  
-  public MBeanContainer createMBean() throws Exception{
-    ObjectName name = new ObjectName("sapia.ubik.rmi:type=TcpSocketServer");
-    return new MBeanContainer(name, this);
-  }    
-
-  /**
-   * @see org.sapia.ubik.net.SocketServer#handleError(Throwable)
-   */
-  protected boolean handleError(Throwable t) {
-    Log.error(getClass(), t);
-
-    return false;
-  }
 }

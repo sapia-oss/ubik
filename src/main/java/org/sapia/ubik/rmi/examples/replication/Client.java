@@ -16,7 +16,7 @@ import org.sapia.ubik.rmi.server.invocation.ClientPreInvokeEvent;
 public class Client {
   public static void main(String[] args) {
     try {
-      Hub.clientRuntime.addInterceptor(ClientPreInvokeEvent.class,
+      Hub.getModules().getClientRuntime().getDispatcher().addInterceptor(ClientPreInvokeEvent.class,
         new ClientSideInterceptor(new ReplicatedInvokerImpl()));
 
       Foo f = (Foo) Hub.connect("localhost", 9000);

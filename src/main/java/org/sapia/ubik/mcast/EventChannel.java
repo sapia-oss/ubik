@@ -1,17 +1,21 @@
 package org.sapia.ubik.mcast;
 
-import org.sapia.ubik.net.ServerAddress;
-
 import java.io.IOException;
-
+import java.lang.ref.SoftReference;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import org.sapia.ubik.log.Category;
+import org.sapia.ubik.log.Log;
+import org.sapia.ubik.mcast.udp.UDPBroadcastDispatcher;
+import org.sapia.ubik.mcast.udp.UDPUnicastDispatcher;
+import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
-import org.sapia.ubik.rmi.PropUtil;
-import org.sapia.ubik.rmi.server.Log;
+import org.sapia.ubik.util.Props;
 
 
 /**
@@ -19,110 +23,98 @@ import org.sapia.ubik.rmi.server.Log;
  * class are logically grouped on a per-domain basis. Remote events are sent/dispatched to other
  * instances of this class through the network.
  * <p>
- * A given <code>EventChannel</code> instance will only send/received events to/from other instances
+ * An instance of this class will only send/received events to/from other instances
  * of the same domain.
  *
  * @see org.sapia.ubik.mcast.DomainName
  * @see org.sapia.ubik.mcast.RemoteEvent
  *
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 public class EventChannel {
-  
-  public static final long DEFAULT_HEARTBEAT_TIMEOUT    = 60000;
-  public static final int  DEFAULT_HEARTBEAT_INTERVAL   = 20000;
   
   static final String  DISCOVER_EVT    = "ubik/mcast/discover";
   static final String  PUBLISH_EVT     = "ubik/mcast/publish";
   static final String  HEARTBEAT_EVT   = "ubik/mcast/heartbeat";
   
-  private Timer                   _heartbeatTimer = new Timer("EventChannel.Timer", true);
-  private BroadcastDispatcher     _broadcast;
-  private UnicastDispatcher       _unicast;
-  private EventConsumer           _consumer;
-  private ChannelEventListener    _listener;
-  private View                    _view           = new View(DEFAULT_HEARTBEAT_TIMEOUT);
-  private ServerAddress           _address;
-  private List<DiscoveryListener> _discoListeners = new ArrayList<DiscoveryListener>();
-  private boolean                 _started;
-  private boolean                 _closed;
-
+  private Category                log            = Log.createCategory(getClass());
+  private Timer                   heartbeatTimer = new Timer("Ubik.EventChannel.Timer", true);
+  private BroadcastDispatcher     broadcast;
+  private UnicastDispatcher       unicast;
+  private EventConsumer           consumer;
+  private ChannelEventListener    listener;
+  private View                    view           = new View(Defaults.DEFAULT_HEARTBEAT_TIMEOUT);
+  private ServerAddress           address;
+  private List<SoftReference<DiscoveryListener>> discoListeners = Collections.synchronizedList(new ArrayList<SoftReference<DiscoveryListener>>());
+  
+  private volatile State          state          = State.CREATED;
   /**
-   * Constructor for EventChannel. For point-to-point communication, this instance will
-   * open a UDP server on a random port.
+   * Creates an instance of this class that will use IP multicast.
    *
    * @param domain the domain name of this instance.
    * @param mcastHost the multicast address that this instance will use to broadcast remote events.
    * @param mcastPort the multicast port that this instance will use to broadcast remote events.
-   *
+   * @throws IOException if a problem occurs creating this instance.
    * @see DomainName
    */
   public EventChannel(String domain, String mcastHost, int mcastPort)
     throws IOException {
-    _consumer    = new EventConsumer(domain);
-    _broadcast   = new BroadcastDispatcherImpl(_consumer, mcastHost, mcastPort);
-    _unicast     = new UDPUnicastDispatcher(
-        PropUtil.getSystemProperties()
-          .getIntProperty(Consts.MCAST_HEARTBEAT_INTERVAL, DEFAULT_HEARTBEAT_INTERVAL), 
-        _consumer
-    );
-    init();
+    consumer    = new EventConsumer(domain);
+    broadcast   = new UDPBroadcastDispatcher(consumer, mcastHost, mcastPort);
+    unicast     = new UDPUnicastDispatcher(consumer);
+    init(new Props().addSystemProperties());
   }
-
+  
   /**
-   * Constructor for EventChannel.
-   *
+   * Creates an instance of this class that will use the given properties to configures
+   * its internal unicast and broadcast dispatchers.
+   * 
    * @param domain the domain name of this instance.
-   * @param mcastHost the multicast address that this instance will use to broadcast remote events.
-   * @param mcastPort the multicast port that this instance will use to broadcast remote events.
-   * @param unicastPort the port of the UDP server that this instance encapsulates, and that is
-   * used for point-to-point communication.
-   *
-   * @see DomainName
+   * @param config the {@link Properties} containing unicast and multicast configuration.
+   * @throws IOException if a problem occurs creating this instance.
+   * @see UnicastDispatcher
+   * @see BroadcastDispatcher
    */
-  public EventChannel(String domain, String mcastHost, int mcastPort,
-    int unicastPort) throws IOException {
-    _consumer    = new EventConsumer(domain);
-    _unicast     = new UDPUnicastDispatcher(
-        PropUtil.getSystemProperties()
-          .getIntProperty(Consts.MCAST_HEARTBEAT_INTERVAL, DEFAULT_HEARTBEAT_INTERVAL), 
-        unicastPort, 
-        _consumer
-    );
-    _broadcast   = new BroadcastDispatcherImpl(_consumer, mcastHost, mcastPort);
-    init();    
+  public EventChannel(String domain, Props config) throws IOException {
+    consumer  = new EventConsumer(domain);
+    unicast   = UnicastDispatcherFactory.createUnicastDispatcher(consumer, config);
+    broadcast = UnicastDispatcherFactory.createBroadcastDispatcher(consumer, config);
+    init(config);
+  }
+  
+  /**
+   * @param consumer the {@link EventConsumer} that the event channel will use.
+   * @param unicast the {@link UnicastDispatcher} that the event channel will use.
+   * @param broadcast the {@link BroadcastDispatcher} that the event channel will use.
+   */
+  public EventChannel(EventConsumer consumer, UnicastDispatcher unicast, BroadcastDispatcher broadcast) {
+    this.consumer  = consumer;
+    this.unicast   = unicast;
+    this.broadcast = broadcast;
+    init(new Props().addSystemProperties());
   }
 
   /**
    * Returns this instance's domain name.
    *
-   * @return a <code>DomainName</code>.
+   * @return a {@link DomainName}.
    */
   public DomainName getDomainName() {
-    return _consumer.getDomainName();
+    return consumer.getDomainName();
+  }
+  
+  /**
+   * @return this instance's {@link MulticastAddress}.
+   */
+  public MulticastAddress getMulticastAddress() {
+    return broadcast.getMulticastAddress();
   }
 
   /**
-   * Returns this instance's multicast address.
-   *
-   * @return a host address as a string.
+   * @return this instance's unicast {@link ServerAddress}.
    */
-  public String getMulticastHost() {
-    return _broadcast.getMulticastAddress();
-  }
-
-  /**
-   * Returns this instance's multicast port.
-   *
-   * @return a port.
-   */
-  public int getMulticastPort() {
-    return _broadcast.getMulticastPort();
+  public ServerAddress getUnicastAddress() {
+    return unicast.getAddress();
   }
 
   /**
@@ -131,40 +123,44 @@ public class EventChannel {
    *
    * @throws IOException if an IO problem occurs starting this instance.
    */
-  public void start() throws IOException {
-    _broadcast.start();
-    _unicast.start();
-    _address = _unicast.getAddress();
-    _broadcast.dispatch(_unicast.getAddress(), false, PUBLISH_EVT, _address);
-    _started = true;
-  }
-
-  /**
-   * @return <code>true</code> if the <code>start()</code> method was called on this instance.
-   *
-   * @see #start()
-   */
-  public boolean isStarted() {
-    return _started;
+  public synchronized void start() throws IOException {
+    if(state == State.CREATED) {
+      broadcast.start();
+      unicast.start();
+      address = unicast.getAddress();
+      broadcast.dispatch(unicast.getAddress(), false, PUBLISH_EVT, address);
+      state = State.STARTED;
+    }
   }
 
   /**
    * Closes this instance.
    */
-  public void close() {
-    _heartbeatTimer.cancel();
-    _broadcast.close();
-    _unicast.close();
-    _closed = true;
+  public synchronized void close() {
+    if(state == State.STARTED) {
+      heartbeatTimer.cancel();
+      broadcast.close();
+      unicast.close();
+      state = State.CLOSED;
+    }
+  }
+  
+  /**
+   * @return <code>true</code> if the {@link #start()} method was called on this instance.
+   *
+   * @see #start()
+   */
+  public boolean isStarted() {
+    return state == State.STARTED;
   }
 
   /**
-   * @return <code>true</code> if the <code>close()</code> method was called on this instance.
+   * @return <code>true</code> if the {@link #close()} method was called on this instance.
    *
    * @see #close()
    */
   public boolean isClosed() {
-    return _closed;
+    return state == State.CLOSED;
   }
 
   /**
@@ -172,7 +168,7 @@ public class EventChannel {
    */
   public void dispatch(boolean alldomains, String type, Object data)
     throws IOException {
-    _broadcast.dispatch(_unicast.getAddress(), alldomains, type, data);
+    broadcast.dispatch(unicast.getAddress(), alldomains, type, data);
   }
 
   /**
@@ -180,7 +176,7 @@ public class EventChannel {
    */
   public void dispatch(ServerAddress addr, String type, Object data)
     throws IOException {
-    _unicast.dispatch(addr, type, data);
+    unicast.dispatch(addr, type, data);
   }
 
   /**
@@ -189,150 +185,184 @@ public class EventChannel {
    * @see org.sapia.ubik.mcast.BroadcastDispatcher#dispatch(String, String, Object)
    */
   public void dispatch(String type, Object data) throws IOException {
-    if(Log.isDebug()){
-      Log.debug(getClass(), "Sending event " + type + " - " + data);
-    }
-    _broadcast.dispatch(_unicast.getAddress(), _consumer.getDomainName().toString(), type, data);
+    log.debug("Sending event %s - %s", type, data);
+    broadcast.dispatch(unicast.getAddress(), consumer.getDomainName().toString(), type, data);
   }
 
-  /**
-   * Adds the given discovery listener to this instance.
-   *
-   * @param listener a <code>DiscoveryListener</code>.
-   */
-  public void addDiscoveryListener(DiscoveryListener listener) {
-    _discoListeners.add(listener);
-  }
 
   /**
-   * Synchronously sends a remote event to the node corresponding to the given <code>ServerAddress</code>,
+   * Synchronously sends a remote event to the node corresponding to the given {@link ServerAddress},
    * and returns the corresponding response.
    *
-   * @param addr the <code>ServerAddress</code> of the node to which to send the remote event.
+   * @param addr the {@link ServerAddress} of the node to which to send the remote event.
    * @param type the "logical type" of the remote event.
    * @param data the data to encapsulate in the remote event.
    *
-   * @return the <code>Response</code> corresponding to this call.
+   * @return the {@link Response} corresponding to this call.
    *
    * @see RemoteEvent
    */
   public Response send(ServerAddress addr, String type, Object data)
     throws IOException, TimeoutException {
-    return _unicast.send(addr, type, data);
+    return unicast.send(addr, type, data);
+  }
+  
+  /**
+   * @see UnicastDispatcher#send(List, String, Object)
+   */
+  public RespList send(List<ServerAddress> addresses, String type, Object data) 
+    throws IOException, TimeoutException, InterruptedException {
+    return unicast.send(addresses, type, data);
   }
 
   /**
-   * Synchronously sends a remote event to all the nodes corresponding to the given <code>ServerAddress</code>,
-   * and returns the corresponding responses.
-   * <p>
+   * Synchronously sends a remote event to all this instance's nodes and returns the corresponding responses.
    *
-   * @param type the "logical type" of the remote event.
-   * @param data the data to encapsulate in the remote event.
-   *
-   * @see org.sapia.ubik.mcast.RemoteEvent
+   * @see UnicastDispatcher#send(List, String, Object)
    */
-  public RespList send(String type, Object data) throws IOException {
-    return _unicast.send(_view.getHosts(), type, data);
+  public RespList send(String type, Object data) throws IOException, InterruptedException {
+    return unicast.send(view.getHosts(), type, data);
   }
 
   /**
    * Registers a listener of asynchronous remote events of the given type.
    *
-   * @param type the logical type of the remotee events to listen for.
-   * @param listener an <code>AsyncEventListener</code>.
+   * @param type the logical type of the remote events to listen for.
+   * @param listener an {@link AsyncEventListener}.
    */
   public synchronized void registerAsyncListener(String type,
     AsyncEventListener listener) {
-    _consumer.registerAsyncListener(type, listener);
+    consumer.registerAsyncListener(type, listener);
   }
 
   /**
    * Registers a listener of synchronous remote events of the given type.
    *
-   * @param type the logical type of the remotee events to listen for.
-   * @param listener a <code>SyncEventListener</code>.
+   * @param type the logical type of the remote events to listen for.
+   * @param listener a {@link SyncEventListener}.
    *
    * @throws ListenerAlreadyRegisteredException if a listener has already been
    * registered for the given event type.
    */
   public synchronized void registerSyncListener(String type,
     SyncEventListener listener) throws ListenerAlreadyRegisteredException {
-    _consumer.registerSyncListener(type, listener);
+    consumer.registerSyncListener(type, listener);
   }
 
   /**
    * Unregisters the given listener from this instance.
    *
-   * @param listener a <code>ASyncEventListener</code>.
+   * @param listener an {@link AsyncEventListener}.
    */
-  public synchronized void unregisterListener(AsyncEventListener listener) {
-    _consumer.unregisterListener(listener);
+  public synchronized void unregisterAsyncListener(AsyncEventListener listener) {
+    consumer.unregisterListener(listener);
   }
   
   /**
-   * Registers the given listener with this instance.
+   * Unregisters the given listener from this instance.
+   *
+   * @param listener an {@link SyncEventListener}.
+   */
+  public synchronized void unregisterSyncListener(SyncEventListener listener) {
+    consumer.unregisterListener(listener);
+  }
+  
+  /**
+   * Adds the given listener to this instance.
    * 
-   * @param listener an {@link EventChannelStateListener}.
    * @see View#addEventChannelStateListener(EventChannelStateListener)
    */
-  public void registerEventChannelStateListener(EventChannelStateListener listener){
-    _view.addEventChannelStateListener(listener);
+  public synchronized void addEventChannelStateListener(EventChannelStateListener listener){
+    view.addEventChannelStateListener(listener);
   }
 
   /**
+   * Removes the given listener from this instance.
+   * 
+   * @see View#removeEventChannelStateListener(EventChannelStateListener)
+   */
+  public synchronized boolean removeEventChannelStateListener(EventChannelStateListener listener) {
+    return view.removeEventChannelStateListener(listener);
+  }
+  
+  /**
+   * Adds the given discovery listener to this instance.
+   *
+   * @param listener a {@link DiscoveryListener}.
+   */
+  public void addDiscoveryListener(DiscoveryListener listener) {
+    discoListeners.add(new SoftReference<DiscoveryListener>(listener));
+  }
+  
+  /**
+   * Removes the given discovery listener from this instance.
+   * @param listener a {@link DiscoveryListener}.
+   * @return <code>true</code> if the removal occurred.
+   */
+  public boolean removeDiscoveryListener(DiscoveryListener listener) {
+    synchronized(discoListeners) {
+      for(int i = 0; i < discoListeners.size(); i++) {
+        SoftReference<DiscoveryListener> listenerRef = discoListeners.get(i);
+        DiscoveryListener registered = listenerRef.get();
+        if(registered != null && registered.equals(listener)) {
+          discoListeners.remove(i);
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  
+  /**
    * Returns this instance's "view".
    *
-   * @return a <code>View</code>.
+   * @return a {@link View}.
    */
   public View getView() {
-    return _view;
+    return view;
   }
 
   /**
    * @see EventConsumer#containsAsyncListener(AsyncEventListener)
    */
   public synchronized boolean containsAsyncListener(AsyncEventListener listener) {
-    return _consumer.containsAsyncListener(listener);
+    return consumer.containsAsyncListener(listener);
   }
 
   /**
    * @see EventConsumer#containsSyncListener(SyncEventListener)
    */
   public synchronized boolean containsSyncListener(SyncEventListener listener) {
-    return _consumer.containsSyncListener(listener);
-  }
-
-  /**
-   * @see BroadcastDispatcher#setBufsize(int)
-   * @see UnicastDispatcher#setBufsize(int)
-   */
-  public void setBufsize(int size) {
-    _broadcast.setBufsize(size);
-    _unicast.setBufsize(size);
+    return consumer.containsSyncListener(listener);
   }
 
   /**
    * @see BroadcastDispatcher#getNode()
    */
   public String getNode() {
-    return _broadcast.getNode();
+    return broadcast.getNode();
+  }
+  
+  private enum State {
+    CREATED, STARTED, CLOSED;
   }
 
-  public class ChannelEventListener implements AsyncEventListener {
+  private class ChannelEventListener implements AsyncEventListener {
 
     private void checkDeadHosts() {
-      _view.removeDeadHosts();
+      view.removeDeadHosts();
 
-      List<ServerAddress> siblings = _view.getHosts();
+      List<ServerAddress> siblings = view.getHosts();
 
-      if (_address != null) {
+      log.debug("Sending heartbeat to other nodes: %s", siblings);
+      if (address != null) {
         for (int i = 0; i < siblings.size(); i++) {
           try {
-            if(Log.isDebug()) Log.debug(getClass(), String.format("Sending heartbeat to %s", _address));
-            dispatch((ServerAddress) siblings.get(i), HEARTBEAT_EVT, _address);
+            log.debug("Sending heartbeat from %s to %s", consumer.getNode(), address);
+            dispatch((ServerAddress) siblings.get(i), HEARTBEAT_EVT, address);
           } catch (IOException e) {
-            e.printStackTrace();
-
+            log.warning("Exception caught while trying to dispatch heartbeat event to host (may be down): " + address, e);
             break;
           }
         }
@@ -343,6 +373,9 @@ public class EventChannel {
      * @see org.sapia.ubik.mcast.AsyncEventListener#onAsyncEvent(RemoteEvent)
      */
     public void onAsyncEvent(RemoteEvent evt) {
+      
+      // ----------------------------------------------------------------------
+      
       if (evt.getType().equals(DISCOVER_EVT)) {
         ServerAddress addr;
 
@@ -351,24 +384,26 @@ public class EventChannel {
           if(addr == null){
             return;
           }
-          _view.addHost(addr, evt.getNode());
-
-          List<DiscoveryListener> listeners = _discoListeners;
-
-          for (int i = 0; i < listeners.size(); i++) {
-            ((DiscoveryListener) listeners.get(i)).onDiscovery(addr, evt);
+          if(view.addHost(addr, evt.getNode())) {
+            notifyDiscoListeners(addr, evt);
           }
         } catch (IOException e) {
-          e.printStackTrace();
+          log.error("Error caught while trying to process discovery event", e);
         }
+      
+      // ----------------------------------------------------------------------
+        
       } else if (evt.getType().equals(HEARTBEAT_EVT)) {
         try {
           ServerAddress addr = (ServerAddress) evt.getData();
 
-          _view.heartbeat(addr, evt.getNode());
+          view.heartbeat(addr, evt.getNode());
         } catch (IOException e) {
-          e.printStackTrace();
+          log.error("Error caught while trying to process heartbeat event", e);
         }
+        
+      // ----------------------------------------------------------------------
+        
       } else {
         try {
           ServerAddress addr = (ServerAddress) evt.getData();
@@ -376,55 +411,56 @@ public class EventChannel {
             return;
           }          
 
-          if(_view.addHost(addr, evt.getNode())){
-            dispatch(false, DISCOVER_EVT, _address);
-  
-            List<DiscoveryListener> listeners = _discoListeners;
-  
-            for (int i = 0; i < listeners.size(); i++) {
-              ((DiscoveryListener) listeners.get(i)).onDiscovery(addr, evt);
-            }
+          if(view.addHost(addr, evt.getNode())){
+            dispatch(false, DISCOVER_EVT, address);
+            notifyDiscoListeners(addr, evt);
           }
         } catch (IOException e) {
-          e.printStackTrace();
+          log.error("Error caught while trying to process event " + evt.getType(), e);
         }
       }
     }
   }
   
-  private void init(){
-    _listener = new ChannelEventListener();
-    _consumer.registerAsyncListener(PUBLISH_EVT, _listener);
-    _consumer.registerAsyncListener(DISCOVER_EVT, _listener);
-    _consumer.registerAsyncListener(HEARTBEAT_EVT, _listener);
-    _unicast.setBufsize(2000);
-    
-    String bufsizeStr = System.getProperty(Consts.MCAST_BUFSIZE_KEY);
-    if(bufsizeStr != null){
-      try{
-        int buf = Integer.parseInt(bufsizeStr);
-        if(buf > 0){
-          _broadcast.setBufsize(buf);
-          _unicast.setBufsize(buf);
-        }
-      }catch(NumberFormatException e){
-        // use default;
+  private void notifyDiscoListeners(ServerAddress addr, RemoteEvent evt) {
+    synchronized(discoListeners) {
+      for (int i = 0; i < discoListeners.size(); i++){
+        SoftReference<DiscoveryListener> listenerRef = discoListeners.get(i);
+        DiscoveryListener listener = listenerRef.get();
+        if(listener != null) {
+          listener.onDiscovery(addr, evt);
+        } else {
+          discoListeners.remove(i--);
+        } 
       }
     }
+  }
+  
+  private void init(Props props){
+    listener = new ChannelEventListener();
+    consumer.registerAsyncListener(PUBLISH_EVT,   listener);
+    consumer.registerAsyncListener(DISCOVER_EVT,  listener);
+    consumer.registerAsyncListener(HEARTBEAT_EVT, listener);
     
-    PropUtil props = PropUtil.getSystemProperties();
+
+
+    long heartbeatTimeout  = props.getLongProperty(Consts.MCAST_HEARTBEAT_TIMEOUT, Defaults.DEFAULT_HEARTBEAT_TIMEOUT);
+    long heartbeatInterval = props.getLongProperty(Consts.MCAST_HEARTBEAT_INTERVAL, Defaults.DEFAULT_HEARTBEAT_INTERVAL);
     
-    _view.setTimeout(props.getLongProperty(Consts.MCAST_HEARTBEAT_TIMEOUT, DEFAULT_HEARTBEAT_TIMEOUT));
+    log.debug("Heartbeat timeout set to %s",  heartbeatTimeout);
+    log.debug("Heartbeat interval set to %s", heartbeatInterval);
     
-    _heartbeatTimer.schedule(
+    view.setTimeout(heartbeatTimeout);
+    heartbeatTimer.schedule(
         new TimerTask() {
           @Override
           public void run() {
-            _listener.checkDeadHosts();
+            if(state == State.STARTED) {
+              listener.checkDeadHosts();
+            }
           }
         }, 0, 
-        PropUtil.getSystemProperties()
-                .getLongProperty(Consts.MCAST_HEARTBEAT_INTERVAL, DEFAULT_HEARTBEAT_INTERVAL)
+        heartbeatInterval
     );
     
   }

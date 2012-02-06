@@ -6,7 +6,7 @@ import java.util.List;
 
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.Hub;
-import org.sapia.ubik.rmi.server.perf.CsvStatDumper;
+import org.sapia.ubik.rmi.server.stats.CsvStatDumper;
 import org.sapia.ubik.taskman.TaskContext;
 import org.sapia.ubik.util.Localhost;
 
@@ -22,8 +22,8 @@ public class StandaloneFooClient{
     
     
     TaskContext ctx = new TaskContext("CsvDumper", 1000*60*2);
-    CsvStatDumper dumper = new CsvStatDumper(new File("etc/clientDump.csv"));
-    Hub.taskMan.addTask(ctx, dumper);    
+    CsvStatDumper dumper = new CsvStatDumper(new File("etc/clientDump.csv"), Hub.getModules().getStatsCollector());
+    Hub.getModules().getTaskManager().addTask(ctx, dumper);    
     
     List workers = new ArrayList();
     for(int i = 0; i < 50; i++){

@@ -1,13 +1,14 @@
 package org.sapia.ubik.rmi.examples;
 
-import org.sapia.ubik.rmi.naming.remote.Consts;
+import java.util.Properties;
+
+import javax.naming.Context;
+import javax.naming.InitialContext;
+
+import org.sapia.ubik.rmi.naming.remote.JndiConsts;
 import org.sapia.ubik.rmi.naming.remote.RemoteInitialContextFactory;
 import org.sapia.ubik.rmi.naming.remote.discovery.JndiDiscoListener;
 import org.sapia.ubik.rmi.naming.remote.proxy.ReliableLocalContext;
-
-import java.util.*;
-
-import javax.naming.*;
 
 
 /**
@@ -38,8 +39,8 @@ public class CustomMulticastJndiDiscoListenerEg implements JndiDiscoListener {
       Properties props = new Properties();
       props.setProperty(InitialContext.PROVIDER_URL, "ubik://localhost:1099");
       props.setProperty(InitialContext.INITIAL_CONTEXT_FACTORY, RemoteInitialContextFactory.class.getName());
-      props.setProperty(Consts.MCAST_ADDR_KEY, CustomMulticastJndiRunner.CUSTOM_MCAST_ADDRESS);
-      props.setProperty(Consts.MCAST_PORT_KEY, Integer.toString(CustomMulticastJndiRunner.CUSTOM_MCAST_PORT));
+      props.setProperty(JndiConsts.MCAST_ADDR_KEY, CustomMulticastJndiRunner.CUSTOM_MCAST_ADDRESS);
+      props.setProperty(JndiConsts.MCAST_PORT_KEY, Integer.toString(CustomMulticastJndiRunner.CUSTOM_MCAST_PORT));
 
       InitialContext       ctx = new InitialContext(props);
 

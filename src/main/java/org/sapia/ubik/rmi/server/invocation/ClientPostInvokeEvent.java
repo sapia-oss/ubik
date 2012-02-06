@@ -1,6 +1,7 @@
 package org.sapia.ubik.rmi.server.invocation;
 
 import org.sapia.ubik.rmi.interceptor.Event;
+import org.sapia.ubik.rmi.server.command.InvokeCommand;
 
 
 /**
@@ -8,15 +9,10 @@ import org.sapia.ubik.rmi.interceptor.Event;
  * method has been invoked.
  *
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 public class ClientPostInvokeEvent implements Event {
-  private InvokeCommand _toInvoke;
-  private Object        _return;
+  private InvokeCommand toInvoke;
+  private Object        returnValue;
 
   /**
    * Creates an instance of this class.
@@ -29,8 +25,8 @@ public class ClientPostInvokeEvent implements Event {
    * threw and exception).
    */
   public ClientPostInvokeEvent(InvokeCommand toInvoke, Object toReturn) {
-    _toInvoke   = toInvoke;
-    _return     = toReturn;
+    this.toInvoke     = toInvoke;
+    this.returnValue  = toReturn;
   }
 
   /**
@@ -39,7 +35,7 @@ public class ClientPostInvokeEvent implements Event {
    * @return an {@link InvokeCommand} instance.
    */
   public InvokeCommand getCommand() {
-    return _toInvoke;
+    return toInvoke;
   }
 
   /**
@@ -55,8 +51,8 @@ public class ClientPostInvokeEvent implements Event {
    * of the method call.
    */
   public void setReturnObject(Object object) {
-    if (_return != null) {
-      _return = object;
+    if (returnValue != null) {
+      returnValue = object;
     }
   }
 
@@ -73,6 +69,6 @@ public class ClientPostInvokeEvent implements Event {
    * return type of <code>void</code>.
    */
   public Object getReturnObject() {
-    return _return;
+    return returnValue;
   }
 }
