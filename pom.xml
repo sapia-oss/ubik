@@ -93,6 +93,13 @@
   
   <dependencies> 
 
+		<dependency>
+		  <groupId>org.mockito</groupId>
+		  <artifactId>mockito-all</artifactId>
+		  <version>1.8.5</version>
+		  <scope>test</scope>
+		</dependency>
+
     <!-- sapia archie (used for naming service) -->
 
     <dependency>
@@ -100,6 +107,14 @@
       <artifactId>sapia_archie</artifactId>
       <version>1.1</version>
     </dependency>
+
+    <!-- =========== JBoss serialization ========== -->
+    
+		<dependency>
+		  <groupId>jboss</groupId>
+		  <artifactId>jboss-serialization</artifactId>
+		  <version>4.2.2.GA</version>
+		</dependency>
 
     <!-- =========== Guice integration ========== -->
 
@@ -122,10 +137,10 @@
     <!-- =========== nio transport ========== -->
 
     <dependency>
-       <groupId>org.apache.mina</groupId>
-       <artifactId>mina-core</artifactId>
-       <version>1.1.2</version>
-        <optional>true</optional>       
+      <groupId>org.apache.mina</groupId>
+      <artifactId>mina-core</artifactId>
+      <version>1.1.5</version>
+      <optional>true</optional>       
     </dependency>
 
     <dependency>
@@ -182,6 +197,48 @@
       <groupId>jetty</groupId>
       <artifactId>jetty</artifactId>
       <version>4.2.9</version>
+      <optional>true</optional>        
+    </dependency>
+    
+    <!-- =========== avis group communication (for broadcast dispatcher) ========== -->
+
+
+    <!-- The following are used for only for starting an in-memory Avis router for testing -->
+    <!-- NOTE: also uses mina core lib, declared previously as part of NIO transport dependencies -->    
+    <dependency>
+      <groupId>org.apache.mina</groupId>
+      <artifactId>mina-filter-ssl</artifactId>
+      <version>1.1.5</version>
+      <scope>test</scope>
+    </dependency>
+    
+    <dependency>
+      <groupId>mantara</groupId>
+      <artifactId>avis-router</artifactId>
+      <version>1.2.2</version>
+      <scope>test</scope>
+    </dependency>
+    
+    <dependency>
+      <groupId>mantara</groupId>
+      <artifactId>fastutil-subset</artifactId>
+      <version>1.2.2</version>
+      <scope>test</scope>        
+    </dependency>
+
+    <!-- The following are necessary for using Ubik's Avis BroadcastDispatcher -->
+   
+    <dependency>
+      <groupId>mantara</groupId>
+      <artifactId>avis-client</artifactId>
+      <version>1.2.2</version>
+      <optional>true</optional>        
+    </dependency>
+    
+    <dependency>
+      <groupId>mantara</groupId>
+      <artifactId>avis-common</artifactId>
+      <version>1.2.2</version>
       <optional>true</optional>        
     </dependency>
     
