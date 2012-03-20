@@ -85,10 +85,33 @@ public interface Consts {
   /**
    * This constant corresponds to the 'ubik.rmi.naming.mcast.heartbeat.timeout' property key. It
    * is used to determine the interval (in millis) after which nodes that haven't sent a heartbeat
-   * are considered down (defaults to 60000).
+   * are considered down (defaults to 90000).
    */
   public static final String MCAST_HEARTBEAT_TIMEOUT = "ubik.rmi.naming.mcast.heartbeat.timeout";
+
+  /**
+   * This constant corresponds to the 'ubik.rmi.naming.mcast.heartbeat.interval' property key. It
+   * is used to determine the interval (in millis) at which nodes send their heartbeat to the other nodes
+   * (defaults to 20000).
+   * <p>
+   * The value of this property should consistent with the value given to the heartbeat timeout: it
+   * should not be more.
+   */
+  public static final String MCAST_HEARTBEAT_INTERVAL = "ubik.rmi.naming.mcast.heartbeat.interval";      
   
+  /**
+   * This constant corresponds to the 'ubik.rmi.naming.mcast.control.response.timeout' property key. It
+   * is used to determine the amount of time (in millis) that is allowed for receiving control responses
+   * (defaults to 60000).
+   */
+  public static final String MCAST_CONTROL_RESPONSE_TIMEOUT = "ubik.rmi.naming.mcast.control.response.timeout";
+  
+  /**
+   * This constant corresponds to the 'ubik.rmi.naming.mcast.control.batch.size' property key. It is used 
+   * to specify the size of the batches of control notifications and requests (defaults to 5).
+   */
+  public static final String MCAST_CONTROL_BATCH_SIZE = "ubik.rmi.naming.mcast.control.batch.size";
+
   /**
    * Identifies the unicast provider to use as part of {@link EventChannel}s.
    */
@@ -140,23 +163,25 @@ public interface Consts {
   public static final String BROADCAST_MEMORY_NODE = "ubik.rmi.naming.broadcast.memory.node";  
   
   /**
-   * This constant corresponds to the 'ubik.rmi.naming.mcast.heartbeat.interval' property key. It
-   * is used to determine the interval (in millis) at which nodes send their heartbeat to the other nodes
-   * (defaults to 20000).
-   * <p>
-   * The value of this property should consistent with the value given to the heartbeat timeout: it
-   * should not be more.
-   */
-  public static final String MCAST_HEARTBEAT_INTERVAL = "ubik.rmi.naming.mcast.heartbeat.interval";      
-  
-  /**
-   * This constant corresponds to the 'ubik.rmi.marshalling' property key. If the property's
+   * This constant corresponds to the <code>ubik.rmi.marshalling</code> property key. If the property's
    * value is true, then the Ubik RMI runtime will wrap remote method invocation
    * parameters in org.sapia.ubik.rmi.transport.MarshalledObject instances prior sending
    * the parameters over the wire.
    */
   public static final String MARSHALLING = "ubik.rmi.marshalling";  
 
+  /**
+   * This constant corresponds to the <code>ubik.rmi.marshalling.buffer.size</code> property key.
+   * It indicates the buffer size (in bytes) to use when performing marshalling/unmarshalling. Defaults
+   * to 512.
+   */
+  public static final String MARSHALLING_BUFSIZE = "ubik.rmi.marshalling.buffer.size";  
+
+  /**
+   * The default marshalling buffer size (see {@link #MARSHALLING_BUFSIZE}).
+   */
+  public static final int DEFAULT_MARSHALLING_BUFSIZE = 512;
+  
   /**
    * Defines the logging verbosity; must be one of the following:
    * debug, info, warning, error - system property name: <code>ubik.rmi.log.level</code>.
@@ -308,4 +333,24 @@ public interface Consts {
    */
   public static final String TRANSPORT_PROVIDER = "ubik.rmi.transport.provider";
   
+  /**
+   * This constant corresponds to the system property (<code>ubik.rmi.transport.serialization.provider</code>)
+   * that specifies which serialization provider should be used: <code>jboss</code> or <code>jdk</code>.
+   * <p>
+   * By default, unless the <code>jdk</code> provider is specified or the JBoss serialization implementation 
+   * cannot be found in the classpath, the JBoss implementation will be used.
+   * 
+   */
+  public static final String SERIALIZATION_PROVIDER = "ubik.rmi.transport.serialization.provider";
+ 
+  /**
+   * Corresponds to the property value that should be used to specify the JBoss serialization provider.
+   */
+  public static final String SERIALIZATION_PROVIDER_JBOSS = "jboss";
+  
+  /**
+   * Corresponds to the property value that should be used to specify the JDK serialization provider.
+   */
+  public static final String SERIALIZATION_PROVIDER_JDK   = "jdk";
+
 }

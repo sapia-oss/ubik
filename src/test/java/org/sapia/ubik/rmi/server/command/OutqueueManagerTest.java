@@ -21,7 +21,8 @@ public class OutqueueManagerTest {
       public ResponseSender getResponseSenderFor(Destination destination) {
         return sender;
       }
-    });
+    },
+    OutqueueManager.DEFAULT_OUTQUEUE_THREADS);
   }
 
   @Test

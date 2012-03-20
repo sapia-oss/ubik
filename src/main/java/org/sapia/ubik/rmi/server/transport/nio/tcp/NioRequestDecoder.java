@@ -7,9 +7,11 @@ import org.apache.mina.common.ByteBuffer;
 import org.apache.mina.common.IoSession;
 import org.apache.mina.filter.codec.CumulativeProtocolDecoder;
 import org.apache.mina.filter.codec.ProtocolDecoderOutput;
+import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.transport.MarshalStreamFactory;
 import org.sapia.ubik.util.ByteVector;
 import org.sapia.ubik.util.ByteVectorInputStream;
+import org.sapia.ubik.util.Props;
 
 /**
  * A decoder for incoming Ubik client requests.
@@ -19,8 +21,10 @@ import org.sapia.ubik.util.ByteVectorInputStream;
  */
 public class NioRequestDecoder extends CumulativeProtocolDecoder{
   
-  private static final int BUFFER_CAPACITY  = 1024;
-  private static final int BUFFER_INCREMENT = 256;
+  private static int bufsz = Props.getSystemProperties().getIntProperty(
+                          			Consts.MARSHALLING_BUFSIZE, 
+                          			Consts.DEFAULT_MARSHALLING_BUFSIZE
+                          	 );
   
   private static final String DECODER_STATE = "DECODER_STATE";  
   
@@ -30,7 +34,7 @@ public class NioRequestDecoder extends CumulativeProtocolDecoder{
     ObjectInputStream  ois;
     
     public DecoderState() throws IOException {
-      this.vector = new ByteVector(BUFFER_CAPACITY, BUFFER_INCREMENT);
+      this.vector = new ByteVector(bufsz, bufsz);
       ois = MarshalStreamFactory.createInputStream(new ByteVectorInputStream(vector));
     }
     

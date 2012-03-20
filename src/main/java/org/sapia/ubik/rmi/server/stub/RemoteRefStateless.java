@@ -17,12 +17,13 @@ import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.MulticastAddress;
 import org.sapia.ubik.rmi.server.CommandPing;
 import org.sapia.ubik.rmi.server.Hub;
-import org.sapia.ubik.rmi.server.OID;
 import org.sapia.ubik.rmi.server.ShutdownException;
 import org.sapia.ubik.rmi.server.UIDGenerator;
 import org.sapia.ubik.rmi.server.command.CallbackInvokeCommand;
 import org.sapia.ubik.rmi.server.command.InvokeCommand;
 import org.sapia.ubik.rmi.server.invocation.InvocationDispatcher;
+import org.sapia.ubik.rmi.server.oid.DefaultOID;
+import org.sapia.ubik.rmi.server.oid.OID;
 import org.sapia.ubik.rmi.server.stub.LocalMethod.LocalMethodMap;
 import org.sapia.ubik.util.Collections2;
 import org.sapia.ubik.util.Function;
@@ -54,7 +55,7 @@ public class RemoteRefStateless implements StubInvocationHandler, Externalizable
   private Name                                    name;
   private String                                  domain;
   private MulticastAddress                        multicastAddress;
-  private OID                                     oid            = new OID(UIDGenerator.createdUID());
+  private OID                                     oid            = new DefaultOID(UIDGenerator.createdUID());
   private transient ContextList                   contexts       = new ContextList();           
   private transient volatile InvocationDispatcher dispatcher;
   

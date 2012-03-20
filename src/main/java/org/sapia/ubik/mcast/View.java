@@ -5,12 +5,15 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.EventChannelStateListener.EventChannelEvent;
 import org.sapia.ubik.net.ServerAddress;
+import org.sapia.ubik.util.Collections2;
+import org.sapia.ubik.util.Function;
 
 
 /**
@@ -27,16 +30,8 @@ public class View {
   
   private Category               log                   = Log.createCategory(getClass());
   private Map<String, NodeInfo>  nodeToNodeInfo        = new ConcurrentHashMap<String, NodeInfo>();
-  private volatile long          timeout;
   private List<SoftReference<EventChannelStateListener>> listeners = Collections.synchronizedList(new ArrayList<SoftReference<EventChannelStateListener>>());
 
-  /**
-   * Constructor for View.
-   */
-  public View(long timeout) {
-    this.timeout = timeout;
-  }
-  
   /**
    * Adds the given listener to this instance, which will be kept in a {@link SoftReference}.
    * 
@@ -70,12 +65,38 @@ public class View {
    *
    * @return a {@link List} of {@link ServerAddress}es.
    */
-  public List<ServerAddress> getHosts() {
-    List<ServerAddress> toReturn = new ArrayList<ServerAddress>(nodeToNodeInfo.size());
-    for(NodeInfo info : nodeToNodeInfo.values()){
-      toReturn.add(info.addr);
-    }
-    return toReturn;
+  public List<ServerAddress> getNodeAddresses() {
+    return Collections2.convertAsList(nodeToNodeInfo.values(), new Function<ServerAddress, NodeInfo>() {
+    	public ServerAddress call(NodeInfo arg) {
+    		return arg.addr;
+    	}
+		});
+  }
+  
+  /**
+   * Returns this instance's {@link List} of nodes.
+   *
+   * @return a {@link List} of nodes.
+   */
+  public List<String> getNodes() {
+    return Collections2.convertAsList(nodeToNodeInfo.values(), new Function<String, NodeInfo>() {
+    	public String call(NodeInfo arg) {
+    		return arg.node;
+    	}
+		});
+  }
+  
+  /**
+   * Returns this instance's {@link Set} of nodes.
+   *
+   * @return a {@link Set} of nodes.
+   */
+  public Set<String> getNodesAsSet() {
+    return Collections2.convertAsSet(nodeToNodeInfo.values(), new Function<String, NodeInfo>() {
+    	public String call(NodeInfo arg) {
+    		return arg.node;
+    	}
+		});
   }
 
   /**
@@ -88,21 +109,6 @@ public class View {
     NodeInfo info = (NodeInfo) nodeToNodeInfo.get(node);
 
     return info.addr;
-  }
-  
-  /**
-   * @param timeout the timeout after which nodes that haven't sent a heartbeat
-   * are removed from this instance.
-   */
-  public void setTimeout(long timeout){
-    this.timeout = timeout;
-  }
-  
-  /**
-   * @return this instance's heartbeat timeout.
-   */
-  public long getTimeout() {
-    return timeout;
   }
   
   /**
@@ -139,7 +145,7 @@ public class View {
   /**
    * Removes the "dead" (timed out) hosts from this instance.
    */
-  void removeDeadHosts() {
+  /*void removeDeadHosts() {
     
     List<NodeInfo> deadNodes = new ArrayList<NodeInfo>(nodeToNodeInfo.size() / 2);
   
@@ -153,6 +159,14 @@ public class View {
       log.debug("Removing dead host %s", dead.node);
       nodeToNodeInfo.remove(dead.node);
       notifyListeners(new EventChannelEvent(dead.node, dead.addr), false);
+    }
+  }*/
+  
+  void removeDeadNode(String node) {
+  	NodeInfo removed = nodeToNodeInfo.remove(node);
+  	if(removed != null) {
+      log.debug("Removing dead node %s", node);
+      notifyListeners(new EventChannelEvent(removed.node, removed.addr), false);
     }
   }
   

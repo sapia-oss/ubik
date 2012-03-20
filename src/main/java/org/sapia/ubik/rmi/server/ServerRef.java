@@ -1,5 +1,6 @@
 package org.sapia.ubik.rmi.server;
 
+import org.sapia.ubik.rmi.server.oid.OID;
 import org.sapia.ubik.rmi.server.stub.Stub;
 import org.sapia.ubik.rmi.server.stub.StubInvocationHandler;
 import org.sapia.ubik.util.Strings;

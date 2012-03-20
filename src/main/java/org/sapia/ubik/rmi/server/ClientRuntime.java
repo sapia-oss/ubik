@@ -15,6 +15,7 @@ import org.sapia.ubik.rmi.interceptor.InvalidInterceptorException;
 import org.sapia.ubik.rmi.interceptor.MultiDispatcher;
 import org.sapia.ubik.rmi.server.gc.ClientGC;
 import org.sapia.ubik.rmi.server.gc.CommandRefer;
+import org.sapia.ubik.rmi.server.oid.OID;
 import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
 

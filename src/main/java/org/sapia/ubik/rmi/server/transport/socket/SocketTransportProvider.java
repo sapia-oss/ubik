@@ -110,9 +110,9 @@ public class SocketTransportProvider implements TransportProvider {
       TCPAddress tcpAddr = (TCPAddress) address;
 
       try {
-        Class<?>  factoryClass = props.getClass(CLIENT_FACTORY, SocketConnectionFactory.class);
+        Class<?>  factoryClass = props.getClass(CLIENT_FACTORY, SocketRmiConnectionFactory.class);
         ConnectionFactory factory = (ConnectionFactory) factoryClass.newInstance();
-        if(factory instanceof SocketConnectionFactory) {
+        if(factory instanceof SocketRmiConnectionFactory) {
           ((SocketRmiConnectionFactory) factory).setResetInterval(resetInterval);
         }
         pool = new SocketClientConnectionPool(tcpAddr.getHost(), tcpAddr.getPort(), factory);

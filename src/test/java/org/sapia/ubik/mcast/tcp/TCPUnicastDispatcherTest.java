@@ -10,12 +10,9 @@ import org.sapia.ubik.mcast.UnicastDispatcherTestSupport;
 
 public class TCPUnicastDispatcherTest extends UnicastDispatcherTestSupport {
   
-  
-
   @Override
   protected UnicastDispatcher createUnicastDispatcher(EventConsumer consumer)
       throws IOException {
-    Log.setDebug();
     return new TCPUnicastDispatcher(consumer);
   }
 }

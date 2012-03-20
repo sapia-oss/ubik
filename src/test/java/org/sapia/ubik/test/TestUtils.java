@@ -11,23 +11,16 @@ import java.util.Set;
 import org.sapia.ubik.rmi.server.stub.Stub;
 
 
-/**
- * @author Yanick Duchesne
- * 15-Sep-2003
- */
 public class TestUtils {
-  /**
-   * Constructor for TestUtils.
-   */
-  public TestUtils() {
+	
+  private TestUtils() {
     super();
   }
 
   public static Object deserialize(byte[] bytes)
     throws IOException, ClassNotFoundException {
-    ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(
-          bytes));
-    Object            o = ois.readObject();
+    ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(bytes));
+    Object            o   = ois.readObject();
 
     return o;
   }
@@ -41,18 +34,18 @@ public class TestUtils {
 
     return bos.toByteArray();
   }
-
-  public static Class[] getInterfacesFor(Class clazz) {
-    HashSet set     = new HashSet();
-    Class   current = clazz;
+  
+  public static Class<?>[] getInterfacesFor(Class<?> clazz) {
+    HashSet<Class<?>> set     = new HashSet<Class<?>>();
+    Class<?>   			  current = clazz;
     appendInterfaces(current, set);
     set.add(Stub.class);
 
     return (Class[]) set.toArray(new Class[set.size()]);
   }
 
-  private static void appendInterfaces(Class current, Set interfaces) {
-    Class[] ifs = current.getInterfaces();
+  private static void appendInterfaces(Class<?> current, Set<Class<?>> interfaces) {
+    Class<?>[] ifs = current.getInterfaces();
 
     for (int i = 0; i < ifs.length; i++) {
       appendInterfaces(ifs[i], interfaces);

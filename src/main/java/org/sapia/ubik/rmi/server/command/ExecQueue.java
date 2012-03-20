@@ -130,4 +130,9 @@ public class ExecQueue<T extends Executable> {
     removalsBerSecond.hit();
     return queue.remove(0);
   }
+  
+  public boolean isShutdown() {
+	  return shutdown;
+  }
+  
 }

@@ -67,7 +67,7 @@ class NioServer implements Server{
   }
   
   /**
-   * @see org.sapia.ubik.rmi.server.transport.nio.tcp.AddressProvider#getAddress()
+   * @see org.sapia.ubik.rmi.server.transport.nio.tcp.AddressProvider#getUnicastAddress()
    */
   public ServerAddress getAddress() {
     return getServerAddress();

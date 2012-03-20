@@ -1,5 +1,7 @@
 package org.sapia.ubik.util;
 
+import org.sapia.ubik.util.Clock.SystemClock;
+
 /**
  * Models a delay.
  * 
@@ -8,21 +10,33 @@ package org.sapia.ubik.util;
  */
 public class Delay {
   
-  private long start      = System.currentTimeMillis();
+	private Clock clock     = SystemClock.getInstance();
+  private long start;
   private long duration;
   
   /**
-   * @param timeout the duration of this delay, in millis.
+   * @param clock the {@link Clock} to use.
+   * @param duration the duration of this delay, in millis.
+   */
+  public Delay(Clock clock, long duration) {
+  	this.clock    = clock;
+  	this.duration = duration;
+  	this.start    = clock.currentTimeMillis();
+  }
+  
+  /**
+   * @param duration the duration of this delay, in millis.
    */
   public Delay(long duration) {
     this.duration = duration;
+  	this.start    = clock.currentTimeMillis();    
   }
   
   /**
    * @return <code>true</code> if this delay is over.
    */
   public boolean isOver() {
-    return System.currentTimeMillis() - start >= duration;
+    return clock.currentTimeMillis() - start >= duration;
   }
   
   /**
@@ -32,7 +46,7 @@ public class Delay {
    * @return the number of remaining milliseconds in this delay.
    */
   public long remaining() {
-    long remaining = duration - (System.currentTimeMillis() - start);
+    long remaining = duration - (clock.currentTimeMillis() - start);
     return remaining < 0 ? 0 : remaining;
   }
   
@@ -53,6 +67,13 @@ public class Delay {
    */
   public long getDuration() {
     return duration;
+  }
+  
+  /**
+   * @return the time (in millis) at which this instance was created.
+   */
+  public long getStart() {
+	  return start;
   }
 
 }

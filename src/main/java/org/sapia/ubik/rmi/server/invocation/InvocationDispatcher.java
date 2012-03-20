@@ -104,7 +104,7 @@ public class InvocationDispatcher implements Module {
     log.debug("Dispatching post-invocation event");
     clientRuntime.getDispatcher().dispatch(post);
     
-    log.debug("Returning invocation response");
+    log.debug("Returning invocation response %s", toReturn);
     return toReturn;
   }
 }

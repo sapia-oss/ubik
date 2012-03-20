@@ -1,4 +1,4 @@
-package org.sapia.ubik.rmi.server;
+package org.sapia.ubik.rmi.server.oid;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -14,20 +14,20 @@ import org.sapia.ubik.util.Strings;
  *
  * @author Yanick Duchesne
  */
-public class OID implements Externalizable, Comparable<OID> {
+public class DefaultOID implements Externalizable, OID {
   static final long serialVersionUID = 1L;
   private static final Object unique = new Object();
   private long      id;
   private int       hashCode;
 
   /** Do not call; used for externalization only. */
-  public OID() {
+  public DefaultOID() {
   }
 
   /**
    * Creates an instance of this class with the given identifier string.
    */
-  public OID(long id) {
+  public DefaultOID(long id) {
     this.id    = id;
     hashCode   = (int) (id ^ (id >>> 32)) ^ unique.hashCode();
   }
@@ -46,8 +46,8 @@ public class OID implements Externalizable, Comparable<OID> {
    * representing the same remote reference has this.
    */
   public boolean equals(Object o) {
-    if(o instanceof OID) {
-      return (((OID) o).id == id) && (hashCode == o.hashCode());
+    if(o instanceof DefaultOID) {
+      return (((DefaultOID) o).id == id) && (hashCode == o.hashCode());
     }
     return false;
   }
@@ -70,18 +70,6 @@ public class OID implements Externalizable, Comparable<OID> {
   }
   
   public String toString() {
-    return Strings.toString("id", id, "hashCode", hashCode);
-  }
-
-  public int compareTo(OID other) {
-    long diff = id - other.id;
-
-    if (diff < 0) {
-      return -1;
-    } else if (diff == 0) {
-      return hashCode - other.hashCode();
-    } else {
-      return 1;
-    }
+    return Strings.toString("id", id, "hashCode", Integer.toHexString(hashCode));
   }
 }

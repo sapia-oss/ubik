@@ -113,13 +113,13 @@ import org.sapia.ubik.util.Props;
 
 @SuppressWarnings(value="unchecked")
 public class RemoteInitialContextFactory implements InitialContextFactory, JndiConsts {
-  private String _scheme = ServiceLocator.UBIK_SCHEME;
+  private String scheme = ServiceLocator.UBIK_SCHEME;
   
   public RemoteInitialContextFactory() {
   }
   
   public RemoteInitialContextFactory(String serviceLocatorScheme) {
-    _scheme = serviceLocatorScheme;
+    scheme = serviceLocatorScheme;
   }
   
   /**
@@ -127,7 +127,7 @@ public class RemoteInitialContextFactory implements InitialContextFactory, JndiC
    */
   public Context getInitialContext(Hashtable props) throws NamingException {
     
-    Props allProps = new Props().addMap((Map<String, String>)props).addProperties(System.getProperties());
+    Props allProps = new Props().addMap((Map<String, String>)props).addSystemProperties();
     
     String url = (String) props.get(InitialContext.PROVIDER_URL);
 
@@ -146,7 +146,7 @@ public class RemoteInitialContextFactory implements InitialContextFactory, JndiC
       throw ne;
     }
     
-    uri.setScheme(_scheme);
+    uri.setScheme(scheme);
     
     String domain = allProps.getProperty(UBIK_DOMAIN_NAME, JndiConsts.DEFAULT_DOMAIN);
     
@@ -178,8 +178,7 @@ public class RemoteInitialContextFactory implements InitialContextFactory, JndiC
         ec.unregisterAsyncListener(listener);
         
         if (evt == null) {
-          NamingException ne = new NamingException(
-            "could not connect to JNDI server");
+          NamingException ne = new NamingException("Could not connect to JNDI server");
           ne.setRootCause(e);
           throw ne;
         }

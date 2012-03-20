@@ -13,10 +13,11 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.TCPAddress;
-import org.sapia.ubik.rmi.server.OID;
 import org.sapia.ubik.rmi.server.TestRemoteInterface;
 import org.sapia.ubik.rmi.server.TestSocketServerTransportSetup;
+import org.sapia.ubik.rmi.server.oid.DefaultOID;
 import org.sapia.ubik.rmi.server.stub.RemoteRefContext;
 import org.sapia.ubik.rmi.server.stub.RemoteRefReliable;
 import org.sapia.ubik.test.TestUtils;
@@ -39,7 +40,7 @@ public class RemoteRefReliableTest {
   
   @Test
   public void testSerializeDeserialize() throws Exception {
-    RemoteRefContext context = new RemoteRefContext(new OID(0), new TCPAddress("localhost", 0));
+    RemoteRefContext context = new RemoteRefContext(new DefaultOID(0), new TCPAddress("localhost", 0));
     RemoteRefReliable ref = new RemoteRefReliable(context, "ubik://localhost/test");
 
     Object proxy = Proxy.newProxyInstance(
@@ -54,7 +55,8 @@ public class RemoteRefReliableTest {
  
   @Test
   public void testIsReliableStub() throws Exception {    
-  
+  	
+ 
     TestRemoteInterface remoteObject = mock(TestRemoteInterface.class);
     
     transport.bind("test", remoteObject);

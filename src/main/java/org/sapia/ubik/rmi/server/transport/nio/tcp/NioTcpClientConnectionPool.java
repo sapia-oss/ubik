@@ -1,19 +1,11 @@
 package org.sapia.ubik.rmi.server.transport.nio.tcp;
 
 import java.rmi.RemoteException;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
-import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.ConnectionPool;
-import org.sapia.ubik.net.ServerAddress;
-import org.sapia.ubik.net.TCPAddress;
 import org.sapia.ubik.net.ThreadInterruptedException;
-import org.sapia.ubik.rmi.server.Hub;
 import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
-import org.sapia.ubik.taskman.Task;
-import org.sapia.ubik.taskman.TaskContext;
 import org.sapia.ubik.util.pool.NoObjectAvailableException;
 import org.sapia.ubik.util.pool.PooledObjectCreationException;
 
@@ -25,15 +17,15 @@ import org.sapia.ubik.util.pool.PooledObjectCreationException;
  */
 public class NioTcpClientConnectionPool implements Connections {
   
-  private static Map<ServerAddress, NioTcpClientConnectionPool> pools = new ConcurrentHashMap<ServerAddress, NioTcpClientConnectionPool>();
-  private static volatile boolean started;
-  ConnectionPool                  pool;
+  private ConnectionPool pool;
 
   /**
    * @param host
    *          the host of the server to connect to.
    * @param port
    *          the port of the server.
+   * @param bufsize 
+   * 					the size of connection buffers.
    */
   NioTcpClientConnectionPool(String host, int port, int bufsize) {
     pool = new ConnectionPool.Builder()
@@ -81,65 +73,4 @@ public class NioTcpClientConnectionPool implements Connections {
     return pool;
   }
 
-  static synchronized void shutdown() {
-
-    if(started) {
-      for(NioTcpClientConnectionPool pool : pools.values()) {
-        pool.internalPool().shrinkTo(0);
-      }
-    }
-  }
-
-  static synchronized NioTcpClientConnectionPool getInstance(
-      ServerAddress address, int bufsize) {
-    if(!started) {
-      started = true;
-
-      Hub.getModules().getTaskManager().addTask(
-          new TaskContext(NioTcpClientConnectionPool.class.getName(), PoolCleaner.INTERVAL),
-          new PoolCleaner(pools)
-      );
-    }
-
-    NioTcpClientConnectionPool pool = (NioTcpClientConnectionPool) pools.get(address);
-
-    if(pool == null) {
-      pool = new NioTcpClientConnectionPool(((NioAddress) address).getHost(),
-          ((NioAddress) address).getPort(), bufsize);
-      pools.put(address, pool);
-    }
-
-    return pool;
-  }
-
-  static synchronized void invalidate(TCPAddress id) {
-    pools.remove(id);
-  }
-  
-  // --------------------------------------------------------------------------
-
-  static final class PoolCleaner implements Task {
-    
-    static final long INTERVAL = 5000;
-    
-    Map<ServerAddress, NioTcpClientConnectionPool> pools;
-
-    PoolCleaner(Map<ServerAddress, NioTcpClientConnectionPool> pools) {
-      this.pools = pools;
-    }
-
-    public void exec(TaskContext context) {
-      NioTcpClientConnectionPool[] toClean;
-
-      toClean = (NioTcpClientConnectionPool[]) pools.values().toArray(new NioTcpClientConnectionPool[pools.size()]);
-
-      for(int i = 0; i < toClean.length; i++) {
-        if((System.currentTimeMillis() - toClean[i].internalPool()
-            .getLastUsageTime()) > INTERVAL) {
-          Log.debug(getClass(), "Shrinking nio socket client connection pool...");
-          toClean[i].internalPool().shrinkTo(0);
-        }
-      }
-    }
-  }
 }

@@ -14,6 +14,7 @@ import org.sapia.archie.Name;
 import org.sapia.archie.impl.AttributeNameParser;
 import org.sapia.archie.impl.AttributeNamePart;
 import org.sapia.archie.impl.DefaultNameParser;
+import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.AsyncEventListener;
 import org.sapia.ubik.mcast.EventChannel;
@@ -35,15 +36,17 @@ import org.sapia.ubik.util.Props;
  * @author Yanick Duchesne
  */
 public class DiscoveryHelper implements AsyncEventListener {
+	
+  protected Category                  log           = Log.createCategory(this.getClass());
   protected EventChannel              channel;
   private List<ServiceDiscoListener>  svclisteners  = new CopyOnWriteArrayList<ServiceDiscoListener>();
   private List<JndiDiscoListener>     jndiListeners = new CopyOnWriteArrayList<JndiDiscoListener>();
-  private ContextResolver             resolver = new DefaultContextResolver();
+  private ContextResolver             resolver      = new DefaultContextResolver();
 
   /**
    * Constructor for DiscoveryHelper.
    */
-  public DiscoveryHelper(EventChannel ec) {
+  public DiscoveryHelper(EventChannel ec) throws IOException {
     channel = ec;
     initChannel();
   }
@@ -56,7 +59,6 @@ public class DiscoveryHelper implements AsyncEventListener {
    */
   public DiscoveryHelper(String domain) throws IOException {
     channel = new EventChannel(domain, Props.getSystemProperties());
-    channel.start();
     initChannel();
   }
   
@@ -73,8 +75,7 @@ public class DiscoveryHelper implements AsyncEventListener {
     Properties props = new Properties();
     props.setProperty(JndiConsts.MCAST_ADDR_KEY, mcastAddr);
     props.setProperty(JndiConsts.MCAST_PORT_KEY, Integer.toString(mcastPort));
-    channel = new EventChannel(domain, new Props().addProperties(props).addProperties(System.getProperties()));
-    channel.start();
+    channel = new EventChannel(domain, new Props().addProperties(props).addSystemProperties());
     initChannel();
   }
 
@@ -185,36 +186,40 @@ public class DiscoveryHelper implements AsyncEventListener {
             listener.onServiceDiscovered(sevt);
           }
         } catch (IOException e) {
-          Log.warning(getClass(), "Caught connection error", e);
+          log.warning("Caught connection error", e);
         } catch (ClassNotFoundException e) {
-          Log.warning(getClass(), "Class not found deserializing event", e);
+          log.warning("Class not found deserializing event", e);
         }
       }
     } catch (RemoteException e) {
-      Log.warning(getClass(), "Caught connection error", e);
+      log.warning("Caught connection error", e);
     } catch (IOException e) {
-      Log.warning(getClass(), "Caught IO error", e);
+      log.warning("Caught IO error", e);
     }
   }
 
   /**
    * Closes this instance - should thereafter be discarded.
    */
-  public synchronized void close() {
+  public void close() {
     channel.close();
   }
 
   /**
    * Returns this instance's event channel.
    */
-  public synchronized EventChannel getChannel() {
+  public EventChannel getChannel() {
     return channel;
   }
   
-  void initChannel() {
+  void initChannel() throws IOException {
     channel.registerAsyncListener(JndiConsts.JNDI_SERVER_PUBLISH, this);
     channel.registerAsyncListener(JndiConsts.JNDI_SERVER_DISCO, this);
     channel.registerAsyncListener(SyncPutEvent.class.getName(), this);
+    
+    if(!channel.isStarted()) {
+    	channel.start();
+    }
   }
   
   

@@ -1,5 +1,7 @@
 package org.sapia.ubik.net;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.EOFException;
@@ -25,16 +27,17 @@ public class SocketConnection implements Connection {
   protected ObjectInputStream  is;
   protected ObjectOutputStream os;
   protected long               lastReset;
-  protected long               resetInterval = DEFAULT_RESET_INTERVAL;
-  private int callCount = 0;
+  protected long               resetInterval 					= DEFAULT_RESET_INTERVAL;
+  private   int                bufsize;
 
-  public SocketConnection(Socket sock, ClassLoader loader) {
-    this(sock);
+  public SocketConnection(Socket sock, ClassLoader loader, int bufsize) {
+    this(sock, bufsize);
     this.loader = loader;
   }
 
-  public SocketConnection(Socket sock) {
+  public SocketConnection(Socket sock, int bufsize) {
     this.sock      = sock;
+    this.bufsize   = bufsize;
     address        = new TCPAddress(sock.getInetAddress().getHostAddress(), sock.getPort());
   }
   
@@ -160,8 +163,8 @@ public class SocketConnection implements Connection {
   
   protected void doSend(Object toSend, ObjectOutputStream mos) throws IOException{
     try{
-      os.writeObject(toSend);
-      os.flush();
+      mos.writeObject(toSend);
+      mos.flush();
        
     } catch (java.net.SocketException e) {
       throw new RemoteException("Communication with server interrupted; server probably disappeared",
@@ -179,13 +182,11 @@ public class SocketConnection implements Connection {
       dos.writeBoolean(true);      
       dos.flush();
       os = null;
-      os = newOutputStream(outputStream, loader);
-      callCount = 0;
+      os = newOutputStream(new BufferedOutputStream(outputStream, bufsize), loader);
     } else{
       dos.writeBoolean(false);
       dos.flush();
     }
-    callCount++;
   }
   
   protected void readHeader(InputStream inputStream, ClassLoader loader) throws IOException{
@@ -194,7 +195,7 @@ public class SocketConnection implements Connection {
     boolean reset = dis.readBoolean();
     if(is == null || reset){
       is = null;
-      is = newInputStream(inputStream, loader);
+      is = newInputStream(new BufferedInputStream(inputStream, bufsize), loader);
     }
   }
 }

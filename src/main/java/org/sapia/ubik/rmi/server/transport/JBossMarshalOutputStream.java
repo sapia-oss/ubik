@@ -51,9 +51,9 @@ public class JBossMarshalOutputStream extends JBossObjectOutputStream implements
       return obj;
     }
   }
-  
+  /*
   protected void writeObjectOverride(Object obj) throws IOException {
     super.writeUnshared(obj);
-  }  
+  } */ 
 
 }

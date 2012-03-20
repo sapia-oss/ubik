@@ -12,7 +12,7 @@ import org.sapia.ubik.util.Props;
  * @author yduchesne
  *
  */
-public class CommandModule implements Module{
+public class CommandModule implements Module {
   
   public  static final String COMMAND_MODULE_SHUTDOWN_TIMEOUT = "ubik.rmi.server.module.command.shutdown-timeout";
   private static final int    DEFAULT_CALLBACK_THREADS = 5;
@@ -27,8 +27,14 @@ public class CommandModule implements Module{
   
   @Override
   public void init(ModuleContext context) {
-    callbackResponseQueue      = new CallbackResponseQueue();
-    OutqueueManager  outqueues = new OutqueueManager(context.lookup(TransportManager.class), callbackResponseQueue);
+    callbackResponseQueue = new CallbackResponseQueue();
+    
+
+    int maxOutQueueThreads = Props.getSystemProperties().getIntProperty(
+      Consts.SERVER_CALLBACK_OUTQUEUE_THREADS, 
+      OutqueueManager.DEFAULT_OUTQUEUE_THREADS
+    );
+    outqueues 						= new OutqueueManager(context.lookup(TransportManager.class), callbackResponseQueue, maxOutQueueThreads);
     
     Props props = Props.getSystemProperties();
     commandProcessor = new CommandProcessor(props.getIntProperty(

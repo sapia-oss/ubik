@@ -4,12 +4,13 @@ import java.lang.reflect.Proxy;
 import java.rmi.RemoteException;
 import java.util.Properties;
 
+import org.sapia.ubik.module.ModuleContext;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.Hub;
-import org.sapia.ubik.rmi.server.OID;
 import org.sapia.ubik.rmi.server.ObjectTable;
 import org.sapia.ubik.rmi.server.ServerTable;
 import org.sapia.ubik.rmi.server.Stateless;
+import org.sapia.ubik.rmi.server.oid.OID;
 import org.sapia.ubik.rmi.server.stub.RemoteRefStateless;
 import org.sapia.ubik.rmi.server.stub.Stub;
 import org.sapia.ubik.rmi.server.stub.StubInvocationHandler;
@@ -24,17 +25,18 @@ import org.sapia.ubik.rmi.server.stub.enrichment.StubEnrichmentStrategy.JndiBind
  */
 public class StatelessStubEnrichmentStrategy implements StubEnrichmentStrategy {
   
-  private ServerTable serverTable = Hub.getModules().getServerTable();
-  private ObjectTable objectTable = Hub.getModules().getObjectTable();
+  private ServerTable serverTable;
+  private ObjectTable objectTable;
+  
+  @Override
+  public void init(ModuleContext context) {
+    serverTable = context.lookup(ServerTable.class);
+    objectTable = context.lookup(ObjectTable.class);
+  }
   
   @Override
   public boolean apply(Object stub, JndiBindingInfo info) {
-    if(stub instanceof Stub) {
-      return !(stub instanceof Stateless);
-    } else {
-      // not a stub: so remote object that implements the Stub interface.
-      return stub instanceof Stateless;
-    }
+  	return stub instanceof Stateless;
   }
   
   /**

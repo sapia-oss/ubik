@@ -97,8 +97,10 @@ public class EmbeddableJNDIServer implements RemoteContextProvider, AsyncEventLi
   /**
    * @param ec the {@link EventChannel} that this instance should wrap.
    */
-  public EmbeddableJNDIServer(EventChannel ec) {
+  public EmbeddableJNDIServer(EventChannel ec, int port) {
     this.channel = ec;
+    this.domain  = ec.getDomainName().toString();
+    this.port    = port;
   }
   
   /**
@@ -176,12 +178,12 @@ public class EmbeddableJNDIServer implements RemoteContextProvider, AsyncEventLi
         }
       });
     serverThread.start();
-    waitStarted();
+    startBarrier.await();
   }
 
   private final void doRun() {
     try {
-
+    	log.warning("Starting JNDI server on port %s, domain %s", port, domain);
       channel.start();
       
       channel.registerAsyncListener(JndiConsts.JNDI_CLIENT_PUBLISH, this);
@@ -195,7 +197,7 @@ public class EmbeddableJNDIServer implements RemoteContextProvider, AsyncEventLi
 
       Hub.exportObject(this, port);
       
-      log.warning("Server started on port: " + port + ", domain: " + domain);
+      log.warning("JNDI Server started");
 
       startBarrier.started();
 
@@ -209,9 +211,5 @@ public class EmbeddableJNDIServer implements RemoteContextProvider, AsyncEventLi
       log.error("Could not start JNDI server", e);
       startBarrier.failed(e);
     }
-  }
-
-  private void waitStarted() throws InterruptedException, Exception {
-    startBarrier.await();
   }
 }

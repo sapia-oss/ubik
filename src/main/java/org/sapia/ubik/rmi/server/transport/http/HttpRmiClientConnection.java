@@ -11,10 +11,12 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.ServerAddress;
+import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.VmId;
 import org.sapia.ubik.rmi.server.transport.MarshalStreamFactory;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
 import org.sapia.ubik.rmi.server.transport.RmiObjectOutput;
+import org.sapia.ubik.util.Props;
 
 
 /**
@@ -28,12 +30,14 @@ import org.sapia.ubik.rmi.server.transport.RmiObjectOutput;
  * @author Yanick Duchesne
  */
 public class HttpRmiClientConnection implements RmiConnection {
-  private static final int DEFAULT_BUFSZ = 1024;
   private HttpAddress      address;
   private HttpClient       client;
   private PostMethod       post;
   private boolean          closed;
-  private int              bufsz = DEFAULT_BUFSZ;
+  private int              bufsz = Props.getSystemProperties().getIntProperty(
+																			Consts.MARSHALLING_BUFSIZE, 
+																			Consts.DEFAULT_MARSHALLING_BUFSIZE
+  																 );
 
   /**
    * Creates an instance of this class with the given HTTP client and

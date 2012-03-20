@@ -1,5 +1,6 @@
 package org.sapia.ubik.rmi.server.stub.handler;
 
+import org.sapia.ubik.module.ModuleContext;
 import org.sapia.ubik.rmi.server.StubProcessor;
 import org.sapia.ubik.rmi.server.stub.RemoteRefContext;
 import org.sapia.ubik.rmi.server.stub.RemoteRefEx;
@@ -16,6 +17,10 @@ import org.sapia.ubik.rmi.server.stub.StubInvocationHandler;
  */
 public class DefaultStubInvocationHandlerCreationStrategy  implements StubInvocationHandlerCreationStrategy {
   
+	@Override
+	public void init(ModuleContext context) {
+	}
+	
   @Override
   public boolean apply(Object toExport) {
     return true;

@@ -5,6 +5,8 @@ import java.net.Socket;
 
 import org.sapia.ubik.net.Connection;
 import org.sapia.ubik.net.SocketConnectionFactory;
+import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.util.Props;
 
 
 /**
@@ -13,6 +15,11 @@ import org.sapia.ubik.net.SocketConnectionFactory;
  * @author Yanick Duchesne
  */
 public class SocketRmiConnectionFactory extends SocketConnectionFactory {
+	
+	private int bufsize = Props.getSystemProperties().getIntProperty(
+													Consts.MARSHALLING_BUFSIZE, 
+													Consts.DEFAULT_MARSHALLING_BUFSIZE
+												);
   
   private long resetInterval;
   
@@ -32,7 +39,7 @@ public class SocketRmiConnectionFactory extends SocketConnectionFactory {
    * @see org.sapia.ubik.net.SocketConnectionFactory#newConnection(Socket)
    */
   public Connection newConnection(Socket sock) throws IOException {
-    SocketRmiConnection conn = new SocketRmiConnection(sock, loader);
+    SocketRmiConnection conn = new SocketRmiConnection(sock, loader, bufsize);
     conn.setResetInterval(resetInterval);
     return conn;
   }
@@ -42,7 +49,7 @@ public class SocketRmiConnectionFactory extends SocketConnectionFactory {
    */
   public Connection newConnection(String host, int port)
     throws IOException {
-    SocketRmiConnection conn = new SocketRmiConnection(new Socket(host, port), loader);
+    SocketRmiConnection conn = new SocketRmiConnection(new Socket(host, port), loader, bufsize);
     return conn;
   }
 }

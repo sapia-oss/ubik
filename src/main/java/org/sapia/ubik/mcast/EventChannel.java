@@ -6,11 +6,18 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
+import org.sapia.ubik.mcast.control.ChannelCallback;
+import org.sapia.ubik.mcast.control.ControlNotification;
+import org.sapia.ubik.mcast.control.ControlRequest;
+import org.sapia.ubik.mcast.control.ControlResponse;
+import org.sapia.ubik.mcast.control.ControllerConfiguration;
+import org.sapia.ubik.mcast.control.EventChannelStateController;
 import org.sapia.ubik.mcast.udp.UDPBroadcastDispatcher;
 import org.sapia.ubik.mcast.udp.UDPUnicastDispatcher;
 import org.sapia.ubik.net.ServerAddress;
@@ -35,19 +42,21 @@ public class EventChannel {
   
   static final String  DISCOVER_EVT    = "ubik/mcast/discover";
   static final String  PUBLISH_EVT     = "ubik/mcast/publish";
-  static final String  HEARTBEAT_EVT   = "ubik/mcast/heartbeat";
+  static final String  CONTROL_EVT   	 = "ubik/mcast/control";
   
-  private Category                log            = Log.createCategory(getClass());
-  private Timer                   heartbeatTimer = new Timer("Ubik.EventChannel.Timer", true);
+  private Category                log              = Log.createCategory(getClass());
+  private Timer                   heartbeatTimer   = new Timer("Ubik.EventChannel.Timer", true);
   private BroadcastDispatcher     broadcast;
   private UnicastDispatcher       unicast;
   private EventConsumer           consumer;
   private ChannelEventListener    listener;
-  private View                    view           = new View(Defaults.DEFAULT_HEARTBEAT_TIMEOUT);
+  private View                    view             = new View();
+  private EventChannelStateController controller;
+  private int                     controlBatchSize = 5;
   private ServerAddress           address;
   private List<SoftReference<DiscoveryListener>> discoListeners = Collections.synchronizedList(new ArrayList<SoftReference<DiscoveryListener>>());
+  private volatile State          state            = State.CREATED;
   
-  private volatile State          state          = State.CREATED;
   /**
    * Creates an instance of this class that will use IP multicast.
    *
@@ -69,7 +78,7 @@ public class EventChannel {
    * Creates an instance of this class that will use the given properties to configures
    * its internal unicast and broadcast dispatchers.
    * 
-   * @param domain the domain name of this instance.
+   * @param domain the domain name of this instance.  
    * @param config the {@link Properties} containing unicast and multicast configuration.
    * @throws IOException if a problem occurs creating this instance.
    * @see UnicastDispatcher
@@ -221,7 +230,7 @@ public class EventChannel {
    * @see UnicastDispatcher#send(List, String, Object)
    */
   public RespList send(String type, Object data) throws IOException, InterruptedException {
-    return unicast.send(view.getHosts(), type, data);
+    return unicast.send(view.getNodeAddresses(), type, data);
   }
 
   /**
@@ -347,28 +356,86 @@ public class EventChannel {
   private enum State {
     CREATED, STARTED, CLOSED;
   }
+  
+  private class ChannelCallbackImpl implements ChannelCallback {
+
+  	public ServerAddress getAddress() {
+  		return EventChannel.this.getUnicastAddress();
+  	}
+  	
+  	@Override
+  	public String getNode() {
+  	  return EventChannel.this.getNode();
+  	}
+
+  	@Override
+  	public Set<String> getNodes() {
+  	  return EventChannel.this.getView().getNodesAsSet();
+  	}
+  	
+  	@Override
+  	public void heartbeat(String node, ServerAddress addr) {
+  		view.heartbeat(addr, node);
+  	}
+
+  	@Override
+  	public void down(String node) {
+  		view.removeDeadNode(node);
+  	}
+  	
+  	@Override
+  	public void sendNotification(ControlNotification notif) {
+			notif.getTargetedNodes().remove(getNode());
+  		if(!notif.getTargetedNodes().isEmpty()) {
+  			List<ControlNotification> split = notif.split(controlBatchSize);
+  			for(ControlNotification toSend : split) {
+  				if(!toSend.getTargetedNodes().isEmpty()) {
+  					String next = toSend.getTargetedNodes().iterator().next();
+  					toSend.getTargetedNodes().remove(next);
+  					try {
+  						unicast.send(view.getAddressFor(next), CONTROL_EVT, toSend);
+  					} catch (IOException e) {
+  						log.error("Could not send control notification", e);
+  					}
+  				}
+  			}
+  		}
+  	}
+  	
+  	@Override
+  	public void sendRequest(ControlRequest req) {
+			req.getTargetedNodes().remove(getNode());
+  		if(!req.getTargetedNodes().isEmpty()) {
+  			List<ControlRequest> split = req.split(controlBatchSize);
+  			for(ControlRequest toSend : split) {
+  				if(!toSend.getTargetedNodes().isEmpty()) {
+  					String next = toSend.getTargetedNodes().iterator().next();
+  					toSend.getTargetedNodes().remove(next);
+  					try {
+  						unicast.send(view.getAddressFor(next), CONTROL_EVT, toSend);
+  					} catch (IOException e) {
+  						log.error("Could not send control request", e);
+  					}
+  				}
+  			}
+  		}
+  	}
+  	
+  	@Override
+  	public void sendResponse(String masterNode, ControlResponse res) {
+			try {
+				unicast.send(view.getAddressFor(masterNode), CONTROL_EVT, res);
+			} catch (IOException e) {
+				log.error("Could not send control response", e);
+			}
+  	}
+
+  }
+  
+  // --------------------------------------------------------------------------
 
   private class ChannelEventListener implements AsyncEventListener {
-
-    private void checkDeadHosts() {
-      view.removeDeadHosts();
-
-      List<ServerAddress> siblings = view.getHosts();
-
-      log.debug("Sending heartbeat to other nodes: %s", siblings);
-      if (address != null) {
-        for (int i = 0; i < siblings.size(); i++) {
-          try {
-            log.debug("Sending heartbeat from %s to %s", consumer.getNode(), address);
-            dispatch((ServerAddress) siblings.get(i), HEARTBEAT_EVT, address);
-          } catch (IOException e) {
-            log.warning("Exception caught while trying to dispatch heartbeat event to host (may be down): " + address, e);
-            break;
-          }
-        }
-      }
-    }
-
+  	
     /**
      * @see org.sapia.ubik.mcast.AsyncEventListener#onAsyncEvent(RemoteEvent)
      */
@@ -390,14 +457,24 @@ public class EventChannel {
         } catch (IOException e) {
           log.error("Error caught while trying to process discovery event", e);
         }
-      
-      // ----------------------------------------------------------------------
         
-      } else if (evt.getType().equals(HEARTBEAT_EVT)) {
+      // ----------------------------------------------------------------------
+
+      } else if (evt.getType().equals(CONTROL_EVT)) {
         try {
           ServerAddress addr = (ServerAddress) evt.getData();
 
           view.heartbeat(addr, evt.getNode());
+          
+          Object data = evt.getData();
+          if(data instanceof ControlRequest) {
+          	controller.onRequest(evt.getNode(), (ControlRequest) data);
+          } else if (data instanceof ControlNotification) {
+          	controller.onNotification(evt.getNode(), (ControlNotification) data);
+          } else if (data instanceof ControlResponse) {
+          	controller.onResponse(evt.getNode(), (ControlResponse) data);
+          }
+          
         } catch (IOException e) {
           log.error("Error caught while trying to process heartbeat event", e);
         }
@@ -440,23 +517,29 @@ public class EventChannel {
     listener = new ChannelEventListener();
     consumer.registerAsyncListener(PUBLISH_EVT,   listener);
     consumer.registerAsyncListener(DISCOVER_EVT,  listener);
-    consumer.registerAsyncListener(HEARTBEAT_EVT, listener);
-    
-
 
     long heartbeatTimeout  = props.getLongProperty(Consts.MCAST_HEARTBEAT_TIMEOUT, Defaults.DEFAULT_HEARTBEAT_TIMEOUT);
     long heartbeatInterval = props.getLongProperty(Consts.MCAST_HEARTBEAT_INTERVAL, Defaults.DEFAULT_HEARTBEAT_INTERVAL);
+    long controlResponseTimeout = props.getLongProperty(
+    		Consts.MCAST_CONTROL_RESPONSE_TIMEOUT, Defaults.DEFAULT_CONTROL_RESPONSE_TIMEOUT);
+    this.controlBatchSize = props.getIntProperty(Consts.MCAST_CONTROL_BATCH_SIZE, Defaults.DEFAULT_CONTROL_BATCH_SIZE);
     
-    log.debug("Heartbeat timeout set to %s",  heartbeatTimeout);
+    log.debug("Heartbeat timeout set to %s", heartbeatTimeout);
     log.debug("Heartbeat interval set to %s", heartbeatInterval);
+    log.debug("Control response timeout set to %s", controlResponseTimeout);
+
+    ControllerConfiguration config = new ControllerConfiguration();
+    config.setHeartbeatInterval(heartbeatInterval);
+    config.setHeartbeatTimeout(heartbeatTimeout);
+    config.setResponseTimeout(controlResponseTimeout);
+    controller = new EventChannelStateController(config, new ChannelCallbackImpl());
     
-    view.setTimeout(heartbeatTimeout);
     heartbeatTimer.schedule(
         new TimerTask() {
           @Override
           public void run() {
             if(state == State.STARTED) {
-              listener.checkDeadHosts();
+              controller.checkStatus();
             }
           }
         }, 0, 

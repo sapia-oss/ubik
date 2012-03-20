@@ -18,7 +18,8 @@ import org.sapia.ubik.module.Module;
 import org.sapia.ubik.module.ModuleContext;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
-import org.sapia.ubik.rmi.server.OID;
+import org.sapia.ubik.rmi.server.oid.DefaultOID;
+import org.sapia.ubik.rmi.server.oid.OID;
 import org.sapia.ubik.rmi.server.stats.Hits;
 import org.sapia.ubik.rmi.server.stats.Stats;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
@@ -87,14 +88,14 @@ public class ClientGC implements Module, Task, ClientGCMBean {
     this.gcRefPerMin           = Stats.getInstance().getHitsBuilder(
                                    getClass(),
                                    "RefPerMin",
-                                   "The number of remote object references that are referenced per minute")
+                                   "The number of remote object that are referenced per minute")
                                    .sampleRate(gcInterval)
                                    .perMinute().build();
 
     this.gcDerefPerMin         = Stats.getInstance().getHitsBuilder(
                                    getClass(), 
                                    "DerefPerMin",
-                                   "The number of remote object references that are dereferenced per minute")
+                                   "The number of remote object that are dereferenced per minute")
                                    .sampleRate(gcInterval)
                                    .perMinute().build();
     
@@ -309,7 +310,7 @@ public class ClientGC implements Module, Task, ClientGCMBean {
         gcDerefPerMin.hit(toSend.size());
         gcConnectionsPerMin.hit();
         
-        conn.send(new CommandGc(toSend.toArray(new OID[toSend.size()]), toSend.size()));
+        conn.send(new CommandGc(toSend.toArray(new DefaultOID[toSend.size()]), toSend.size()));
         conn.receive();
         transport.getConnectionsFor(addr).release(conn);
       } catch (Throwable e) {

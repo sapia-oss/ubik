@@ -60,7 +60,7 @@ final class InMemoryDispatchChannel {
         if(registered == null) {
           broadcastDispatchers.remove(i--);
         } else if(registered.equals(dispatcher)) {
-          broadcastDispatchers.remove(i);
+          broadcastDispatchers.remove(i--);
         }
       }
     }
@@ -93,7 +93,7 @@ final class InMemoryDispatchChannel {
         if(registered == null) {
           unicastDispatchers.remove(i--);
         } else if(registered.equals(dispatcher)) {
-          unicastDispatchers.remove(i);
+          unicastDispatchers.remove(i--);
         }
       }
     }

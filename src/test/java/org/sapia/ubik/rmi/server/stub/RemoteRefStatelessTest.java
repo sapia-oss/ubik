@@ -24,7 +24,6 @@ public class RemoteRefStatelessTest {
   
   @Before
   public void setUp() throws Exception {
-    Log.setTrace();
     transport = new TestSocketServerTransportSetup();
     transport.setUp();
   }  

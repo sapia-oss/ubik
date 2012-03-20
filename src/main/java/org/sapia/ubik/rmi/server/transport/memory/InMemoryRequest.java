@@ -6,9 +6,11 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
+import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.VmId;
 import org.sapia.ubik.rmi.server.transport.MarshalStreamFactory;
 import org.sapia.ubik.rmi.server.transport.RmiObjectOutput;
+import org.sapia.ubik.util.Props;
 
 /**
  * Models an in-memory request.
@@ -18,6 +20,10 @@ import org.sapia.ubik.rmi.server.transport.RmiObjectOutput;
  */
 class InMemoryRequest {
   
+  private int              bufsz = Props.getSystemProperties().getIntProperty(
+                                			Consts.MARSHALLING_BUFSIZE, 
+                                			Consts.DEFAULT_MARSHALLING_BUFSIZE
+                                	 );
   private boolean  useMarshalling;
   private Object   data;
   private volatile InMemoryResponse response;
@@ -25,7 +31,7 @@ class InMemoryRequest {
   InMemoryRequest(boolean useMarshalling, Object data) throws IOException {
     this.useMarshalling = useMarshalling;
     if(useMarshalling) {
-      ByteArrayOutputStream byteOs    = new ByteArrayOutputStream();
+      ByteArrayOutputStream byteOs    = new ByteArrayOutputStream(bufsz);
       ObjectOutputStream    marshalOs = MarshalStreamFactory.createOutputStream(byteOs);
       ((RmiObjectOutput)marshalOs).setUp(VmId.getInstance(), InMemoryAddress.TRANSPORT_TYPE);
       marshalOs.writeObject(data);

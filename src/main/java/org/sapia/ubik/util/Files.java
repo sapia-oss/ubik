@@ -9,7 +9,7 @@ public final class Files {
   
   /**
    * This interface must be implemented by class that interact with the file system traversal
-   * method that this class provides.
+   * method that the {@link Files} class provides.
    * 
    * @author yduchesne
    *

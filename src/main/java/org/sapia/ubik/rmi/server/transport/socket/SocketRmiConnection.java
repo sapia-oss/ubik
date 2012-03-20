@@ -29,16 +29,16 @@ public class SocketRmiConnection extends SocketConnection
    * @param sock
    * @param loader
    */
-  public SocketRmiConnection(Socket sock, ClassLoader loader) {
-    super(sock, loader);
+  public SocketRmiConnection(Socket sock, ClassLoader loader, int bufsize) {
+    super(sock, loader, bufsize);
   }
 
   /**
    * Constructor for RMIConnection.
    * @param sock
    */
-  public SocketRmiConnection(Socket sock) {
-    super(sock);
+  public SocketRmiConnection(Socket sock, int bufsize) {
+    super(sock, bufsize);
   }
 
   /**

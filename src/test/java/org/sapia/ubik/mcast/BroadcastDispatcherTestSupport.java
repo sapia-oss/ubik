@@ -8,7 +8,6 @@ import java.io.IOException;
 import org.junit.Before;
 import org.junit.Test;
 import org.sapia.ubik.concurrent.BlockingRef;
-import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.memory.InMemoryUnicastDispatcher;
 
 public abstract class BroadcastDispatcherTestSupport {
@@ -27,7 +26,6 @@ public abstract class BroadcastDispatcherTestSupport {
   
   @Before
   public void setUp() throws Exception {
-    Log.setDebug();
     source               = createDispatcher(sourceConsumer    = new EventConsumer("broadcast/01"));
     domainDestination    = createDispatcher(domainConsumer    = new EventConsumer("broadcast/01")); 
     nonDomainDestination = createDispatcher(nonDomainConsumer = new EventConsumer("broadcast/02")); 

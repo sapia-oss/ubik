@@ -131,7 +131,7 @@ public class LocalContext extends ContextProxy implements java.rmi.Remote {
   /**
    * @see javax.naming.Context#getEnvironment()
    */
-  public Hashtable getEnvironment() throws NamingException {
+  public Hashtable<?,?> getEnvironment() throws NamingException {
     try {
       return super.getEnvironment();
     } catch (UndeclaredThrowableException e) {
@@ -393,7 +393,7 @@ public class LocalContext extends ContextProxy implements java.rmi.Remote {
   protected Object onBind(Name n, Object toBind) throws NamingException {
     JndiBindingInfo info = new JndiBindingInfo(url, n, domainInfo.getDomainName(), domainInfo.getMulticastAddress());
     try {
-      toBind = Hub.getModules().getServerTable().getStubProcessor().enrichForJndiBinding(toBind, info);
+      toBind = Hub.getModules().getStubProcessor().enrichForJndiBinding(toBind, info);
     } catch (RemoteException e) {
       NamingException ne = new NamingException("Could not enrich stub for binding");
       ne.setRootCause(e);

@@ -5,8 +5,11 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.io.ObjectOutputStream;
 
+import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.VmId;
+import org.sapia.ubik.util.Props;
 import org.sapia.ubik.util.Serialization;
 
 
@@ -16,6 +19,10 @@ import org.sapia.ubik.util.Serialization;
  * @author Yanick Duchesne
  */
 public class MarshalledObject implements Externalizable {
+	
+	private static int bufsize = Props.getSystemProperties().getIntProperty(
+			Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE);
+	
   private byte[] bytes;
 
   /**
@@ -70,13 +77,12 @@ public class MarshalledObject implements Externalizable {
 
   private static byte[] serialize(VmId vmid, String transportType, Object o)
     throws IOException {
-    ByteArrayOutputStream bos = new ByteArrayOutputStream();
-    MarshalOutputStream   ous = new MarshalOutputStream(bos);
-    ous.setUp(vmid, transportType);
+    ByteArrayOutputStream bos = new ByteArrayOutputStream(bufsize);
+    ObjectOutputStream    ous = MarshalStreamFactory.createOutputStream(bos);
+    ((RmiObjectOutput)ous).setUp(vmid, transportType);
     ous.writeObject(o);
     ous.flush();
     ous.close();
-
     return bos.toByteArray();
   }
 }

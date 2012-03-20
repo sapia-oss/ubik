@@ -1,7 +1,6 @@
 package org.sapia.ubik.mcast;
 
 import static org.junit.Assert.assertEquals;
-
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
@@ -29,7 +28,6 @@ public class EventChannelTest {
   
   @Test
   public void testEventChannelState() throws Exception {
-    Log.setDebug();
     source      = createEventChannel(1000, 2000);
     source.start();
     Thread.sleep(1000);
@@ -58,7 +56,7 @@ public class EventChannelTest {
   
     destination.close();
     
-    Boolean isDown = isDownRef.await(3000);
+    Boolean isDown = isDownRef.await(30000);
     assertTrue("Destination not detected as down (event channel listener not called)", isDown != null);
     assertTrue("Destination not detected as down", isDown);
   }
@@ -360,6 +358,7 @@ public class EventChannelTest {
     properties.setProperty(Consts.MCAST_ADDR_KEY, "231.175.5.5");    
     properties.setProperty(Consts.MCAST_HEARTBEAT_INTERVAL, Long.toString(heartBeatInterval));
     properties.setProperty(Consts.MCAST_HEARTBEAT_TIMEOUT, Long.toString(heartBeatTimeout));
+    properties.setProperty(Consts.MCAST_CONTROL_RESPONSE_TIMEOUT, Long.toString(heartBeatInterval));    
     properties.setProperty(Consts.BROADCAST_PROVIDER, Consts.BROADCAST_PROVIDER_MEMORY);
     properties.setProperty(Consts.UNICAST_PROVIDER, Consts.UNICAST_PROVIDER_MEMORY);
     return new EventChannel("test", new Props().addProperties(properties));
@@ -370,6 +369,7 @@ public class EventChannelTest {
     properties.setProperty(Consts.MCAST_ADDR_KEY, "231.175.5.5");
     properties.setProperty(Consts.MCAST_HEARTBEAT_INTERVAL, Long.toString(heartBeatInterval));
     properties.setProperty(Consts.MCAST_HEARTBEAT_TIMEOUT, Long.toString(heartBeatTimeout));
+    properties.setProperty(Consts.MCAST_CONTROL_RESPONSE_TIMEOUT, Long.toString(heartBeatInterval));
     properties.setProperty(Consts.BROADCAST_PROVIDER, Consts.BROADCAST_PROVIDER_MEMORY);
     properties.setProperty(Consts.UNICAST_PROVIDER, Consts.UNICAST_PROVIDER_MEMORY);
     return new EventChannel(domain, new Props().addProperties(properties));

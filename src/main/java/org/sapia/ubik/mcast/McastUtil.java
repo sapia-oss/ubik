@@ -7,11 +7,16 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
 
+import org.sapia.ubik.log.Category;
+import org.sapia.ubik.log.Log;
+
 
 /**
  * @author Yanick Duchesne
  */
 public final class McastUtil {
+	
+	private static Category log = Log.createCategory(McastUtil.class);
 
   /**
    * Private constructor.
@@ -21,8 +26,10 @@ public final class McastUtil {
   
   public static Object fromDatagram(DatagramPacket pack)
     throws IOException, ClassNotFoundException {
-    ByteArrayInputStream bis = new ByteArrayInputStream(pack.getData(),
-        pack.getOffset(), pack.getLength());
+  	
+  	log.debug("Deserializing from packet (offset=%s, length=%s)", pack.getOffset(), pack.getLength());
+  	
+    ByteArrayInputStream bis = new ByteArrayInputStream(pack.getData(), pack.getOffset(), pack.getLength());
     ObjectInputStream    ois = null;
     
     try {
@@ -40,7 +47,9 @@ public final class McastUtil {
   
   public static Object fromBytes(byte[] bytes) throws IOException, ClassNotFoundException {
     ObjectInputStream    ois = null;
-    
+
+  	log.debug("Deserializing bytes (length=%s)", bytes.length);
+
     try {
       ois = new ObjectInputStream(new ByteArrayInputStream(bytes));
       Object o = ois.readObject();
@@ -60,7 +69,9 @@ public final class McastUtil {
     ous.flush();
     ous.close();
 
-    return bos.toByteArray();
+    byte[] toReturn = bos.toByteArray();
+  	log.debug("Serializing as bytes (length=%s)", toReturn.length);
+  	return toReturn;
   }
 
   public static int getSizeInBytes(Object o) throws IOException {

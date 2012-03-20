@@ -4,6 +4,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.sapia.ubik.util.Clock;
+import org.sapia.ubik.util.Clock.SystemClock;
+
 /**
  * Calculates hits per second. 
  * 
@@ -21,6 +24,7 @@ public class HitsStatistic extends Statistic implements StatCapable {
    */
   public static class Builder {
     
+  	private Clock         clock        = SystemClock.getInstance();
     private String        source;
     private String        name;
     private String        description;
@@ -64,8 +68,13 @@ public class HitsStatistic extends Statistic implements StatCapable {
       return timeUnit(TimeUnit.DAYS);
     }        
     
+    public Builder clock(Clock clock) {
+    	this.clock = clock;
+    	return this;
+    }
+    
     public Hits build() {
-      HitsStatistic stat = new HitsStatistic(source, name, description, sampleRate, unit);
+      HitsStatistic stat = new HitsStatistic(clock, source, name, description, sampleRate, unit);
       Stats.getInstance().add(stat);
       return new Hits(stat);
     }
@@ -73,7 +82,8 @@ public class HitsStatistic extends Statistic implements StatCapable {
   }
   
   // --------------------------------------------------------------------------
-  
+
+	private Clock          clock      = SystemClock.getInstance();
   private long           sampleRate = DEFAULT_SAMPLE_RATE;
   private AtomicLong     startTime  = new AtomicLong(System.currentTimeMillis());
   private AtomicInteger  counter    = new AtomicInteger();
@@ -83,9 +93,11 @@ public class HitsStatistic extends Statistic implements StatCapable {
   /**
    * @see Statistic#Statistic(String, String, String)
    */
-  protected HitsStatistic(String source, String name, String description, long sampleRate, StatsTimeUnit unit){
+  protected HitsStatistic(Clock clock, String source, String name, String description, long sampleRate, StatsTimeUnit unit){
     super(source, name, description);
+    this.clock = clock;
     this.sampleRate = sampleRate;
+    this.startTime  = new AtomicLong(clock.currentTimeMillis());
     this.unit       = unit;
     hits = new Hits(this);
   }
@@ -93,8 +105,8 @@ public class HitsStatistic extends Statistic implements StatCapable {
   /**
    * @see Statistic#Statistic(String, String, String)
    */
-  protected HitsStatistic(String source, String name, String description, StatsTimeUnit unit){
-    this(source, name, description, DEFAULT_SAMPLE_RATE, unit);
+  protected HitsStatistic(Clock clock, String source, String name, String description, StatsTimeUnit unit){
+    this(clock, source, name, description, DEFAULT_SAMPLE_RATE, unit);
   }
 
   /**
@@ -131,8 +143,8 @@ public class HitsStatistic extends Statistic implements StatCapable {
   
   public synchronized double getStat() {
     Long start = startTime.get();
-    if(System.currentTimeMillis() - start > sampleRate){
-      double timebase = convertMillis((System.currentTimeMillis() - start));
+    if(clock.currentTimeMillis() - start > sampleRate){
+      double timebase = convertMillis((clock.currentTimeMillis() - start));
       double ratio;
       if(timebase == 0) {
         ratio = 0;
@@ -140,7 +152,7 @@ public class HitsStatistic extends Statistic implements StatCapable {
         ratio = counter.doubleValue() / timebase;
       }
       super.incrementDouble(ratio);
-      startTime.set(System.currentTimeMillis());
+      startTime.set(clock.currentTimeMillis());
       double value = super.getStat();
       counter.set(0);
       return value;
@@ -151,7 +163,7 @@ public class HitsStatistic extends Statistic implements StatCapable {
   
   protected synchronized void onPostReset() {
     counter.set(0);
-    startTime.set(System.currentTimeMillis());
+    startTime.set(clock.currentTimeMillis());
   }
   
   private double convertMillis(long delay){

@@ -11,6 +11,8 @@ import org.sapia.ubik.module.Module;
 import org.sapia.ubik.module.ModuleContext;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.NoSuchObjectException;
+import org.sapia.ubik.rmi.server.oid.DefaultOID;
+import org.sapia.ubik.rmi.server.oid.OID;
 import org.sapia.ubik.rmi.server.stats.Hits;
 import org.sapia.ubik.rmi.server.stats.Statistic;
 import org.sapia.ubik.rmi.server.stats.Stats;
@@ -69,7 +71,7 @@ public class ObjectTable implements ObjectTableMBean, Module {
   @Override
   public void init(ModuleContext context) {
     Props pu         = new Props().addProperties(System.getProperties());
-    float loadFactor = pu.getFloat(Consts.OBJECT_TABLE_LOAD_FACTOR, DEFAULT_LOAD_FACTOR);
+    float loadFactor = pu.getFloatProperty(Consts.OBJECT_TABLE_LOAD_FACTOR, DEFAULT_LOAD_FACTOR);
     int initCapacity = pu.getIntProperty(Consts.OBJECT_TABLE_INITCAPACITY, DEFAULT_INIT_CAPACITY);
     refs             = new ConcurrentHashMap<OID, Ref>(initCapacity, loadFactor);
     Stats.getInstance().add(refCount);
@@ -106,7 +108,7 @@ public class ObjectTable implements ObjectTableMBean, Module {
    * Increases the reference count of the object whose identifier
    * is passed as a parameter.
    *
-   * @param oid the {@link OID} of the object whose reference count
+   * @param oid the {@link DefaultOID} of the object whose reference count
    * should be incremented.
    */
   public synchronized void reference(OID oid){
@@ -124,7 +126,7 @@ public class ObjectTable implements ObjectTableMBean, Module {
   /**
    * Decrements the reference count of the object whose identifier is given.
    *
-   * @param oid the {@link OID} of an object whose reference count is
+   * @param oid the {@link DefaultOID} of an object whose reference count is
    * to be decremented.
    * @param decrement the value that should be substracted from the OID's reference count.
    */
@@ -150,19 +152,19 @@ public class ObjectTable implements ObjectTableMBean, Module {
   /**
    * Returns the object whose identifier is passed in.
    *
-   * @param oid the {@link OID} corresponding to the identifier of the object to return
+   * @param oid the {@link DefaultOID} corresponding to the identifier of the object to return
    * @return the {@link Object} whose identifier is passed in.
    * @throws NoSuchObjectException if no object exists for the given identifier
    */
   public Object getObjectFor(OID oid) throws NoSuchObjectException {
     objectReadPerSec.hit();
-    return getRefFor(oid).get();
+    return getRefFor(oid).getObject();
   }
   
   /**
    * Returns the reference whose identifier is passed in.
    *
-   * @param oid the {@link OID} corresponding to the identifier of the object to return
+   * @param oid the {@link DefaultOID} corresponding to the identifier of the object to return
    * @return the {@link Ref} whose identifier is passed in.
    * @throws NoSuchObjectException if no object exists for the given identifier
    */
@@ -226,7 +228,7 @@ public class ObjectTable implements ObjectTableMBean, Module {
    * Returns the reference count of the object whose identifier is given.
    *
    * @return the reference count of the object corresponding to the
-   * {@link OID} passed in.
+   * {@link DefaultOID} passed in.
    */
   public int getRefCount(OID oid) {
     Ref ref = (Ref) refs.get(oid);
@@ -242,7 +244,7 @@ public class ObjectTable implements ObjectTableMBean, Module {
    * Returns the total number of references that this instance holds.
    *
    * @return the reference count of the object corresponding to the
-   * {@link OID} passed in.
+   * {@link DefaultOID} passed in.
    */  
   public int getRefCount(){
     Ref[]   refArray    = (Ref[]) refs.values().toArray(new Ref[refs.size()]);
@@ -261,10 +263,10 @@ public class ObjectTable implements ObjectTableMBean, Module {
   }
 
   /**
-   * Resets the reference count corresponding to the given {@link OID} 
+   * Resets the reference count corresponding to the given {@link DefaultOID} 
    * to 0.
    * 
-   * @param oid an {@link OID}
+   * @param oid an {@link DefaultOID}
    */
   public synchronized void clear(OID oid) {
     Ref ref = (Ref) refs.get(oid);
@@ -277,7 +279,7 @@ public class ObjectTable implements ObjectTableMBean, Module {
   /*////////////////////////////////////////////////////////////////////
                               INNER CLASSES
   ////////////////////////////////////////////////////////////////////*/
-  protected static class Ref {
+  public static class Ref {
     AtomicInteger count = new AtomicInteger();
     Object        obj;
     OID           oid;
@@ -305,8 +307,12 @@ public class ObjectTable implements ObjectTableMBean, Module {
       return count.get();
     }
 
-    Object get() {
+    public Object getObject() {
       return obj;
+    }
+    
+    public OID getOID() {
+    	return oid;
     }
   }
 }

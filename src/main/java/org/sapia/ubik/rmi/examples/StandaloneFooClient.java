@@ -1,13 +1,10 @@
 package org.sapia.ubik.rmi.examples;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.Hub;
-import org.sapia.ubik.rmi.server.stats.CsvStatDumper;
-import org.sapia.ubik.taskman.TaskContext;
 import org.sapia.ubik.util.Localhost;
 
 public class StandaloneFooClient{
@@ -15,17 +12,12 @@ public class StandaloneFooClient{
   
   public static void main(String[] args) throws Exception{
     System.setProperty(Consts.STATS_ENABLED, "true");
-    //System.setProperty(Consts.STATS_DUMP_INTERVAL, "10");
     System.setProperty(Consts.SERVER_RESET_INTERVAL, "0");    
     //System.setProperty(Consts.CLIENT_GC_THRESHOLD, "200");
     System.setProperty(Consts.MARSHALLING, "true");    
     
     
-    TaskContext ctx = new TaskContext("CsvDumper", 1000*60*2);
-    CsvStatDumper dumper = new CsvStatDumper(new File("etc/clientDump.csv"), Hub.getModules().getStatsCollector());
-    Hub.getModules().getTaskManager().addTask(ctx, dumper);    
-    
-    List workers = new ArrayList();
+    List<Worker> workers = new ArrayList<Worker>();
     for(int i = 0; i < 50; i++){
       Foo f = (Foo)Hub.connect(Localhost.getAnyLocalAddress().getHostAddress(), 
           9090);

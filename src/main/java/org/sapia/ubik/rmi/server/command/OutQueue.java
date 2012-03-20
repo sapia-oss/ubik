@@ -4,13 +4,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
-import org.sapia.ubik.concurrent.NamedThreadFactory;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.rmi.Consts;
-import org.sapia.ubik.util.Props;
 
 
 /**
@@ -38,44 +35,21 @@ public class OutQueue extends ExecQueue<Response> {
      */
     public void onResponses(Destination destination, List<Response> responses);
   }
-
-  public static final int DEFAULT_OUTQUEUE_THREADS = 2;
   
   /**
    * Shared {@link ExecutorService} instance, used to notify {@link OutQueueListener}s on instances
    * of this class about pending responses.
    */
-  private static volatile ExecutorService notifier;  
-    
+  private ExecutorService 				notifier;  
   private Category                log          = Log.createCategory(getClass());
   private Destination             destination;
 
   private List<OutQueueListener>  listeners    = Collections.synchronizedList(new ArrayList<OutQueueListener>());
   
-  public OutQueue(Destination destination) {
+  public OutQueue(ExecutorService notifier, Destination destination) {
     this.destination = destination;
-    if(notifier == null) {
-      createNotifier();
-    }
-  }
+    this.notifier    = notifier;
   
-  private synchronized void createNotifier() {
-    if(notifier == null) {
-      notifier = Executors.newFixedThreadPool(
-                   Props.getSystemProperties().getIntProperty(
-                     Consts.SERVER_CALLBACK_OUTQUEUE_THREADS, 
-                     DEFAULT_OUTQUEUE_THREADS
-                   ), 
-                   NamedThreadFactory
-                     .createWith("ubik.rmi.callback.outqueue.thread").setDaemon(true)
-                 );
-      Runtime.getRuntime().addShutdownHook(new Thread() {
-        @Override
-        public void run() {
-          notifier.shutdown();
-        }
-      });
-    }
   }
   
   public void addQueueListener(OutQueueListener listener) {
@@ -103,16 +77,5 @@ public class OutQueue extends ExecQueue<Response> {
       }
     });
   }
-  
-  @Override
-  public synchronized void shutdown(long timeout) throws InterruptedException {
-    super.shutdown(timeout);
-    notifier.shutdown();
-  }
- 
-  public boolean isShutdown() {
-   return notifier.isShutdown(); 
-  }
- 
 
 }

@@ -86,7 +86,9 @@ public class RemoteRefEx extends RemoteRef {
       }
 
       Throwable err = (Throwable) toReturn;
-      err.fillInStackTrace();
+      try { 
+      	err.fillInStackTrace();
+      } catch (NullPointerException e) {}
       throw err;
     }
 

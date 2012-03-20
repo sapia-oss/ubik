@@ -8,6 +8,7 @@ import org.sapia.ubik.module.ModuleContext;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.ClientRuntime;
 import org.sapia.ubik.rmi.server.command.CallbackInvokeCommand;
+import org.sapia.ubik.rmi.server.command.CommandModule;
 import org.sapia.ubik.rmi.server.command.InvokeCommand;
 import org.sapia.ubik.rmi.server.command.ResponseLock;
 import org.sapia.ubik.rmi.server.command.CallbackResponseQueue;
@@ -43,7 +44,7 @@ public class RemoteInvocationStrategy implements InvocationStrategy {
   public void init(ModuleContext context) {
     timeout       = Props.getSystemProperties().getLongProperty(Consts.CLIENT_CALLBACK_TIMEOUT, DEFAULT_CALLBACK_TIMEOUT);
     clientRuntime = context.lookup(ClientRuntime.class);
-    responses     = context.lookup(CallbackResponseQueue.class);
+    responses     = context.lookup(CommandModule.class).getCallbackResponseQueue();
   }
   
   @Override

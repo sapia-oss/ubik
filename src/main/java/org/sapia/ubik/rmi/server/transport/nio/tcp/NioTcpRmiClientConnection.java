@@ -24,8 +24,6 @@ import org.sapia.ubik.util.ByteVectorOutputStream;
  */
 public class NioTcpRmiClientConnection implements RmiConnection {
   
-  static final int MAX_INCREMENT = 8000;
-  
   private Socket                sock;
   private ServerAddress         address;
   private ByteVector            vector;
@@ -40,7 +38,7 @@ public class NioTcpRmiClientConnection implements RmiConnection {
   public NioTcpRmiClientConnection(Socket sock, int bufsize) throws IOException {
     this.sock = sock;
     this.address = new NioAddress(sock.getInetAddress().getHostAddress(), sock.getPort());
-    vector = new ByteVector(bufsize, bufsize > MAX_INCREMENT ? MAX_INCREMENT : bufsize);
+    vector = new ByteVector(bufsize, bufsize);
   }
 
   /**

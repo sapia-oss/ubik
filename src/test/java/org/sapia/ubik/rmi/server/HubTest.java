@@ -12,7 +12,6 @@ import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.sapia.ubik.concurrent.BlockingRef;
-import org.sapia.ubik.log.Log;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.transport.memory.InMemoryAddress;
 import org.sapia.ubik.rmi.server.transport.memory.InMemoryTransportProvider;
@@ -36,9 +35,6 @@ public class HubTest {
   
   @Test
   public void testExportAndConnect() throws Exception {
-    
-    Log.setDebug();
-    
     Properties props = new Properties();
     props.setProperty(Consts.TRANSPORT_TYPE, InMemoryAddress.TRANSPORT_TYPE);
     

@@ -27,8 +27,8 @@ public abstract class Pool<T> {
   protected volatile long defaultAcquireTimeOut = DEFAULT_ACQUIRE_TIME_OUT;
   private   Timer         acquireTime           = Stats.getInstance().createTimer(
                                                     getClass(), 
-                                                    "ConnectionAcquireTime", 
-                                                    "Avg time for acquiring connection");
+                                                    "AcquireTime", 
+                                                    "Avg object acquisition time");
   
   public Pool() {
     this(NO_MAX);
@@ -241,7 +241,7 @@ public abstract class Pool<T> {
   /**
    * This method attempts to acquire an object from this pool. If
    * this pool is currently empty and its maximum number of created
-   * objects has been reached, then <code>null</code>. If this pool
+   * objects has been reached, then <code>null</code> is returned. If this pool
    * is currently empty but no maximum number of created objects has been 
    * defined (at construction time), then a new object will be created and
    * returned.

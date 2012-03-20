@@ -4,6 +4,7 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
@@ -20,8 +21,8 @@ import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.DomainName;
 import org.sapia.ubik.mcast.MulticastAddress;
 import org.sapia.ubik.rmi.server.Hub;
-import org.sapia.ubik.rmi.server.stub.Stub;
 import org.sapia.ubik.rmi.server.stub.StubInvocationHandler;
+import org.sapia.ubik.rmi.server.stub.Stubs;
 import org.sapia.ubik.rmi.server.stub.enrichment.StubEnrichmentStrategy.JndiBindingInfo;
 
 
@@ -59,8 +60,8 @@ public class BindingCache implements Externalizable {
       try {
         if ((ref.domainName != null) && domain.contains(ref.domainName)) {
           Object toBind;
-          if(ref.obj instanceof SoftReference<?>){
-            toBind = ((SoftReference<?>)ref.obj).get();
+          if(ref.obj instanceof Reference<?>){
+            toBind = ((Reference<?>)ref.obj).get();
           }
           else{
             toBind = ref.obj;
@@ -68,7 +69,7 @@ public class BindingCache implements Externalizable {
           if(toBind != null){
             JndiBindingInfo info = new JndiBindingInfo(baseUrl, ref.name, ref.domainName, mcastAddress);
             try {
-              toBind = Hub.getModules().getServerTable().getStubProcessor().enrichForJndiBinding(toBind, info);
+              toBind = Hub.getModules().getStubProcessor().enrichForJndiBinding(toBind, info);
               ctx.rebind(ref.name, toBind);
             } catch (RemoteException e) {
               log.error("Could not enrich stub", e);
@@ -139,7 +140,7 @@ public class BindingCache implements Externalizable {
         toWrite = obj;
       }
 
-      if (toWrite instanceof Stub && Proxy.isProxyClass(toWrite.getClass())) {
+      if (Stubs.isStub(toWrite)) {
         InvocationHandler handler = Proxy.getInvocationHandler(toWrite);
 
         if (handler instanceof StubInvocationHandler) {

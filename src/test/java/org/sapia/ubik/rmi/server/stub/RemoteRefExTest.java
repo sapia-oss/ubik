@@ -9,9 +9,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.sapia.ubik.net.TCPAddress;
 import org.sapia.ubik.rmi.server.Hub;
-import org.sapia.ubik.rmi.server.OID;
 import org.sapia.ubik.rmi.server.TestInMemoryTransportSetup;
 import org.sapia.ubik.rmi.server.TestRemoteInterface;
+import org.sapia.ubik.rmi.server.oid.DefaultOID;
 import org.sapia.ubik.rmi.server.stub.RemoteRefContext;
 import org.sapia.ubik.rmi.server.stub.RemoteRefEx;
 import org.sapia.ubik.test.TestUtils;
@@ -33,7 +33,7 @@ public class RemoteRefExTest {
   
   @Test
   public void testSerializeDeserialize() throws Exception {
-    RemoteRefContext context = new RemoteRefContext(new OID(0), new TCPAddress("localhost", 0));
+    RemoteRefContext context = new RemoteRefContext(new DefaultOID(0), new TCPAddress("localhost", 0));
     RemoteRefEx ref = new RemoteRefEx(context);
     Object proxy;
 
@@ -56,7 +56,7 @@ public class RemoteRefExTest {
     assertEquals(1, Hub.getModules().getObjectTable().getRefCount(ref.getContexts().iterator().next().getOid()));
     
     remoteProxy = transport.connect();
-    assertEquals(2, Hub.getModules().getObjectTable().getRefCount(ref.getContexts().iterator().next().getOid()));
+    assertEquals(1, Hub.getModules().getObjectTable().getRefCount(ref.getContexts().iterator().next().getOid()));
   }
 
 }

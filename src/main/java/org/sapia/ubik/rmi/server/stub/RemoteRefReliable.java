@@ -52,6 +52,7 @@ public class RemoteRefReliable extends RemoteRefEx {
       return super.invoke(obj, toCall, params);
     } catch (java.rmi.RemoteException e) {
       if (url != null) {
+      	log.info("RemoteException caught, performing failover");
         return doFailOver(obj, toCall, params, e);
       } else {
         throw e;
@@ -91,6 +92,8 @@ public class RemoteRefReliable extends RemoteRefEx {
     try {
       Object remote = ServiceLocator.lookup(url);
 
+      log.debug("Looked up remote object %s", url);
+      
       synchronized (lock) {
         log.debug("Performing failover for %s", url);
         RemoteRefContext newContext = Stubs.getStubInvocationHandler(remote).getContexts().iterator().next();

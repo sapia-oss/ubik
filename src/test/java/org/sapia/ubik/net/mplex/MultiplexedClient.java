@@ -121,7 +121,7 @@ public class MultiplexedClient {
     private SocketConnection getConnection() throws IOException {
       if (_conn == null) {
         log("Getting new connection to port 7777...");
-        _conn = new SocketConnection(new java.net.Socket("localhost", 7777));
+        _conn = new SocketConnection(new java.net.Socket("localhost", 7777), 512);
         log("Connected to " + _conn.getServerAddress());
       }
 

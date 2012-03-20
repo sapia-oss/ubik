@@ -8,7 +8,7 @@ import java.io.ObjectOutput;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.server.Hub;
-import org.sapia.ubik.rmi.server.OID;
+import org.sapia.ubik.rmi.server.oid.OID;
 
 
 /**

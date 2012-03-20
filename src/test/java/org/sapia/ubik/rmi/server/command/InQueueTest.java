@@ -30,7 +30,7 @@ public class InQueueTest {
           }
         };
       }
-    });
+    }, OutqueueManager.DEFAULT_OUTQUEUE_THREADS);
     inQueue = new InQueue(1, manager);
   }
   
@@ -44,7 +44,7 @@ public class InQueueTest {
       }
     }));
     
-    assertEquals("Expected 1 response", 1, responseRef.await(3000).size());
+    assertEquals("Expected 1 response", 1, responseRef.await(10000).size());
   }
 
 }

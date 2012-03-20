@@ -19,7 +19,8 @@ public class JBossMarshalInputStream extends JBossObjectInputStream {
     return arg;
   }
   
+  /*
   public Object readObjectOverride() throws IOException, ClassNotFoundException {
      return super.readUnshared();
-  }
+  }*/
 }

@@ -40,11 +40,11 @@ import org.sapia.ubik.rmi.naming.remote.discovery.ServiceDiscoveryEvent;
 @SuppressWarnings(value="unchecked")
 public class ReliableLocalContext extends LocalContext
   implements AsyncEventListener {
-  private static ThreadLocal currentContext = new ThreadLocal();
+  private static ThreadLocal<Context> currentContext = new ThreadLocal<Context>();
   private static String      PING           = "ubik/rmi/naming/ping/test";
   private BindingCache       bindings       = new BindingCache();
   private DiscoveryHelper    helper;
-  private List               servers        = Collections.synchronizedList(new ArrayList());
+  private List<Context>			 servers        = Collections.synchronizedList(new ArrayList<Context>());
   private ContextResolver    resolver;
 
   /**

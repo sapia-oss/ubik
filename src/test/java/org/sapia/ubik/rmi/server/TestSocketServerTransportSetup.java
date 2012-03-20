@@ -15,8 +15,6 @@ public class TestSocketServerTransportSetup {
   Context context;
   
   public void setUp() throws Exception{
-    // making sure we're shut down
-    Hub.shutdown();
     System.setProperty(Consts.ENABLE_COLOCATED_CALLS, "false");
     jndi = new EmbeddableJNDIServer("testDomain", 1099);
     jndi.start(true);
@@ -33,6 +31,11 @@ public class TestSocketServerTransportSetup {
     System.setProperty(Consts.ENABLE_COLOCATED_CALLS, "true");
     if(jndi != null) {
       jndi.stop();
+    }
+    try {
+    	context.close();
+    } catch (Exception e) {
+    	
     }
     Hub.shutdown();
   }

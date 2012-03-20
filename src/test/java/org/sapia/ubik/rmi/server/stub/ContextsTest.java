@@ -9,7 +9,7 @@ import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.sapia.ubik.rmi.server.OID;
+import org.sapia.ubik.rmi.server.oid.DefaultOID;
 import org.sapia.ubik.rmi.server.transport.memory.InMemoryAddress;
 
 public class ContextsTest {
@@ -22,7 +22,7 @@ public class ContextsTest {
     contextList = new ArrayList<RemoteRefContext>();
     contexts = new Contexts();
     for(int i = 0; i < 5; i++) {
-      RemoteRefContext ctx = new RemoteRefContext(new OID(i), new InMemoryAddress("test"));
+      RemoteRefContext ctx = new RemoteRefContext(new DefaultOID(i), new InMemoryAddress("test"));
       contextList.add(ctx);
     }
     contexts.addAll(contextList);
@@ -36,7 +36,7 @@ public class ContextsTest {
     
     List<RemoteRefContext> toAdd = new ArrayList<RemoteRefContext>();
     for(int i = 5; i < 10; i++) {
-      RemoteRefContext ctx = new RemoteRefContext(new OID(i), new InMemoryAddress("test"));
+      RemoteRefContext ctx = new RemoteRefContext(new DefaultOID(i), new InMemoryAddress("test"));
       toAdd.add(ctx);
     }
     

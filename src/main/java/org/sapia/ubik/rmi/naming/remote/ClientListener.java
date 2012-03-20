@@ -23,7 +23,7 @@ import org.sapia.ubik.net.ServerAddress;
  * this instance from the underlying event channel, which will enable/disable the notification behavior, accordingly.
  * <p>
  * A reference to an instance of this class must be kept after registration with the event channel (an event channel keeps
- * listeners in {@link SoftReference}s). Not doing so will the instance subject to garbace collection. 
+ * listeners in {@link SoftReference}s). Not doing so will subject it to garbace collection. 
  * 
  * @author Yanick Duchesne
  */

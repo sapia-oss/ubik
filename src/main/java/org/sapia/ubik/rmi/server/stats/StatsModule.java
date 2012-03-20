@@ -97,7 +97,9 @@ public class StatsModule implements Module {
   
   @Override
   public void stop() {
-    statsLog.close();
+  	if(statsLog != null) {
+  		statsLog.close();
+  	}
     Stats.getInstance().clear();
   }
 

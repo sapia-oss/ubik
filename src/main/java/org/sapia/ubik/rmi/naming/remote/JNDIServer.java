@@ -62,7 +62,7 @@ public class JNDIServer {
         EmbeddableJNDIServer server;
         if(broadcastProvider != null || unicastProvider != null) {
           EventChannel channel = new EventChannel(argsObj.domain, props);
-          server = new EmbeddableJNDIServer(channel);
+          server = new EmbeddableJNDIServer(channel, argsObj.port);
         } else {
           server = new EmbeddableJNDIServer(
                          argsObj.domain,

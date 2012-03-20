@@ -11,10 +11,12 @@ import java.net.URL;
 import java.rmi.RemoteException;
 
 import org.sapia.ubik.net.ServerAddress;
+import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.VmId;
 import org.sapia.ubik.rmi.server.transport.MarshalStreamFactory;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
 import org.sapia.ubik.rmi.server.transport.RmiObjectOutput;
+import org.sapia.ubik.util.Props;
 
 
 /**
@@ -23,15 +25,16 @@ import org.sapia.ubik.rmi.server.transport.RmiObjectOutput;
  * @author Yanick Duchesne
  */
 public class JdkRmiClientConnection implements RmiConnection {
-  private static final int    DEFAULT_BUFSZ         = 1024;
   private static final String POST_METHOD           = "POST";
   private static final String CONTENT_LENGTH_HEADER = "Content-Length";
   private HttpAddress         address;
   private URL                 url;
   private volatile boolean    closed;
   private HttpURLConnection   conn;
-  private volatile int        bufsz = DEFAULT_BUFSZ;
-
+  private int              		bufsz = Props.getSystemProperties().getIntProperty(
+                                    			Consts.MARSHALLING_BUFSIZE, 
+                                    			Consts.DEFAULT_MARSHALLING_BUFSIZE
+                                    	 );
   public JdkRmiClientConnection() {
   }
 

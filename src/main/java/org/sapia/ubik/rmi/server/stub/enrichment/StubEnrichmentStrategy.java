@@ -6,6 +6,7 @@ import javax.naming.Name;
 
 import org.sapia.ubik.mcast.DomainName;
 import org.sapia.ubik.mcast.MulticastAddress;
+import org.sapia.ubik.rmi.server.stub.StubStrategy;
 import org.sapia.ubik.util.Assertions;
 
 /**
@@ -13,7 +14,7 @@ import org.sapia.ubik.util.Assertions;
  * in Ubik's JNDI. That is: at binding time, such a strategy is invoked so that it can perform
  * stub substitution.
  */
-public interface StubEnrichmentStrategy {
+public interface StubEnrichmentStrategy extends StubStrategy {
   
   /**
    * An instance of this class holds the JNDI-related information that 

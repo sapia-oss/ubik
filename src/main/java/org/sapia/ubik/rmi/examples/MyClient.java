@@ -22,7 +22,7 @@ public class MyClient {
   public static void main(String[] args) {
     try {
       SocketConnection conn = new SocketConnection(new java.net.Socket(
-            "localhost", 6666));
+            "localhost", 6666), 512);
 
       while (true) {
         System.out.println("Sending...");

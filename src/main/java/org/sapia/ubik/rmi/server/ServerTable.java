@@ -12,6 +12,8 @@ import org.sapia.ubik.module.ModuleContext;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.gc.ServerGC;
+import org.sapia.ubik.rmi.server.oid.DefaultOID;
+import org.sapia.ubik.rmi.server.oid.OID;
 import org.sapia.ubik.rmi.server.stats.Stats;
 import org.sapia.ubik.rmi.server.stats.Timer;
 import org.sapia.ubik.rmi.server.stub.RemoteRefContext;
@@ -40,7 +42,7 @@ public class ServerTable implements Module {
   private ObjectTable               objectTable;
   private ServerGC                  gc;
   private TransportManager          transport;
-  private StubProcessor             stubProcessor   = new StubProcessor(this);
+  private StubProcessor             stubProcessor;
   private boolean                   callbackEnabled;
   private Object                    serverCreationLock = new Object();
   
@@ -56,9 +58,10 @@ public class ServerTable implements Module {
   
   @Override
   public void start(ModuleContext context) {
-    objectTable = context.lookup(ObjectTable.class);
-    gc          = context.lookup(ServerGC.class);
-    transport   = context.lookup(TransportManager.class);
+    objectTable   = context.lookup(ObjectTable.class);
+    gc            = context.lookup(ServerGC.class);
+    transport     = context.lookup(TransportManager.class);
+    stubProcessor = context.lookup(StubProcessor.class);
   }
   
   @Override
@@ -88,16 +91,9 @@ public class ServerTable implements Module {
   }
   
   /**
-   * @return this instance's {@link StubProcessor}.
-   */
-  public StubProcessor getStubProcessor() {
-    return stubProcessor;
-  }
-
-  /**
    * Returns the unique object identifier of this instance.
    *
-   * @return an {@link OID}.
+   * @return an {@link DefaultOID}.
    */
   public OID getOID(String transportType) {
     return getServerRef(transportType).getOid();
@@ -147,8 +143,8 @@ public class ServerTable implements Module {
   private Object doExportObjectAndCreateServer(Object toExport, String transportType, Properties properties) 
     throws RemoteException {
     log.info("Starting new server for transport %s, and exporting object %s", transportType, toExport);
-    OID       oid               = generateOID();
-    Server    server;
+    OID oid               = stubProcessor.createOID(toExport);
+    Server     server;
     if(properties == null) {
       server = transport.getProviderFor(transportType).newDefaultServer();
     } else {
@@ -172,7 +168,7 @@ public class ServerTable implements Module {
     
     log.info("Server already bound for transport %s, exporting object %s", transportType, toExport);
 
-    OID              oid        = generateOID();
+    OID              oid        = stubProcessor.createOID(toExport);
     RemoteRefContext refContext = new RemoteRefContext(oid, address);
     refContext.setCallback(callbackEnabled && 
                            typeCache.getAnnotationsFor(toExport.getClass()).contains(Callback.class));
@@ -234,7 +230,7 @@ public class ServerTable implements Module {
     throws RemoteException {
     remoteObjectCreation.start();
     log.info("Creating server and remote object (transport %s) : %s", transportType, toExport);
-    OID       oid                 = generateOID();
+    OID       oid                 = stubProcessor.createOID(toExport);
     Server    server              = transport.getProviderFor(transportType).newDefaultServer();
     RemoteRefContext refContext   = new RemoteRefContext(oid, server.getServerAddress());
     refContext.setCallback(callbackEnabled && 
@@ -254,7 +250,7 @@ public class ServerTable implements Module {
     throws RemoteException {
     remoteObjectCreation.start();
     log.debug("Creating remote object (transport %s): %s", transportType, toExport);
-    OID              oid          = generateOID();
+    OID              oid          = stubProcessor.createOID(toExport);
     RemoteRefContext refContext   = new RemoteRefContext(oid, address);
     refContext.setCallback(callbackEnabled && 
         typeCache.getAnnotationsFor(toExport.getClass()).contains(Callback.class));
@@ -274,8 +270,5 @@ public class ServerTable implements Module {
     return ref;
   }
 
-  static synchronized OID generateOID() {
-    return new OID(UIDGenerator.createdUID());
-  }
 
 }

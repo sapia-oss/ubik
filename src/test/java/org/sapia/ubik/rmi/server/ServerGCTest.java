@@ -9,6 +9,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.sapia.ubik.module.ModuleContainer;
 import org.sapia.ubik.rmi.server.gc.ServerGC;
+import org.sapia.ubik.rmi.server.oid.DefaultOID;
 import org.sapia.ubik.taskman.MockTaskManager;
 import org.sapia.ubik.taskman.TaskManager;
 
@@ -39,14 +40,14 @@ public class ServerGCTest {
 
   @Test
   public void testRegisterRef() throws Exception {
-    OID  oid  = new OID(1);
+    DefaultOID  oid  = new DefaultOID(1);
     VmId vmid = new VmId(1,1);
     gc.registerRef(vmid, oid, "addr_1");
     assertEquals(1, gc.getRefCount(vmid, oid));
   }
 
   public void testUnregisterRef() throws Exception {
-    OID  oid  = new OID(2);
+    DefaultOID  oid  = new DefaultOID(2);
     VmId vmid = new VmId(2,2);
     gc.clear();
     gc.registerRef(vmid, oid, "addr_2");
@@ -58,7 +59,7 @@ public class ServerGCTest {
     VmId   vm1 = new VmId(1,1);
     VmId   vm2 = new VmId(2,2);
     VmId   vm3 = new VmId(3,2);
-    OID    oid = new OID(3);
+    DefaultOID    oid = new DefaultOID(3);
     String obj = "object3";
     gc.clear();
 

@@ -1,6 +1,7 @@
 package org.sapia.ubik.rmi.server.stub.creation;
 
 import org.sapia.ubik.rmi.server.stub.StubInvocationHandler;
+import org.sapia.ubik.rmi.server.stub.StubStrategy;
 
 /**
  * Specifies stub creation behavior.
@@ -8,7 +9,7 @@ import org.sapia.ubik.rmi.server.stub.StubInvocationHandler;
  * @author yduchesne
  *
  */
-public interface StubCreationStrategy {
+public interface StubCreationStrategy extends StubStrategy {
   
   /**
    * @param exported the {@link Object} that has been exported (as a remote object).

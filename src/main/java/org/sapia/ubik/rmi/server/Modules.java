@@ -28,9 +28,10 @@ public class Modules {
   private StatelessStubTable        statelessStubTable;
   private ObjectTable               objectTable;
   private ServerTable               serverTable;
+  private StubProcessor             stubProcessor;
   private ClientRuntime             clientRuntime;
   private ServerRuntime             serverRuntime;
-  private CommandModule            callback;
+  private CommandModule            	callback;
   private InvocationDispatcher      invocationDispatcher;
   private ClientGC                  clientGC;
   private ServerGC                  serverGC;
@@ -45,6 +46,7 @@ public class Modules {
     bind(statelessStubTable   = new StatelessStubTable());
     bind(objectTable          = new ObjectTable());
     bind(serverTable          = new ServerTable());
+    bind(stubProcessor  		 	= new StubProcessor());
     bind(clientRuntime        = new ClientRuntime());
     bind(serverRuntime        = new ServerRuntime());
     bind(callback             = new CommandModule());    
@@ -103,6 +105,10 @@ public class Modules {
   
   public ServerTable getServerTable() {
     return serverTable;
+  }
+  
+  public StubProcessor getStubProcessor() {
+	  return stubProcessor;
   }
   
   public ClientRuntime getClientRuntime() {

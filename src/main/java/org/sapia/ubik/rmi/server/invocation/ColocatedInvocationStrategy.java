@@ -34,7 +34,7 @@ public class ColocatedInvocationStrategy implements InvocationStrategy {
     Object target = objectTable.getObjectFor(cmd.getOID());
     Method toCall = target.getClass().getMethod(cmd.getMethodName(), cmd.getParameterTypes());
 
-    log.info("Performing colocated direct call ==> invoking %s on %s (%s)",  toCall.getName(),  cmd.getOID(), target);
+    log.info("Performing colocated call ==> invoking %s on %s (%s)",  toCall.getName(),  cmd.getOID(), target);
     
     // SERVER pre invoke event dispatch
     ServerPreInvokeEvent serverPreEvent = new ServerPreInvokeEvent(cmd, target);

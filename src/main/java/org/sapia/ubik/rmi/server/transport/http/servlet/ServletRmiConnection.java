@@ -11,10 +11,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.sapia.ubik.net.ServerAddress;
+import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.VmId;
 import org.sapia.ubik.rmi.server.transport.MarshalStreamFactory;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
 import org.sapia.ubik.rmi.server.transport.RmiObjectOutput;
+import org.sapia.ubik.util.Props;
 
 
 /**
@@ -28,9 +30,10 @@ import org.sapia.ubik.rmi.server.transport.RmiObjectOutput;
  */
 public class ServletRmiConnection implements RmiConnection {
   
-  static final int            DEFAULT_BUFSZ = 1024;
-  
-  private volatile int        bufsz   = DEFAULT_BUFSZ;
+  private int              	  bufsz = Props.getSystemProperties().getIntProperty(
+                                			Consts.MARSHALLING_BUFSIZE, 
+                                			Consts.DEFAULT_MARSHALLING_BUFSIZE
+                                	 );  
   private HttpServletRequest  req;
   private HttpServletResponse res;
   private ServletAddress      address;

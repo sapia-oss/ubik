@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.naming.NameNotFoundException;
 import javax.naming.NamingException;
 
+import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.Uri;
 import org.sapia.ubik.net.UriSyntaxException;
 import org.sapia.ubik.rmi.naming.remote.proxy.JNDIHandler;
@@ -143,8 +144,23 @@ public class ServiceLocator {
       throw new NamingException("no handler found for: " + uri.getScheme());
     }
 
-    return handler.handleLookup(uri.getHost(), uri.getPort(),
+    if(Log.isDebug()) {
+    	Log.debug(ServiceLocator.class, "Delegating lookup to handler: " + handler);
+    }
+    
+    try {
+    Object obj = handler.handleLookup(uri.getHost(), uri.getPort(),
       uri.getQueryString().getPath(), uri.getQueryString().getParameters());
+    
+    if(Log.isDebug()) {
+    	Log.debug(ServiceLocator.class, "Lookup finished");
+    }
+    
+    return obj;
+    } catch (Throwable t) {
+    	t.printStackTrace();
+    	throw new NamingException("Could not lookup");
+    }
   }
 
   /**

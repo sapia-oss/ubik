@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.net.Socket;
 import java.rmi.server.RMIClientSocketFactory;
 
+import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.util.Props;
+
 /**
  * Implements a factory of {@link SocketConnection} instances. An instance of this class
  * may be provided with a {@link RMIClientSocketFactory}, which will then be internally
@@ -13,8 +16,13 @@ import java.rmi.server.RMIClientSocketFactory;
  */
 public class SocketConnectionFactory implements ConnectionFactory {
   
+	
   private static final int NO_SO_TIMEOUT = 0;
   
+	private int 										 bufsize = Props.getSystemProperties().getIntProperty(
+																						 		Consts.MARSHALLING_BUFSIZE, 
+                                              	Consts.DEFAULT_MARSHALLING_BUFSIZE
+                                             );  
   protected ClassLoader            loader;
   private   int                    soTimeout;
   protected RMIClientSocketFactory clientSocketFactory;
@@ -81,7 +89,7 @@ public class SocketConnectionFactory implements ConnectionFactory {
     if(soTimeout > NO_SO_TIMEOUT) {
       socket.setSoTimeout(soTimeout);
     }      
-    return new SocketConnection(socket, loader);    
+    return new SocketConnection(socket, loader, bufsize);    
   }
   
   /**
@@ -91,6 +99,6 @@ public class SocketConnectionFactory implements ConnectionFactory {
    * @return a {@link SocketConnection}.
    */
   public Connection newConnection(Socket sock) throws IOException {
-    return new SocketConnection(sock, loader);
+    return new SocketConnection(sock, loader, bufsize);
   }
 }

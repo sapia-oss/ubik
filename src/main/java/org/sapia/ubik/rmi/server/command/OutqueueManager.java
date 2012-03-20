@@ -4,7 +4,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
+import org.sapia.ubik.concurrent.NamedThreadFactory;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.rmi.server.command.OutQueue.OutQueueListener;
@@ -18,17 +21,25 @@ import org.sapia.ubik.rmi.server.transport.TransportManager;
  *
  */
 public class OutqueueManager  {
+	
+  public static final int DEFAULT_OUTQUEUE_THREADS = 2;
   
   private Category                   log          = Log.createCategory(getClass());
   private Map<Destination, OutQueue> queuesByHost = new ConcurrentHashMap<Destination, OutQueue>();
   private ResponseSenderFactory      senders;
+  
+  /**
+   * Shared {@link ExecutorService} instance, used to notify {@link OutQueueListener}s on {@link OutQueue} instances
+   * about pending responses.
+   */
+  private static ExecutorService notifier;  
 
   /**
    * @param transports the {@link TransportManager}.
    * @param queue the {@link CallbackResponseQueue}.
    */
-  OutqueueManager(TransportManager transports, CallbackResponseQueue queue) {
-    this(new ResponseSenderFactoryImpl(transports, queue));
+  OutqueueManager(TransportManager transports, CallbackResponseQueue queue, int maxOutqueueThreads) {
+    this(new ResponseSenderFactoryImpl(transports, queue), maxOutqueueThreads);
   }
   
   /**
@@ -37,8 +48,14 @@ public class OutqueueManager  {
    * 
    * @param senderFactory a {@link ResponseSenderFactory}.
    */
-  public OutqueueManager(ResponseSenderFactory senderFactory) {
+  public OutqueueManager(ResponseSenderFactory senderFactory, int maxOutqueueThreads) {
     senders = senderFactory;
+    notifier = Executors.newFixedThreadPool(
+    		maxOutqueueThreads, 
+        NamedThreadFactory
+          .createWith("ubik.rmi.callback.outqueue.thread").setDaemon(true)
+      );
+    
   }
   
   /**
@@ -74,12 +91,13 @@ public class OutqueueManager  {
         break;
       }
     }
+    notifier.shutdown();
   }
   
   private synchronized OutQueue createOutQueueFor(Destination dest) {
     OutQueue out = queuesByHost.get(dest);
     if (out == null) {
-      out = new OutQueue(dest);
+      out = new OutQueue(notifier, dest);
       out.addQueueListener(new OutQueueListener() {
         @Override
         public void onResponses(final Destination destination, final List<Response> responses) {

@@ -2,6 +2,8 @@ package org.sapia.ubik.util;
 
 import java.util.concurrent.TimeUnit;
 
+import org.sapia.ubik.util.Clock.SystemClock;
+
 /**
  * Measures a duration.
  * 
@@ -10,13 +12,23 @@ import java.util.concurrent.TimeUnit;
  */
 public class Chrono {
   
-  private long start = System.currentTimeMillis();
+	private Clock clock = SystemClock.getInstance();
+  private long start;
+  
+  public Chrono(Clock clock) {
+  	this.clock = clock;
+  	this.start = clock.currentTimeMillis();
+  }
+  
+  public Chrono() {
+  	this.start = clock.currentTimeMillis();
+  }  
   
   /**
    * @return the number of millis elapsed since this instance's start.
    */
   public long getElapsed() { 
-    return System.currentTimeMillis() - start;
+    return clock.currentTimeMillis() - start;
   }
   
   /**
@@ -25,7 +37,7 @@ public class Chrono {
    * given time unit.
    */
   public long getElapsed(TimeUnit unit) {
-    return TimeUnit.MILLISECONDS.convert(getElapsed(), unit);
+    return TimeUnit.SECONDS.convert(getElapsed(), TimeUnit.MILLISECONDS);
   }
 
 }

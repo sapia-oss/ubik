@@ -17,14 +17,14 @@ public class Props {
   /**
    * The {@link List} of {@link PropertyLookup} instances to look up.
    */
-  private List<PropertyLookup> _props = new ArrayList<PropertyLookup>();
+  private List<PropertyLookup> props = new ArrayList<PropertyLookup>();
   
   /**
    * @param props some {@link Properties} to look up.
    * @return this instance.
    */
   public Props addProperties(Properties props) {
-    _props.add(new PropertiesPropertyLookup(props));
+    this.props.add(new PropertiesPropertyLookup(props));
     return this;
   }
   
@@ -33,7 +33,7 @@ public class Props {
    * @return this instance.
    */
   public Props addMap(Map<String, String> props) {
-    _props.add(new MapPropertyLookup(props));
+    this.props.add(new MapPropertyLookup(props));
     return this;
   }  
   
@@ -51,7 +51,7 @@ public class Props {
    * @return this instance.
    */
   public Props addPropertyLookup(PropertyLookup lookup) {
-    _props.add(lookup);
+    props.add(lookup);
     return this;
   }
   
@@ -116,7 +116,7 @@ public class Props {
    */
   public float getFloatProperty(String key) throws NumberFormatException, IllegalArgumentException{
     String val = lookup(key, true);
-    return Long.parseLong(val);
+    return Float.parseFloat(val);
   }
   
   /**
@@ -126,12 +126,12 @@ public class Props {
    * @return the property value.
    * @throws NumberFormatException if the value could not be converted to a float.
      */  
-  public float getFloat(String key, float defaultValue) throws NumberFormatException{
+  public float getFloatProperty(String key, float defaultValue) throws NumberFormatException{
     String val = lookup(key, false);
     if(val == null){
       return defaultValue;
     }
-    return Long.parseLong(val);
+    return Float.parseFloat(val);
   }  
     
   
@@ -231,8 +231,8 @@ public class Props {
   private String lookup(String key, boolean throwExcIfNotFound){
     PropertyLookup current;
     String val;
-    for(int i = 0; i < _props.size(); i++){
-      current = _props.get(i);
+    for(int i = 0; i < props.size(); i++){
+      current = props.get(i);
       val = current.getProperty(key);
       if(val != null){
         return val;

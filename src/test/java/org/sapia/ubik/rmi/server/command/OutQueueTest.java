@@ -3,6 +3,8 @@ package org.sapia.ubik.rmi.server.command;
 import static org.junit.Assert.*;
 
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -19,7 +21,7 @@ public class OutQueueTest {
   @Before
   public void setUp() throws Exception {
     destination = new Destination(new InMemoryAddress("test"), VmId.getInstance());
-    queue = new OutQueue(destination);
+    queue = new OutQueue(Executors.newFixedThreadPool(2), destination);
 
   }
 
@@ -36,8 +38,12 @@ public class OutQueueTest {
     });
     
     Response res = new Response(1, "response");
-    queue.add(res);
-    assertEquals(1, responseListRef.await(3000).size());
+    try {
+      queue.add(res);
+      assertEquals(1, responseListRef.await(3000).size());
+    } catch (RejectedExecutionException e) {
+    	// noop
+    }
   }
   
   @Test

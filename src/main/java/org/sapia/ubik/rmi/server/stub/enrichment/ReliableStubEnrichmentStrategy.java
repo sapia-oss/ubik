@@ -5,6 +5,7 @@ import java.rmi.RemoteException;
 import java.util.Map;
 import java.util.Properties;
 
+import org.sapia.ubik.module.ModuleContext;
 import org.sapia.ubik.net.Uri;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.naming.remote.RemoteInitialContextFactory;
@@ -25,8 +26,15 @@ import org.sapia.ubik.rmi.server.stub.Stubs;
  */
 public class ReliableStubEnrichmentStrategy implements StubEnrichmentStrategy {
 
-  private ServerTable serverTable = Hub.getModules().getServerTable();
-  private ObjectTable objectTable = Hub.getModules().getObjectTable();
+  private ServerTable serverTable;
+  private ObjectTable objectTable;
+  
+  
+  @Override
+  public void init(ModuleContext context) {
+    serverTable = context.lookup(ServerTable.class);
+    objectTable = context.lookup(ObjectTable.class);
+  }
   
   @Override
   public boolean apply(Object stub, JndiBindingInfo info) {
@@ -86,8 +94,8 @@ public class ReliableStubEnrichmentStrategy implements StubEnrichmentStrategy {
     }
 
     RemoteRefContext  context  = handler.getContexts().iterator().next();
-    RemoteRefReliable reliable = new RemoteRefReliable(context, newUriObj.toString());
-    Object            exported = objectTable.getRefFor(context.getOid());
+    RemoteRefReliable reliable = createRemoteRef(context, newUriObj.toString());
+    Object            exported = objectTable.getRefFor(context.getOid()).getObject();
 
     Object enriched = Proxy.newProxyInstance(
         Thread.currentThread().getContextClassLoader(),
@@ -96,5 +104,9 @@ public class ReliableStubEnrichmentStrategy implements StubEnrichmentStrategy {
     );
     
     return enriched;
+  }
+  
+  protected RemoteRefReliable createRemoteRef(RemoteRefContext context, String uri) {
+  	return new RemoteRefReliable(context, uri);
   }
 }

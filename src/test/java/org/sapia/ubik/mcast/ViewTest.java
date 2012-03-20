@@ -14,7 +14,7 @@ public class ViewTest {
   
   @Before
   public void setUp() throws Exception {
-    view = new View(1000);
+    view = new View();
   }
 
   @Test
@@ -60,8 +60,7 @@ public class ViewTest {
     };
     view.addEventChannelStateListener(listener);
     view.heartbeat(new TCPAddress("test", 1), "123");
-    Thread.sleep(1200);
-    view.removeDeadHosts();
+    view.removeDeadNode("123");
     assertTrue("EventChannelStateListener onDown() not called", onDown.get());
   }
 

@@ -11,9 +11,10 @@ import org.sapia.ubik.log.Log;
 import org.sapia.ubik.module.Module;
 import org.sapia.ubik.module.ModuleContext;
 import org.sapia.ubik.rmi.Consts;
-import org.sapia.ubik.rmi.server.OID;
 import org.sapia.ubik.rmi.server.ObjectTable;
 import org.sapia.ubik.rmi.server.VmId;
+import org.sapia.ubik.rmi.server.oid.DefaultOID;
+import org.sapia.ubik.rmi.server.oid.OID;
 import org.sapia.ubik.rmi.server.stats.Hits;
 import org.sapia.ubik.rmi.server.stats.Stats;
 import org.sapia.ubik.taskman.Task;
@@ -93,7 +94,7 @@ public class ServerGC implements Module, Task, ServerGCMBean {
    * identifier.
    *
    * @param id a {@link VmId}.
-   * @param oid an {@link OID}.
+   * @param oid an {@link DefaultOID}.
    *
    * @return a reference count, as an <code>int</code>.
    */
@@ -106,7 +107,7 @@ public class ServerGC implements Module, Task, ServerGCMBean {
    * by the client whose host corresponds to the passed in {@link VmId}.
    * 
    * @param id a {@link VmId}
-   * @param oid an {@link OID}
+   * @param oid an {@link DefaultOID}
    */
   public int getSpecificCount(VmId id, OID oid) {
     return getClientInfo(id).getSpecificCount(oid);
@@ -163,7 +164,7 @@ public class ServerGC implements Module, Task, ServerGCMBean {
    *
    * @param id the {@link VmId} of the client from which the
    * dereferencing call comes.
-   * @param oid the {@link OID} to dereference.
+   * @param oid the {@link DefaultOID} to dereference.
    */
   public void dereference(VmId id, OID oid) {
     gcDerefPerMin.hit();

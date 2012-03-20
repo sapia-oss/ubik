@@ -61,7 +61,7 @@ public class Hub {
   private static Statistic       freeMemory    = new FreeMemStatistic();
   private static Statistic       maxMemory     = new MaxMemStatistic();
   private static Statistic       totalMemory   = new TotalMemStatistic();  
-
+  
   /**
    * "Exports" the passed in object as a remote RMI server: this method
    * internally starts an RMI server that listens on a random port and implements
@@ -306,6 +306,9 @@ public class Hub {
   // this method is not synchronized, since the container's start() method is itself
   // synchronized
   private static void checkStarted() {
+  	if(container == null) {
+  		System.out.println("2. **************************************************************");
+  	}
     if(!container.isStarted()) {
       
       container.init();

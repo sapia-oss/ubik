@@ -1,84 +1,84 @@
 package org.sapia.ubik.rmi.server.stats;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 
+import java.util.concurrent.TimeUnit;
+
+import org.junit.Before;
 import org.junit.Test;
-import org.sapia.ubik.rmi.server.stats.HitsStatistic;
-import org.sapia.ubik.rmi.server.stats.StatsTimeUnit;
-import org.sapia.ubik.util.Delay;
+import org.sapia.ubik.util.Clock;
 
 public class HitStatisticTest {
+	
+	private Clock.MutableClock clock;
+	
+	@Before
+	public void setUp() {
+		clock = new Clock.MutableClock();
+	}
   
   @Test
   public void testGetHitsPerSecond() throws Exception{
     
-    HitsStatistic hits = new HitsStatistic("test source", "test", "this is a test", StatsTimeUnit.SECONDS);
+    HitsStatistic hits = new HitsStatistic(clock, "test source", "test", "this is a test", StatsTimeUnit.SECONDS);
     hits.setEnabled(true);
     
-    Delay delay = new Delay(5000);
-    while(!delay.isOver()){
-      hits.getHits().hit();
-      Thread.sleep(250);
+    for(int i = 0; i < 100; i++) {
+    	hits.getHits().hit();
     }
     
+    clock.increaseCurrentTimeMillis(4000);
     double hitsValue = hits.getHits().getValue();
-   
-    assertTrue("Expected value between 3 and 5, got " + hitsValue, between(hitsValue, 3, 5));
+    
+    assertEquals("Expected 25 hits per second, got " + hitsValue, 25, hitsValue, 0);
   }
   
   @Test
   public void testGetHitsPerMinute() throws Exception{
     
-    HitsStatistic hits = new HitsStatistic("test source", "test", "this is a test", StatsTimeUnit.MINUTES);
+    HitsStatistic hits = new HitsStatistic(clock, "test source", "test", "this is a test", StatsTimeUnit.MINUTES);
     hits.setEnabled(true);
     
-    Delay delay = new Delay(5000);
-    while(!delay.isOver()){
-      hits.getHits().hit();
-      Thread.sleep(250);
+    for(int i = 0; i < 100; i++) {
+    	hits.getHits().hit(10);
     }
-    
+
+    clock.increaseCurrentTimeMillis(2000);
     double hitsValue = hits.getHits().getValue();
    
-    assertTrue("Expected value between 239 and 241, got " + hitsValue, between(hitsValue, 239, 241));
+    assertEquals("Expected 30,000 hits per minute, got " + hitsValue, 30000, hitsValue, 0);
   }
   
   @Test
   public void testGetHitsPerHour() throws Exception{
     
-    HitsStatistic hits = new HitsStatistic("test source", "test", "this is a test", StatsTimeUnit.HOURS);
+    HitsStatistic hits = new HitsStatistic(clock, "test source", "test", "this is a test", StatsTimeUnit.HOURS);
     hits.setEnabled(true);
     
-    Delay delay = new Delay(5000);
-    while(!delay.isOver()){
-      hits.getHits().hit();
-      Thread.sleep(250);
+    for(int i = 0; i < 100; i++) {
+    	hits.getHits().hit(10);
     }
-    
+
+    clock.increaseCurrentTimeMillis(60000);    
     double hitsValue = hits.getHits().getValue();
-   
-    assertTrue("Expected value between 14300 and 14500, got " + hitsValue, between(hitsValue, 14300, 14500));
+    
+    assertEquals("Expected 60,000 hits per hour, got " + hitsValue, 60000, hitsValue, 0);    
   }
   
   @Test
   public void testGetHitsPerDay() throws Exception{
     
-    HitsStatistic hits = new HitsStatistic("test source", "test", "this is a test", StatsTimeUnit.DAYS);
+    HitsStatistic hits = new HitsStatistic(clock, "test source", "test", "this is a test", StatsTimeUnit.DAYS);
     hits.setEnabled(true);
     
-    Delay delay = new Delay(5000);
-    while(!delay.isOver()){
-      hits.getHits().hit();
-      Thread.sleep(250);
+    for(int i = 0; i < 100; i++) {
+    	hits.getHits().hit(10);
     }
-    
-    double hitsValue = hits.getHits().getValue();
+
+    clock.increaseCurrentTimeMillis(TimeUnit.MILLISECONDS.convert(4, TimeUnit.HOURS));    
+    double hitsValue = hits.getHits().getValue();    
    
-    assertTrue("Expected value between 345000 and 346000, got " + hitsValue, between(hitsValue, 345000, 346000));
-  }
-  
-  private boolean between(double given, double low, double high) {
-    return given > low && given < high;
+    assertEquals("Expected 6,000 hits per day, got " + hitsValue, 6000, hitsValue, 0);
   }
 
 }

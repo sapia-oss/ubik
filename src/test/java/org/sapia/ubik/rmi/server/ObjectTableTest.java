@@ -9,6 +9,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.sapia.ubik.module.TestModuleContext;
 import org.sapia.ubik.rmi.NoSuchObjectException;
+import org.sapia.ubik.rmi.server.oid.DefaultOID;
 import org.sapia.ubik.rmi.server.stats.Stats;
 
 public class ObjectTableTest {
@@ -26,7 +27,7 @@ public class ObjectTableTest {
 
   @Test
   public void testRegister() throws Exception {
-    OID oid = new OID(1);
+    DefaultOID oid = new DefaultOID(1);
     objectTable.clear(oid);
     objectTable.register(oid, "anObject");
     assertEquals(1, objectTable.getRefCount(oid));
@@ -34,7 +35,7 @@ public class ObjectTableTest {
 
   @Test
   public void testRemove() {
-    OID oid = new OID(1);
+    DefaultOID oid = new DefaultOID(1);
     objectTable.clear(oid);
     objectTable.register(oid, "anObject");
     assertTrue(objectTable.remove("anObject"));
@@ -42,7 +43,7 @@ public class ObjectTableTest {
   
   @Test
   public void testRemoveForClassLoader() {
-    OID oid = new OID(1);
+    DefaultOID oid = new DefaultOID(1);
     objectTable.clear(oid);
 
     TestRemoteObj obj = new TestRemoteObj();
@@ -52,7 +53,7 @@ public class ObjectTableTest {
 
   @Test
   public void testUnreferenced() {
-    OID oid = new OID(1);
+    DefaultOID oid = new DefaultOID(1);
     objectTable.clear(oid);
 
     TestRemoteObj obj = new TestRemoteObj();
@@ -63,7 +64,7 @@ public class ObjectTableTest {
   
   @Test
   public void testUnregister() throws Exception {
-    OID oid = new OID(1);
+    DefaultOID oid = new DefaultOID(1);
     objectTable.clear(oid);
     objectTable.register(oid, "anObject");
     assertEquals(objectTable.getRefCount(oid), 1);
@@ -77,7 +78,7 @@ public class ObjectTableTest {
 
   @Test
   public void testGetObjectFor() throws Exception {
-    OID oid = new OID(1);
+    DefaultOID oid = new DefaultOID(1);
     objectTable.clear(oid);
 
     try {

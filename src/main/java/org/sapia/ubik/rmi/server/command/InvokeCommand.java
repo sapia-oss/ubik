@@ -10,11 +10,12 @@ import java.lang.reflect.Method;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.Hub;
-import org.sapia.ubik.rmi.server.OID;
 import org.sapia.ubik.rmi.server.ShutdownException;
 import org.sapia.ubik.rmi.server.VmId;
 import org.sapia.ubik.rmi.server.invocation.ServerPostInvokeEvent;
 import org.sapia.ubik.rmi.server.invocation.ServerPreInvokeEvent;
+import org.sapia.ubik.rmi.server.oid.DefaultOID;
+import org.sapia.ubik.rmi.server.oid.OID;
 import org.sapia.ubik.rmi.server.transport.ClassDescriptor;
 import org.sapia.ubik.rmi.server.transport.MarshalledObject;
 
@@ -46,7 +47,7 @@ public class InvokeCommand extends RMICommand implements Externalizable {
   }
 
   /**
-   * @param oid the {@link OID} (unique object identifier) of the
+   * @param oid the {@link DefaultOID} (unique object identifier) of the
    * object on which the method call should be performed.
    * @param methodName the name of the method to call.
    * @param params the method's parameters.
@@ -71,7 +72,7 @@ public class InvokeCommand extends RMICommand implements Externalizable {
    * Returns the object identifier of the object on which
    * the invocation will be performed.
    *
-   * @return an {@link OID}.
+   * @return an {@link DefaultOID}.
    */
   public OID getOID() {
     return oid;
