@@ -12,10 +12,8 @@ import org.sapia.ubik.rmi.server.ServerTable;
 import org.sapia.ubik.rmi.server.Stateless;
 import org.sapia.ubik.rmi.server.oid.OID;
 import org.sapia.ubik.rmi.server.stub.RemoteRefStateless;
-import org.sapia.ubik.rmi.server.stub.Stub;
 import org.sapia.ubik.rmi.server.stub.StubInvocationHandler;
 import org.sapia.ubik.rmi.server.stub.Stubs;
-import org.sapia.ubik.rmi.server.stub.enrichment.StubEnrichmentStrategy.JndiBindingInfo;
 
 /**
  * Converts a stub to a stateless one (see {@link RemoteRefStateless}). 

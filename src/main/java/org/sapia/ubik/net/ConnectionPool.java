@@ -1,5 +1,7 @@
 package org.sapia.ubik.net;
 
+import org.sapia.ubik.log.Category;
+import org.sapia.ubik.log.Log;
 import org.sapia.ubik.util.Assertions;
 import org.sapia.ubik.util.pool.Pool;
 
@@ -20,7 +22,7 @@ public class ConnectionPool extends Pool<Connection>{
     private int                    port;
     private int                    maxSize            = ConnectionPool.NO_MAX;
     private ConnectionFactory      connectionFactory;
-
+    
     public Builder host(String host) {
       this.host = host;
       return this;
@@ -42,15 +44,15 @@ public class ConnectionPool extends Pool<Connection>{
     }
     
     public ConnectionPool build() {
-      if(connectionFactory == null) {
-        connectionFactory = new SocketConnectionFactory();
-      }
+      Assertions.notNull(connectionFactory, "Connection factory not set");    	
       Assertions.notNull(host, "Host not set");
       return new ConnectionPool(host, port, connectionFactory, maxSize);
     }
   }
   
   // --------------------------------------------------------------------------
+  
+  private Category 						log 			= Log.createCategory(getClass());
 
   protected ConnectionFactory factory;
   protected String            host;
@@ -77,7 +79,10 @@ public class ConnectionPool extends Pool<Connection>{
 
   @Override
   protected final Connection doNewObject() throws Exception {
-    return factory.newConnection(host, port);
+  	log.debug("Trying to create connection to %s:%s", host, port);
+    Connection connection = factory.newConnection(host, port);
+  	log.debug("Created connection to %s:%s", host, port);    
+    return connection;
   }
   
   @Override

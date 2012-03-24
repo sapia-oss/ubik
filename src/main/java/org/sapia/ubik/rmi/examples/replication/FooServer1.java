@@ -8,6 +8,7 @@ import org.sapia.ubik.rmi.examples.Foo;
 import org.sapia.ubik.rmi.examples.UbikFoo;
 import org.sapia.ubik.rmi.replication.ReplicationEvent;
 import org.sapia.ubik.rmi.server.Hub;
+import org.sapia.ubik.rmi.server.transport.socket.TcpSocketAddress;
 
 
 /**
@@ -23,8 +24,8 @@ public class FooServer1 {
   }
 
   public static void main(String[] args) {
-    TCPAddress addr    = new TCPAddress("localhost", 9000);
-    TCPAddress sibling = new TCPAddress("localhost", 9001);
+    TCPAddress addr    = new TcpSocketAddress("localhost", 9000);
+    TCPAddress sibling = new TcpSocketAddress("localhost", 9001);
 
     Set        siblings = new HashSet();
     siblings.add(sibling);

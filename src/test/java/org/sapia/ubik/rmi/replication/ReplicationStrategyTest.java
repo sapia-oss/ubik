@@ -18,10 +18,10 @@ public class ReplicationStrategyTest extends TestCase {
   }
 
   public void testNoTargets() {
-    TCPAddress addr1 = new TCPAddress("test", 1);
-    TCPAddress addr2 = new TCPAddress("test", 2);
-    TCPAddress addr3 = new TCPAddress("test", 3);
-    TCPAddress addr4 = new TCPAddress("test", 4);
+    TCPAddress addr1 = new TCPAddress("test", "test", 1);
+    TCPAddress addr2 = new TCPAddress("test", "test", 2);
+    TCPAddress addr3 = new TCPAddress("test", "test", 3);
+    TCPAddress addr4 = new TCPAddress("test", "test", 4);
 
     Set<ServerAddress> siblings = new HashSet<ServerAddress>();
     siblings.add(addr1);
@@ -55,10 +55,10 @@ public class ReplicationStrategyTest extends TestCase {
   }
 
   public void testTargets() {
-    TCPAddress addr1 = new TCPAddress("test", 1);
-    TCPAddress addr2 = new TCPAddress("test", 2);
-    TCPAddress addr3 = new TCPAddress("test", 3);
-    TCPAddress addr4 = new TCPAddress("test", 4);
+    TCPAddress addr1 = new TCPAddress("test", "test", 1);
+    TCPAddress addr2 = new TCPAddress("test", "test", 2);
+    TCPAddress addr3 = new TCPAddress("test", "test", 3);
+    TCPAddress addr4 = new TCPAddress("test", "test", 4);
 
     Set<ServerAddress> siblings = new HashSet<ServerAddress>();
     siblings.add(addr1);

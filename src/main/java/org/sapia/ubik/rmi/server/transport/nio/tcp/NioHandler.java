@@ -29,6 +29,7 @@ public class NioHandler extends IoHandlerAdapter{
   }
   
   public void sessionCreated(IoSession sess) throws Exception {
+    log.debug("Connection created from %s", sess.getRemoteAddress());
   }  
 
   public void exceptionCaught(IoSession sess, Throwable err) throws Exception {

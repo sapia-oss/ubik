@@ -42,7 +42,7 @@ public class NioTcpTransportProvider implements TransportProvider {
   /**
    * Constant corresponding to this provider class' transport type.
    */
-  public static final String TRANSPORT_TYPE = NioAddress.TRANSPORT_TYPE;
+  public static final String TRANSPORT_TYPE = "tcp/nio";
 
   /**
    * This constant corresponds to the
@@ -56,20 +56,10 @@ public class NioTcpTransportProvider implements TransportProvider {
    */
   public static final String PORT           = "ubik.rmi.transport.nio-tcp.port";
   
-  /**
-   * This constant corresponds to the
-   * <code>ubik.rmi.transport.nio-tcp.buffer-size</code> system property.
-   */
-  public static final String BUFFER_SIZE    = "ubik.rmi.transport.nio-tcp.buffer-size";
-  
-  /**
-   * The default buffer size (4000).
-   * 
-   * @see #BUFFER_SIZE
-   */
-  public static final int DEFAULT_BUFFER_SIZE = 4000;
-  
-  private int bufsize = DEFAULT_BUFFER_SIZE;
+  private int bufsize = Props.getSystemProperties().getIntProperty(
+  												Consts.MARSHALLING_BUFSIZE, 
+  												Consts.DEFAULT_MARSHALLING_BUFSIZE
+  											);
   
   private volatile boolean started;
   
@@ -133,22 +123,25 @@ public class NioTcpTransportProvider implements TransportProvider {
       }
     }
     
-    bufsize = pu.getIntProperty(BUFFER_SIZE, DEFAULT_BUFFER_SIZE);
+    int specificBufsize = pu.getIntProperty(Consts.MARSHALLING_BUFSIZE, this.bufsize);
     int maxThreads = pu.getIntProperty(Consts.SERVER_MAX_THREADS, 0);
     
     try{
-      NioServer server = new NioServer(addr, bufsize, maxThreads);
+      NioServer server = new NioServer(addr, specificBufsize, maxThreads);
       return server;
     }catch(IOException e){
       throw new RemoteException("Could not create server", e);
     } finally {
       if(!started) {
-        started = true;
-        if(!started) 
-        Hub.getModules().getTaskManager().addTask(
-            new TaskContext(NioTcpClientConnectionPool.class.getName(), PoolCleaner.INTERVAL),
-            new PoolCleaner(pools)
-        );
+      	synchronized(this) {
+          if(!started) {
+            started = true;
+            Hub.getModules().getTaskManager().addTask(
+                new TaskContext(NioTcpClientConnectionPool.class.getName(), PoolCleaner.INTERVAL),
+                new PoolCleaner(pools)
+            );
+          }
+      	}
       }
     }
   }

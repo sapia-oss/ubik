@@ -23,16 +23,19 @@ import org.sapia.ubik.util.pool.PooledObjectCreationException;
  */
 public class SocketClientConnectionPool implements Connections {
   
-  ConnectionPool pool;
+	private String         transportType;
+  private ConnectionPool pool;
 
   /**
    * @param host the host of the server to connect to.
    * @param port the port of the server.
    */
   public SocketClientConnectionPool(
+  		String transportType,
       String host, 
       int port,
       ConnectionFactory connectionFactory) {
+  	this.transportType = transportType;
     pool = new ConnectionPool.Builder()
              .host(host)
              .port(port)
@@ -73,7 +76,7 @@ public class SocketClientConnectionPool implements Connections {
    * @see org.sapia.ubik.rmi.server.transport.Connections#getTransportType()
    */
   public String getTransportType() {
-    return SocketTransportProvider.TRANSPORT_TYPE;
+    return transportType;
   }
 
   ConnectionPool internalPool() {

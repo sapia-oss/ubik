@@ -28,7 +28,7 @@ public class ViewTest {
       }
     };
     view.addEventChannelStateListener(listener);
-    view.addHost(new TCPAddress("test", 1), "123");
+    view.addHost(new TCPAddress("test", "test", 1), "123");
     assertTrue("EventChannelStateListener onUp() not called", onUp.get());
   }
   
@@ -43,7 +43,7 @@ public class ViewTest {
       }
     };
     view.addEventChannelStateListener(listener);
-    view.heartbeat(new TCPAddress("test", 1), "123");
+    view.heartbeat(new TCPAddress("test", "test", 1), "123");
     assertTrue("EventChannelStateListener onUp() not called", onUp.get());
   }
   
@@ -59,7 +59,7 @@ public class ViewTest {
       }
     };
     view.addEventChannelStateListener(listener);
-    view.heartbeat(new TCPAddress("test", 1), "123");
+    view.heartbeat(new TCPAddress("test", "test", 1), "123");
     view.removeDeadNode("123");
     assertTrue("EventChannelStateListener onDown() not called", onDown.get());
   }
@@ -78,14 +78,14 @@ public class ViewTest {
     };
     view.addEventChannelStateListener(listener);
     assertTrue("EventChannelStateListener was not removed", view.removeEventChannelStateListener(listener));
-    view.heartbeat(new TCPAddress("test", 1), "123");
+    view.heartbeat(new TCPAddress("test", "test", 1), "123");
     assertTrue("Removed EventChannelStateListener should not have been notified", !notified.get());
 
   }
 
   @Test
   public void testGetAddressFor() {
-    TCPAddress addr = new TCPAddress("test", 1);
+    TCPAddress addr = new TCPAddress("test", "test", 1);
     view.addHost(addr, "123");
     assertEquals("No address found for node", addr, view.getAddressFor("123"));
   }

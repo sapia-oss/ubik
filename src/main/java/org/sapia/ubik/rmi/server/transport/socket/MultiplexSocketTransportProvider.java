@@ -36,6 +36,11 @@ import org.sapia.ubik.util.Props;
 public class MultiplexSocketTransportProvider extends SocketTransportProvider {
   
   /**
+   * Constant corresponding to this provider class' transport type.
+   */
+  public static final String MPLEX_TRANSPORT_TYPE   = "tcp/mplex";
+	
+  /**
    * The number of backlog connections.
    */
   private static final int   BACKLOG          = 50;
@@ -58,7 +63,7 @@ public class MultiplexSocketTransportProvider extends SocketTransportProvider {
    * Creates a new MultiplexSocketTransportProvider instance.
    */
   public MultiplexSocketTransportProvider() {
-    super();
+    super(MPLEX_TRANSPORT_TYPE);
   }
 
   /**
@@ -101,9 +106,9 @@ public class MultiplexSocketTransportProvider extends SocketTransportProvider {
   }
   
   protected Server doNewServer(int port, Props props) throws RemoteException{
-    int             maxThreads    = 0;
-    int             acceptorCount = 0;
-    int             selectorCount = 0;
+    int maxThreads;
+    int acceptorCount;
+    int selectorCount;
         
     maxThreads = props.getIntProperty(Consts.SERVER_MAX_THREADS, ThreadPool.NO_MAX);   
     if (maxThreads == 0) {
@@ -135,10 +140,11 @@ public class MultiplexSocketTransportProvider extends SocketTransportProvider {
     try {
       log.debug("Creating server on %s:%s", bindAddress, port);
       
-      return SocketRmiServer.Builder.create()
+      return SocketRmiServer.Builder.create(MPLEX_TRANSPORT_TYPE)
         .setBindAddress(bindAddress)
         .setPort(port)
         .setMaxThreads(maxThreads)
+        .setConnectionFactory(new MultiplexSocketConnectionFactory())
         .setServerSocketFactory(new MultiPlexServerSocketFactory(acceptorCount, selectorCount))
         .setResetInterval(props.getLongProperty(Consts.SERVER_RESET_INTERVAL, DEFAULT_RESET_INTERVAL))
         .build();

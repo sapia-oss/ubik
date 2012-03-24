@@ -45,7 +45,7 @@ import org.sapia.ubik.util.Localhost;
 public class TCPUnicastDispatcher implements UnicastDispatcher {
   
   public static final String MAX_CONNECTIONS = "ubik.rmi.naming.unicast.tcp.max-connections";
-
+  public static final String TRANSPORT_TYPE  = "tcp/unicast";
 
   public static final int DEFAULT_MAX_CONNECTIONS_PER_HOST   = 3;
   
@@ -136,7 +136,7 @@ public class TCPUnicastDispatcher implements UnicastDispatcher {
   @Override
   public ServerAddress getAddress() throws IllegalStateException {
     if (address == null) {
-      address = new TCPAddress(socketServer.getAddress(), socketServer.getPort());
+      address = new TCPAddress(TRANSPORT_TYPE, socketServer.getAddress(), socketServer.getPort());
       log.debug("Server address for node %s: %s", consumer.getNode(), address);      
     }
     return address;
@@ -278,11 +278,11 @@ public class TCPUnicastDispatcher implements UnicastDispatcher {
   static class TCPUnicastSocketServer extends SocketServer {
     
     public TCPUnicastSocketServer(String bindAddress, EventConsumer consumer) throws IOException{
-      super(bindAddress, 0, new TCPUnicastThreadPool(consumer), new DefaultUbikServerSocketFactory());
+      super(TRANSPORT_TYPE, bindAddress, 0, new TCPUnicastThreadPool(consumer), new DefaultUbikServerSocketFactory());
     }
     
     public TCPUnicastSocketServer(EventConsumer consumer) throws IOException{
-      super(0, new TCPUnicastThreadPool(consumer), new DefaultUbikServerSocketFactory());
+      super(TRANSPORT_TYPE, 0, new TCPUnicastThreadPool(consumer), new DefaultUbikServerSocketFactory());
     }    
   }
 
@@ -359,7 +359,7 @@ public class TCPUnicastDispatcher implements UnicastDispatcher {
       ConnectionPool pool = pools.get(addr);
       if(pool == null) {
         TCPAddress tcpAddr = (TCPAddress) addr;
-        SocketConnectionFactory sockets = new SocketConnectionFactory();
+        SocketConnectionFactory sockets = new SocketConnectionFactory(TRANSPORT_TYPE);
         sockets.setSoTimeout(responseTimeout);
         pool = new ConnectionPool.Builder()
                  .host(tcpAddr.getHost())

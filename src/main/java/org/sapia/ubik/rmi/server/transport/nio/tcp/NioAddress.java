@@ -14,8 +14,6 @@ public class NioAddress extends TCPAddress {
 
   static final long          serialVersionUID = 1L;
 
-  public static final String TRANSPORT_TYPE   = "tcp/nio";
-
   public NioAddress() {
     super();
   }
@@ -27,13 +25,13 @@ public class NioAddress extends TCPAddress {
    *          a port
    */
   public NioAddress(String host, int port) {
-    super(host, port);
+    super(NioTcpTransportProvider.TRANSPORT_TYPE, host, port);
   }
 
   /**
    * @see org.sapia.ubik.net.TCPAddress#getTransportType()
    */
   public String getTransportType() {
-    return TRANSPORT_TYPE;
+    return NioTcpTransportProvider.TRANSPORT_TYPE;
   }
 }

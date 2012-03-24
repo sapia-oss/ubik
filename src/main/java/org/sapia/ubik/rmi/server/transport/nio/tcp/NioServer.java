@@ -9,6 +9,7 @@ import java.util.concurrent.Executors;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.filter.executor.ExecutorFilter;
 import org.apache.mina.transport.socket.nio.SocketAcceptor;
+import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.TcpPortSelector;
@@ -21,6 +22,8 @@ import org.sapia.ubik.rmi.server.Server;
  * 
  */
 class NioServer implements Server{
+	
+	private Category          log = Log.createCategory(getClass());
 
   private SocketAcceptor    acceptor;
   private InetSocketAddress inetAddr;
@@ -43,26 +46,29 @@ class NioServer implements Server{
    * @throws IOException if a problem occurs while creating this instance.
    */
   NioServer(InetSocketAddress inetAddr, int bufsize, int maxThreads) throws IOException {
-    this.acceptor = new SocketAcceptor();
+    this.acceptor = new SocketAcceptor(Runtime.getRuntime().availableProcessors() + 1, Executors.newCachedThreadPool());
     if(maxThreads <= 0){
-      Log.debug(getClass(), "Using a cached thread pool (no max threads)");
+      log.info("Using a cached thread pool (no max threads)");
       this.executor = Executors.newCachedThreadPool();
     }
     else{
-      Log.debug(getClass(), "Using maximum number of threads: " + maxThreads);      
+      log.info("Using maximum number of threads: ", maxThreads);      
       this.executor = Executors.newFixedThreadPool(maxThreads);
     }
     acceptor.getFilterChain().addLast("protocol", new ProtocolCodecFilter(new NioCodecFactory()));
     acceptor.getFilterChain().addLast("threads", new ExecutorFilter(executor));    
     
     if(inetAddr.getPort() != 0){
+    	log.info("Using port %s", inetAddr.getPort());
       this.inetAddr = inetAddr;  
     }
     else{
       int randomPort = new TcpPortSelector().select(inetAddr.getAddress().getHostAddress());
-      inetAddr = new InetSocketAddress(inetAddr.getAddress().getHostAddress(), randomPort);
+    	log.info("Using random port %s", inetAddr.getPort());      
+      this.inetAddr = new InetSocketAddress(inetAddr.getAddress().getHostAddress(), randomPort);
     }
-    addr = new NioAddress(inetAddr.getAddress().getHostAddress(), inetAddr.getPort());
+    log.info("Binding to address: %s", this.inetAddr);      
+    addr = new NioAddress(this.inetAddr.getAddress().getHostAddress(), this.inetAddr.getPort());
     handler = new NioHandler(addr);    
   }
   
@@ -85,6 +91,7 @@ class NioServer implements Server{
    */
   public void start() throws RemoteException {
     try {
+    	log.info("Starting NIO TCP server on %s", inetAddr);
       acceptor.bind(inetAddr, handler);
     } catch(IOException e) {
       throw new RemoteException("Could not start acceptor", e);

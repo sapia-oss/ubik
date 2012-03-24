@@ -85,11 +85,7 @@ public class RemoteRefEx extends RemoteRef {
         onShutdown(proxy, toCall, params);
       }
 
-      Throwable err = (Throwable) toReturn;
-      try { 
-      	err.fillInStackTrace();
-      } catch (NullPointerException e) {}
-      throw err;
+      throw (Throwable) toReturn;
     }
 
     return toReturn;

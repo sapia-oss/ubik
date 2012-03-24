@@ -1,5 +1,12 @@
 package org.sapia.ubik.rmi.server.transport.nio.tcp;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.ObjectOutputStream;
+
+import org.apache.mina.common.ByteBuffer;
+import org.sapia.ubik.rmi.server.transport.MarshalStreamFactory;
+
 import junit.framework.TestCase;
 
 public class NioRequestDecoderTest extends TestCase {
@@ -13,12 +20,12 @@ public class NioRequestDecoderTest extends TestCase {
   }
 
   public void testDoDecode() throws Exception{
-    /*
+    
     String toEncode = "THIS_IS_A_TEST";
     ByteArrayOutputStream bos = new ByteArrayOutputStream();
-    MarshalOutputStream mos = new MarshalOutputStream(bos);
-    mos.writeObject(toEncode);
-    mos.flush();
+    ObjectOutputStream oos = MarshalStreamFactory.createOutputStream(bos);
+    oos.writeObject(toEncode);
+    oos.flush();
 
     byte[] bytes = bos.toByteArray();
     bos = new ByteArrayOutputStream();
@@ -36,7 +43,6 @@ public class NioRequestDecoderTest extends TestCase {
     buf.flip();
     decoder.doDecode(null, buf, out);
     assertEquals(toEncode, out.msg);
-    */
   }
 
 }

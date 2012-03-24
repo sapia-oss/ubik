@@ -34,6 +34,7 @@ public class SocketRmiServer extends SocketServer implements Server, SocketRmiSe
    */
   public static class Builder {
     
+  	private String                  transportType;
     private String                  bindAddress;
     private int                     port;
     private long                    resetInterval;
@@ -41,6 +42,10 @@ public class SocketRmiServer extends SocketServer implements Server, SocketRmiSe
     private ThreadPool<Request>     threadPool;
     private int                     maxThreads            = ThreadPool.NO_MAX;
     private UbikServerSocketFactory serverSocketFactory;
+    
+    private Builder(String transportType) {
+    	this.transportType = transportType;
+    }
  
     /**
      * @param bindAddress the address to which the server should be bound (if not specified, the {@link Localhost} class 
@@ -116,8 +121,8 @@ public class SocketRmiServer extends SocketServer implements Server, SocketRmiSe
     
     protected Builder() {}
    
-    public static Builder create() {
-      return new Builder();
+    public static Builder create(String transportType) {
+      return new Builder(transportType);
     }
     
     // ------------------------------------------------------------------------
@@ -134,7 +139,7 @@ public class SocketRmiServer extends SocketServer implements Server, SocketRmiSe
       }
       
       if(connectionFactory == null) {
-        SocketRmiConnectionFactory rmiConnectionFactory = new SocketRmiConnectionFactory();
+        SocketRmiConnectionFactory rmiConnectionFactory = new SocketRmiConnectionFactory(transportType);
         rmiConnectionFactory.setResetInterval(resetInterval);
         connectionFactory = rmiConnectionFactory;
       }
@@ -144,9 +149,9 @@ public class SocketRmiServer extends SocketServer implements Server, SocketRmiSe
       }
       
       if(bindAddress != null) {
-        return new SocketRmiServer(bindAddress, port, threadPool, connectionFactory, serverSocketFactory);
+        return new SocketRmiServer(transportType, bindAddress, port, threadPool, connectionFactory, serverSocketFactory);
       } else {
-        return new SocketRmiServer(port, threadPool, connectionFactory, serverSocketFactory);
+        return new SocketRmiServer(transportType, port, threadPool, connectionFactory, serverSocketFactory);
       }
       
     }
@@ -160,6 +165,7 @@ public class SocketRmiServer extends SocketServer implements Server, SocketRmiSe
   private Thread        serverThread;
   
   protected SocketRmiServer(
+  		String transportType,
       String bindAddr, 
       int port, 
       ThreadPool<Request> tp,
@@ -170,10 +176,11 @@ public class SocketRmiServer extends SocketServer implements Server, SocketRmiSe
           connectionFactory,
           tp, 
           serverSocketFactory);
-    addr = new TCPAddress(getAddress(), getPort());            
+    addr = new TCPAddress(transportType, getAddress(), getPort());            
   }
     
-    protected SocketRmiServer(
+  protected SocketRmiServer(
+    		String transportType,
         int port, 
         ThreadPool<Request> tp,
         SocketConnectionFactory connectionFactory,
@@ -182,7 +189,7 @@ public class SocketRmiServer extends SocketServer implements Server, SocketRmiSe
             connectionFactory,
             tp, 
             serverSocketFactory);
-    addr = new TCPAddress(getAddress(), getPort());            
+    addr = new TCPAddress(transportType, getAddress(), getPort());            
   }
   
   /**

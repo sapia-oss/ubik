@@ -34,6 +34,7 @@ public class TransportManager implements Module {
   
   @Override
   public void init(ModuleContext context) {
+  	registerProvider(new SocketTransportProvider());
     registerProvider(new MultiplexSocketTransportProvider());
     registerProvider(new NioTcpTransportProvider());
     registerProvider(new InMemoryTransportProvider());
@@ -136,7 +137,7 @@ public class TransportManager implements Module {
    * @return the {@link SocketTransportProvider}.
    */
   public SocketTransportProvider getDefaultProvider() {
-    return (SocketTransportProvider) providers.get(SocketTransportProvider.TRANSPORT_TYPE);
+    return (SocketTransportProvider) providers.get(MultiplexSocketTransportProvider.MPLEX_TRANSPORT_TYPE);
   }
 
   /**

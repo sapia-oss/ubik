@@ -142,26 +142,6 @@ public class View {
     }
   }
 
-  /**
-   * Removes the "dead" (timed out) hosts from this instance.
-   */
-  /*void removeDeadHosts() {
-    
-    List<NodeInfo> deadNodes = new ArrayList<NodeInfo>(nodeToNodeInfo.size() / 2);
-  
-    for(NodeInfo node : nodeToNodeInfo.values()){
-      if (node.isTimeoutReached(timeout)) {
-        deadNodes.add(node);
-      }
-    }
-  
-    for(NodeInfo dead: deadNodes){
-      log.debug("Removing dead host %s", dead.node);
-      nodeToNodeInfo.remove(dead.node);
-      notifyListeners(new EventChannelEvent(dead.node, dead.addr), false);
-    }
-  }*/
-  
   void removeDeadNode(String node) {
   	NodeInfo removed = nodeToNodeInfo.remove(node);
   	if(removed != null) {
@@ -198,17 +178,12 @@ public class View {
     
     private ServerAddress addr;
     private String        node;
-    private long          updateTime = System.currentTimeMillis();
 
     private NodeInfo(ServerAddress addr, String node) {
       this.addr   = addr;
       this.node   = node;
     }
     
-    private boolean isTimeoutReached(long timeout) {
-      return System.currentTimeMillis() - updateTime > timeout;
-    }
-
     public boolean equals(Object obj) {
       if (obj instanceof NodeInfo) {
         NodeInfo inf = (NodeInfo) obj;

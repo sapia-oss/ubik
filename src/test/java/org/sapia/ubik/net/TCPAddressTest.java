@@ -10,8 +10,8 @@ public class TCPAddressTest {
   
   @Test
   public void testEquals() {
-    TCPAddress addr1 = new TCPAddress("localhost", 2222);
-    TCPAddress addr2 = new TCPAddress("localhost", 2223);
+    TCPAddress addr1 = new TCPAddress("test", "localhost", 2222);
+    TCPAddress addr2 = new TCPAddress("test", "localhost", 2223);
 
     assertTrue(addr1.equals(addr1));
     assertTrue(!addr1.equals(addr2));
@@ -19,8 +19,8 @@ public class TCPAddressTest {
 
   @Test
   public void testSet() {
-    TCPAddress addr1 = new TCPAddress("localhost", 2222);
-    TCPAddress addr2 = new TCPAddress("localhost", 2223);
+    TCPAddress addr1 = new TCPAddress("test", "localhost", 2222);
+    TCPAddress addr2 = new TCPAddress("test", "localhost", 2223);
     Set<TCPAddress> set1  = new HashSet<TCPAddress>();
     Set<TCPAddress> set2  = new HashSet<TCPAddress>();
 

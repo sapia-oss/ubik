@@ -127,7 +127,7 @@ public class StubProcessorTest {
 		};
 		
 		processor.insertHandlerCreationStrategy(stra);
-		RemoteRefContext 			ctx 		= new RemoteRefContext(new DefaultOID(), new TCPAddress("test", 0));
+		RemoteRefContext 			ctx 		= new RemoteRefContext(new DefaultOID(), new TCPAddress("test",  "test", 0));
 		StubInvocationHandler handler = processor.createInvocationHandlerFor(new Object(), ctx);
 		
 		assertTrue("Expected TestStubInvocationHandler", handler instanceof TestStubInvocationHandler);
@@ -176,7 +176,7 @@ public class StubProcessorTest {
 		processor.insertStubCreationStrategy(stra);
 		
 		Object 						exported 		= new Object();
-		RemoteRefContext 	ctx 		 		= new RemoteRefContext(new DefaultOID(), new TCPAddress("test", 0));
+		RemoteRefContext 	ctx 		 		= new RemoteRefContext(new DefaultOID(), new TCPAddress("test", "test", 0));
 		moduleContext.lookup(ObjectTable.class).register(ctx.getOid(), exported);
 		Object 						stub 		 	  = processor.createStubFor(exported, processor.createInvocationHandlerFor(exported, ctx));
 		JndiBindingInfo   bindingInfo = new JndiBindingInfo(
@@ -216,7 +216,7 @@ public class StubProcessorTest {
 		processor.insertStubCreationStrategy(stra);
 		
 		Object 						exported 		= new Object();
-		RemoteRefContext 	ctx 		 		= new RemoteRefContext(new DefaultOID(), new TCPAddress("test", 0));
+		RemoteRefContext 	ctx 		 		= new RemoteRefContext(new DefaultOID(), new TCPAddress("test", "test", 0));
 		moduleContext.lookup(ObjectTable.class).register(ctx.getOid(), exported);
 		Object 						stub 		 	  = processor.createStubFor(exported, processor.createInvocationHandlerFor(exported, ctx));
 		JndiBindingInfo   bindingInfo = new JndiBindingInfo(

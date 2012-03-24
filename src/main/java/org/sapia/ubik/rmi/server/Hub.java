@@ -26,7 +26,7 @@ import org.sapia.ubik.rmi.server.transport.socket.SocketTransportProvider;
  */
 public class Hub {
   
-  public static final String DEFAULT_TRANSPORT_TYPE = SocketTransportProvider.TRANSPORT_TYPE;
+  public static final String DEFAULT_TRANSPORT_TYPE = MultiplexSocketTransportProvider.MPLEX_TRANSPORT_TYPE;
   
   private static final long DEFAULT_SHUTDOWN_TIMEOUT = 5000;
   
@@ -177,7 +177,7 @@ public class Hub {
    */
   public static Object connect(String host, int port) throws RemoteException {
     checkStarted();    
-    return connect(new TCPAddress(host, port));
+    return connect(new TCPAddress(DEFAULT_TRANSPORT_TYPE, host, port));
   }
 
   /**

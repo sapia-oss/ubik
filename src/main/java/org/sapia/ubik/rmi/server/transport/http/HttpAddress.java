@@ -22,13 +22,12 @@ public class HttpAddress extends TCPAddress {
   }
 
   public HttpAddress(Uri uri) {
-    super(uri.getHost(), uri.getPort());
-    transportType   = HttpConsts.DEFAULT_HTTP_TRANSPORT_TYPE;
-    this.uri             = uri.toString();
+    this(HttpConsts.DEFAULT_HTTP_TRANSPORT_TYPE, uri);
   }
 
   protected HttpAddress(String transportType, Uri uri) {
-    this(uri);
+    super(transportType, uri.getHost(), uri.getPort());
+    this.uri = uri.toString();
     this.transportType = transportType;
   }
 

@@ -9,8 +9,7 @@ import org.apache.mina.filter.codec.CumulativeProtocolDecoder;
 import org.apache.mina.filter.codec.ProtocolDecoderOutput;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.transport.MarshalStreamFactory;
-import org.sapia.ubik.util.ByteVector;
-import org.sapia.ubik.util.ByteVectorInputStream;
+import org.sapia.ubik.util.ByteBufferInputStream;
 import org.sapia.ubik.util.Props;
 
 /**
@@ -20,51 +19,113 @@ import org.sapia.ubik.util.Props;
  *
  */
 public class NioRequestDecoder extends CumulativeProtocolDecoder{
+	
+	
+  // ==========================================================================
+	// inner classes
+	
+	private enum DecodingStatus {
+		INITIAL,
+		HEADER_RECEIVED,
+		PAYLOAD_RECEIVED,
+		PROCESSED,
+	}
   
-  private static int bufsz = Props.getSystemProperties().getIntProperty(
+  // --------------------------------------------------------------------------
+	
+	private static class DecoderState {
+		private DecodingStatus 		status = DecodingStatus.INITIAL;
+  	private int        				payloadSize;
+  	private ByteBuffer 			  incoming;
+  	private ObjectInputStream stream;
+  	
+    private DecoderState() throws IOException {
+    	incoming = ByteBuffer.allocate(BUFSIZE);
+    	incoming.setAutoExpand(true);
+    }
+    
+    private void reset() {
+    	status = DecodingStatus.INITIAL;
+    	incoming.clear();
+    }
+    
+    private void headerReceived(int payloadSize) {
+    	this.payloadSize = payloadSize;
+    	status = DecodingStatus.HEADER_RECEIVED;
+    }
+    
+    private void payloadReceived() {
+    	status = DecodingStatus.PAYLOAD_RECEIVED;
+    }
+
+    private void processed() {
+    	status = DecodingStatus.PROCESSED;
+    }    
+    
+    private ObjectInputStream getObjectInputStream() throws IOException {
+    	if(stream == null) {
+    		stream = MarshalStreamFactory.createInputStream(new ByteBufferInputStream(incoming));
+    	}
+    	return stream;
+    }
+    
+  }  
+  
+  // ==========================================================================
+	// class variables
+
+	private static int BUFSIZE = Props.getSystemProperties().getIntProperty(
                           			Consts.MARSHALLING_BUFSIZE, 
                           			Consts.DEFAULT_MARSHALLING_BUFSIZE
                           	 );
   
   private static final String DECODER_STATE = "DECODER_STATE";  
   
-  static class DecoderState {
-    
-    ByteVector         vector;
-    ObjectInputStream  ois;
-    
-    public DecoderState() throws IOException {
-      this.vector = new ByteVector(bufsz, bufsz);
-      ois = MarshalStreamFactory.createInputStream(new ByteVectorInputStream(vector));
-    }
-    
-  }  
+  
+  // ==========================================================================
+	// methods
   
   protected boolean doDecode(IoSession sess, ByteBuffer buf, ProtocolDecoderOutput output) throws Exception {
     
     if(buf.prefixedDataAvailable(NioCodecFactory.PREFIX_LEN)){
-      int length   = buf.getInt();
-      byte[] bytes = new byte[length];
-      buf.get(bytes);
-      
-      DecoderState ds = (DecoderState)sess.getAttribute(DECODER_STATE);
+      DecoderState ds = (DecoderState) sess.getAttribute(DECODER_STATE);
       if(ds == null){
         ds = new DecoderState();
         sess.setAttribute(DECODER_STATE, ds);
       } 
-        
-      ds.vector.clear(false);
-      ds.vector.write(bytes);
-      ds.vector.reset();
-        
-      output.write(ds.ois.readObject());
-      return true;
+
+      switch (ds.status) {
+      	case PROCESSED:
+      		 ds.reset();
+        case INITIAL:
+           ds.headerReceived(buf.getInt());
+        case HEADER_RECEIVED:
+          if(buf.remaining() >= ds.payloadSize) {
+            byte[] payload = new byte[ds.payloadSize];
+            buf.get(payload);
+            ds.payloadReceived();
+          	ds.incoming.put(payload);
+          	ds.incoming.flip();
+          	output.write(ds.getObjectInputStream().readObject());
+          	ds.processed();
+          	return true;
+          }
+        default: // can only be PAYLOAD_RECEIVED
+        	return true;
+      }
     }
     else{
       return false;
     }
   }
   
-  
+  @Override
+  public void dispose(IoSession sess) throws Exception {
+    super.dispose(sess);
+    DecoderState ds = (DecoderState) sess.getAttribute(DECODER_STATE);
+    if(ds != null){
+    	ds.incoming.release();
+    }    
+  }
 
 }

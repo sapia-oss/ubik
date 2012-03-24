@@ -33,7 +33,7 @@ public class RemoteRefExTest {
   
   @Test
   public void testSerializeDeserialize() throws Exception {
-    RemoteRefContext context = new RemoteRefContext(new DefaultOID(0), new TCPAddress("localhost", 0));
+    RemoteRefContext context = new RemoteRefContext(new DefaultOID(0), new TCPAddress("test", "localhost", 0));
     RemoteRefEx ref = new RemoteRefEx(context);
     Object proxy;
 

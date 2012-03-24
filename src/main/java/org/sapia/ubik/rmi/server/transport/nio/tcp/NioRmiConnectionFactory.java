@@ -14,6 +14,7 @@ public class NioRmiConnectionFactory extends SocketConnectionFactory {
   private int bufsize;
   
   public NioRmiConnectionFactory(int bufsize) {
+  	super(NioTcpTransportProvider.TRANSPORT_TYPE);
     this.bufsize = bufsize;
   }
 

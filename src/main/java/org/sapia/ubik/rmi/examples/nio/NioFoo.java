@@ -15,7 +15,7 @@ public class NioFoo {
       //Log.setDebug();
       Properties props = new Properties();
       props.setProperty(Consts.TRANSPORT_TYPE,
-        NioAddress.TRANSPORT_TYPE);
+        NioTcpTransportProvider.TRANSPORT_TYPE);
       props.setProperty(NioTcpTransportProvider.PORT, "6060");
       props.setProperty(Consts.SERVER_MAX_THREADS, "10");      
       

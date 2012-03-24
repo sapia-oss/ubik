@@ -22,16 +22,18 @@ public class SocketConnectionFactory implements ConnectionFactory {
 	private int 										 bufsize = Props.getSystemProperties().getIntProperty(
 																						 		Consts.MARSHALLING_BUFSIZE, 
                                               	Consts.DEFAULT_MARSHALLING_BUFSIZE
-                                             );  
-  protected ClassLoader            loader;
+                                             ); 
+	
+	protected String                 transportType;
+	protected ClassLoader            loader;
   private   int                    soTimeout;
   protected RMIClientSocketFactory clientSocketFactory;
 
   /**
    * Creates an instance of this class with the current thread's {@link ClassLoader}.
    */
-  public SocketConnectionFactory() {
-    this(Thread.currentThread().getContextClassLoader());
+  public SocketConnectionFactory(String transportType) {
+    this(transportType, new DefaultRMIClientSocketFactory(), Thread.currentThread().getContextClassLoader());
   }
 
   /**
@@ -40,9 +42,8 @@ public class SocketConnectionFactory implements ConnectionFactory {
    * 
    * @param client a {@link RMIClientSocketFactory}.
    */
-  public SocketConnectionFactory(RMIClientSocketFactory client) {
-    this(Thread.currentThread().getContextClassLoader());
-    clientSocketFactory = client;
+  public SocketConnectionFactory(String transportType, RMIClientSocketFactory client) {
+    this(transportType, client, Thread.currentThread().getContextClassLoader());
   }
 
   /**
@@ -52,8 +53,9 @@ public class SocketConnectionFactory implements ConnectionFactory {
    * @param client a {@link RMIClientSocketFactory}
    * @param loader a {@link ClassLoader}
    */
-  public SocketConnectionFactory(RMIClientSocketFactory client, ClassLoader loader) {
+  public SocketConnectionFactory(String transportType, RMIClientSocketFactory client, ClassLoader loader) {
     this(loader);
+    this.transportType  = transportType;
     clientSocketFactory = client;
   }
 
@@ -89,7 +91,7 @@ public class SocketConnectionFactory implements ConnectionFactory {
     if(soTimeout > NO_SO_TIMEOUT) {
       socket.setSoTimeout(soTimeout);
     }      
-    return new SocketConnection(socket, loader, bufsize);    
+    return new SocketConnection(transportType, socket, loader, bufsize);    
   }
   
   /**
@@ -99,6 +101,11 @@ public class SocketConnectionFactory implements ConnectionFactory {
    * @return a {@link SocketConnection}.
    */
   public Connection newConnection(Socket sock) throws IOException {
-    return new SocketConnection(sock, loader, bufsize);
+    return new SocketConnection(transportType, sock, loader, bufsize);
+  }
+  
+  @Override
+  public String getTransportType() {
+    return transportType;
   }
 }

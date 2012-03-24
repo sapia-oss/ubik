@@ -37,10 +37,11 @@ public abstract class SocketServer implements Runnable {
    * @throws java.io.IOException if an IO problem occurs construction this instance.
    */
   protected SocketServer(
+  		String transportType,
       int port, 
       ThreadPool<Request> tp,
       UbikServerSocketFactory socketFactory) throws java.io.IOException {
-    this(port, new SocketConnectionFactory(), tp, socketFactory);
+    this(port, new SocketConnectionFactory(transportType), tp, socketFactory);
   }
 
   /**
@@ -52,11 +53,12 @@ public abstract class SocketServer implements Runnable {
    * @throws java.io.IOException if an IO problem occurs construction this instance.
    */
   protected SocketServer(
+  		String transportType,
       String bindAddr, 
       int port, 
       ThreadPool<Request> tp,
       UbikServerSocketFactory socketFactory) throws java.io.IOException {
-    this(bindAddr, port, new SocketConnectionFactory(), tp, socketFactory);
+    this(bindAddr, port, new SocketConnectionFactory(transportType), tp, socketFactory);
   }
 
   /**
@@ -104,9 +106,9 @@ public abstract class SocketServer implements Runnable {
    * @param server
    * @throws IOException
    */
-  protected SocketServer(ThreadPool<Request> tp, ServerSocket server)
+  protected SocketServer(String transportType, ThreadPool<Request> tp, ServerSocket server)
     throws IOException {
-    this(new SocketConnectionFactory(), tp, server);
+    this(new SocketConnectionFactory(transportType), tp, server);
   }
 
   /**
@@ -206,7 +208,7 @@ public abstract class SocketServer implements Runnable {
 
         final Connection conn = fac.newConnection(client);
 
-        Request req = new Request(conn, new TCPAddress(getAddress(), getPort()));
+        Request req = new Request(conn, new TCPAddress(fac.getTransportType(), getAddress(), getPort()));
         tp.acquire().exec(req);
       } catch (Throwable t) {
         if (handleError(t)) {

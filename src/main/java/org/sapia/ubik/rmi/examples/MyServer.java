@@ -16,7 +16,7 @@ public class MyServer extends SocketServer {
    * Constructor for MyServer.
    */
   public MyServer() throws java.io.IOException {
-    super(6666, new MyThreadPool(), new DefaultUbikServerSocketFactory());
+    super("test", 6666, new MyThreadPool(), new DefaultUbikServerSocketFactory());
   }
 
   public static void main(String[] args) {

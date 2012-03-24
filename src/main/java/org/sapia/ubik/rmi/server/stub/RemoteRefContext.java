@@ -13,7 +13,6 @@ import org.sapia.ubik.rmi.server.ClientRuntime;
 import org.sapia.ubik.rmi.server.Hub;
 import org.sapia.ubik.rmi.server.VmId;
 import org.sapia.ubik.rmi.server.command.RMICommand;
-import org.sapia.ubik.rmi.server.oid.DefaultOID;
 import org.sapia.ubik.rmi.server.oid.OID;
 import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;

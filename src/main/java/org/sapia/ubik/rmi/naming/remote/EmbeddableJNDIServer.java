@@ -15,6 +15,7 @@ import org.sapia.ubik.mcast.EventChannel;
 import org.sapia.ubik.mcast.RemoteEvent;
 import org.sapia.ubik.net.TCPAddress;
 import org.sapia.ubik.rmi.server.Hub;
+import org.sapia.ubik.rmi.server.transport.socket.MultiplexSocketTransportProvider;
 import org.sapia.ubik.util.Localhost;
 import org.sapia.ubik.util.Props;
 
@@ -125,7 +126,7 @@ public class EmbeddableJNDIServer implements RemoteContextProvider, AsyncEventLi
     if(evt.getType().equals(JndiConsts.JNDI_CLIENT_PUBLISH)){
       try{
         channel.dispatch(JndiConsts.JNDI_SERVER_DISCO,
-            new TCPAddress(Localhost.getAnyLocalAddress().getHostAddress(), port));
+            new TCPAddress(MultiplexSocketTransportProvider.MPLEX_TRANSPORT_TYPE, Localhost.getAnyLocalAddress().getHostAddress(), port));
       }catch(Exception e){
         log.warning("Could not dispatch JNDI server publishing event", e);
       }
@@ -189,9 +190,9 @@ public class EmbeddableJNDIServer implements RemoteContextProvider, AsyncEventLi
       channel.registerAsyncListener(JndiConsts.JNDI_CLIENT_PUBLISH, this);
 
       channel.dispatch(JndiConsts.JNDI_SERVER_PUBLISH,
-          new TCPAddress(Localhost.getAnyLocalAddress().getHostAddress(), port));
+          new TCPAddress(MultiplexSocketTransportProvider.MPLEX_TRANSPORT_TYPE, Localhost.getAnyLocalAddress().getHostAddress(), port));
       channel.dispatch(JndiConsts.JNDI_SERVER_DISCO,
-          new TCPAddress(Localhost.getAnyLocalAddress().getHostAddress(), port));
+          new TCPAddress(MultiplexSocketTransportProvider.MPLEX_TRANSPORT_TYPE, Localhost.getAnyLocalAddress().getHostAddress(), port));
 
       root = JNDIServerHelper.newRootContext(channel);
 

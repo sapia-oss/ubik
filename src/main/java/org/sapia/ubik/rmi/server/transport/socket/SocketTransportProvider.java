@@ -11,7 +11,6 @@ import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.ConnectionFactory;
 import org.sapia.ubik.net.ServerAddress;
-import org.sapia.ubik.net.SocketConnectionFactory;
 import org.sapia.ubik.net.TCPAddress;
 import org.sapia.ubik.net.TcpPortSelector;
 import org.sapia.ubik.net.ThreadPool;
@@ -39,7 +38,7 @@ public class SocketTransportProvider implements TransportProvider {
   /**
    * Constant corresponding to this provider class' transport type.
    */
-  public static final String TRANSPORT_TYPE   = TCPAddress.TRANSPORT_TYPE;
+  public static final String SOCKET_TRANSPORT_TYPE   = "tcp/socket";
 
   /**
    * This constant corresponds to the <code>ubik.rmi.transport.socket.max-threads</code>
@@ -74,11 +73,20 @@ public class SocketTransportProvider implements TransportProvider {
   public static final String PORT             = "ubik.rmi.transport.socket.port";
   
   protected static final long DEFAULT_RESET_INTERVAL               = 2000;
-  private   static final long DEFAULT_STALE_CLIENT_CONNECTION_TIME = 5000;
+  private   static final long DEFAULT_STALE_CLIENT_CONNECTION_TIME = 10000;
 
+  private String                                         transportType;
   private Category                                       log   = Log.createCategory(getClass());
   private Map<ServerAddress, SocketClientConnectionPool> pools = new ConcurrentHashMap<ServerAddress, SocketClientConnectionPool>();
-  private boolean                                        poolCleanerStarted;
+  private volatile boolean                               poolCleanerStarted;
+  
+  protected SocketTransportProvider(String transportType) {
+  	this.transportType = transportType;
+  }
+  
+  public SocketTransportProvider() {
+  	this(SOCKET_TRANSPORT_TYPE);
+  }
   
   /**
    * @see org.sapia.ubik.rmi.server.transport.TransportProvider#getPoolFor(ServerAddress)
@@ -110,12 +118,12 @@ public class SocketTransportProvider implements TransportProvider {
       TCPAddress tcpAddr = (TCPAddress) address;
 
       try {
-        Class<?>  factoryClass = props.getClass(CLIENT_FACTORY, SocketRmiConnectionFactory.class);
+        Class<?>  factoryClass = props.getClass(CLIENT_FACTORY, TcpSocketConnectionFactory.class);
         ConnectionFactory factory = (ConnectionFactory) factoryClass.newInstance();
         if(factory instanceof SocketRmiConnectionFactory) {
           ((SocketRmiConnectionFactory) factory).setResetInterval(resetInterval);
         }
-        pool = new SocketClientConnectionPool(tcpAddr.getHost(), tcpAddr.getPort(), factory);
+        pool = new SocketClientConnectionPool(transportType, tcpAddr.getHost(), tcpAddr.getPort(), factory);
         pools.put(address, pool);        
       } catch (ClassNotFoundException e) {
         throw new RemoteException("Could load connection factory class (was not found)", e);
@@ -195,7 +203,7 @@ public class SocketTransportProvider implements TransportProvider {
     resetInterval = props.getLongProperty(Consts.SERVER_RESET_INTERVAL, DEFAULT_RESET_INTERVAL);
     
     try {
-      server = SocketRmiServer.Builder.create()
+      server = SocketRmiServer.Builder.create(transportType)
         .setBindAddress(bindAddress)
         .setMaxThreads(maxThreads)
         .setResetInterval(resetInterval)
@@ -212,7 +220,7 @@ public class SocketTransportProvider implements TransportProvider {
    * @see org.sapia.ubik.rmi.server.transport.TransportProvider#getTransportType()
    */
   public String getTransportType() {
-    return TRANSPORT_TYPE;
+    return transportType;
   }
 
   /**
@@ -223,10 +231,7 @@ public class SocketTransportProvider implements TransportProvider {
   }
   
   private void doCleanPools() {
-    SocketClientConnectionPool[] poolsArray = 
-      (SocketClientConnectionPool[]) pools.values().toArray(new SocketClientConnectionPool[pools.size()]);
-
-    for(SocketClientConnectionPool pool : poolsArray) {
+    for(SocketClientConnectionPool pool : pools.values()) {
       if ((System.currentTimeMillis() - pool.internalPool().getLastUsageTime()) >= DEFAULT_STALE_CLIENT_CONNECTION_TIME) {
         log.debug("Shrinking socket client connection pool...");
         pool.internalPool().shrinkTo(0);

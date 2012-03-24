@@ -40,7 +40,7 @@ public class RemoteRefReliableTest {
   
   @Test
   public void testSerializeDeserialize() throws Exception {
-    RemoteRefContext context = new RemoteRefContext(new DefaultOID(0), new TCPAddress("localhost", 0));
+    RemoteRefContext context = new RemoteRefContext(new DefaultOID(0), new TCPAddress("test", "localhost", 0));
     RemoteRefReliable ref = new RemoteRefReliable(context, "ubik://localhost/test");
 
     Object proxy = Proxy.newProxyInstance(

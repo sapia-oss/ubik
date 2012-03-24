@@ -10,10 +10,13 @@ import org.junit.Test;
 
 
 public class ConnectionPoolTest {
+	
+	
+	private static final String TRANSPORT_TYPE = "test";
   
   @Test
   public void testAcquireNoMaxSize() throws Exception {
-    ConnectionPool pool = new ConnectionPool("test", 9999, new TestConnectionFactory(), -1);
+    ConnectionPool pool = new ConnectionPool("localhost", 9999, new TestConnectionFactory(), -1);
 
     for (int i = 0; i < 100; i++) {
       pool.acquire();
@@ -24,7 +27,7 @@ public class ConnectionPoolTest {
 
   @Test
   public void testAcquireWithMaxSize() throws Exception {
-    ConnectionPool pool = new ConnectionPool("test", 9999, new TestConnectionFactory(), 3);
+    ConnectionPool pool = new ConnectionPool("localhost", 9999, new TestConnectionFactory(), 3);
 
     pool.acquire(100);
     pool.acquire(100);
@@ -42,7 +45,7 @@ public class ConnectionPoolTest {
 
   @Test
   public void testRelease() throws Exception {
-    ConnectionPool pool = new ConnectionPool("test", 9999, new TestConnectionFactory(), 3);
+    ConnectionPool pool = new ConnectionPool("localhost", 9999, new TestConnectionFactory(), 3);
 
     Connection     conn;
     pool.acquire(100);
@@ -59,7 +62,7 @@ public class ConnectionPoolTest {
   
   @Test
   public void testInvalidate() throws Exception {
-    ConnectionPool pool = new ConnectionPool("test", 9999, new TestConnectionFactory(), 3);
+    ConnectionPool pool = new ConnectionPool("localhost", 9999, new TestConnectionFactory(), 3);
     Connection     conn = pool.acquire();
     assertEquals("Created count should be 1", 1, pool.getCreatedCount());
     pool.invalidate(conn);
@@ -67,7 +70,7 @@ public class ConnectionPoolTest {
   }
   
   static class TestConnection implements Connection {
-    TCPAddress address = new TCPAddress("test", 8888);
+    TCPAddress address = new TCPAddress(ConnectionPoolTest.TRANSPORT_TYPE, "test", 8888);
 
     public void close() {
     }
@@ -94,6 +97,11 @@ public class ConnectionPoolTest {
     public Connection newConnection(String host, int port)
       throws IOException {
       return new TestConnection();
+    }
+    
+    @Override
+    public String getTransportType() {
+      return null;
     }
   }
 }

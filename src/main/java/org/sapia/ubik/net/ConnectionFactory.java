@@ -20,4 +20,8 @@ public interface ConnectionFactory {
   public Connection newConnection(String host, int port)
     throws IOException;
 
+  /**
+   * @return the transport type corresponding to the connections that this instance creates.
+   */
+  public String getTransportType();
 }

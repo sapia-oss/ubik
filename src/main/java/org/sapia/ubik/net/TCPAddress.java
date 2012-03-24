@@ -12,10 +12,9 @@ import java.io.ObjectOutput;
  */
 public class TCPAddress implements java.io.Externalizable, ServerAddress {
   static final long          serialVersionUID = 1L;
-  public static final String TRANSPORT_TYPE = "tcp/socket";
   private String             host;
   private int                port;
-  protected String           transportType = TRANSPORT_TYPE;
+  protected String           transportType;
 
   /** Do not call; used for externalization only. */
   public TCPAddress() {
@@ -25,13 +24,15 @@ public class TCPAddress implements java.io.Externalizable, ServerAddress {
    * Creates an instance of this class with the given host and port
    * information.
    *
+   * @param transportType the transport type.
    * @param host the address of a host.
    * @param port the port of the server running on the given host.
    *
    */
-  public TCPAddress(String host, int port) {
-    this.host       = host;
-    this.port       = port;
+  public TCPAddress(String transportType, String host, int port) {
+  	this.transportType = transportType;
+    this.host          = host;
+    this.port          = port;
   }
 
   /**

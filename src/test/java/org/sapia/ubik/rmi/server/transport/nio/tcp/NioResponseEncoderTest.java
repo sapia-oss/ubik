@@ -1,36 +1,74 @@
 package org.sapia.ubik.rmi.server.transport.nio.tcp;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
-public class NioResponseEncoderTest extends TestCase {
+import java.io.ByteArrayInputStream;
+import java.io.ObjectInputStream;
+import java.util.HashMap;
+import java.util.Map;
 
-  public NioResponseEncoderTest(String arg0) {
-    super(arg0);
+import org.apache.mina.common.IoSession;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
+import org.sapia.ubik.rmi.server.transport.MarshalStreamFactory;
+
+public class NioResponseEncoderTest {
+	
+	private NioResponseEncoder  encoder;
+	private IoSession 					session;
+	private Map<String, Object> sessionData;
+	private TestEncoderOutput   output;
+
+	@Before
+  public void setUp() throws Exception {
+		encoder     = new NioResponseEncoder();
+		sessionData = new HashMap<String, Object>();
+		session 		= mock(IoSession.class);
+		
+		when(session.getAttribute(anyString())).thenAnswer(new Answer<Object>() {
+			@Override
+			public Object answer(InvocationOnMock invocation) throws Throwable {
+			  return sessionData.get(invocation.getArguments()[0]);
+			}
+		});
+		
+		when(session.setAttribute(anyString(), anyObject())).thenAnswer(new Answer<Object>() {
+			@Override
+			public Object answer(InvocationOnMock invocation) throws Throwable {
+			  return sessionData.put((String)invocation.getArguments()[0], invocation.getArguments()[1]);
+			}
+		});		
+		output = new TestEncoderOutput();
   }
-
-  protected void setUp() throws Exception {
-    super.setUp();
-  }
+	
+	@After
+	public void tearDown() {
+		output.close();
+	}
   
+	@Test
   public void testEncode() throws Exception{
-    /*
-    NioResponseEncoder encoder = new NioResponseEncoder();
-    
     String toEncode = "THIS_IS_A_TEST";
     NioResponse res = new NioResponse();
     res.setObject(toEncode);    
-    TestEncoderOutput out = new TestEncoderOutput();
-    encoder.encode(null, res, out);
-
-    assertTrue(out.buf.prefixedDataAvailable(4));
-    
-    int length = out.buf.getInt();
+    encoder.encode(session, res, output);
+    int length = output.buf.getInt();
     byte[] bytes = new byte[length];
-    out.buf.get(bytes);
+    output.buf.get(bytes);
     ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
-    MarshalInputStream mis = new MarshalInputStream(bis);
-    assertEquals(toEncode, mis.readObject());
-    */
+    ObjectInputStream ois = MarshalStreamFactory.createInputStream(bis);
+    assertEquals(toEncode, ois.readObject());
+    
   }
 
 }
+
+

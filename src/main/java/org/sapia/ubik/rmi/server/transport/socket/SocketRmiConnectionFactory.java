@@ -23,8 +23,8 @@ public class SocketRmiConnectionFactory extends SocketConnectionFactory {
   
   private long resetInterval;
   
-  public SocketRmiConnectionFactory() {
-    super();
+  public SocketRmiConnectionFactory(String transportType) {
+    super(transportType);
   }
   
   /**
@@ -39,7 +39,7 @@ public class SocketRmiConnectionFactory extends SocketConnectionFactory {
    * @see org.sapia.ubik.net.SocketConnectionFactory#newConnection(Socket)
    */
   public Connection newConnection(Socket sock) throws IOException {
-    SocketRmiConnection conn = new SocketRmiConnection(sock, loader, bufsize);
+    SocketRmiConnection conn = new SocketRmiConnection(transportType, sock, loader, bufsize);
     conn.setResetInterval(resetInterval);
     return conn;
   }
@@ -49,7 +49,7 @@ public class SocketRmiConnectionFactory extends SocketConnectionFactory {
    */
   public Connection newConnection(String host, int port)
     throws IOException {
-    SocketRmiConnection conn = new SocketRmiConnection(new Socket(host, port), loader, bufsize);
+    SocketRmiConnection conn = new SocketRmiConnection(transportType, new Socket(host, port), loader, bufsize);
     return conn;
   }
 }

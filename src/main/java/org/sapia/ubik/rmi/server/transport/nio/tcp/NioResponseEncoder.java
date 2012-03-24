@@ -1,6 +1,5 @@
 package org.sapia.ubik.rmi.server.transport.nio.tcp;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 
@@ -8,8 +7,11 @@ import org.apache.mina.common.ByteBuffer;
 import org.apache.mina.common.IoSession;
 import org.apache.mina.filter.codec.ProtocolEncoder;
 import org.apache.mina.filter.codec.ProtocolEncoderOutput;
+import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.transport.MarshalStreamFactory;
 import org.sapia.ubik.rmi.server.transport.RmiObjectOutput;
+import org.sapia.ubik.util.ByteBufferOutputStream;
+import org.sapia.ubik.util.Props;
 
 /**
  * An encoder of Ubik server responses.
@@ -17,48 +19,66 @@ import org.sapia.ubik.rmi.server.transport.RmiObjectOutput;
  * @author yduchesne
  *
  */
-public class NioResponseEncoder implements ProtocolEncoder{
+public class NioResponseEncoder implements ProtocolEncoder {
+	
+  private static final int BUFSIZE = Props.getSystemProperties().getIntProperty(
+                                  			Consts.MARSHALLING_BUFSIZE, 
+                                  			Consts.DEFAULT_MARSHALLING_BUFSIZE
+                                  	 );
+
+  private static final String ENCODER_STATE = "ENCODER_STATE";
   
+  private static final int BYTES_PER_INT = 4;
+
+  // --------------------------------------------------------------------------
   
-  private static final int BUFFER_CAPACITY  = 1024;
-  
-  static class EncoderState{
+  private static class EncoderState {
+  	
+    private ByteBuffer 				 outgoing;
+    private ObjectOutputStream stream;
     
+    private EncoderState() throws IOException {
+    	outgoing = ByteBuffer.allocate(BUFSIZE);
+    	outgoing.setAutoExpand(true);
+    }
     
-    ByteArrayOutputStream bos = new ByteArrayOutputStream(BUFFER_CAPACITY);
-    ObjectOutputStream    mos;
-    
-    
-    public EncoderState() throws IOException {
-      mos = MarshalStreamFactory.createOutputStream(bos);
+    private ObjectOutputStream getObjectOutputStream() throws IOException {
+    	if (stream == null) {
+    		stream = MarshalStreamFactory.createOutputStream(new ByteBufferOutputStream(outgoing));
+    	}
+    	return stream;
     }
     
   }
   
-  private static final String ENCODER_STATE = "ENCODER_STATE";
+  // --------------------------------------------------------------------------
   
   public void encode(IoSession sess, Object toEncode, ProtocolEncoderOutput output) throws Exception {
     
     EncoderState es = (EncoderState)sess.getAttribute(ENCODER_STATE);
-    if(es == null){
+    if (es == null) {
       es = new EncoderState();
       sess.setAttribute(ENCODER_STATE, es);
     }
-    else{
-      es.bos.reset();
-    }
-    
+    es.outgoing.clear();
     NioResponse resp = (NioResponse)toEncode;
-    ((RmiObjectOutput)es.mos).setUp(resp.getAssociatedVmId(), resp.getTransportType());
-    es.mos.writeObject(resp.getObject());
-    es.mos.flush();
-    byte[] toSend = es.bos.toByteArray();
-    ByteBuffer buffer = ByteBuffer.allocate(toSend.length, false);
-    buffer.put(toSend);
-    buffer.flip();
-    output.write(buffer);
+    es.outgoing.putInt(0); // reserve space for length header
+    doEncode(resp, es.outgoing, es.getObjectOutputStream(), output);
   }
   
-  public void dispose(IoSession arg0) throws Exception {
+  void doEncode(NioResponse toEncode, ByteBuffer outputBuffer, ObjectOutputStream outputStream, ProtocolEncoderOutput output) throws Exception {
+    ((RmiObjectOutput)outputStream).setUp(toEncode.getAssociatedVmId(), toEncode.getTransportType());
+    outputStream.writeObject(toEncode.getObject());
+    outputStream.flush();
+    outputBuffer.putInt(0, outputBuffer.position() - BYTES_PER_INT); // setting length at reserved space
+    outputBuffer.flip();
+    output.write(outputBuffer);  	
+  }
+  
+  public void dispose(IoSession sess) throws Exception {
+    EncoderState es = (EncoderState)sess.getAttribute(ENCODER_STATE);  	
+    if (es != null) {
+      es.outgoing.release();
+    }
   }
 }

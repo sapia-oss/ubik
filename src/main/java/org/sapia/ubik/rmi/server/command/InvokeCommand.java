@@ -150,6 +150,7 @@ public class InvokeCommand extends RMICommand implements Externalizable {
 
       Hub.getModules().getServerRuntime().getDispatcher().dispatch(preEvt);
 
+      mt.setAccessible(true);
       Object toReturn = mt.invoke(preEvt.getTarget(),
           preEvt.getInvokeCommand().getParams());
 
@@ -179,6 +180,7 @@ public class InvokeCommand extends RMICommand implements Externalizable {
       
       if(e instanceof InvocationTargetException){
         e = ((InvocationTargetException)e).getTargetException();
+        e.fillInStackTrace();
       }
       ServerPostInvokeEvent postEvt = new ServerPostInvokeEvent(
           preEvt.getTarget(),

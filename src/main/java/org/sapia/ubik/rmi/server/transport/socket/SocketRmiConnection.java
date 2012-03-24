@@ -24,21 +24,13 @@ import org.sapia.ubik.rmi.server.transport.RmiObjectOutput;
  */
 public class SocketRmiConnection extends SocketConnection
   implements RmiConnection {
-  /**
-   * Constructor for RMIConnection.
-   * @param sock
-   * @param loader
-   */
-  public SocketRmiConnection(Socket sock, ClassLoader loader, int bufsize) {
-    super(sock, loader, bufsize);
+	
+  public SocketRmiConnection(String transportType, Socket sock, ClassLoader loader, int bufsize) {
+    super(transportType, sock, loader, bufsize);
   }
 
-  /**
-   * Constructor for RMIConnection.
-   * @param sock
-   */
-  public SocketRmiConnection(Socket sock, int bufsize) {
-    super(sock, bufsize);
+  public SocketRmiConnection(String transportType, Socket sock, int bufsize) {
+    super(transportType, sock, bufsize);
   }
 
   /**

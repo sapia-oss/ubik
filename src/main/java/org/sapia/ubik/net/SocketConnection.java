@@ -30,15 +30,15 @@ public class SocketConnection implements Connection {
   protected long               resetInterval 					= DEFAULT_RESET_INTERVAL;
   private   int                bufsize;
 
-  public SocketConnection(Socket sock, ClassLoader loader, int bufsize) {
-    this(sock, bufsize);
+  public SocketConnection(String transportType, Socket sock, ClassLoader loader, int bufsize) {
+    this(transportType, sock, bufsize);
     this.loader = loader;
   }
 
-  public SocketConnection(Socket sock, int bufsize) {
+  public SocketConnection(String transportType, Socket sock, int bufsize) {
     this.sock      = sock;
     this.bufsize   = bufsize;
-    address        = new TCPAddress(sock.getInetAddress().getHostAddress(), sock.getPort());
+    address        = new TCPAddress(transportType, sock.getInetAddress().getHostAddress(), sock.getPort());
   }
   
   /**

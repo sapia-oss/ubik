@@ -8,6 +8,8 @@ import org.sapia.ubik.rmi.server.Hub;
 import org.sapia.ubik.rmi.server.command.RMICommand;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
 import org.sapia.ubik.rmi.server.transport.TransportManager;
+import org.sapia.ubik.rmi.server.transport.socket.SocketTransportProvider;
+import org.sapia.ubik.rmi.server.transport.socket.TcpSocketAddress;
 
 
 /**
@@ -28,7 +30,7 @@ public class HelloWorldCommand extends RMICommand {
 
   public static void main(String[] args) {
     // creating address of server we wish to connect to
-    TCPAddress addr = new TCPAddress("localhost", 7070);
+    TCPAddress addr = new TcpSocketAddress("localhost", 7070);
 
     RmiConnection conn = null;
 
