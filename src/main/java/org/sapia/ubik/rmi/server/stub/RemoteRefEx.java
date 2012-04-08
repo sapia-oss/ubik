@@ -53,6 +53,7 @@ public class RemoteRefEx extends RemoteRef {
       }
 
       toReturn = dispatcher().dispatchInvocation(
+      		  context.getVmId(),
             context.getConnections(),
             new CallbackInvokeCommand(
                 context.getOid(), 
@@ -67,6 +68,7 @@ public class RemoteRefEx extends RemoteRef {
       }
 
       toReturn = dispatcher().dispatchInvocation(
+    		  context.getVmId(),      		
           context.getConnections(),
           new InvokeCommand(
               context.getOid(), 

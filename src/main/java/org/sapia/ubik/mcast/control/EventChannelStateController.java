@@ -223,13 +223,15 @@ public class EventChannelStateController {
 		// the node that comes "first" becomes the master.
 		Collections.sort(nodes);
 		if(nodes.size() > 0) {			
+			log.debug("Found %s other node(s): %s", nodes.size(), nodes);
 			if(force || context.getNode().compareTo(nodes.get(0)) <= 0) {
 				// Master role not yet confirmed, upgrading to candidate for now.
 				context.setRole(Role.MASTER_CANDIDATE);
 			}
 		// Lonely node: automatically becomes the master
 		} else {
-			context.setRole(Role.MASTER);		
+			log.debug("No other nodes found, setting self to candidate for master", nodes.size());
+			context.setRole(Role.MASTER_CANDIDATE);		
 		}
 		
 		if(context.getRole() == Role.MASTER_CANDIDATE) {

@@ -216,6 +216,7 @@ public class RemoteRefStateless implements StubInvocationHandler, Externalizable
       log.debug("Invoking (callback): %s", toCall);
 
       toReturn = dispatcher().dispatchInvocation(
+      		context.getVmId(),
           context.getConnections(),
           new CallbackInvokeCommand(
               context.getOid(), 
@@ -228,6 +229,7 @@ public class RemoteRefStateless implements StubInvocationHandler, Externalizable
       log.debug("Invoking (no callback): %s", toCall);
       
       toReturn = dispatcher().dispatchInvocation(
+      		context.getVmId(),      		
           context.getConnections(),
           new InvokeCommand(
               context.getOid(), 

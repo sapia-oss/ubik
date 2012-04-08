@@ -51,12 +51,16 @@ public class MultiplexSocketTransportProvider extends SocketTransportProvider {
    */
   public static final String ACCEPTOR_THREADS = "ubik.rmi.transport.mplex.acceptor-threads";
 
+  static final int DEFAULT_ACCEPTOR_THREADS = 0;
+  
   /**
    * This constant corresponds to the <code>ubik.rmi.transport.mplex.selector-threads</code>
    * property.
    */
   public static final String SELECTOR_THREADS = "ubik.rmi.transport.mplex.selector-threads";
 
+  static final int DEFAULT_SELECTOR_THREADS = 0;
+  
   private Category log = Log.createCategory(getClass());
   
   /**

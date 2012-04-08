@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
+import java.util.Random;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -40,9 +41,28 @@ import org.sapia.ubik.util.Props;
  */
 public class EventChannel {
   
+	/**
+	 * Sent by a node when it receives a publish event. Allows discovery by the node that just published itself.
+	 */
   static final String  DISCOVER_EVT    = "ubik/mcast/discover";
+  
+	/**
+	 * Sent at startup when a node first appears.
+	 */  
   static final String  PUBLISH_EVT     = "ubik/mcast/publish";
+  
+  /**
+   * Sent by a node to notify other nodes that it is shutting down.
+   */
+  static final String  SHUTDOWN_EVT    = "ubik/mcast/shutdown";
+  
+  /**
+   * Corresponds to all types of control events.
+   */  
   static final String  CONTROL_EVT   	 = "ubik/mcast/control";
+  
+  private static final int MIN_STARTUP_DELAY = 5000; 
+  private static final int MIN_STARTUP_DELAY_OFFSET = 10000;
   
   private Category                log              = Log.createCategory(getClass());
   private Timer                   heartbeatTimer   = new Timer("Ubik.EventChannel.Timer", true);
@@ -137,7 +157,7 @@ public class EventChannel {
       broadcast.start();
       unicast.start();
       address = unicast.getAddress();
-      broadcast.dispatch(unicast.getAddress(), false, PUBLISH_EVT, address);
+      broadcast.dispatch(address, false, PUBLISH_EVT, address);
       state = State.STARTED;
     }
   }
@@ -147,6 +167,11 @@ public class EventChannel {
    */
   public synchronized void close() {
     if(state == State.STARTED) {
+    	try {
+    		this.broadcast.dispatch(unicast.getAddress(), this.getDomainName().toString(), SHUTDOWN_EVT, "SHUTDOWN");
+    	} catch (IOException e) {
+    		log.info("Could not send shutdown event", e, new Object[]{});
+    	}
       heartbeatTimer.cancel();
       broadcast.close();
       unicast.close();
@@ -393,7 +418,7 @@ public class EventChannel {
   					String next = toSend.getTargetedNodes().iterator().next();
   					toSend.getTargetedNodes().remove(next);
   					try {
-  						unicast.send(view.getAddressFor(next), CONTROL_EVT, toSend);
+  						unicast.dispatch(view.getAddressFor(next), CONTROL_EVT, notif);
   					} catch (IOException e) {
   						log.error("Could not send control notification", e);
   					}
@@ -406,13 +431,15 @@ public class EventChannel {
   	public void sendRequest(ControlRequest req) {
 			req.getTargetedNodes().remove(getNode());
   		if(!req.getTargetedNodes().isEmpty()) {
+  			log.debug("Sending control request to nodes: %s", req.getTargetedNodes());
   			List<ControlRequest> split = req.split(controlBatchSize);
   			for(ControlRequest toSend : split) {
   				if(!toSend.getTargetedNodes().isEmpty()) {
   					String next = toSend.getTargetedNodes().iterator().next();
+  	  			log.debug("Sending control request to next nodes %s", next);  					
   					toSend.getTargetedNodes().remove(next);
   					try {
-  						unicast.send(view.getAddressFor(next), CONTROL_EVT, toSend);
+  						unicast.dispatch(view.getAddressFor(next), CONTROL_EVT, toSend);
   					} catch (IOException e) {
   						log.error("Could not send control request", e);
   					}
@@ -424,7 +451,7 @@ public class EventChannel {
   	@Override
   	public void sendResponse(String masterNode, ControlResponse res) {
 			try {
-				unicast.send(view.getAddressFor(masterNode), CONTROL_EVT, res);
+				unicast.dispatch(view.getAddressFor(masterNode), CONTROL_EVT, res);
 			} catch (IOException e) {
 				log.error("Could not send control response", e);
 			}
@@ -442,12 +469,29 @@ public class EventChannel {
     public void onAsyncEvent(RemoteEvent evt) {
       
       // ----------------------------------------------------------------------
-      
-      if (evt.getType().equals(DISCOVER_EVT)) {
-        ServerAddress addr;
-
+    	
+    	log.debug("Received remote event %s from %s", evt.getType(), evt.getNode());
+    	
+      if (evt.getType().equals(PUBLISH_EVT)) {
         try {
-          addr = (ServerAddress) evt.getData();
+          ServerAddress addr = (ServerAddress) evt.getData();
+          if(addr == null){
+            return;
+          }          
+  
+          view.addHost(addr, evt.getNode());
+          unicast.dispatch(addr, DISCOVER_EVT, address);
+          notifyDiscoListeners(addr, evt);
+
+        } catch (IOException e) {
+          log.error("Error caught while trying to process event " + evt.getType(), e);
+        }
+        
+      // ----------------------------------------------------------------------
+        
+      } else if (evt.getType().equals(DISCOVER_EVT)) {
+        try {
+        	ServerAddress addr = (ServerAddress) evt.getData();
           if(addr == null){
             return;
           }
@@ -459,10 +503,15 @@ public class EventChannel {
         }
         
       // ----------------------------------------------------------------------
-
+        
+      } else if (evt.getType().equals(SHUTDOWN_EVT)) {
+      	view.removeDeadNode(evt.getNode());
+      	
+      // ----------------------------------------------------------------------
+      	
       } else if (evt.getType().equals(CONTROL_EVT)) {
         try {
-          ServerAddress addr = (ServerAddress) evt.getData();
+          ServerAddress addr = (ServerAddress) evt.getUnicastAddress();
 
           view.heartbeat(addr, evt.getNode());
           
@@ -477,23 +526,6 @@ public class EventChannel {
           
         } catch (IOException e) {
           log.error("Error caught while trying to process heartbeat event", e);
-        }
-        
-      // ----------------------------------------------------------------------
-        
-      } else {
-        try {
-          ServerAddress addr = (ServerAddress) evt.getData();
-          if(addr == null){
-            return;
-          }          
-
-          if(view.addHost(addr, evt.getNode())){
-            dispatch(false, DISCOVER_EVT, address);
-            notifyDiscoListeners(addr, evt);
-          }
-        } catch (IOException e) {
-          log.error("Error caught while trying to process event " + evt.getType(), e);
         }
       }
     }
@@ -517,11 +549,15 @@ public class EventChannel {
     listener = new ChannelEventListener();
     consumer.registerAsyncListener(PUBLISH_EVT,   listener);
     consumer.registerAsyncListener(DISCOVER_EVT,  listener);
+    consumer.registerAsyncListener(SHUTDOWN_EVT,  listener);
+    consumer.registerAsyncListener(CONTROL_EVT,  listener);
 
     long heartbeatTimeout  = props.getLongProperty(Consts.MCAST_HEARTBEAT_TIMEOUT, Defaults.DEFAULT_HEARTBEAT_TIMEOUT);
     long heartbeatInterval = props.getLongProperty(Consts.MCAST_HEARTBEAT_INTERVAL, Defaults.DEFAULT_HEARTBEAT_INTERVAL);
     long controlResponseTimeout = props.getLongProperty(
-    		Consts.MCAST_CONTROL_RESPONSE_TIMEOUT, Defaults.DEFAULT_CONTROL_RESPONSE_TIMEOUT);
+    		Consts.MCAST_CONTROL_RESPONSE_TIMEOUT, 
+    		Defaults.DEFAULT_CONTROL_RESPONSE_TIMEOUT
+    );
     this.controlBatchSize = props.getIntProperty(Consts.MCAST_CONTROL_BATCH_SIZE, Defaults.DEFAULT_CONTROL_BATCH_SIZE);
     
     log.debug("Heartbeat timeout set to %s", heartbeatTimeout);
@@ -534,6 +570,9 @@ public class EventChannel {
     config.setResponseTimeout(controlResponseTimeout);
     controller = new EventChannelStateController(config, new ChannelCallbackImpl());
     
+    Random random = new Random();
+    long firstTaskStartupDelay = MIN_STARTUP_DELAY + random.nextInt(MIN_STARTUP_DELAY_OFFSET);
+    
     heartbeatTimer.schedule(
         new TimerTask() {
           @Override
@@ -542,7 +581,7 @@ public class EventChannel {
               controller.checkStatus();
             }
           }
-        }, 0, 
+        }, firstTaskStartupDelay, 
         heartbeatInterval
     );
     

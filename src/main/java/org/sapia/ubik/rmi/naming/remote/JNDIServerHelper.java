@@ -13,7 +13,7 @@ import org.sapia.ubik.rmi.naming.remote.archie.UbikRemoteContext;
 /**
  * @author Yanick Duchesne
  */
-class JNDIServerHelper implements JndiConsts {
+public class JNDIServerHelper implements JndiConsts {
 
   /**
    * Parses the given command-line arguments and returns their object representation, or

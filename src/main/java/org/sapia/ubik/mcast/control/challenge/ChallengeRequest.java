@@ -18,6 +18,12 @@ import org.sapia.ubik.util.Clock;
 public class ChallengeRequest extends ControlRequest {
 
 	/**
+	 * Meant for externalization
+	 */
+	public ChallengeRequest() {
+  }
+
+	/**
 	 * @param clock the {@link Clock} to use.
 	 * @param requestId the identifier to assign to this request.
 	 * @param masterNode the master node's identifier.

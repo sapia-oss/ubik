@@ -106,6 +106,18 @@ public class ServerTable implements Module {
     return typeCache;
   }
   
+  /**
+   * @param transportType a transport type identifier.
+   * @return the {@link Server} corresponding to the given type.
+   */
+  public Server getServerFor(String transportType) {
+  	ServerRef ref = serversByType.get(transportType);
+  	if(ref == null) {
+  		throw new IllegalArgumentException("No server for type: " + transportType);
+  	}
+  	return ref.getServer();
+  }
+  
   // --------------------------------------------------------------------------
   // exportObject()
 

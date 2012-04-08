@@ -237,4 +237,8 @@ public abstract class SocketServer implements Runnable {
     log.error("Error while handling request", t);
     return true;
   }
+  
+  public ServerSocket serverSocket() {
+  	return server;
+  }
 }

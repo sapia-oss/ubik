@@ -125,6 +125,8 @@ public abstract class ControlRequest implements Externalizable {
 	    ClassNotFoundException {
 		this.requestId = in.readLong();
 		this.creationTime = in.readLong();
+		this.masterNode = in.readUTF();
+		this.masterAddress = (ServerAddress) in.readObject();
 		this.targetedNodes = (Set<String>) in.readObject();
 	}
 	
@@ -132,6 +134,8 @@ public abstract class ControlRequest implements Externalizable {
 	public void writeExternal(ObjectOutput out) throws IOException {
 		out.writeLong(requestId);
 		out.writeLong(creationTime);
+		out.writeUTF(masterNode);
+		out.writeObject(masterAddress);
 		out.writeObject(targetedNodes);
 	}
 

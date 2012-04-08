@@ -89,7 +89,13 @@ public class SocketTransportExporter {
 			props.setProperty(SocketTransportProvider.PORT, Integer.toString(port));
 		}
 		props.setProperty(Consts.TRANSPORT_TYPE, SocketTransportProvider.SOCKET_TRANSPORT_TYPE);
-		
+		addProperties(props);
 		return Hub.exportObject(toExport);
+	}
+	
+	/**
+	 * @param props the {@link Properties} instance to which any additional properties should be added.
+	 */
+	protected void addProperties(Properties props) { 
 	}
 }

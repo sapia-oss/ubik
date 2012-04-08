@@ -9,6 +9,7 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 
+import org.sapia.ubik.concurrent.ThreadStartup;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.Defaults;
@@ -22,9 +23,10 @@ import org.sapia.ubik.util.Localhost;
  */
 public abstract class UDPServer extends Thread {
   
-  private Category         log     = Log.createCategory(getClass());
-  protected DatagramSocket sock;
-  private int              bufsize = Defaults.DEFAULT_UDP_PACKET_SIZE;
+  private 	Category         log     				= Log.createCategory(getClass());
+  protected DatagramSocket 	 sock;
+  private 	int              bufsize 				= Defaults.DEFAULT_UDP_PACKET_SIZE;
+  protected ThreadStartup    startupBarrier = new ThreadStartup();
 
   /**
    * Constructor for UDPServer.
@@ -70,6 +72,7 @@ public abstract class UDPServer extends Thread {
     while (true) {
       try {
         pack = new DatagramPacket(new byte[bufsize], bufsize);
+        startupBarrier.started();
         sock.receive(pack);
         handle(pack, sock);
       } catch (SocketTimeoutException e) {

@@ -52,7 +52,7 @@ public class InvocationDispatcher implements Module {
   // --------------------------------------------------------------------------
 
   private Category                 log              = Log.createCategory(getClass());
-  private InvocationStats                     stats            = new InvocationStats();
+  private InvocationStats          stats            = new InvocationStats();
   private ClientRuntime            clientRuntime;
   private InvocationStrategyFactory handlerFactory;
  
@@ -85,18 +85,18 @@ public class InvocationDispatcher implements Module {
    * @throws Throwable if the invocation is colocated and an exception is throws by the
    * colocated call.
    */
-  public Object dispatchInvocation(Connections pool, InvokeCommand cmd)
+  public Object dispatchInvocation(VmId vmId, Connections pool, InvokeCommand cmd)
     throws java.io.IOException, ClassNotFoundException, Throwable {
     
     Object toReturn;
     
-    log.debug("Sending invocation for object: %s on vmId %s", cmd.getOID(), cmd.getVmId());
+    log.debug("Sending invocation for object: %s on vmId %s", cmd.getOID(), vmId);
     
     // CLIENT pre-invoke event dispatch
     ClientPreInvokeEvent pre = new ClientPreInvokeEvent(cmd);
     clientRuntime.getDispatcher().dispatch(pre);
     
-    InvocationStrategy handler = handlerFactory.getInvocationStrategy(cmd.getVmId());
+    InvocationStrategy handler = handlerFactory.getInvocationStrategy(vmId);
     toReturn = handler.dispatchInvocation(stats, pool, cmd);
 
     // CLIENT post-invoke event dispatch

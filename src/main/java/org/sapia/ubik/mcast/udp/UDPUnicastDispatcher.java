@@ -34,6 +34,8 @@ import org.sapia.ubik.util.Localhost;
  * @author Yanick Duchesne
  */
 public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher {
+	
+  private static final long STARTUP_TIMEOUT 		= 5000;
   
   private Category              log             = Log.createCategory(getClass());
   private EventConsumer         consumer;
@@ -69,12 +71,20 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
   public void start() {
     super.start();
     
+    try {
+    	super.startupBarrier.await(STARTUP_TIMEOUT);
+    } catch (InterruptedException e) {
+    	throw new IllegalStateException("Thread interrupted while waiting for startup", e);
+    } catch (Exception e) {
+    	throw new IllegalStateException("Problem while starting up", e);
+    }
+    
     this.senders = Executors.newFixedThreadPool(
         senderCount, 
         NamedThreadFactory.createWith("udp.unicast.dispatcher.Sender").setDaemon(true)
     );
 
-    InetAddress inetAddr = sock.getInetAddress();
+    InetAddress inetAddr = sock.getLocalAddress();
     if(inetAddr == null){
       try{
         inetAddr = Localhost.getAnyLocalAddress();
@@ -130,7 +140,6 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
     sock.setSoTimeout(responseTimeout);
     RemoteEvent evt = new RemoteEvent(null, type, data).setNode(consumer.getNode()).setSync();
     evt.setUnicastAddress(addr);
-    
     UDPUnicastAddress inet = (UDPUnicastAddress) addr;
 
     try {
@@ -270,7 +279,7 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
         "Size of data larger than buffer size; increase this instance's buffer size through the setBufsize() method");
     }
 
-    log.debug("doSend() : %s, event type: ", addr, type);
+    log.debug("doSend() : %s, event type: %s", addr, type);
     DatagramPacket pack = new DatagramPacket(bytes, 0, bytes.length, addr, port);
 
     sock.send(pack);
