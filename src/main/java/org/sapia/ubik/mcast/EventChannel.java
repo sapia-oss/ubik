@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Random;
@@ -18,7 +19,9 @@ import org.sapia.ubik.mcast.control.ControlNotification;
 import org.sapia.ubik.mcast.control.ControlRequest;
 import org.sapia.ubik.mcast.control.ControlResponse;
 import org.sapia.ubik.mcast.control.ControllerConfiguration;
-import org.sapia.ubik.mcast.control.EventChannelStateController;
+import org.sapia.ubik.mcast.control.EventChannelController;
+import org.sapia.ubik.mcast.control.SynchronousControlRequest;
+import org.sapia.ubik.mcast.control.SynchronousControlResponse;
 import org.sapia.ubik.mcast.udp.UDPBroadcastDispatcher;
 import org.sapia.ubik.mcast.udp.UDPUnicastDispatcher;
 import org.sapia.ubik.net.ServerAddress;
@@ -71,7 +74,7 @@ public class EventChannel {
   private EventConsumer           consumer;
   private ChannelEventListener    listener;
   private View                    view             = new View();
-  private EventChannelStateController controller;
+  private EventChannelController controller;
   private int                     controlBatchSize = 5;
   private ServerAddress           address;
   private List<SoftReference<DiscoveryListener>> discoListeners = Collections.synchronizedList(new ArrayList<SoftReference<DiscoveryListener>>());
@@ -427,6 +430,30 @@ public class EventChannel {
   		}
   	}
   	
+    @Override
+  	public Set<SynchronousControlResponse> sendSynchronousRequest(
+  	    Set<String> targetedNodes, SynchronousControlRequest request) throws InterruptedException, IOException {
+  		
+  		List<ServerAddress> targetAddresses = new ArrayList<ServerAddress>();
+  		for(String targetedNode : targetedNodes) {
+  			ServerAddress addr = view.getAddressFor(targetedNode);
+  			if(addr != null) {
+  				targetAddresses.add(addr);
+  			}
+  		}
+  		
+  		RespList responses = unicast.send(targetAddresses, CONTROL_EVT, request);
+  		
+  		Set<SynchronousControlResponse> toReturn = new HashSet<SynchronousControlResponse>();
+  		for(int i = 0; i < responses.count(); i++) {
+  			Response r = responses.get(i);
+  			if(!r.isNone() && !r.isError()) {
+  				toReturn.add((SynchronousControlResponse) r.getData());
+  			} 
+  		}
+  		return toReturn;
+  	}
+  	
   	@Override
   	public void sendRequest(ControlRequest req) {
 			req.getTargetedNodes().remove(getNode());
@@ -435,14 +462,21 @@ public class EventChannel {
   			List<ControlRequest> split = req.split(controlBatchSize);
   			for(ControlRequest toSend : split) {
   				if(!toSend.getTargetedNodes().isEmpty()) {
-  					String next = toSend.getTargetedNodes().iterator().next();
-  	  			log.debug("Sending control request to next nodes %s", next);  					
-  					toSend.getTargetedNodes().remove(next);
-  					try {
-  						unicast.dispatch(view.getAddressFor(next), CONTROL_EVT, toSend);
-  					} catch (IOException e) {
-  						log.error("Could not send control request", e);
-  					}
+  					ServerAddress address = null;
+  					do {
+    					try {
+      					String next = toSend.getTargetedNodes().iterator().next();
+      	  			log.debug("Sending control request to next nodes %s", next);  					
+      					toSend.getTargetedNodes().remove(next);
+    						address = view.getAddressFor(next);
+    						if(address != null) {
+    							unicast.dispatch(address, CONTROL_EVT, toSend);
+    						}
+    					} catch (IOException e) {
+    						log.error("Could not send control request", e);
+    						break;
+    					}
+  					} while (address == null && !toSend.getTargetedNodes().isEmpty());
   				}
   			}
   		}
@@ -451,7 +485,10 @@ public class EventChannel {
   	@Override
   	public void sendResponse(String masterNode, ControlResponse res) {
 			try {
-				unicast.dispatch(view.getAddressFor(masterNode), CONTROL_EVT, res);
+				ServerAddress addr = view.getAddressFor(masterNode);
+				if(addr != null) {
+					unicast.dispatch(addr, CONTROL_EVT, res);
+				}
 			} catch (IOException e) {
 				log.error("Could not send control response", e);
 			}
@@ -460,18 +497,34 @@ public class EventChannel {
   }
   
   // --------------------------------------------------------------------------
-
-  private class ChannelEventListener implements AsyncEventListener {
+  
+  private class ChannelEventListener implements AsyncEventListener, SyncEventListener {
   	
-    /**
-     * @see org.sapia.ubik.mcast.AsyncEventListener#onAsyncEvent(RemoteEvent)
-     */
+  	@Override
+  	public Object onSyncEvent(RemoteEvent evt) {
+  		
+  	 	log.debug("Received remote event %s from %s", evt.getType(), evt.getNode());
+  	 	
+  	 	if (evt.getType().equals(CONTROL_EVT)) {
+        try {
+        	Object data = evt.getData();
+          if(data instanceof SynchronousControlRequest) {
+          	return controller.onSynchronousRequest(evt.getNode(), (SynchronousControlRequest) data);
+          } 
+        } catch (IOException e) {
+          log.error("Error caught while trying to process synchronous control request", e);
+        }  	 		
+  	 	}
+  	  return null;
+  	}
+  	
+  	@Override
     public void onAsyncEvent(RemoteEvent evt) {
       
-      // ----------------------------------------------------------------------
-    	
     	log.debug("Received remote event %s from %s", evt.getType(), evt.getNode());
-    	
+
+      // ----------------------------------------------------------------------
+
       if (evt.getType().equals(PUBLISH_EVT)) {
         try {
           ServerAddress addr = (ServerAddress) evt.getData();
@@ -511,21 +564,16 @@ public class EventChannel {
       	
       } else if (evt.getType().equals(CONTROL_EVT)) {
         try {
-          ServerAddress addr = (ServerAddress) evt.getUnicastAddress();
-
-          view.heartbeat(addr, evt.getNode());
-          
-          Object data = evt.getData();
+        	Object data = evt.getData();
           if(data instanceof ControlRequest) {
           	controller.onRequest(evt.getNode(), (ControlRequest) data);
           } else if (data instanceof ControlNotification) {
           	controller.onNotification(evt.getNode(), (ControlNotification) data);
           } else if (data instanceof ControlResponse) {
           	controller.onResponse(evt.getNode(), (ControlResponse) data);
-          }
-          
+          } 
         } catch (IOException e) {
-          log.error("Error caught while trying to process heartbeat event", e);
+          log.error("Error caught while trying to process control event", e);
         }
       }
     }
@@ -550,8 +598,12 @@ public class EventChannel {
     consumer.registerAsyncListener(PUBLISH_EVT,   listener);
     consumer.registerAsyncListener(DISCOVER_EVT,  listener);
     consumer.registerAsyncListener(SHUTDOWN_EVT,  listener);
-    consumer.registerAsyncListener(CONTROL_EVT,  listener);
-
+    consumer.registerAsyncListener(CONTROL_EVT,   listener);
+    try {
+    	consumer.registerSyncListener(CONTROL_EVT, 	  listener);
+    } catch (ListenerAlreadyRegisteredException e) {
+    	throw new IllegalStateException("Could not register sync event listener", e);
+    }
     long heartbeatTimeout  = props.getLongProperty(Consts.MCAST_HEARTBEAT_TIMEOUT, Defaults.DEFAULT_HEARTBEAT_TIMEOUT);
     long heartbeatInterval = props.getLongProperty(Consts.MCAST_HEARTBEAT_INTERVAL, Defaults.DEFAULT_HEARTBEAT_INTERVAL);
     long controlResponseTimeout = props.getLongProperty(
@@ -568,7 +620,7 @@ public class EventChannel {
     config.setHeartbeatInterval(heartbeatInterval);
     config.setHeartbeatTimeout(heartbeatTimeout);
     config.setResponseTimeout(controlResponseTimeout);
-    controller = new EventChannelStateController(config, new ChannelCallbackImpl());
+    controller = new EventChannelController(config, new ChannelCallbackImpl());
     
     Random random = new Random();
     long firstTaskStartupDelay = MIN_STARTUP_DELAY + random.nextInt(MIN_STARTUP_DELAY_OFFSET);

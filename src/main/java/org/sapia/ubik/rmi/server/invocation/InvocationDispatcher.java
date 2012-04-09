@@ -51,15 +51,15 @@ public class InvocationDispatcher implements Module {
 
   // --------------------------------------------------------------------------
 
-  private Category                 log              = Log.createCategory(getClass());
-  private InvocationStats          stats            = new InvocationStats();
-  private ClientRuntime            clientRuntime;
-  private InvocationStrategyFactory handlerFactory;
+  private Category                  log              = Log.createCategory(getClass());
+  private InvocationStats           stats            = new InvocationStats();
+  private ClientRuntime             clientRuntime;
+  private InvocationStrategyFactory invocationStrategyFactory;
  
   @Override
   public void init(ModuleContext context) {
     clientRuntime  = context.lookup(ClientRuntime.class);
-    handlerFactory = new InvocationStrategyFactory(context);
+    invocationStrategyFactory = new InvocationStrategyFactory(context);
   }
   @Override
   public void start(ModuleContext context) {
@@ -96,7 +96,7 @@ public class InvocationDispatcher implements Module {
     ClientPreInvokeEvent pre = new ClientPreInvokeEvent(cmd);
     clientRuntime.getDispatcher().dispatch(pre);
     
-    InvocationStrategy handler = handlerFactory.getInvocationStrategy(vmId);
+    InvocationStrategy handler = invocationStrategyFactory.getInvocationStrategy(vmId);
     toReturn = handler.dispatchInvocation(stats, pool, cmd);
 
     // CLIENT post-invoke event dispatch

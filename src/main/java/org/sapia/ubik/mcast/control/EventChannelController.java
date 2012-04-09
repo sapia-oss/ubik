@@ -16,13 +16,16 @@ import org.sapia.ubik.mcast.control.heartbeat.DownNotification;
 import org.sapia.ubik.mcast.control.heartbeat.DownNotificationHandler;
 import org.sapia.ubik.mcast.control.heartbeat.HeartbeatRequest;
 import org.sapia.ubik.mcast.control.heartbeat.HeartbeatRequestHandler;
+import org.sapia.ubik.mcast.control.heartbeat.PingRequest;
+import org.sapia.ubik.mcast.control.heartbeat.PingRequestHandler;
 import org.sapia.ubik.util.Clock;
 
-public class EventChannelStateController {
+public class EventChannelController {
 	
 	// --------------------------------------------------------------------------
 	
 	public enum Role {
+		
 		UNDEFINED,
 		MASTER_CANDIDATE,
 		MASTER,		
@@ -69,19 +72,21 @@ public class EventChannelStateController {
 	private	ControllerConfiguration config;
 	private ControllerContext				context;			 
 	
-	private SynchronizedRef<PendingResponseState> 	ref 								 = new SynchronizedRef<PendingResponseState>();
-	private	Map<String, ControlRequestHandler> 			requestHandlers 		 = new HashMap<String, ControlRequestHandler>();
-	private	Map<String, ControlNotificationHandler> notificationHandlers = new HashMap<String, ControlNotificationHandler>();
+	private SynchronizedRef<PendingResponseState> 	      ref 								 = new SynchronizedRef<PendingResponseState>();
+	private	Map<String, ControlRequestHandler> 			      requestHandlers 		 = new HashMap<String, ControlRequestHandler>();
+	private	Map<String, ControlNotificationHandler> 		  notificationHandlers = new HashMap<String, ControlNotificationHandler>();
+	private	Map<String, SynchronousControlRequestHandler> syncRequestHandlers  = new HashMap<String, SynchronousControlRequestHandler>();
 	
-	public EventChannelStateController(ControllerConfiguration config, ChannelCallback callback) {
+	public EventChannelController(ControllerConfiguration config, ChannelCallback callback) {
 		this(Clock.SystemClock.getInstance(), config, callback);
 	}
 	
-	public EventChannelStateController(Clock clock, ControllerConfiguration config, ChannelCallback callback) {
+	public EventChannelController(Clock clock, ControllerConfiguration config, ChannelCallback callback) {
 		this.config  = config;
 		context = new ControllerContext(callback, clock);
 		requestHandlers.put(ChallengeRequest.class.getName(), 		 new ChallengeRequestHandler(context));
 		requestHandlers.put(HeartbeatRequest.class.getName(), 		 new HeartbeatRequestHandler(context));
+		syncRequestHandlers.put(PingRequest.class.getName(), 			 new PingRequestHandler(context));
 		notificationHandlers.put(DownNotification.class.getName(), new DownNotificationHandler(context));
 	}
 	
@@ -154,6 +159,16 @@ public class EventChannelStateController {
   		// cascading the request
   		request.getTargetedNodes().remove(context.getNode());
   		context.getChannelCallback().sendRequest(request);
+		}
+	}
+	
+	public synchronized SynchronousControlResponse onSynchronousRequest(String originNode, SynchronousControlRequest request) {
+		SynchronousControlRequestHandler handler = syncRequestHandlers.get(request.getClass().getName());
+		if(handler != null) {
+			return handler.handle(originNode, request);
+		} else {
+			log.error("No request handler for request %s", request);
+			return null;
 		}
 	}
 	

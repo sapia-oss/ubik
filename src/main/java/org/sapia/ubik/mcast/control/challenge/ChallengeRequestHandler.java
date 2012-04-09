@@ -6,7 +6,7 @@ import org.sapia.ubik.mcast.control.ControlRequest;
 import org.sapia.ubik.mcast.control.ControlRequestHandler;
 import org.sapia.ubik.mcast.control.ControlResponseFactory;
 import org.sapia.ubik.mcast.control.ControllerContext;
-import org.sapia.ubik.mcast.control.EventChannelStateController.Role;
+import org.sapia.ubik.mcast.control.EventChannelController.Role;
 import org.sapia.ubik.mcast.control.challenge.ChallengeResponse.Code;
 
 /**

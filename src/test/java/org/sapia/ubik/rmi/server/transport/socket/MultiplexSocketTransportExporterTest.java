@@ -9,7 +9,7 @@ import org.sapia.ubik.concurrent.Counter;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.Hub;
 
-public class SocketTransportExporterTest {
+public class MultiplexSocketTransportExporterTest {
 	
 	@Before
 	public void setUp() {
@@ -27,14 +27,14 @@ public class SocketTransportExporterTest {
 	public void testExport() throws Exception {
 		
 		final Counter counter = new Counter(2);
-		SocketTransportExporter exporter = new SocketTransportExporter();
+		MultiplexSocketTransportExporter exporter = new MultiplexSocketTransportExporter();
 		TestInterface remoteObject = (TestInterface) exporter.export(new TestInterface() {
 			@Override
 			public void test() {
 				counter.increment();
 			}
 		});
-			
+		
 		remoteObject.test();
 		remoteObject.test();
 		assertEquals(2, counter.getCount());
@@ -44,6 +44,4 @@ public class SocketTransportExporterTest {
 		
 		public void test();
 	}
-
-
 }

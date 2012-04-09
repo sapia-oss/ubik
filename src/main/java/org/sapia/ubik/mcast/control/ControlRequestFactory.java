@@ -4,6 +4,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.sapia.ubik.mcast.control.challenge.ChallengeRequest;
 import org.sapia.ubik.mcast.control.heartbeat.HeartbeatRequest;
+import org.sapia.ubik.mcast.control.heartbeat.PingRequest;
 
 /**
  * The factory of {@link ControlRequest}s.
@@ -41,6 +42,14 @@ class ControlRequestFactory {
 				context.getChannelCallback().getAddress(),
 				context.getChannelCallback().getNodes());
 		return req;
+	}
+	
+	/**
+	 * @param context the {@link ControllerContext}.
+	 * @return a new {@link PingRequest}.
+	 */
+	static SynchronousControlRequest createPingRequest(ControllerContext context) {
+		return new PingRequest();
 	}
 	
 	private static synchronized long createId() {

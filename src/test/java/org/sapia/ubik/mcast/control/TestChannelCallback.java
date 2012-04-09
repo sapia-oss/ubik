@@ -1,5 +1,7 @@
 package org.sapia.ubik.mcast.control;
 
+import java.io.IOException;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -22,14 +24,14 @@ public class TestChannelCallback implements ChannelCallback {
 	
 	private String 												node;
   private TestCallbackAddress           address 		 = new TestCallbackAddress();	
-	private EventChannelStateController 	controller;
+	private EventChannelController 	controller;
 	private Map<String, NodeRegistration> siblings 		 = new ConcurrentHashMap<String, NodeRegistration>();
 	private Map<String, NodeRegistration> deadSiblings = new ConcurrentHashMap<String, NodeRegistration>();
   private volatile boolean              down;
 	
 	public TestChannelCallback(String node, Clock clock, ControllerConfiguration config) {
 		this.node = node;
-		this.controller = new EventChannelStateController(clock, config, this);
+		this.controller = new EventChannelController(clock, config, this);
   }
 	
 	public TestChannelCallback addSibling(TestChannelCallback sibling) {
@@ -108,6 +110,24 @@ public class TestChannelCallback implements ChannelCallback {
 	}
 	
 	@Override
+	public Set<SynchronousControlResponse> sendSynchronousRequest(
+	    Set<String> targetedNodes, SynchronousControlRequest request)
+	    throws InterruptedException, IOException {
+
+		Set<SynchronousControlResponse> responses = new HashSet<SynchronousControlResponse>();
+		if(!down) {
+			for(String targeted : targetedNodes) {
+				TestChannelCallback callback = getCallback(targeted);
+				if(callback != null && !callback.down) {
+					responses.add(callback.getController().onSynchronousRequest(getNode(), request));
+				}
+			}
+		}
+		
+		return responses;
+	}
+	
+	@Override
 	public void sendResponse(String masterNode, ControlResponse res) {
 		if(!down) {
     	TestChannelCallback callback = getCallback(masterNode);
@@ -115,7 +135,7 @@ public class TestChannelCallback implements ChannelCallback {
 		}
 	}
 	
-	public EventChannelStateController getController() {
+	public EventChannelController getController() {
 	  return controller;
   }
 	

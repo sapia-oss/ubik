@@ -9,6 +9,8 @@ import org.sapia.ubik.mcast.control.ControlNotificationFactory;
 import org.sapia.ubik.mcast.control.ControlResponse;
 import org.sapia.ubik.mcast.control.ControlResponseHandler;
 import org.sapia.ubik.mcast.control.ControllerContext;
+import org.sapia.ubik.mcast.control.SynchronousControlResponse;
+import org.sapia.ubik.util.Collections2;
 
 /**
  * This class holds logic for handling {@link HeartbeatResponse}s.
@@ -77,6 +79,30 @@ public class HeartbeatResponseHandler implements ControlResponseHandler {
 			// those nodes that have replied or removed from the original set of targeted nodes,
 			// which then holds the nodes that haven't replied.
 			targetedNodes.removeAll(replyingNodes);
+			
+			Set<SynchronousControlResponse> responses;
+			
+			try {
+				responses = context.getChannelCallback().sendSynchronousRequest(targetedNodes, new PingRequest());
+			} catch (Exception e) {
+				throw new IllegalStateException("Could not send request", e);
+			}
+				
+			Set<String> responding = Collections2.convertAsSet(
+			  responses, 
+			  new org.sapia.ubik.util.Function<String, SynchronousControlResponse>() {
+  				public String call(SynchronousControlResponse res) {
+  					return res.getOriginNode();
+  				}
+			  }
+			);
+			
+			if(responding.size() > 0) {
+				log.debug("Got %s nodes that responded to the last resort ping", responding.size());
+			}
+				
+			targetedNodes.removeAll(responding);
+			replyingNodes.addAll(responding);
 			
 			for(String down : targetedNodes) {
 				context.getChannelCallback().down(down);

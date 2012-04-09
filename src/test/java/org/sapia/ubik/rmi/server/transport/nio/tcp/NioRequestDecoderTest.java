@@ -1,24 +1,53 @@
 package org.sapia.ubik.rmi.server.transport.nio.tcp;
 
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.ObjectOutputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.mina.common.ByteBuffer;
+import org.apache.mina.common.IoSession;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.sapia.ubik.rmi.server.transport.MarshalStreamFactory;
 
-import junit.framework.TestCase;
+public class NioRequestDecoderTest {
 
-public class NioRequestDecoderTest extends TestCase {
+	private IoSession 					session;
+	private Map<String, Object> sessionData;
 
-  public NioRequestDecoderTest(String arg0) {
-    super(arg0);
+
+	@Before
+  public void setUp() throws Exception {
+		sessionData = new HashMap<String, Object>();
+		session 		= mock(IoSession.class);
+		
+		when(session.getAttribute(anyString())).thenAnswer(new Answer<Object>() {
+			@Override
+			public Object answer(InvocationOnMock invocation) throws Throwable {
+			  return sessionData.get(invocation.getArguments()[0]);
+			}
+		});
+		
+		when(session.setAttribute(anyString(), anyObject())).thenAnswer(new Answer<Object>() {
+			@Override
+			public Object answer(InvocationOnMock invocation) throws Throwable {
+			  return sessionData.put((String)invocation.getArguments()[0], invocation.getArguments()[1]);
+			}
+		});		
+
   }
 
-  protected void setUp() throws Exception {
-    super.setUp();
-  }
-
+	@Test
   public void testDoDecode() throws Exception{
     
     String toEncode = "THIS_IS_A_TEST";
@@ -41,7 +70,7 @@ public class NioRequestDecoderTest extends TestCase {
     ByteBuffer buf = ByteBuffer.allocate(4+bytes.length ,true);
     buf.put(bytes);
     buf.flip();
-    decoder.doDecode(null, buf, out);
+    decoder.doDecode(session, buf, out);
     assertEquals(toEncode, out.msg);
   }
 

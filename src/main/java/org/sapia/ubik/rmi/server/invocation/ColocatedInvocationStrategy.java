@@ -41,6 +41,7 @@ public class ColocatedInvocationStrategy implements InvocationStrategy {
     serverRuntime.getDispatcher().dispatch(serverPreEvent);
     
     try {
+    	toCall.setAccessible(true);
       toReturn = toCall.invoke(serverPreEvent.getTarget(), serverPreEvent.getInvokeCommand().getParams());
 
       // SERVER post invoke event dispatch

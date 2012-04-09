@@ -59,10 +59,12 @@ public class NioResponseEncoderTest {
     String toEncode = "THIS_IS_A_TEST";
     NioResponse res = new NioResponse();
     res.setObject(toEncode);    
+
     encoder.encode(session, res, output);
     int length = output.buf.getInt();
     byte[] bytes = new byte[length];
     output.buf.get(bytes);
+
     ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
     ObjectInputStream ois = MarshalStreamFactory.createInputStream(bis);
     assertEquals(toEncode, ois.readObject());

@@ -8,7 +8,7 @@ import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.control.ControlResponse;
 import org.sapia.ubik.mcast.control.ControlResponseHandler;
 import org.sapia.ubik.mcast.control.ControllerContext;
-import org.sapia.ubik.mcast.control.EventChannelStateController.Role;
+import org.sapia.ubik.mcast.control.EventChannelController.Role;
 import org.sapia.ubik.mcast.control.challenge.ChallengeResponse.Code;
 
 public class ChallengeResponseHandler implements ControlResponseHandler {

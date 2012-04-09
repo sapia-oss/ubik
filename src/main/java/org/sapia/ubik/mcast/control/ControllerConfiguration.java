@@ -3,7 +3,7 @@ package org.sapia.ubik.mcast.control;
 import org.sapia.ubik.mcast.Defaults;
 
 /**
- * Holds the configuration for an {@link EventChannelStateController}.
+ * Holds the configuration for an {@link EventChannelController}.
  * 
  * @author yduchesne
  *

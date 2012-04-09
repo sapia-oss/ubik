@@ -107,7 +107,7 @@ public class View {
    */
   public ServerAddress getAddressFor(String node) {
     NodeInfo info = (NodeInfo) nodeToNodeInfo.get(node);
-
+    if(info == null) return null;
     return info.addr;
   }
   

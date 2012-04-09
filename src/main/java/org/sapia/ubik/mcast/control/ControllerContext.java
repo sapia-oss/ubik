@@ -3,18 +3,18 @@ package org.sapia.ubik.mcast.control;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.sapia.ubik.mcast.EventChannel;
-import org.sapia.ubik.mcast.control.EventChannelStateController.Role;
+import org.sapia.ubik.mcast.control.EventChannelController.Role;
 import org.sapia.ubik.util.Clock;
 
 /**
- * An instance of this class holds an {@link EventChannelStateController} contextual objects.
+ * An instance of this class holds an {@link EventChannelController} contextual objects.
  * 
  * @author yduchesne
  *
  */
 public class ControllerContext {
 
-	private EventChannelStateController.Role role;
+	private EventChannelController.Role role;
 	private ChannelCallback                  channelCallback;
 	private Clock													   clock; 
 	private AtomicLong 											 lastHeartbeatReqRcvTime 		= new AtomicLong();
@@ -32,7 +32,7 @@ public class ControllerContext {
 	ControllerContext(
 			ChannelCallback callback, 
 			Clock clock) {
-		this.role 					 = EventChannelStateController.Role.UNDEFINED;
+		this.role 					 = EventChannelController.Role.UNDEFINED;
 		this.channelCallback = callback;
 		this.clock           = clock;
 		lastHeartbeatReqRcvTime.set(clock.currentTimeMillis());
@@ -56,14 +56,14 @@ public class ControllerContext {
 	/**
 	 * @return this instance's {@link Role}.
 	 */
-	public synchronized EventChannelStateController.Role getRole() {
+	public synchronized EventChannelController.Role getRole() {
 	  return role;
   }
 	
 	/**
 	 * @param role the {@link Role} to assign to this instance.
 	 */
-	public synchronized void setRole(EventChannelStateController.Role role) {
+	public synchronized void setRole(EventChannelController.Role role) {
 	  this.role = role;
   }
 	

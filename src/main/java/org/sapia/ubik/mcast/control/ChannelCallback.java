@@ -1,5 +1,6 @@
 package org.sapia.ubik.mcast.control;
 
+import java.io.IOException;
 import java.util.Set;
 
 import org.sapia.ubik.mcast.EventChannel;
@@ -7,7 +8,7 @@ import org.sapia.ubik.net.ServerAddress;
 
 /**
  * This interface is meant to abstract the {@link EventChannel} class from the
- * {@link EventChannelStateController}. To the controller, an instance of this class
+ * {@link EventChannelController}. To the controller, an instance of this class
  * represents its event channel.
  * 
  * @author yduchesne
@@ -37,6 +38,16 @@ public interface ChannelCallback {
 	 * @param req a {@link ControlRequest} to send.
 	 */
 	public void sendRequest(ControlRequest req);
+	
+	/**
+	 * @param targetedNodes the set of node identifiers corresponding to the targeted nodes.
+	 * @param request the {@link SynchronousControlRequest} to send.
+	 * @return the {@link Set} of {@link SynchronousControlResponse} that are returned in response to the request.
+	 * @throws InterruptedException if the calling thread is interrupted while sending the request.
+	 * @throws IOException if an IO problem occurred while sending the request.
+	 */
+	public Set<SynchronousControlResponse> sendSynchronousRequest(Set<String> targetedNodes, SynchronousControlRequest request)
+		throws InterruptedException, IOException;
 	
 	/**
 	 * Sends a {@link ControlResponse} back to the master node - following a corresponding
