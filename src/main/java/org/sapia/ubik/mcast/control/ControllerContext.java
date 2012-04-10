@@ -3,8 +3,9 @@ package org.sapia.ubik.mcast.control;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.sapia.ubik.mcast.EventChannel;
-import org.sapia.ubik.mcast.control.EventChannelController.Role;
+import org.sapia.ubik.mcast.EventChannel.Role;
 import org.sapia.ubik.util.Clock;
+
 
 /**
  * An instance of this class holds an {@link EventChannelController} contextual objects.
@@ -14,13 +15,13 @@ import org.sapia.ubik.util.Clock;
  */
 public class ControllerContext {
 
-	private EventChannelController.Role role;
-	private ChannelCallback                  channelCallback;
-	private Clock													   clock; 
-	private AtomicLong 											 lastHeartbeatReqRcvTime 		= new AtomicLong();
-	private AtomicLong 											 lastHeartbeatReqSentTime 	= new AtomicLong();
-	private AtomicLong 											 lastChallengeReqRcvTime 		= new AtomicLong();
-	private AtomicLong 											 lastChallengeReqSentTime 	= new AtomicLong();
+	private Role 						role;
+	private ChannelCallback channelCallback;
+	private Clock						clock; 
+	private AtomicLong 			lastHeartbeatReqRcvTime 		= new AtomicLong();
+	private AtomicLong 			lastHeartbeatReqSentTime 	= new AtomicLong();
+	private AtomicLong 			lastChallengeReqRcvTime 		= new AtomicLong();
+	private AtomicLong 			lastChallengeReqSentTime 	= new AtomicLong();
 	
 	/**
 	 * Creates an instance of this class with the given objects.
@@ -32,7 +33,7 @@ public class ControllerContext {
 	ControllerContext(
 			ChannelCallback callback, 
 			Clock clock) {
-		this.role 					 = EventChannelController.Role.UNDEFINED;
+		this.role 					 = Role.UNDEFINED;
 		this.channelCallback = callback;
 		this.clock           = clock;
 		lastHeartbeatReqRcvTime.set(clock.currentTimeMillis());
@@ -56,14 +57,14 @@ public class ControllerContext {
 	/**
 	 * @return this instance's {@link Role}.
 	 */
-	public synchronized EventChannelController.Role getRole() {
+	public synchronized Role getRole() {
 	  return role;
   }
 	
 	/**
 	 * @param role the {@link Role} to assign to this instance.
 	 */
-	public synchronized void setRole(EventChannelController.Role role) {
+	public synchronized void setRole(Role role) {
 	  this.role = role;
   }
 	

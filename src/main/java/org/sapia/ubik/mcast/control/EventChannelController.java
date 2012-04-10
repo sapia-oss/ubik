@@ -10,6 +10,7 @@ import java.util.Map;
 import org.sapia.ubik.concurrent.SynchronizedRef;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
+import org.sapia.ubik.mcast.EventChannel.Role;
 import org.sapia.ubik.mcast.control.challenge.ChallengeRequest;
 import org.sapia.ubik.mcast.control.challenge.ChallengeRequestHandler;
 import org.sapia.ubik.mcast.control.heartbeat.DownNotification;
@@ -20,22 +21,8 @@ import org.sapia.ubik.mcast.control.heartbeat.PingRequest;
 import org.sapia.ubik.mcast.control.heartbeat.PingRequestHandler;
 import org.sapia.ubik.util.Clock;
 
+
 public class EventChannelController {
-	
-	// --------------------------------------------------------------------------
-	
-	public enum Role {
-		
-		UNDEFINED,
-		MASTER_CANDIDATE,
-		MASTER,		
-		SLAVE;
-		
-		public boolean isMaster() {
-			return this == MASTER;
-		}
-		
-	}
 	
 	// --------------------------------------------------------------------------
 	
@@ -224,7 +211,7 @@ public class EventChannelController {
   		// This node is a slave: has it received a heartbeat request "lately" ? If no, 
   		// we're triggering a challenge: the master may be down.
   		default: // SLAVE
-  			if(context.getClock().currentTimeMillis() - context.getLastChallengeRequestReceivedTime() >= config.getHeartbeatTimeout()) {
+  			if(context.getClock().currentTimeMillis() - context.getLastHeartbeatRequestReceivedTime() >= config.getHeartbeatTimeout()) {
   				log.debug("Heartbeat request has not been received in timely manner since last time, triggering challenge");
   				doTriggerChallenge(true);
   			}

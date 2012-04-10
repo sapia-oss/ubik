@@ -44,6 +44,19 @@ import org.sapia.ubik.util.Props;
  */
 public class EventChannel {
   
+	public enum Role {
+		
+		UNDEFINED,
+		MASTER_CANDIDATE,
+		MASTER,		
+		SLAVE;
+		
+		public boolean isMaster() {
+			return this == MASTER;
+		}
+		
+	}
+	
 	/**
 	 * Sent by a node when it receives a publish event. Allows discovery by the node that just published itself.
 	 */
@@ -75,7 +88,7 @@ public class EventChannel {
   private ChannelEventListener    listener;
   private View                    view             = new View();
   private EventChannelController controller;
-  private int                     controlBatchSize = 5;
+  private int                     controlBatchSize;
   private ServerAddress           address;
   private List<SoftReference<DiscoveryListener>> discoListeners = Collections.synchronizedList(new ArrayList<SoftReference<DiscoveryListener>>());
   private volatile State          state            = State.CREATED;
@@ -124,6 +137,13 @@ public class EventChannel {
     this.unicast   = unicast;
     this.broadcast = broadcast;
     init(new Props().addSystemProperties());
+  }
+  
+  /**
+   * @return this instance's {@link Role}
+   */
+  public Role getRole() {
+  	return controller.getContext().getRole();
   }
 
   /**

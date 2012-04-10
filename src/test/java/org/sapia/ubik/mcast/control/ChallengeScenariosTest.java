@@ -4,7 +4,7 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.sapia.ubik.mcast.control.EventChannelController.Role;
+import org.sapia.ubik.mcast.EventChannel.Role;
 
 public class ChallengeScenariosTest extends EventChannelControllerTestSupport {
 
