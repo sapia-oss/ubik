@@ -27,7 +27,8 @@ public class EventChannelTest {
   
   @Test
   public void testEventChannelState() throws Exception {
-    source      = createEventChannel(1000, 2000);
+  	
+  	source      = createEventChannel(1000, 2000);
     source.start();
     Thread.sleep(1000);
     destination = createEventChannel(1000, 2000);
@@ -36,8 +37,7 @@ public class EventChannelTest {
     final BlockingRef<Boolean> isUpRef   = new BlockingRef<Boolean>();
     final BlockingRef<Boolean> isDownRef = new BlockingRef<Boolean>();
     
-    
-    source.addEventChannelStateListener(new EventChannelStateListener() {
+    EventChannelStateListener listener = new EventChannelStateListener() {
       @Override
       public void onDown(EventChannelEvent event) {
         isDownRef.set(true);
@@ -47,15 +47,17 @@ public class EventChannelTest {
       public void onUp(EventChannelEvent event) {
         isUpRef.set(true);
       }
-    });
+    }; 
     
-    Boolean isUp = isUpRef.await(3000);
+    source.addEventChannelStateListener(listener);
+    
+    Boolean isUp = isUpRef.await(5000);
     assertTrue("Destination not detected as up (event channel listener not called)", isUp != null);
     assertTrue("Destination not detected as up", isUp);
   
     destination.close();
     
-    Boolean isDown = isDownRef.await(30000);
+    Boolean isDown = isDownRef.await(5000);
     assertTrue("Destination not detected as down (event channel listener not called)", isDown != null);
     assertTrue("Destination not detected as down", isDown);
   }

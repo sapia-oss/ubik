@@ -108,7 +108,10 @@ public class UDPBroadcastDispatcher implements BroadcastDispatcher {
       evt = new RemoteEvent(domain, evtType, data).setNode(node);
     }
     evt.setUnicastAddress(unicastAddr);
-    server.send(McastUtil.toBytes(evt, bufsz));
+    
+    if(server != null) {
+    	server.send(McastUtil.toBytes(evt, bufsz));
+    }
   }
 
   /**
@@ -121,7 +124,10 @@ public class UDPBroadcastDispatcher implements BroadcastDispatcher {
     log.debug("Sending event bytes for: %s", evtType);
     evt = new RemoteEvent(domain, evtType, data).setNode(node);
     evt.setUnicastAddress(unicastAddr);
-    server.send(McastUtil.toBytes(evt, bufsz));
+    
+    if(server != null) {    
+    	server.send(McastUtil.toBytes(evt, bufsz));
+    }
   }
   
   /**

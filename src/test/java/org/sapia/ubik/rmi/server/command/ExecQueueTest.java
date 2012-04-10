@@ -55,7 +55,7 @@ public class ExecQueueTest {
         });
     remover.start();
 
-    queue.shutdown(2000);
+    queue.shutdown(5000);
     assertEquals(0, queue.size());
 
     try {

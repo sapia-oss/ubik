@@ -180,11 +180,6 @@ public class InvokeCommand extends RMICommand implements Externalizable {
       
       if(e instanceof InvocationTargetException){
         e = ((InvocationTargetException)e).getTargetException();
-        try {
-        	e.fillInStackTrace();
-        } catch (NullPointerException npe) {
-        	// catching bizarre NPE when calling fillInStackTrace()
-        }
       }
       ServerPostInvokeEvent postEvt = new ServerPostInvokeEvent(
           preEvt.getTarget(),
