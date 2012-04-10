@@ -34,7 +34,7 @@ public class Defaults {
   /**
    * The default heartbeat interval (see {@link Consts#MCAST_HEARTBEAT_INTERVAL}).
    */
-  public static final int  DEFAULT_HEARTBEAT_INTERVAL       = 20000;
+  public static final int  DEFAULT_HEARTBEAT_INTERVAL       = 40000;
   
   /**
    * The default timeout for channel control responses. 
