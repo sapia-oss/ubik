@@ -28,7 +28,7 @@ public class TestSocketServerTransportSetup {
   }
   
   public void tearDown() {
-    System.setProperty(Consts.ENABLE_COLOCATED_CALLS, "true");
+    System.clearProperty(Consts.ENABLE_COLOCATED_CALLS);
     if(jndi != null) {
       jndi.stop();
     }

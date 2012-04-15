@@ -13,7 +13,6 @@ import java.util.List;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.sapia.ubik.log.Log;
 import org.sapia.ubik.rmi.server.TestSocketServerTransportSetup;
 import org.sapia.ubik.rmi.server.TestStatelessRemoteInterface;
 

@@ -1,5 +1,6 @@
 package org.sapia.ubik.mcast.udp;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.MulticastSocket;
@@ -199,6 +200,9 @@ public class UDPBroadcastDispatcher implements BroadcastDispatcher {
     protected void handle(DatagramPacket pack, MulticastSocket sock) {
       try {
         consumer.onAsyncEvent((RemoteEvent) McastUtil.fromDatagram(pack));
+      } catch (EOFException e) {
+      	log.warning("Could not deserialize remote event, packet size may be too short " + this.bufSize());
+      
       } catch (Exception e) {
         log.error("Could not deserialize remote event", e);
       }

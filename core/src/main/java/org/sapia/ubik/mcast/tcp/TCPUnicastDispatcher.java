@@ -64,11 +64,11 @@ public class TCPUnicastDispatcher implements UnicastDispatcher {
    * @param consumer
    * @throws IOException
    */
-  public TCPUnicastDispatcher(EventConsumer consumer) throws IOException{
+  public TCPUnicastDispatcher(EventConsumer consumer, int maxThreads) throws IOException{
     if(Localhost.isIpPatternDefined()) {
-      this.socketServer = new TCPUnicastSocketServer(Localhost.getAnyLocalAddress().getHostAddress(), consumer);  
+      this.socketServer = new TCPUnicastSocketServer(Localhost.getAnyLocalAddress().getHostAddress(), consumer, maxThreads);  
     } else {
-      this.socketServer = new TCPUnicastSocketServer(consumer);
+      this.socketServer = new TCPUnicastSocketServer(consumer, maxThreads);
     }
     this.consumer = consumer;
   }
@@ -228,7 +228,7 @@ public class TCPUnicastDispatcher implements UnicastDispatcher {
     } catch (ClassNotFoundException e) {
       log.error("Could not deserialize response", e);
     } catch (TimeoutException e) {
-      // will not happen, see doSend()
+    	log.error("Did not receive ack from peer", e);
     } catch (InterruptedException e) {
       ThreadInterruptedException tie = new ThreadInterruptedException();
       tie.fillInStackTrace();
@@ -282,12 +282,12 @@ public class TCPUnicastDispatcher implements UnicastDispatcher {
   
   static class TCPUnicastSocketServer extends SocketServer {
     
-    public TCPUnicastSocketServer(String bindAddress, EventConsumer consumer) throws IOException{
-      super(TRANSPORT_TYPE, bindAddress, 0, new TCPUnicastThreadPool(consumer), new DefaultUbikServerSocketFactory());
+    public TCPUnicastSocketServer(String bindAddress, EventConsumer consumer, int maxThreads) throws IOException{
+      super(TRANSPORT_TYPE, bindAddress, 0, new TCPUnicastThreadPool(consumer, maxThreads), new DefaultUbikServerSocketFactory());
     }
     
-    public TCPUnicastSocketServer(EventConsumer consumer) throws IOException{
-      super(TRANSPORT_TYPE, 0, new TCPUnicastThreadPool(consumer), new DefaultUbikServerSocketFactory());
+    public TCPUnicastSocketServer(EventConsumer consumer, int maxThreads) throws IOException{
+      super(TRANSPORT_TYPE, 0, new TCPUnicastThreadPool(consumer, maxThreads), new DefaultUbikServerSocketFactory());
     }    
   }
 
@@ -297,8 +297,8 @@ public class TCPUnicastDispatcher implements UnicastDispatcher {
     
     private EventConsumer consumer;
     
-    TCPUnicastThreadPool(EventConsumer consumer) {
-      super(consumer.getNode() + "Unicast@" + consumer.getDomainName().toString(), true, 1);
+    TCPUnicastThreadPool(EventConsumer consumer, int maxSize) {
+      super(consumer.getNode() + "Unicast@" + consumer.getDomainName().toString(), true, maxSize);
       this.consumer = consumer;
     }
    

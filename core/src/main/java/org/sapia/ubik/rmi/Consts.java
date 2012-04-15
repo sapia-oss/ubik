@@ -73,6 +73,14 @@ public interface Consts {
    */
   public static final String MCAST_SENDER_COUNT = "ubik.rmi.naming.mcast.sender.count";
   
+  
+  /**
+   * This constant corresponds to the 'ubik.rmi.naming.mcast.handler.count' property key. It
+   * is used to set the number of worker threads that handler request in {@link UnicastDispatcher} 
+   * or {@link BroadcastDispatcher} implementations.
+   */  
+  public static final String MCAST_HANDLER_COUNT = "ubik.rmi.naming.mcast.handler.count";
+  
   /**
    * This constant corresponds to the 'ubik.rmi.naming.mcast.response.timeout' property key. The value
    * is expected to indicate the timeout (in millis) when waiting for synchronous responses.

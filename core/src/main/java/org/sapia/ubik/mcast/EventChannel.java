@@ -108,8 +108,9 @@ public class EventChannel {
     throws IOException {
     consumer    = new EventConsumer(domain);
     broadcast   = new UDPBroadcastDispatcher(consumer, mcastHost, mcastPort);
-    unicast     = new UDPUnicastDispatcher(consumer);
-    init(new Props().addSystemProperties());
+    Props props = new Props().addSystemProperties(); 
+    unicast     = new UDPUnicastDispatcher(consumer, props.getIntProperty(Consts.MCAST_HANDLER_COUNT, Defaults.DEFAULT_HANDLER_COUNT));
+    init(props);
   }
   
   /**
@@ -139,8 +140,8 @@ public class EventChannel {
    */
   public EventChannel(String domain, Props config) throws IOException {
     consumer  = new EventConsumer(domain);
-    unicast   = UnicastDispatcherFactory.createUnicastDispatcher(consumer, config);
-    broadcast = UnicastDispatcherFactory.createBroadcastDispatcher(consumer, config);
+    unicast   = DispatcherFactory.createUnicastDispatcher(consumer, config);
+    broadcast = DispatcherFactory.createBroadcastDispatcher(consumer, config);
     init(config);
   }
   
@@ -465,6 +466,7 @@ public class EventChannel {
     						if(address != null) {
     							unicast.dispatch(address, CONTROL_EVT, toSend);
     						}
+    						Thread.yield();
     					} catch (IOException e) {
     						log.error("Could not send control request", e);
     						break;
@@ -517,6 +519,7 @@ public class EventChannel {
     						if(address != null) {
     							unicast.dispatch(address, CONTROL_EVT, toSend);
     						}
+    						Thread.yield();    						
     					} catch (IOException e) {
     						log.error("Could not send control request", e);
     						break;

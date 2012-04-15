@@ -1,0 +1,36 @@
+<assembly>
+  <id>bin</id>
+  <formats>
+    <format>zip</format>
+    <format>tar.gz</format>
+  </formats>
+  <includeBaseDirectory>true</includeBaseDirectory>
+  <fileSets>
+    
+    <!-- bin -->
+    <fileSet>
+       <directory>bin</directory>
+       <includes>
+          <include>*.sh</include>
+       </includes>
+       <fileMode>0777</fileMode>
+    </fileSet>
+    <fileSet>
+       <directory>bin</directory>
+       <includes>
+          <include>*.bat</include>
+       </includes>
+       <fileMode>0777</fileMode>
+    </fileSet>
+    
+    <!-- lib -->
+    <fileSet>
+       <directory>lib</directory>
+       <includes>
+          <include>**/*</include>
+       </includes>
+    </fileSet>
+
+  </fileSets>
+  
+</assembly>

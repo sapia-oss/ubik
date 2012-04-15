@@ -20,15 +20,15 @@ import org.sapia.ubik.util.Props;
  * @author yduchesne
  *
  */
-public final class UnicastDispatcherFactory {
+public final class DispatcherFactory {
 
   /**
    * Private constructor.
    */
-  private UnicastDispatcherFactory() {
+  private DispatcherFactory() {
   }
   
-  private static Category log = Log.createCategory(UnicastDispatcherFactory.class);
+  private static Category log = Log.createCategory(DispatcherFactory.class);
 
   /**
    * Creates a {@link UnicastDispatcher}, based on the given {@link Properties}, and returns it.
@@ -45,14 +45,14 @@ public final class UnicastDispatcherFactory {
       return new InMemoryUnicastDispatcher(consumer);
     } else if(provider.equals(Consts.UNICAST_PROVIDER_TCP)) {
       log.info("Creating TCP unicast provider");
-      TCPUnicastDispatcher dispatcher = new TCPUnicastDispatcher(consumer);
+      TCPUnicastDispatcher dispatcher = new TCPUnicastDispatcher(consumer, props.getIntProperty(Consts.MCAST_HANDLER_COUNT, Defaults.DEFAULT_HANDLER_COUNT));
       dispatcher.setSenderCount(props.getIntProperty(Consts.MCAST_SENDER_COUNT, Defaults.DEFAULT_SENDER_COUNT));
       dispatcher.setMaxConnectionsPerHost(props.getIntProperty(TCPUnicastDispatcher.MAX_CONNECTIONS, TCPUnicastDispatcher.DEFAULT_MAX_CONNECTIONS_PER_HOST));
       dispatcher.setResponseTimeout(props.getIntProperty(Consts.MCAST_SYNC_RESPONSE_TIMEOUT, Defaults.DEFAULT_SYNC_RESPONSE_TIMEOUT));
       return dispatcher;
     } else {
       log.info("Creating UDP unicast provider");      
-      UDPUnicastDispatcher dispatcher = new UDPUnicastDispatcher(consumer);  
+      UDPUnicastDispatcher dispatcher = new UDPUnicastDispatcher(consumer, props.getIntProperty(Consts.MCAST_HANDLER_COUNT, Defaults.DEFAULT_HANDLER_COUNT));  
       dispatcher.setBufsize(props.getIntProperty(Consts.MCAST_BUFSIZE_KEY, Defaults.DEFAULT_UDP_PACKET_SIZE));
       dispatcher.setSenderCount(props.getIntProperty(Consts.MCAST_SENDER_COUNT, Defaults.DEFAULT_SENDER_COUNT));
       return dispatcher;

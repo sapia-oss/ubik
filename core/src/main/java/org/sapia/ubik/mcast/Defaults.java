@@ -14,12 +14,18 @@ public class Defaults {
   /**
    * The default UDP packet size (see {@link Consts#MCAST_BUFSIZE_KEY}).
    */
-  public static final int DEFAULT_UDP_PACKET_SIZE           = 2034;
+  public static final int DEFAULT_UDP_PACKET_SIZE           = 3072;
   
   /**
    * The default sender count (see {@link Consts#MCAST_SENDER_COUNT}).
    */
   public static final int DEFAULT_SENDER_COUNT              = 3;
+  
+  /**
+   * The default number of worker threads for unicast dispatchers.
+   * (see {@link Consts#MCAST_HANDLER_COUNT}).
+   */
+  public static final int DEFAULT_HANDLER_COUNT             = 3;
   
   /**
    * The default synchronous response timeout (see {@link Consts#MCAST_SYNC_RESPONSE_TIMEOUT}).

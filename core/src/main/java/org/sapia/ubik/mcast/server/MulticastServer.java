@@ -12,7 +12,7 @@ import org.sapia.ubik.concurrent.NamedThreadFactory;
 import org.sapia.ubik.concurrent.ThreadShutdown;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
-import org.sapia.ubik.mcast.ByteArrayPool;
+import org.sapia.ubik.mcast.Defaults;
 import org.sapia.ubik.util.Localhost;
 
 
@@ -24,7 +24,6 @@ import org.sapia.ubik.util.Localhost;
  */
 public abstract class MulticastServer {
   
-  static final int          DEFAULT_BUFSZ = 20000;
   static final int          DEFAULT_TTL   = 7;
   
   protected Category        log           = Log.createCategory(getClass());
@@ -32,8 +31,8 @@ public abstract class MulticastServer {
   private InetAddress       group;
   private String            groupStr;
   private int               port;
-  private ByteArrayPool     bytePool      = new ByteArrayPool(DEFAULT_BUFSZ);
   private Thread            serverThread;
+  private int               bufSize       = Defaults.DEFAULT_UDP_PACKET_SIZE;
   
   private class Acceptor implements Runnable {
     
@@ -80,7 +79,7 @@ public abstract class MulticastServer {
    * @param size a buffer size.
    */
   public void setBufsize(int size) {
-    bytePool.setBufSize(size);
+    this.bufSize = size;
   }
 
   /**
@@ -140,21 +139,13 @@ public abstract class MulticastServer {
     DatagramPacket pack = null;
 
     while (true) {
-      byte[] bytes = null;
-      
-      try{
-        bytes = (byte[])bytePool.acquire();
-      } catch (Exception e) {
-        log.error("Could not acquire byte buffer", e);
-        break;
-      }
-      
+      byte[] bytes = new byte[bufSize];
       try {
         pack = new DatagramPacket(bytes, bytes.length);
         sock.receive(pack);
         handle(pack, sock);
       } catch (EOFException e) {
-        log.error("EOF: could not read incoming packet bytes (packet size may be too short)");
+        log.error("EOF: could not read incoming packet bytes. Packet size may be too short: " + bufSize);
       } catch (SocketException e) {
         // socket might have been closed, which is the case when this instance's
         // close() method is called. In which case, just exit silently
@@ -163,10 +154,8 @@ public abstract class MulticastServer {
         } else {
           log.error("Socket error caught while reading data", e);
         }
-      } catch (IOException e) {
-        log.error("IO exception caught while waiting for incoming packets", e);
-      } finally {
-        bytePool.release(bytes);
+      } catch (Exception e) {
+        log.error("Unexpected exception caught while waiting for incoming packets", e);
       }
     }
   }
@@ -175,7 +164,7 @@ public abstract class MulticastServer {
    * @return the size (in bytes) of the buffers that are used to read incoming datagrams.
    */
   protected int bufSize() {
-    return bytePool.getBufSize();
+    return bufSize;
   }
 
   /**

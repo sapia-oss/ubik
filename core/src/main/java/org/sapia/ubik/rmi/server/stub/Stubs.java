@@ -6,7 +6,7 @@ import java.rmi.RemoteException;
 
 import javax.naming.Name;
 
-import org.sapia.ubik.mcast.UnicastDispatcherFactory;
+import org.sapia.ubik.mcast.DispatcherFactory;
 import org.sapia.ubik.net.Connection;
 import org.sapia.ubik.rmi.server.command.RMICommand;
 import org.sapia.ubik.rmi.server.transport.Connections;
@@ -92,7 +92,7 @@ public class Stubs {
     RemoteRefStateless ref      = new RemoteRefStateless(
                                         name, 
                                         domain, 
-                                        UnicastDispatcherFactory.getMulticastAddress(System.getProperties())
+                                        DispatcherFactory.getMulticastAddress(System.getProperties())
                                   );
     ref.getContextList().update(handler.getContexts());
     return ref;

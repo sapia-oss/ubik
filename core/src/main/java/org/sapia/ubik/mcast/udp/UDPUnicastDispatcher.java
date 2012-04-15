@@ -42,18 +42,27 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
   private int                   responseTimeout = Defaults.DEFAULT_SYNC_RESPONSE_TIMEOUT;
   private int                   senderCount     = Defaults.DEFAULT_SENDER_COUNT;
   private ExecutorService       senders;
+  private ExecutorService       handlers;
   private UDPUnicastAddress     addr;
   
-  public UDPUnicastDispatcher(EventConsumer consumer)
+  public UDPUnicastDispatcher(EventConsumer consumer, int maxThreads)
     throws SocketException {
     super(consumer.getNode() + "Unicast@" + consumer.getDomainName().toString());
     this.consumer   = consumer;
+    handlers = Executors.newFixedThreadPool(
+        maxThreads, 
+        NamedThreadFactory.createWith("udp.unicast.dispatcher.Handler").setDaemon(true)
+    );    
   }
 
-  public UDPUnicastDispatcher(int soTimeout, int port, EventConsumer consumer)
+  public UDPUnicastDispatcher(int soTimeout, int port, EventConsumer consumer, int maxThreads)
     throws SocketException {
     super(consumer.getNode() + "@" + consumer.getDomainName().toString(), port);
     this.consumer   = consumer;
+    handlers = Executors.newFixedThreadPool(
+        maxThreads, 
+        NamedThreadFactory.createWith("udp.unicast.dispatcher.Handler").setDaemon(true)
+    );
   }
   
   /**
@@ -79,7 +88,7 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
     	throw new IllegalStateException("Problem while starting up", e);
     }
     
-    this.senders = Executors.newFixedThreadPool(
+    senders = Executors.newFixedThreadPool(
         senderCount, 
         NamedThreadFactory.createWith("udp.unicast.dispatcher.Sender").setDaemon(true)
     );
@@ -225,7 +234,16 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
   /**
    * @see org.sapia.ubik.mcast.server.UDPServer#handle(DatagramPacket, DatagramSocket)
    */
-  protected void handle(DatagramPacket pack, DatagramSocket sock) {
+  protected void handle(final DatagramPacket pack, final DatagramSocket sock) {
+  	handlers.execute(new Runnable() {
+			@Override
+			public void run() {
+				doHandle(pack, sock);
+			}
+		});
+  }
+  
+  private void doHandle(DatagramPacket pack, DatagramSocket sock) {
     try {
       Object o = McastUtil.fromDatagram(pack);
 

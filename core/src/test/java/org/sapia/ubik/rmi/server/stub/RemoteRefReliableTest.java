@@ -18,8 +18,6 @@ import org.sapia.ubik.net.TCPAddress;
 import org.sapia.ubik.rmi.server.TestRemoteInterface;
 import org.sapia.ubik.rmi.server.TestSocketServerTransportSetup;
 import org.sapia.ubik.rmi.server.oid.DefaultOID;
-import org.sapia.ubik.rmi.server.stub.RemoteRefContext;
-import org.sapia.ubik.rmi.server.stub.RemoteRefReliable;
 import org.sapia.ubik.test.TestUtils;
 
 
