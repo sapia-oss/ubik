@@ -14,7 +14,7 @@ public class Defaults {
   /**
    * The default UDP packet size (see {@link Consts#MCAST_BUFSIZE_KEY}).
    */
-  public static final int DEFAULT_UDP_PACKET_SIZE           = 4096;
+  public static final int DEFAULT_UDP_PACKET_SIZE           = 2034;
   
   /**
    * The default sender count (see {@link Consts#MCAST_SENDER_COUNT}).
@@ -34,7 +34,7 @@ public class Defaults {
   /**
    * The default heartbeat interval (see {@link Consts#MCAST_HEARTBEAT_INTERVAL}).
    */
-  public static final int  DEFAULT_HEARTBEAT_INTERVAL       = 40000;
+  public static final int  DEFAULT_HEARTBEAT_INTERVAL       = 60000;
   
   /**
    * The default timeout for channel control responses. 

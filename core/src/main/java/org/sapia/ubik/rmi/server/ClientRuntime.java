@@ -178,6 +178,10 @@ public class ClientRuntime implements Module{
       conn = conns.acquire();
       conn.send(new CommandRefer(oid));
       conn.receive();
+    } catch (Exception e) {
+    	if (conn != null) {
+    		conn.close();
+    	}
     } finally {
       if (conn != null) {
         conns.release(conn);

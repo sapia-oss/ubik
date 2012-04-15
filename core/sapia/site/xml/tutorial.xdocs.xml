@@ -17,8 +17,18 @@
     
     <sapia:vsection name="Transports">
       <sapia:vitem name="HTTP" href="transport/http.html" />
-      <sapia:vitem name="Mplex" href="transport/mplex.html" />    
+      <sapia:vitem name="Mplex" href="transport/mplex.html" />
+	  <sapia:vitem name="Standard/TCP" href="transport/standard_tcp.html" />
+      <sapia:vitem name="NIO/TCP" href="transport/nio_tcp.html" />
     </sapia:vsection>  
+    
+    <sapia:vsection name="Group Comm" href="group_communication.html">
+      <sapia:vitem name="Event Channel" href="group_communication.html#eventchannel" />
+      <sapia:vitem name="Protocol" href="group_communication.html#control_protocol" />    
+      <sapia:vitem name="Avis" href="group_communication.html#using_avis" />
+      <sapia:vitem name="TCP Unicast" href="group_communication.html#tcp_unicast" />
+    </sapia:vsection>
+          
     <sapia:vsection name="Javadoc" href="maven/api/index.html"/>
     <sapia:vsection name="Download" href="download.html"/>
     <sapia:vsection name="Mailing List" href="list.html"/>
@@ -49,7 +59,7 @@
         resorts to localhost. If multiple network interfaces (other than localhost) are available
         on the host on which a Ubik server is started, then a regular expression can be used to
         indicate to Ubik which one to use. That regular expression must be specified as a 
-        System property, under the <sapia:command>ubik.rmi.address-pattern</sapia:command>
+        JVM property, under the <sapia:command>ubik.rmi.address-pattern</sapia:command>
         key. If no address could be found that matches the given regexp, then Ubik also
         resorts to localhost.
       </p>
@@ -79,7 +89,6 @@
         <li>after a remote method invocation on the client-side;</li>
         <li>prior to a remote method invocation on the server-side;</li>
         <li>after a remote method invocation on the server-side;</li>
-        <!--li>prior to a stub being created - on the server-side.</li-->
       </ul>
       
       <p>Through the Ubik RMI API, it is possible to register interceptors for the above events, depending
@@ -141,7 +150,7 @@ public class HitCountInterceptor implements Interceptor {
 // the hitInterceptor variable is an 
 // instance of HitCountInterceptor
  
-Hub.serverRuntime.
+Hub.getModules().getServerRuntime().
     dispatcher.
         addInterceptor(ServerPreInvokeEvent.class, 
                        hitInterceptor);        
@@ -153,8 +162,8 @@ Hub.serverRuntime.
         would take place:</p>
         
         <sapia:code>
-Hub.clientRuntime.
-    dispatcher.
+Hub.getModules().getClientRuntime().
+    getDispatcher().
         addInterceptor(someEventClass,  
                        someInterceptor);        
         </sapia:code>
@@ -179,8 +188,7 @@ Hub.clientRuntime.
         registered. The following snippet shows how to dispatch an event:</p>
         
         <sapia:code>
-Hub.clientRuntime.
-        dispatchEvent(someEvent);        
+Hub.getClientRuntime().getDispatcher().dispatchEvent(someEvent);        
         </sapia:code>
       </sapia:sect3>
     </sapia:sect2>
@@ -367,7 +375,7 @@ public class HelloWorldCommand extends RMICommand {
       
       <p>In addition, if objects transit through other VMs when going from client to server (and vice-versa), the intermediary
       VMs will not be able to deserialize remote method call information - if the appropriate classes are not in the classpath; this
-      will also result in <sapia:command>ClassNotFoundException</sapia:command>s. Again with regards to a multi-VM scenario, another
+      will also result in <sapia:class>ClassNotFoundException</sapia:class>s. Again with regards to a multi-VM scenario, another
       disadvantage is that whole object graphs have to be deserialized and reserialized, which can produce quite an overhead.</p>
       
       <p>As a work around, Ubik encapsulates method call parameters in 

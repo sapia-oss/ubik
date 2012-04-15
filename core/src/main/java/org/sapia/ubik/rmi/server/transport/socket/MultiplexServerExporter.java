@@ -13,7 +13,7 @@ import org.sapia.ubik.rmi.Consts;
  * @author yduchesne
  *
  */
-public class MultiplexSocketTransportExporter extends SocketTransportExporter {
+public class MultiplexServerExporter extends SocketServerExporter {
 	
 	private int acceptorThreads;
 	private int selectorThreads;
@@ -23,7 +23,7 @@ public class MultiplexSocketTransportExporter extends SocketTransportExporter {
 	 * @return this instance.
 	 * @see MultiplexSocketTransportProvider#ACCEPTOR_THREADS
 	 */
-	public MultiplexSocketTransportExporter setAcceptorThreads(int acceptorThreads) {
+	public MultiplexServerExporter setAcceptorThreads(int acceptorThreads) {
 		this.acceptorThreads = acceptorThreads;
 		return this;
 	}
@@ -40,7 +40,7 @@ public class MultiplexSocketTransportExporter extends SocketTransportExporter {
 	 * @param selectorThreads the number of selector threads.
 	 * @return this instance.
 	 */
-	public MultiplexSocketTransportExporter setSelectorThreads(int selectorThreads) {
+	public MultiplexServerExporter setSelectorThreads(int selectorThreads) {
 		this.selectorThreads = selectorThreads;
 		return this;
 	}

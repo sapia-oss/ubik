@@ -15,7 +15,7 @@ public class MultiplexSocketHelper {
    * @return The created socket connector.
    */
   public static MultiplexSocketConnector createSocketConnector(StreamSelector aSelector) {
-  	SocketServer server = (SocketServer)Hub.getModules()
+  	SocketServer server = (SocketServer) Hub.getModules()
   			.getServerTable()
   			.getServerFor(MultiplexSocketTransportProvider.MPLEX_TRANSPORT_TYPE);
     MultiplexServerSocket serverSocket = (MultiplexServerSocket) server.serverSocket();
@@ -28,7 +28,7 @@ public class MultiplexSocketHelper {
    * @param anInterceptor The connector to remove.
    */
   public static void removeSocketConnector(MultiplexSocketConnector anInterceptor) {
-  	SocketServer server = (SocketServer)Hub.getModules()
+  	SocketServer server = (SocketServer) Hub.getModules()
   			.getServerTable()
   			.getServerFor(MultiplexSocketTransportProvider.MPLEX_TRANSPORT_TYPE);
     MultiplexServerSocket serverSocket = (MultiplexServerSocket) server.serverSocket();

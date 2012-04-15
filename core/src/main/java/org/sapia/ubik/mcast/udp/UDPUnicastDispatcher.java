@@ -146,7 +146,7 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
       return (Response) doSend(inet.getInetAddress(), inet.getPort(), sock,
         McastUtil.toBytes(evt, bufSize()), true, type);
     } catch (TimeoutException e) {
-      return new Response(evt.getId(), null).setStatusSuspect();
+      return new Response(evt.getId(), e).setStatusSuspect();
     } finally {
       try{
         sock.close();
@@ -182,7 +182,7 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
             queue.add(resp);
           } catch (TimeoutException e) {
             log.error("Response from %s not received in timely manner", addr);
-            queue.add(new Response(evt.getId(), null).setStatusSuspect());
+            queue.add(new Response(evt.getId(), e).setStatusSuspect());
           } catch (IOException e) { 
             log.error("IO problem sending remote event to " + addr, e);
           } finally {

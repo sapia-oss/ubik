@@ -94,13 +94,15 @@ public class EventChannel {
   private volatile State          state            = State.CREATED;
   
   /**
-   * Creates an instance of this class that will use IP multicast.
+   * Creates an instance of this class that will use IP multicast and UDP unicast.
    *
    * @param domain the domain name of this instance.
    * @param mcastHost the multicast address that this instance will use to broadcast remote events.
    * @param mcastPort the multicast port that this instance will use to broadcast remote events.
    * @throws IOException if a problem occurs creating this instance.
    * @see DomainName
+   * @see UDPBroadcastDispatcher
+   * @see UDPUnicastDispatcher
    */
   public EventChannel(String domain, String mcastHost, int mcastPort)
     throws IOException {
@@ -108,6 +110,21 @@ public class EventChannel {
     broadcast   = new UDPBroadcastDispatcher(consumer, mcastHost, mcastPort);
     unicast     = new UDPUnicastDispatcher(consumer);
     init(new Props().addSystemProperties());
+  }
+  
+  /**
+   * Creates an instance of this class that uses a {@link UDPBroadcastDispatcher} and a {@link UDPUnicastDispatcher}.
+   * The broadcast dispatcher will use the default multicast address and port.
+   * 
+   * @param domain this instance's domain.
+   * @throws IOException
+   * @see {@link Consts#DEFAULT_MCAST_ADDR}
+   * @see Consts#DEFAULT_MCAST_PORT
+   * @see UDPBroadcastDispatcher
+   * @see UDPUnicastDispatcher
+   */
+  public EventChannel(String domain) throws IOException {
+  	this(domain, Consts.DEFAULT_MCAST_ADDR, Consts.DEFAULT_MCAST_PORT);
   }
   
   /**
@@ -438,18 +455,26 @@ public class EventChannel {
   			List<ControlNotification> split = notif.split(controlBatchSize);
   			for(ControlNotification toSend : split) {
   				if(!toSend.getTargetedNodes().isEmpty()) {
-  					String next = toSend.getTargetedNodes().iterator().next();
-  					toSend.getTargetedNodes().remove(next);
-  					try {
-  						unicast.dispatch(view.getAddressFor(next), CONTROL_EVT, notif);
-  					} catch (IOException e) {
-  						log.error("Could not send control notification", e);
-  					}
+  					ServerAddress address = null;
+  					do {
+    					try {
+      					String next = toSend.getTargetedNodes().iterator().next();
+      	  			log.debug("Sending control notification to next nodes %s", next);  					
+      					toSend.getTargetedNodes().remove(next);
+    						address = view.getAddressFor(next);
+    						if(address != null) {
+    							unicast.dispatch(address, CONTROL_EVT, toSend);
+    						}
+    					} catch (IOException e) {
+    						log.error("Could not send control request", e);
+    						break;
+    					}
+  					} while (address == null && !toSend.getTargetedNodes().isEmpty());
   				}
   			}
   		}
   	}
-  	
+ 	
     @Override
   	public Set<SynchronousControlResponse> sendSynchronousRequest(
   	    Set<String> targetedNodes, SynchronousControlRequest request) throws InterruptedException, IOException {

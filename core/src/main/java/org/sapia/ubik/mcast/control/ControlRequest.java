@@ -99,7 +99,7 @@ public abstract class ControlRequest implements Externalizable {
   }
 	
 	/**
-	 * Splits this notification into multiple other ones, each targeted at a subset of the original targeted notes.
+	 * Splits this notification into multiple other ones, each targeted at a subset of the original targeted nodes.
 	 * 
 	 * @return a {@link List} of {@link ControlRequest}s.
 	 */

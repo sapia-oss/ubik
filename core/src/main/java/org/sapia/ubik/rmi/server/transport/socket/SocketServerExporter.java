@@ -12,7 +12,7 @@ import org.sapia.ubik.rmi.server.Hub;
  * @author yduchesne
  *
  */
-public class SocketTransportExporter {
+public class SocketServerExporter {
 	
 	private int 	 maxThreads;
 	private String bindAddress;
@@ -23,7 +23,7 @@ public class SocketTransportExporter {
 	 * consult the {@link Consts#SERVER_MAX_THREADS} property first, and will use this value as a fallback).
 	 * @return this instance.
 	 */
-	public SocketTransportExporter setMaxThreads(int maxThreads) {
+	public SocketServerExporter setMaxThreads(int maxThreads) {
 	  this.maxThreads = maxThreads;
 	  return this;
   }
@@ -41,7 +41,7 @@ public class SocketTransportExporter {
 	 * network interfaces if not set.
 	 * @return this instance.
 	 */
-	public SocketTransportExporter setBindAddress(String bindAddress) {
+	public SocketServerExporter setBindAddress(String bindAddress) {
 	  this.bindAddress = bindAddress;
 	  return this;
   }
@@ -57,7 +57,7 @@ public class SocketTransportExporter {
 	 * @param port the port on which the server should listen (defaults to a random port if not set).
 	 * @return this instance.
 	 */
-	public SocketTransportExporter setPort(int port) {
+	public SocketServerExporter setPort(int port) {
 	  this.port = port;
 	  return this;
   }

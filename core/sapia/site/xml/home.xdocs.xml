@@ -17,8 +17,18 @@
     
     <sapia:vsection name="Transports">
       <sapia:vitem name="HTTP" href="transport/http.html" />
-      <sapia:vitem name="Mplex" href="transport/mplex.html" />    
+      <sapia:vitem name="Mplex" href="transport/mplex.html" />
+	  <sapia:vitem name="Standard/TCP" href="transport/standard_tcp.html" />
+      <sapia:vitem name="NIO/TCP" href="transport/nio_tcp.html" />
     </sapia:vsection>  
+    
+    <sapia:vsection name="Group Comm" href="group_communication.html">
+      <sapia:vitem name="Event Channel" href="group_communication.html#eventchannel" />
+      <sapia:vitem name="Protocol" href="group_communication.html#control_protocol" />    
+      <sapia:vitem name="Avis" href="group_communication.html#using_avis" />
+      <sapia:vitem name="TCP Unicast" href="group_communication.html#tcp_unicast" />
+    </sapia:vsection>
+    
     <sapia:vsection name="Javadoc" href="maven/api/index.html"/>
     <sapia:vsection name="Download" href="download.html"/>
     <sapia:vsection name="Mailing List" href="list.html"/>
@@ -80,7 +90,11 @@
           reduces configuration and security-related hassles (setting setting up a remote distributed codebase, 
           managing security managers and permissions, etc.);</li>
           <li>clean shutdown - incoming request threads are given time to complete;</li>
-          <li>performant <!--(25% more raw throughput performance than the JDK's RMI for passed-by-value objects)-->.</li>
+          <li>different discovery mechanisms (IP Multicast, TCP-based broadcast relying on <a href="http://avis.sourceforge.net/">Avis</a>).</li>
+          <li>faster serialization with the <a href="http://www.jboss.org/serialization/">JBoss Serialization</a> library.</li>
+          <li>features a <sapia:class link="maven/api/org/sapia/ubik/rmi/Remote.html">@Remote</sapia:class> annotation, which can be used
+          instead of implementing the JDK's <sapia:class>Remote</sapia:class> interface.</li>
+          <li>performant.</li>
         </ul>
       </sapia:sect3>
       

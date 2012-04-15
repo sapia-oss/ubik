@@ -27,7 +27,7 @@ public class SocketTransportExporterTest {
 	public void testExport() throws Exception {
 		
 		final Counter counter = new Counter(2);
-		SocketTransportExporter exporter = new SocketTransportExporter();
+		SocketServerExporter exporter = new SocketServerExporter();
 		TestInterface remoteObject = (TestInterface) exporter.export(new TestInterface() {
 			@Override
 			public void test() {

@@ -17,8 +17,18 @@
     
     <sapia:vsection name="Transports">
       <sapia:vitem name="HTTP" href="transport/http.html" />
-      <sapia:vitem name="Mplex" href="transport/mplex.html" />    
+      <sapia:vitem name="Mplex" href="transport/mplex.html" />
+	  <sapia:vitem name="Standard/TCP" href="transport/standard_tcp.html" />
+      <sapia:vitem name="NIO/TCP" href="transport/nio_tcp.html" />
     </sapia:vsection>  
+    
+    <sapia:vsection name="Group Comm" href="group_communication.html">
+      <sapia:vitem name="Event Channel" href="group_communication.html#eventchannel" />
+      <sapia:vitem name="Protocol" href="group_communication.html#control_protocol" />    
+      <sapia:vitem name="Avis" href="group_communication.html#using_avis" />
+      <sapia:vitem name="TCP Unicast" href="group_communication.html#tcp_unicast" />
+    </sapia:vsection>      
+    
     <sapia:vsection name="Javadoc" href="maven/api/index.html"/>
     <sapia:vsection name="Download" href="download.html"/>
     <sapia:vsection name="Mailing List" href="list.html"/>
@@ -52,13 +62,15 @@
         <li>A-la-Jini discovery of JNDI servers is supported.</li>
       </ul>
       
-      <p>Ubik JNDI uses UDP multicast to implement binding replication and fail-over among multiple Ubik JNDI 
-      servers in a domain. </p>
+      <p>Ubik JNDI uses UDP multicast by default to implement binding replication and fail-over among multiple Ubik JNDI 
+      servers in a domain.</p>
+      
+      <p>This feature is supported through the <sapia:class>EventChannel</sapia:class>, which is better documented in the
+      <a href="group_communication.html">Group Communication section</a>.</p>
       
       <sapia:note>
-      Needless to say, to benefit from Ubik's most interesting features, your network needs to be multicast-enabled. Usually,
-      routers support multicast natively - even domestic routers that you use at home to serve as a gateway between your PC
-      and the internet.
+      As of release 3, Ubik supports discovery and replication over <a href="http://avis.sourceforge.net/">Avis</a>: 
+      see the <a href="group_communication.html">Group Communication</a> section for more details.
       </sapia:note>
       
       <p>Ubik JNDI servers communicate with each other in the following manner:</p>
@@ -136,7 +148,7 @@ public class HelloImpl implements Hello{
   
   public static void main(String[] args){
     try{
-      Properties props = new Propertie();
+      Properties props = new Properties();
       
       props.setProperty(InitialContext.PROVIDER_URL, 
              "ubik://localhost:1099/");
@@ -152,7 +164,7 @@ public class HelloImpl implements Hello{
       }
     }catch(InterruptedException e){
       System.out.println("terminating");
-    }catch(RemoteException e){
+    }catch(Exception e){
       e.printStackTrace();
     }
   }
@@ -172,7 +184,7 @@ public class HelloLookup {
         
   public static void main(String[] args){
     try{
-      Properties props = new Propertie();
+      Properties props = new Properties();
       
       props.setProperty(InitialContext.PROVIDER_URL, 
               "ubik://localhost:1099/");
@@ -187,7 +199,7 @@ public class HelloLookup {
       context.close();
       
       System.out.println(hello.getMessage());
-    }catch(RemoteException e){
+    }catch(Exception e){
       e.printStackTrace();
     }
   }
@@ -196,29 +208,119 @@ public class HelloLookup {
       
     </sapia:sect2>
     
-    <sapia:sect2 title="Advanced Issues" alias="advanced">
+    <sapia:sect2 title="Advanced Topics" alias="advanced">
+      <sapia:sect-desc>
+      This section covers more advanced topics regarding Ubik's JNDI.
+      </sapia:sect-desc>
+      
       <sapia:sect3 title="Multicast Address and Port of the JNDI Server">
         <p>The multicast address and port of the JNDI server can be specified within
         the properties that are passed to the JNDI initial context. These properties
         are the following:</p>
         
         <ul>
-           <li>ubik.rmi.naming.mcast.address</li>
-           <li>ubik.rmi.naming.mcast.port</li>
+           <li><tt>ubik.rmi.naming.mcast.address</tt></li>
+           <li><tt>ubik.rmi.naming.mcast.port</tt></li>
         </ul>
+        
+        <p>If you are using an alernate discovery mechanism, you must configure the JVM
+        properties that specify it - as described in the <a href="group_communication.html">Group Communication</a>
+        section. See <a href="#using_avis">the next section</a> as well for an example.</p>
       </sapia:sect3>
+      
+      <sapia:sect3 title="Using Avis" alias="using_avis">
+        <p>If you are using the Avis-backed implementation, you have to configure the following 
+        as part of the JNDI properties that you specify on the client-side:
+        </p>
+        
+        <ul>
+           <li><tt>ubik.rmi.naming.broadcast.provider</tt> should be set to <tt>ubik.rmi.naming.broadcast.avis</tt></li>
+           <li><tt>ubik.rmi.naming.broadcast.avis.url</tt> should be set to the URL of your Avis router.</li>
+        </ul>
+        
+        <p>
+        	On the side of the JNDI server, you will have to modify the <sapia:command>jndi.sh</sapia:command> 
+        	(or <sapia:command>jndi.bat</sapia:command>) script to set the above as JVM properties, using the <sapia:command>-D</sapia:command>
+        	switches on the <sapia:command>java</sapia:command> command line.
+        </p>
+        
+        <p>For more details about avis, jump to the <a href="group_communication.html#using_avis">relevant documentation</a>.
+        In the meantime, here's an example:</p>
+        
+        <sapia:code>public class HelloLookupWithAvis {
+
+	public static void main(String[] args) {
+	
+    try{
+      Properties props = new Properties();
+      
+      props.setProperty(InitialContext.PROVIDER_URL, 
+              "ubik://localhost:1099/");
+      props.setProperty(InitialContext.INITIAL_CONTEXT_FACTORY,
+              RemoteInitialContextFactory.class.getName());
+      
+      props.setProperty(Consts.BROADCAST_PROVIDER, 
+      				Consts.BROADCAST_PROVIDER_AVIS);
+      props.setProperty(Consts.BROADCAST_AVIS_URL, "elvin://localhost");
+      
+      InitialContext context = new InitialContext(props);
+      
+      Hello hello = (Hello)context.lookup("server/hello");
+      
+      // do not forget...
+      context.close();
+      
+      System.out.println(hello.getMessage());
+    }catch(Exception e){
+      e.printStackTrace();
+    }
+  }		
+}</sapia:code>
+      </sapia:sect3>
+      
+      <sapia:sect3 title="JNDI Context Builder">
+      	<p>The code above is tedious. You can use the 
+      	<sapia:class link="maven/api/org/sapia/ubik/rmi/naming/remote/JndiContextBuilder.html">JndiContextBuilder</sapia:class> class
+      	the spare yourself some work. Here's the Avis example of the previous section rewritten with the builder:
+      	</p>
+      	
+      	<sapia:code>public class HelloLookupWithJndiContextBuilder {
+
+	public static void main(String[] args) {
+	
+    try{
+    	
+    	Context context = JNDIContextBuilder.newInstance()
+    			.property(Consts.BROADCAST_PROVIDER, Consts.BROADCAST_PROVIDER_AVIS)
+    			.property(Consts.BROADCAST_AVIS_URL, "elvin://localhost")
+    			.build();
+      
+      Hello hello = (Hello)context.lookup("server/hello");
+      
+      // do not forget...
+      context.close();
+      
+      System.out.println(hello.getMessage());
+    }catch(Exception e){
+      e.printStackTrace();
+    }
+  }		
+}</sapia:code>
+      </sapia:sect3>      
+      
+      
       <sapia:sect3 title="Client-Side Discovery" alias="disco">
         <p>If the host and port specified in the JNDI provider URL do not match an existing
-        JNDI server, the naming client will try to discover an existing JNDI server in the domain dynamically,
-        through multicast. This is a very important feature to create robust applications; in production,
+        JNDI server, the naming client will try to discover an existing JNDI server in the domain dynamically. 
+        This is a very important feature to create robust applications; in production,
         multiple JNDI servers can work together in a domain and provide a fallback for each other in case
         of crash; clients will always have a JNDI server that they can lookup.
         </p>
-        <p>For client-side discovery to work, one only needs specifying the domain to which the client belongs,
+        <p>For client-side discovery to work, one only needs specifying the domain to which the client belongs (which
+        should be the same as the JNDI server(s) to which the client is trying to connect). This is done
         through a property that is passed through the JNDI initialization properties:</p>
         
-<sapia:code>
-Properties props = new Propertie();
+<sapia:code>Properties props = new Propertie();
 
 props.setProperty(InitialContext.PROVIDER_URL, 
         "ubik://localhost:1099/");
@@ -226,12 +328,63 @@ props.setProperty(InitialContext.INITIAL_CONTEXT_FACTORY,
         RemoteInitialContextFactory.class.getName());
         
 // here we set the domain...
-props.setProperty("ubik.jndi.domain", "someDomain");        
+props.setProperty("ubik.jndi.domain", "someDomain");
+// or: props.setProperty(Consts.UBIK_DOMAIN_NAME, "someDomain");         
 
 InitialContext context = new InitialContext(props);
-...
-</sapia:code>
+...</sapia:code>
+
+<p>Using the <sapia:class>JNDIContextBuilder</sapia:class> the above would be:</p>
+
+<sapia:code>Context context = JNDIContextBuilder.newInstance()
+    			.property(Consts.BROADCAST_PROVIDER, Consts.BROADCAST_PROVIDER_AVIS)
+    			.property(Consts.BROADCAST_AVIS_URL, "elvin://localhost")
+    			.domain("someDomain");
+    			.build();
+...</sapia:code>
         
+      </sapia:sect3>
+      
+      <sapia:sect3 title="Embdding a JNDI server" alias="embedded_jndi">
+      	<p>You can embed a JNDI server if you wish, making it potentially more convenient in certain deployment scenarios.
+        To that end, you use the <sapia:class class="maven/api/org/sapia/ubik/rmi/naming/remote/EmbeddableJNDIServer.html">EmbeddedableJNDIServer</sapia:class> class, 
+        that you instantiate following the 
+        steps described below:
+        </p>
+        
+        <p><b><u>1) Create an EventChannel</u></b></p>
+        <p>You need to create the <sapia:class link="maven/api/org/sapia/ubik/mcast/EventChannel.html">EventChannel</sapia:class> 
+        instance that the JNDI server will use for group
+        communication. If you will be using the default multicast configuration, you only need using the constructor that takes a domain:
+        </p>
+        
+    	<sapia:code>EventChannel channel = new EventChannel("mydomain");
+channel.start();</sapia:code>
+          
+    	<p>You can also specify an alternate configuration (for example you could rely on <a href="">Avis</a> for broadcasting, or
+    	you could wish that point-to-point communication between members of the cluster be done over UDP). See the
+    	<a href="group_communication.html">Group Communication</a> section for the details.</p>
+ 
+        <p><b><u>2) Create the JNDI Server</u></b></p>
+        <p>
+        The next step is to instantiate an <sapia:class>EmbeddableJNDIServer</sapia:class>, pass it the event channel that
+        you've created, and start the server:</p>
+     
+     	<sapia:code>final EmbeddableJNDIServer jndiServer = new EmbeddableJNDIServer(channel, 1099);
+jndiServer.start(true);
+	
+Runtime.getRuntime().addShutdownHook(new Thread() {
+		
+	@Override
+	public void run() {
+	  jndiServer.stop();
+	}
+});</sapia:code>  
+    	
+    	<p>The <tt>true</tt> flag specifies that the server should be started as a daemon. Note how you're responsible for ensuring the clean 
+    	shutdown of the server (in this case we're doing it in a JVM shutdown hook). 
+    	The server's <sapia:command>stop()</sapia:command> method will also close the event channel.</p>
+    
       </sapia:sect3>
       
       <sapia:sect3 title="Auto-Bind" alias="autobind">
@@ -240,8 +393,8 @@ InitialContext context = new InitialContext(props);
         the stubs that it binds. These stubs are automatically bound by the local implementation to new JNDI servers that appear in the domain.</p>
         
         <p>For this to work, the domain to which the client belongs has to be specified as in the previous section. The difference resides in the
-        fact that <b>the local context must NOT be closed once the binding is done</b>. The context internally maintains a multicast server that
-        listens for new JNDI servers - the latter broacast an event on startup to indicate their presence. So you must keep your client context
+        fact that <b>the local context must NOT be closed once the binding is done</b>. The context internally maintains an <sapia:class>EventChannel</sapia:class>
+        that listens for new JNDI servers - the latter broacast an event on startup to indicate their presence. So you must keep your client context
         and thereafter perform your bindings using that instance. The example below shows this:</p>
         
 <sapia:code>

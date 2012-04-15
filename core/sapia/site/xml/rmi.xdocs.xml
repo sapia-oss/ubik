@@ -18,8 +18,18 @@
     
     <sapia:vsection name="Transports">
       <sapia:vitem name="HTTP" href="transport/http.html" />
-      <sapia:vitem name="Mplex" href="transport/mplex.html" />    
+      <sapia:vitem name="Mplex" href="transport/mplex.html" />
+	  <sapia:vitem name="Standard/TCP" href="transport/standard_tcp.html" />
+      <sapia:vitem name="NIO/TCP" href="transport/nio_tcp.html" />
     </sapia:vsection>  
+    
+    <sapia:vsection name="Group Comm" href="group_communication.html">
+      <sapia:vitem name="Event Channel" href="group_communication.html#eventchannel" />
+      <sapia:vitem name="Protocol" href="group_communication.html#control_protocol" />    
+      <sapia:vitem name="Avis" href="group_communication.html#using_avis" />
+      <sapia:vitem name="TCP Unicast" href="group_communication.html#tcp_unicast" />
+    </sapia:vsection>  
+    
     <sapia:vsection name="Javadoc" href="maven/api/index.html"/>
     <sapia:vsection name="Download" href="download.html"/>
     <sapia:vsection name="Mailing List" href="list.html"/>
@@ -77,7 +87,8 @@
           <td valign="top">Define an interface that extends <sapia:class>java.rmi.Remote</sapia:class> and some methods that throw <sapia:class>RemoteException.</sapia:class></td>
         </tr>
         <tr>
-          <td valign="top">Write a class that implements the remote interface.</td>
+          <td valign="top">Write a class that implements the remote interface, or is annotated with the <sapia:class link="maven/api/org/sapia/ubik/rmi/Remote.html">@Remote</sapia:class>
+          annotation.</td>
           <td valign="top">Write a class that implements the remote interface and extends <sapia:class>java.rmi.server. UnicastRemoteObject.</sapia:class></td>
         </tr>
         <tr>
@@ -178,7 +189,9 @@ public class HelloImpl implements Hello{
   would internally generate a stub even if our object would not be an instance of <sapia:class>Remote</sapia:class>. 
   As for methods that return remote objects, the <sapia:class>Remote</sapia:class> interface has to be extended by 
   theses objects' interface - indeed, the Ubik RMI runtime has in this case no way to implicitely determine that a
-  remote reference has to be returned.</p>
+  remote reference has to be returned. Note that instead of implementing the <sapia:class>Remote</sapia:class>
+  interface, you could simply annotate your class with <sapia:class link="maven/api/org/sapia/ubik/rmi/Remote.html">@Remote</sapia:class>,
+  which in addition would allow you to specify exactly which interfaces should be exported as part of the stub that Ubik eventually creates.</p>
 
   <p>And now, of course, to make all of this meaningful, let's implement a client:</p>
   

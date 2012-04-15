@@ -1,0 +1,189 @@
+<sapia:page title="Group Communication" xmlns:sapia="http://www.sapia-oss.org/2003/XSL/Transform">
+  <sapia:vmenu>
+    <sapia:vsection name="Project Home" href="home.html"/>
+    <sapia:vsection name="Wiki" href="http://code.google.com/p/sapia/wiki/Ubik"/>
+    <sapia:vsection name="RMI" href="rmi.html">
+      <sapia:vitem name="For Dummies" href="rmi.html#dummies" />
+      <sapia:vitem name="Believing" href="rmi.html#believing" />
+      <sapia:vitem name="Architecture" href="architecture.html" />
+      <sapia:vitem name="Tutorial" href="tutorial.html" />    
+    </sapia:vsection>
+    
+    <sapia:vsection name="Naming" href="naming.html">
+      <sapia:vitem name="Robust Naming" href="naming.html#robust" />
+      <sapia:vitem name="Usage" href="naming.html#usage" />
+      <sapia:vitem name="Advanced" href="naming.html#advanced" />    
+    </sapia:vsection>
+    
+    <sapia:vsection name="Transports">
+      <sapia:vitem name="HTTP" href="transport/http.html" />
+      <sapia:vitem name="Mplex" href="transport/mplex.html" />
+	  <sapia:vitem name="Standard/TCP" href="transport/standard_tcp.html" />
+      <sapia:vitem name="NIO/TCP" href="transport/nio_tcp.html" />
+    </sapia:vsection>  
+    
+    <sapia:vsection name="Group Comm" href="group_communication.html">
+      <sapia:vitem name="Event Channel" href="group_communication.html#eventchannel" />
+      <sapia:vitem name="Protocol" href="group_communication.html#control_protocol" />    
+      <sapia:vitem name="Avis" href="group_communication.html#using_avis" />
+      <sapia:vitem name="TCP Unicast" href="group_communication.html#tcp_unicast" />
+    </sapia:vsection>      
+    
+    <sapia:vsection name="Javadoc" href="maven/api/index.html"/>
+    <sapia:vsection name="Download" href="download.html"/>
+    <sapia:vsection name="Mailing List" href="list.html"/>
+  </sapia:vmenu>
+
+  <sapia:sect1 title="Group Communication" alias="group_communication">
+    <sapia:section>
+      <sapia:path name="home" href="../../home.html" />
+      <sapia:path name="projects" />
+      <sapia:path name="ubik" href="home.html" />
+      <sapia:path name="rmi" href="rmi.html" />
+      <sapia:path name="group communication" />      
+    </sapia:section>  
+  
+    <toc/>
+    <sapia:sect-desc>
+    <p>
+    For features such as dynamic discovery (used to avoid configuring network addresses for point-to-point connections), Ubik uses a highly configurable
+    group communication framework. Ubik's distributed JNDI implementation makes use of that framework.
+    </p>
+    </sapia:sect-desc>
+    
+    <sapia:sect2 title="The EventChannel" alias="eventchannel">    
+      <p>
+        Ubik's group communication logic is built upon the <sapia:class link="maven/api/org/sapia/ubik/mcast/EventChannel.html">EventChannel</sapia:class> class, which implements group communication
+        on top of two abstractions:
+        <ul>
+          <li>
+          	<sapia:class link="maven/api/org/sapia/ubik/mcast/BroadcastDispatcher.html">BroadcastDispatcher</sapia:class>: handles the broadcast of 
+          	<sapia:class link="maven/api/org/sapia/ubik/mcast/RemoteEvent.html">RemoteEvent</sapia:class>s 
+          	to all other <sapia:class>EventChannel</sapia:class> nodes in a domain.
+          </li>
+          <li>
+          	<sapia:class link="maven/api/org/sapia/ubik/mcast/UnicastDispatcher.html">UnicastDispatcher</sapia:class>: handles the dispatching 
+          	of <sapia:class>RemoteEvent</sapia:class>s in a point-to-point manner - from one <sapia:class>EventChannel</sapia:class> to another.
+          </li>
+        </ul>
+      </p>
+      
+      <p>
+      	Internally, an <sapia:class>EventChannel</sapia:class> uses its <sapia:class>BroadcastDispatcher</sapia:class> at startup to broadcast its
+      	presence to other <sapia:class>EventChannel</sapia:class> nodes. In turn, these other nodes will publish themselves to their new peer,
+      	this time using the <sapia:class>UnicastDispatcher</sapia:class>. 
+      </p>      
+      <p>
+        The <sapia:class>BroadcastDispatcher</sapia:class> is also used at shutdown: an <sapia:class>EventChannel</sapia:class> will then notify
+        the other nodes in the domain that it is shutting, and thus disappearing from the network - this allows other nodes to immediately synchronize
+        their view of the domain.
+      </p>
+      <p>
+      	By default, the implementations of the dispacher abstractions that are used by an <sapia:class>EventChannel</sapia:class> are 
+        <sapia:class>UDPBroadcastDispatcher</sapia:class> and <sapia:class>UDPUnicastDispatcher</sapia:class> respectively. The former
+        uses IP multicast to broadcast <sapia:class>RemoteEvent</sapia:class>s. It is by default configured to listen to multicast address and port
+        <tt>231.173.5.7</tt> and <tt>5454</tt>, respectively. This can be configured through the following JVM properties:
+        
+        <ul>
+          <li><tt>ubik.rmi.naming.mcast.address</tt>: used to specify the multicast address.</li>        
+          <li><tt>ubik.rmi.naming.mcast.port</tt>: used to specifiy the multicast port.</li>
+        </ul>
+      </p>
+      <p>This the dispatcher implementations that are used can be configured otherwise - which is explained in sections further below.</p>
+     
+    </sapia:sect2>
+    
+    <sapia:sect2 title="The Control Protocol at a Glance" alias="control_protocol">
+	  <p>Among all the event channel nodes that discover each other (and are thus part of the same domain),
+      one is elected master - as the others are assigned the slave status. It is the master that periodically probes 
+      the slaves for their status - through "heartbeat requests" (which by default are sent every minute by the master).</p>
+      
+      <p>The control protocol was designed to be scalable across a large number of nodes, and to minimize chattiness. The
+      protocol does not rely on broadcast - since when using IP multicast, multiple domains can use the same 
+      multicast address, resulting in many control messages crossing domains.</p>
+      
+      <p>Rather then, the protocol is implemented over unicast, but using a cascading scheme where slave nodes are put
+      to contribution: a first set of nodes is determined, where each is ordered to relay the control messages to other 
+      nodes, and so on, until no nodes are left to contact. The size of the batch of nodes to contact, at every stage, 
+      is determined by the <tt>ubik.rmi.naming.mcast.control.batch.size</tt> JVM property - which defaults to 5.</p>
+      
+      <p>
+      For example, let's say there are 101 nodes, one of them being the master - it is always the master that initiates a control sequence
+      as part of the protocol. Given a batch size of 5, it means that the 100 nodes are divided in groups of 20. The first node in each set 
+      will in turn split the 19 target node IDs it receives into 5, yielding 4 groups of 4 nodes to contact, and 1 group of 3. Since 4 and 3 cannot be 
+      further divided by 5, this will be the last time such a split occurs. If you do the calculations you'll see that it takes 4 stages 
+      in the cascade to dispatch a message across a cluster of 1000 event channel nodes, given a batch of 5. Of course the 
+      larger the batch size, the less dispatch stages you will incur.
+      </p>
+      
+      <p>
+      There is one caveat: in large clusters, since UDP is used by default and the packet size is set to 2048 kb (configurable through the
+      <tt>ubik.rmi.naming.mcast.bufsize</tt> JVM property), you may risk having some messages not going through. Indeed, the payload
+      transported in the control messages is larger - since the IDs of the nodes to contact at the next stages are transported from
+      one stage to the next. You have two choices in this case: increase the UDP packet size with the above-mentioned property, 
+      or <a href="#tcp_unicast">use TCP unicast</a> - which we would recommend for clusters of 25 nodes or more.
+      </p>
+    </sapia:sect2>
+    
+    <sapia:sect2 title="Broadcast using Avis" alias="using_avis">
+      <p>In environments where IP multicast is not supported, an alternate broadcast
+      mechanism can be used: it relies on the <a href="http://avis.sourceforge.net/">Avis</a> group communication framework. 
+      In this setup, an Avis "router" provides the broadcast fabric. It acts as a message queue (sort of), and all event 
+      channels become clients of it.</p>
+      
+      <p>You can federate multiple such routers for more reliability - without overblowing it, otherwise you will create 
+      yourself a configuration nightmare. Two instances should be sufficient for most cases, since broadcast is sparingly used.</p>
+      
+      <p>To use Avis broadcast implementation, you have to configure the following JVM properties:</p>
+      
+      <ul>
+        <li><tt>ubik.rmi.naming.broadcast.provider</tt> should have its value set to <tt>ubik.rmi.naming.broadcast.avis</tt>: 
+        this indicates that the <sapia:class link="maven/api/org/sapia/ubik/mcast/avis/AvisBroadcastDispatcher.html">AvisBroadcastDispatcher</sapia:class> 
+        should be used for broadcasting.</li>
+      	<li><tt>ubik.rmi.naming.broadcast.avis.url</tt> should be set to the URL to use to connect to the Avis router - 
+      	For example: <tt>elvin://localhost:2917</tt>. 
+      	</li>
+      </ul>
+      <p>The programmatic version would be:</p>
+      <sapia:code>import org.sapia.ubik.mcast.EventChannel;
+import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.util.Props;
+
+Properties properties = new Properties();
+properties.setProperty(Consts.BROADCAST_PROVIDER, Consts.BROADCAST_PROVIDER_AVIS);
+properties.setProperty(Consts.BROADCAST_AVIS_URL, "elvin://localhost:2917");
+EventChannel channel = new EventChannel("myDomain", new Props().addProperties(properties));</sapia:code>
+      
+      <p>The format of the URL is entirely Avis' - see its documentation for more info and for instructions detailing how to install the router.</p>
+      
+      <sapia:note>
+      The Avis client library is required in the classpath of your application if you use that mechanism (Ubik is built and tested against version 1.1.1, the latest). 
+      The library is not distributed under the same license as Ubik: it is published under the LGPL. If you distribute an application that uses a version of that
+      library that you've modified, your application will become subjected to the terms of the LGPL. Since you will most likely use Avis as is, you should 
+      not fear being impacted. 
+      </sapia:note>
+
+    </sapia:sect2>
+    <sapia:sect2 title="TCP unicast" alias="tcp_unicast">
+   		<p>For the unicast part, you also have a non-UDP option: you can configure the <sapia:class>TCPUnicastDispatcher</sapia:class>
+   		which, as its name implies, uses TCP</p>
+   		
+   		<p>To configure the <sapia:class link="maven/api/org/sapia/ubik/mcast/tcp/TCPUnicastDispatcher.html">TCPUnicastDispatcher</sapia:class>, set the following JVM property as follows:
+   		  <ul>
+   		  	<li><tt>ubik.rmi.naming.unicast.provider</tt> should be set to <tt>ubik.rmi.naming.unicast.tcp</tt>.</li>
+   		  </ul>
+   		</p>
+   		
+   		<p>Programmatically, you would do it as follows:</p>
+   		
+   		<sapia:code>import org.sapia.ubik.mcast.EventChannel;
+import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.util.Props;
+
+Properties properties = new Properties();
+properties.setProperty(Consts.UNICAST_PROVIDER, Consts.UNICAST_PROVIDER_TCP);
+EventChannel channel = new EventChannel("myDomain", new Props().addProperties(properties));</sapia:code>
+    </sapia:sect2>    
+  </sapia:sect1>
+
+</sapia:page>

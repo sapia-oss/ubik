@@ -9,12 +9,13 @@ import java.net.SocketException;
 
 
 /**
- * This utility class adapts a <code>MultiplexSocketConnector</code> to a
- * <code>java.net.ServerSocket<code>. That means that a socket connector, that
+ * This utility class adapts a {@link MultiplexSocketConnector} to a
+ * {@link java.net.ServerSocket}. That means that a socket connector, that
  * was previously created with a multiplex server socket, can be used as
  * a traditionnal server socket. This adapter can be useful when integrating
- * the multiplex module into existing code that rely on the <code>java.net.ServerSocket<code>
- * object.<p>
+ * the multiplex module into existing code that rely on the {@link java.net.ServerSocket}
+ * object.
+ * <p>
  *
  * Note that the following methods are not supported:
  * <ul>
@@ -25,22 +26,15 @@ import java.net.SocketException;
  *   <li>setReceiveBufferSize(int size)</li>
  * </ul><p>
  *
- * Calling any of these methods will result in an <code>UnsupportedOperationException</code>
+ * Calling any of these methods will result in an {@link UnsupportedOperationException}
  * beign thrown.
  *
  *
  * @author <a href="mailto:jc@sapia-oss.org">Jean-Cedric Desrochers</a>
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2004 <a href="http://www.sapia-oss.org">
- *     Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *     <a href="http://www.sapia-oss.org/license.html" target="sapia-license">license page</a>
- *     at the Sapia OSS web site</dd></dt>
- * </dl>
  */
 public class ServerSocketAdapter extends ServerSocket {
   /** The socket connector wrapped by this adapter. */
-  private MultiplexSocketConnector _theDelegate;
+  private MultiplexSocketConnector theDelegate;
 
   /**
    * Creates a new ServerSocketAdapter instance.
@@ -48,7 +42,7 @@ public class ServerSocketAdapter extends ServerSocket {
   public ServerSocketAdapter(MultiplexSocketConnector anInterceptor)
     throws IOException {
     super();
-    _theDelegate = anInterceptor;
+    theDelegate = anInterceptor;
   }
 
   /**
@@ -70,49 +64,49 @@ public class ServerSocketAdapter extends ServerSocket {
    * @see java.net.ServerSocket#getInetAddress()
    */
   public InetAddress getInetAddress() {
-    return _theDelegate.getInetAddress();
+    return theDelegate.getInetAddress();
   }
 
   /**
    * @see java.net.ServerSocket#getLocalPort()
    */
   public int getLocalPort() {
-    return _theDelegate.getLocalPort();
+    return theDelegate.getLocalPort();
   }
 
   /**
    * @see java.net.ServerSocket#getLocalSocketAddress()
    */
   public SocketAddress getLocalSocketAddress() {
-    return _theDelegate.getLocalSocketAddress();
+    return theDelegate.getLocalSocketAddress();
   }
 
   /**
    * @see java.net.ServerSocket#accept()
    */
   public Socket accept() throws IOException {
-    return _theDelegate.accept();
+    return theDelegate.accept();
   }
 
   /**
    * @see java.net.ServerSocket#close()
    */
   public void close() throws IOException {
-    _theDelegate.close();
+    theDelegate.close();
   }
 
   /**
    * @see java.net.ServerSocket#isBound()
    */
   public boolean isBound() {
-    return _theDelegate.isBound();
+    return theDelegate.isBound();
   }
 
   /**
    * @see java.net.ServerSocket#isClosed()
    */
   public boolean isClosed() {
-    return _theDelegate.isClosed();
+    return theDelegate.isClosed();
   }
 
   /**
@@ -126,7 +120,7 @@ public class ServerSocketAdapter extends ServerSocket {
    * @see java.net.ServerSocket#getSoTimeout()
    */
   public int getSoTimeout() throws IOException {
-    return _theDelegate.getSoTimeout();
+    return theDelegate.getSoTimeout();
   }
 
   /**
@@ -140,7 +134,7 @@ public class ServerSocketAdapter extends ServerSocket {
    * @see java.net.ServerSocket#getReuseAddress()
    */
   public boolean getReuseAddress() throws SocketException {
-    return _theDelegate.getReuseAddress();
+    return theDelegate.getReuseAddress();
   }
 
   /**
@@ -154,6 +148,6 @@ public class ServerSocketAdapter extends ServerSocket {
    * @see java.net.ServerSocket#getReceiveBufferSize()
    */
   public int getReceiveBufferSize() throws SocketException {
-    return _theDelegate.getReceiveBufferSize();
+    return theDelegate.getReceiveBufferSize();
   }
 }

@@ -18,8 +18,18 @@
     
     <sapia:vsection name="Transports">
       <sapia:vitem name="HTTP" href="transport/http.html" />
-      <sapia:vitem name="Mplex" href="transport/mplex.html" />    
+      <sapia:vitem name="Mplex" href="transport/mplex.html" />
+	  <sapia:vitem name="Standard/TCP" href="transport/standard_tcp.html" />
+      <sapia:vitem name="NIO/TCP" href="transport/nio_tcp.html" />
     </sapia:vsection>  
+    
+    <sapia:vsection name="Group Comm" href="group_communication.html">
+      <sapia:vitem name="Event Channel" href="group_communication.html#eventchannel" />
+      <sapia:vitem name="Protocol" href="group_communication.html#control_protocol" />    
+      <sapia:vitem name="Avis" href="group_communication.html#using_avis" />
+      <sapia:vitem name="TCP Unicast" href="group_communication.html#tcp_unicast" />
+    </sapia:vsection>
+    
     <sapia:vsection name="Javadoc" href="maven/api/index.html"/>
     <sapia:vsection name="Download" href="download.html"/>
     <sapia:vsection name="Mailing List" href="list.html"/>
@@ -74,44 +84,30 @@
         
         <sapia:sect4 title="The Hub" alias="hub">
           <p>The single-entry point into the API is the <sapia:class link="maven/api/org/sapia/ubik/rmi/server/Hub.html">Hub</sapia:class>
-          class, that allows to export objects as servers. This class is statically initialized upon its first
+          class, that allows exporting objects as servers. This class is statically initialized upon its first
           invocation, where it creates all dependent objects that compose the Ubik RMI runtime. The 
           <sapia:command>Hub</sapia:command> is a singleton, meaning that there is only a single instance of
           it per JVM (or, rather, per classloader).</p>
+          
+          <p>Upon exiting, your application should call <sapia:command>Hub.shutdown()</sapia:command> to make sure all resources 
+          (network connections, etc.) held by the Ubik runtime are released.
+          </p>
         </sapia:sect4>
         
         <sapia:sect4 title="Server vs Client" alias="serverclient">
         
           <p>For the developer, implementing a distributed application involves creating clients and servers. 
-          Very often, these roles are intertwined: a server can be the client of another server. Within the 
-          <sapia:command>Hub</sapia:command>, this duality is modeled by two classes: the 
-          <sapia:class link="maven/api/org/sapia/ubik/rmi/server/ServerRuntime.html">ServerRuntime</sapia:class> and 
-          <sapia:class link="maven/api/org/sapia/ubik/rmi/server/ClientRuntime.html">ClientRuntime</sapia:class> classes
-          (both in the <sapia:class>org.sapia.ubik.rmi.server</sapia:class> package). An instance of both is kept 
-          in the <sapia:command>Hub</sapia:command> singleton.</p>
-          
-          <p>At a given <sapia:command>Hub</sapia:command>, the <sapia:command>ServerRuntime</sapia:command> 
-          receives incoming remote method calls and dispatches them to the appropriate remote object. In turn,
-          if the <sapia:command>Hub</sapia:command> is also acting as a client, it is in charge of notifying the
-          appropriate <sapia:command>Hub</sapia:command>s (which are its servers, in this case) when remote
-          references are locally garbage-collected; the <sapia:command>ClientRuntime</sapia:command> within
-          the <sapia:command>Hub</sapia:command> in fact deals with this aspect.</p>
-          
-          <p>So, in short, the following is true:</p>
-          <ul>
-            <li>A <sapia:command>ClientRuntime</sapia:command> at one <sapia:command>Hub</sapia:command> is
-            indirectly the client of a <sapia:command>ServerRuntime</sapia:command> at another;</li>
-            <li>a <sapia:command>Hub</sapia:command> can be both server and client.</li>
-          </ul>
-          
+          Very often, these roles are intertwined: a server can be the client of another server.</p>
+               
           <p>When an object is exported as a server through the <sapia:command>Hub</sapia:command>, a physical 
           server is created, of which there is also a single instance per VM, <b>per transport type</b>(see the
           <a href="#transport">Transport</a> section for more details). This server object implements the 
           <sapia:class link="maven/api/org/sapia/ubik/rmi/server/Server.html">Server</sapia:class> interface. 
-          The instance is kept as part of the <sapia:command>ServerRuntime</sapia:command> and is in charge of receiving the 
-          remote method calls and relaying them internally so that they can be dispatched to the appropriate remote objects. 
-          Once an object has been exported, all subsequent remote objects will receive their method calls 
-          through the same server. </p>
+          The instance is kept as part of the 
+          <sapia:class link="maven/api/org/sapia/ubik/rmi/server/ServerTable.html">ServerTable</sapia:class> and 
+          is in charge of receiving the remote method calls and relaying them internally so that they can be dispatched 
+          to the appropriate remote objects. Once an object has been exported, all subsequent remote objects will receive 
+          their method calls through the same server.</p>
           
         </sapia:sect4>
       </sapia:sect3>
@@ -185,7 +181,7 @@
         entry point into the transport layer. It allows for the registration of 
         <sapia:class link="maven/api/org/sapia/ubik/rmi/server/transport/TransportProvider.html">TransportProvider</sapia:class>s which 
         handle the low-level communication issues. The default transport provider is implemented by the 
-        <sapia:class link="maven/api/org/sapia/ubik/rmi/server/transport/socket/SocketTransportProvider.html">SocketTransportProvider</sapia:class> 
+        <sapia:class link="maven/api/org/sapia/ubik/rmi/server/transport/socket/MultiplexSocketTransportProvider.html">MultiplexSocketTransportProvider</sapia:class> 
         class, which, as its name implies, handles communication over sockets. It is also the default transport provider of Ubik RMI.</p>
         
         <p>As was mentioned previously, a Ubik RMI server implements the <sapia:command>Server</sapia:command> interface, 
@@ -203,7 +199,7 @@
         over the wire. When a Ubik RMI stub sends a remote invocation command to its server, it uses an instance of this 
         interface to do so.</p>
         
-        <p>An instance of the <sapia:command>TransportProvider</sapia:command> interface is used by the Ubik RMI core
+        <p>An instance of the <sapia:class>TransportProvider</sapia:class> interface is used by the Ubik RMI core
         to create a new server instance, and to acquire client connections. The core selects the proper provider to use
         based on the <sapia:command>export(...)</sapia:command> method that is called by the application; one of these
         methods allows to pass in the port on which the server should be started. Internally, this method will use the

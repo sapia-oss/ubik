@@ -37,14 +37,15 @@
   </modules>
 
   <build>
+  
+
     <directory>target</directory>
     <outputDirectory>target/classes</outputDirectory>
     <finalName>${artifactId}-${version}</finalName>
     <testOutputDirectory>target/test-classes</testOutputDirectory>
  
 
-   <plugins>
-
+    <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -66,7 +67,17 @@
     </plugins>
 
   </build>
-  
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.sapia</groupId>
+        <artifactId>sapia_ubik</artifactId>    
+        <version>${project.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
   <dependencies> 
 
     <dependency>

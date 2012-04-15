@@ -161,16 +161,19 @@ public class TCPUnicastDispatcher implements UnicastDispatcher {
             queue.add((Response) doSend(addr, evt, true, type));
           } catch (ClassNotFoundException e) {
             log.error("Could not deserialize response received from " + addr, e);
-            queue.add(new Response(evt.getId(), null));      
+            queue.add(new Response(evt.getId(), e));      
           } catch (TimeoutException e) {
             log.error("Response from %s not received in timely manner", addr);
-            queue.add(new Response(evt.getId(), null));
+            queue.add(new Response(evt.getId(), e).setStatusSuspect());
           } catch (ConnectException e) {
             log.error("Remote node probably down: %s" + addr, e);
-            queue.add(new Response(evt.getId(), null).setStatusSuspect()); 
+            queue.add(new Response(evt.getId(), e).setStatusSuspect()); 
+          } catch (RemoteException e) {
+            log.error("Remote node probably down: %s" + addr, e);
+            queue.add(new Response(evt.getId(), e).setStatusSuspect());
           } catch (IOException e) {
             log.error("IO error caught trying to send to %s" + addr, e);
-            queue.add(new Response(evt.getId(), null)); 
+            queue.add(new Response(evt.getId(), e)); 
           } catch (InterruptedException e) {
             ThreadInterruptedException tie = new ThreadInterruptedException();
             tie.fillInStackTrace();
@@ -193,16 +196,19 @@ public class TCPUnicastDispatcher implements UnicastDispatcher {
       return (Response) doSend(addr, evt, true, type);
     } catch (ClassNotFoundException e) {
       log.error("Could not deserialize response from %s" + addr, e);
-      return new Response(evt.getId(), null);      
+      return new Response(evt.getId(), e);      
     } catch (TimeoutException e) {
       log.error("Response from %s not received in timely manner", addr);
-      return new Response(evt.getId(), null).setStatusSuspect();
+      return new Response(evt.getId(), e).setStatusSuspect();
     } catch (ConnectException e) {
       log.error("Remote node probably down: %s" + addr, e);
-      return new Response(evt.getId(), null).setStatusSuspect();
+      return new Response(evt.getId(), e).setStatusSuspect();
+    } catch (RemoteException e) {
+      log.error("Remote node probably down: %s" + addr, e);
+      return new Response(evt.getId(), e).setStatusSuspect();
     } catch (IOException e) {
       log.error("IO error caught trying to send to %s" + addr, e);
-      return new Response(evt.getId(), null); 
+      return new Response(evt.getId(), e); 
     } catch (InterruptedException e) {
       ThreadInterruptedException tie = new ThreadInterruptedException();
       tie.fillInStackTrace();
@@ -232,7 +238,7 @@ public class TCPUnicastDispatcher implements UnicastDispatcher {
   }
   
   private Object doSend(ServerAddress addr, Serializable toSend, boolean synchro, String type) 
-    throws IOException, ClassNotFoundException, TimeoutException, InterruptedException {
+    throws IOException, ClassNotFoundException, TimeoutException, InterruptedException, RemoteException {
     log.debug("doSend() : %s, event type: %s", addr, type);
     ConnectionPool pool   = connections.getPoolFor(addr);
     Connection connection = pool.acquire();
@@ -258,7 +264,6 @@ public class TCPUnicastDispatcher implements UnicastDispatcher {
       } catch (SocketTimeoutException e) {
         pool.invalidate(connection);
         TimeoutException toe = new TimeoutException();
-        toe.fillInStackTrace();
         throw toe;
       } catch (IOException e) {
         pool.invalidate(connection);

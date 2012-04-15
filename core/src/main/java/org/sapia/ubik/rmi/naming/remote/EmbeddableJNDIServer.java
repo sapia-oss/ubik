@@ -185,7 +185,9 @@ public class EmbeddableJNDIServer implements RemoteContextProvider, AsyncEventLi
   private final void doRun() {
     try {
     	log.warning("Starting JNDI server on port %s, domain %s", port, domain);
-      channel.start();
+    	if (!channel.isStarted()) {
+    		channel.start();
+    	}
       
       channel.registerAsyncListener(JndiConsts.JNDI_CLIENT_PUBLISH, this);
 

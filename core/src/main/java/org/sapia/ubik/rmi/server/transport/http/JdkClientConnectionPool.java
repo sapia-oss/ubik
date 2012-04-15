@@ -67,7 +67,6 @@ public class JdkClientConnectionPool implements Connections {
   
   @Override
   public void release(RmiConnection conn) {
-    conn.close();
     pool.release((JdkRmiClientConnection)conn);
   }
 

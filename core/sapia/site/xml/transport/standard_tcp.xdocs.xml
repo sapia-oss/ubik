@@ -1,0 +1,34 @@
+<sapia:page title="Standard TCP Transport"  cssPath="../css/sapia.css" xmlns:sapia="http://www.sapia-oss.org/2003/XSL/Transform">
+  <sapia:refreshMenu page="../leftmenu.html" />
+  <sapia:sect1 title="Standard TCP Transport">
+    <sapia:section>
+      <sapia:path name="home" href="../../../home.html" />
+      <sapia:path name="projects" />
+      <sapia:path name="ubik" href="../home.html" />
+      <sapia:path name="transport" />
+      <sapia:path name="standard tcp" />
+    </sapia:section>  
+  
+    <sapia:sect-desc>
+      <p>The so-called Standard TCP transport uses standard Java sockets to implement a TCP transport layer.
+	  </p>
+    </sapia:sect-desc>
+    
+    <sapia:sect2 title="Exporting a Server">
+    
+    
+      <p>You use <sapia:class link="../maven/api/org/sapia/ubik/rmi/server/transport/socket/SocketServerExporter.html">SocketServerExporter</sapia:class> to export a server over this transport, as follows:</p>
+<sapia:code>SocketServerExporter exporter = new SocketServerExporter();
+exporter.setPort(7070);
+Hello helloServer = exporter.export(new HelloImpl());</sapia:code>
+
+<p>The above exports the <sapia:class>HelloImpl</sapia:class> instance as a server. The stub that
+is returned by the <sapia:command>export()</sapia:command> method can then be bound to Ubik's JNDI, as such:</p>
+
+<sapia:code>Context context = JNDIContextBuilder.newInstance().domain("myDomain").build();
+context.bind("hello", helloServer);</sapia:code>
+    </sapia:sect2>
+    
+  </sapia:sect1>
+
+</sapia:page>

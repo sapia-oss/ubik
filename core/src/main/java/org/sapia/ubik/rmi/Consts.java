@@ -8,9 +8,6 @@ import org.sapia.ubik.mcast.EventChannel;
 import org.sapia.ubik.mcast.UnicastDispatcher;
 import org.sapia.ubik.rmi.server.transport.TransportProvider;
 
-import com.sun.corba.se.pept.transport.TransportManager;
-
-
 /**
  * This class conveniently holds constants that correspond to the
  * system properties that can be define to influence Ubik RMI's runtime
@@ -65,7 +62,7 @@ public interface Consts {
   /**
    * This constant corresponds to the 'ubik.rmi.naming.mcast.bufsize' property key. It
    * is used to set the size of buffers that handle UDP datagrams. A too small value
-   * may result in multicast events not being sent/received. Defaults to 5kb.
+   * may result in multicast events not being sent/received. Defaults to 2048 bytes.
    */
   public static final String MCAST_BUFSIZE_KEY = "ubik.rmi.naming.mcast.bufsize";  
   
@@ -92,7 +89,7 @@ public interface Consts {
   /**
    * This constant corresponds to the 'ubik.rmi.naming.mcast.heartbeat.interval' property key. It
    * is used to determine the interval (in millis) at which nodes send their heartbeat to the other nodes
-   * (defaults to 30000).
+   * (defaults to 60000).
    * <p>
    * The value of this property should consistent with the value given to the heartbeat timeout: it
    * should not be more.

@@ -1,5 +1,4 @@
 <sapia:page title="Multiplex Transport"  cssPath="../css/sapia.css" xmlns:sapia="http://www.sapia-oss.org/2003/XSL/Transform">
-  <sapia:refreshMenu page="../leftmenu.html" />
   <sapia:sect1 title="Multiplex Transport">
     <sapia:section>
       <sapia:path name="home" href="../../../home.html" />
@@ -71,12 +70,25 @@
 	  JNDI implementation will export that object automatically, using this transport provider (since it is the default).
 	</sapia:note>
       </sapia:sect3>
+      <sapia:sect3 title="Using MultiplexServerExporter">
+      <p>You can use an instance of <sapia:class link="../maven/api/org/sapia/ubik/rmi/server/transport/socket/MultiplexServerExporter.html">MultiplexServerExporter</sapia:class> to export a server rather than use tedious configuration, as follows:</p>
+<sapia:code>MultiplexSocketServerExporter exporter = new MultiplexServerExporter();
+exporter.setPort(7070);
+Hello helloServer = exporter.export(new HelloImpl());</sapia:code>
+
+<p>The above exports the <sapia:class>HelloImpl</sapia:class> instance as a server. The stub that
+is returned by the <sapia:command>export()</sapia:command> method can then be bound to Ubik's JNDI, as follows:</p>
+
+<sapia:code>Context context = JNDIContextBuilder.newInstance().domain("myDomain").build();
+context.bind("hello", helloServer);</sapia:code>
+      </sapia:sect3>
       
       <sapia:sect3 title="Multiplexing">
         <p>As was explained, you can leverage a single Ubik server over multiple connectors. To do so, you need to:</p>
 	<ul>
-	  <li>Implement a <sapia:class>StreamSelector</sapia:class>;</li>
-          <li>call the <sapia:class>createSocketConnector(StreamSelector)</sapia:class> on this provider;</li>
+	  <li>Implement a <sapia:class link="../maven/api/org/sapia/ubik/net/mplex/StreamSelector.html">StreamSelector</sapia:class>;</li>
+          <li>call the static <sapia:class>createSocketConnector(StreamSelector)</sapia:class> of the 
+          <sapia:class link="../maven/api/org/sapia/ubik/rmi/server/transport/socket/MultiplexSocketHelper.html">MultiplexSocketHelper</sapia:class> class;</li>
 	  <li>the above method returns a <sapia:class>MultiplexSocketConnector</sapia:class> that you use to process incoming requests (this in fact allows
 	  implementing a server on top of a connector...);</li>
 	  <li>since most server implementations are based on the <sapia:class>java.net.ServerSocket</sapia:class> class, a connector is not very handy to adapt
@@ -84,28 +96,32 @@
 	  class, with a <sapia:class link="../maven/api/org/sapia/ubik/net/mplex/ServerSocketAdapter.html">ServerSocketAdapter</sapia:class>.</li>
 	</ul>
 	<p>The code below illustrates the above steps:</p>
-<sapia:code>
-import java.net.ServerSocket;
+	
+<sapia:code>import java.net.ServerSocket;
+import org.sapia.ubik.net.mplex.MultiplexSocketConnector;
 import org.sapia.ubik.net.mplex.ServerSocketAdapter;
-import org.sapia.ubik.rmi.server.transport.TransportManager;
-import org.sapia.ubik.rmi.server.transport.socket
-  .MultiplexSocketTransportProvider;
+import org.sapia.ubik.net.mplex.StreamSelector;
+import org.sapia.ubik.rmi.server.transport.socket.MultiplexSocketHelper;
   
 ...
 
-  // export has already taken place...
-  MultiplexSocketTransportProvider provider = 
-    (MultiplexSocketTransportProvider)TransportManager.getProviderFor(
-       MultiplexSocketTransportProvider.TRANSPORT_TYPE);
-       
-  MultiplexSocketConnector connector = 
-    provider.createSocketConnector(new MyStreamSelector());
+// export has already taken place...
+MultiplexSocketConnector connector = MultiplexSocketHelper.createSocketConnector(
+	new StreamSelector() {
+		
+		@Override
+		public boolean selectStream(byte[] header) {
+			// implement custom logic
+			return true;
+		}
+	});
 
-  ServerSocket socket = new ServerSocketAdapter(connector);
-  MyServer server = new MyServer(socket);
-  server.start();
-...
-</sapia:code>
+
+ServerSocket socket = new ServerSocketAdapter(connector);
+MyServer server = new MyServer(socket);
+server.start();
+
+...</sapia:code>
       </sapia:sect3>
     </sapia:sect2>
     
