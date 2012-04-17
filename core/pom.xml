@@ -76,6 +76,7 @@
               <overWriteReleases>false</overWriteReleases>
               <overWriteSnapshots>false</overWriteSnapshots>
               <overWriteIfNewer>true</overWriteIfNewer>
+              <excludeArtifactIds>avis-router,fastutil-subset,mina-filter-ssl</excludeArtifactIds>
             </configuration>
           </execution>
         </executions>
