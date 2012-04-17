@@ -1,7 +1,5 @@
 package org.sapia.ubik.mcast.control;
 
-import static org.junit.Assert.*;
-
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -27,6 +25,11 @@ public class ControlRequestTest {
 	public void testSizeFor40Nodes() throws Exception {
 	  System.out.println("Size with 40 nodes: " + McastUtil.getSizeInBytes(createWith(40)));
 	}
+	
+	@Test
+	public void testSizeFor50Nodes() throws Exception {
+	  System.out.println("Size with 50 nodes: " + McastUtil.getSizeInBytes(createWith(50)));
+	}	
 	
 	@Test
 	public void testSizeFor100Nodes() throws Exception {

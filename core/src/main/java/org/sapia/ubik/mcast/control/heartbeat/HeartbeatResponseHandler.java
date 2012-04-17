@@ -26,6 +26,7 @@ public class HeartbeatResponseHandler implements ControlResponseHandler {
 	private ControllerContext context;
 	private Set<String> 		  targetedNodes;
 	private Set<String> 		  replyingNodes  = new HashSet<String>();
+	private volatile boolean  timedOut;
 	
 	/**
 	 * @param context the {@link ControllerContext}
@@ -54,13 +55,15 @@ public class HeartbeatResponseHandler implements ControlResponseHandler {
 	 */
 	@Override
 	public synchronized boolean handle(String originNode, ControlResponse response) {
-		if(response instanceof HeartbeatResponse) {
+		if(response instanceof HeartbeatResponse && !timedOut) {
 			HeartbeatResponse heartbeatRs = (HeartbeatResponse)response;
 			log.debug("Received heartbeat response from %s", originNode);
 			context.getChannelCallback().heartbeat(originNode, heartbeatRs.getUnicastAddress());
 			replyingNodes.add(originNode);
 			if(replyingNodes.size() >= targetedNodes.size()) {
 				log.debug("All expected heartbeats received");
+				
+				context.notifyHeartbeatCompleted(targetedNodes.size(), replyingNodes.size());
 				return true;
 			}
 			log.debug("Received %s/%s responses thus far...", replyingNodes.size(), targetedNodes.size());
@@ -72,16 +75,21 @@ public class HeartbeatResponseHandler implements ControlResponseHandler {
 	}
 	
 	@Override
-	public void onResponseTimeOut() {
+	public synchronized void onResponseTimeOut() {
+		timedOut = true;
 		if(replyingNodes.size() < targetedNodes.size()) {
 			log.debug("Received %s/%s responses (dead nodes detected)", replyingNodes.size(), targetedNodes.size());
 			
 			// those nodes that have replied or removed from the original set of targeted nodes,
 			// which then holds the nodes that haven't replied.
+			
+			int expectedCount = targetedNodes.size();
 			targetedNodes.removeAll(replyingNodes);
 			
 			Set<SynchronousControlResponse> responses;
-			
+
+			log.debug("Sending synchronous ping requests");
+
 			try {
 				responses = context.getChannelCallback().sendSynchronousRequest(targetedNodes, new PingRequest());
 			} catch (Exception e) {
@@ -97,21 +105,25 @@ public class HeartbeatResponseHandler implements ControlResponseHandler {
 			  }
 			);
 			
-			if(responding.size() > 0) {
-				log.debug("Got %s nodes that responded to the last resort ping", responding.size());
-			}
+			log.debug("Got %s/%s nodes that responded to the last resort ping", responding.size(), targetedNodes.size());
 				
 			targetedNodes.removeAll(responding);
 			replyingNodes.addAll(responding);
 			
-			for(String down : targetedNodes) {
-				context.getChannelCallback().down(down);
+			if (!targetedNodes.isEmpty()) {
+				log.debug("Got %s down nodes", targetedNodes.size());
+  			for(String down : targetedNodes) {
+  				context.getChannelCallback().down(down);
+  			}
+			} else {
+				log.debug("All nodes responded, no down nodes detected");
 			}
 			
 			context.getChannelCallback().sendNotification(
 					ControlNotificationFactory.createDownNotification(replyingNodes, targetedNodes)
 			);
 			
+			context.notifyHeartbeatCompleted(expectedCount, replyingNodes.size());
 		}
 	}
 }

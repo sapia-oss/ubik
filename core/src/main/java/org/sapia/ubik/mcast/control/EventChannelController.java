@@ -225,9 +225,10 @@ public class EventChannelController {
 		// the node that comes "first" becomes the master.
 		Collections.sort(nodes);
 		if(nodes.size() > 0) {			
-			log.debug("Found %s other node(s): %s", nodes.size(), nodes);
+			log.debug("Node %s has %s sibling node(s): %s", context.getNode(), nodes.size(), nodes);
 			if(force || context.getNode().compareTo(nodes.get(0)) <= 0) {
 				// Master role not yet confirmed, upgrading to candidate for now.
+				log.debug("Setting self (%s) to candidate for master", context.getNode());
 				context.setRole(Role.MASTER_CANDIDATE);
 			}
 		// Lonely node: automatically becomes the master

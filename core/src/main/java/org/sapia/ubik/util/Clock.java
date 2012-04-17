@@ -70,6 +70,10 @@ public interface Clock {
 		public long currentTimeMillis() {
 		  return currentTime.get();
 		}
+		
+		public static MutableClock getInstance() {
+			return new MutableClock();
+		}
 	}
 	
 	// ===========================================================================

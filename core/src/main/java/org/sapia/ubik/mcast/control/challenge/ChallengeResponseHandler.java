@@ -42,15 +42,17 @@ public class ChallengeResponseHandler implements ControlResponseHandler {
 						"Challenge was denied by node %s. Setting state of this node to SLAVE and aborting response handling", 
 						originNode
 				);
-				context.setRole(Role.SLAVE);				
+				context.setRole(Role.SLAVE);
+				context.notifyChallengeCompleted();
 				return true;
-			} else {
-				log.debug("Challenge was accepted by %s", originNode);
 			}
+			
+		  log.debug("Challenge was accepted by %s", originNode);
 			
 			if(replyingNodes.size() >= targetedNodes.size()) {
 				log.debug("All expected challenge responses received. Upgrading role to MASTER");
 				context.setRole(Role.MASTER);
+				context.notifyChallengeCompleted();
 				return true;
 			}
 			log.debug("Received %s/%s responses thus far...", replyingNodes.size(), targetedNodes.size());
@@ -65,6 +67,7 @@ public class ChallengeResponseHandler implements ControlResponseHandler {
 	public synchronized void onResponseTimeOut() {
 		log.debug("Challenge response timeout detected, assuming role is MASTER");
 		context.setRole(Role.MASTER);
+		context.notifyChallengeCompleted();
 	}
 
 }

@@ -69,10 +69,8 @@ public class InMemoryUnicastDispatcher implements UnicastDispatcher{
 
     for (int i = 0; i < addresses.size(); i++) {
       current = (InMemoryUnicastAddress) addresses.get(i);
-      resp = (Response) (Response) doSend(current, evt, true);
-      if (!resp.isNone()) {
-        resps.addResponse(resp);
-      }
+      resp = (Response) doSend(current, evt, true);
+      resps.addResponse(resp);
     } 
     return resps;  
   }
@@ -87,15 +85,15 @@ public class InMemoryUnicastDispatcher implements UnicastDispatcher{
   
   private Object doSend(InMemoryUnicastAddress destination, RemoteEvent toSend, boolean synchro) {
 
-    log.debug("sending to %s, event type: %s", destination, toSend.getType());
-
     if (synchro) {
       try {
+        log.debug("Sending sync to %s, event type: %s", destination, toSend.getType());
         return channel.sendSync(destination, toSend);
       } catch (InterruptedException e) {
         throw new IllegalStateException("Thread interrupted while waiting for sync response");
       }
     } else {
+      log.debug("Sending async to %s, event type: %s", destination, toSend.getType());    	
       channel.sendASync(destination, toSend);
       return null;
     }

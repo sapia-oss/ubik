@@ -4,12 +4,17 @@ import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.sapia.ubik.concurrent.BlockingRef;
 import org.sapia.ubik.concurrent.NamedThreadFactory;
+import org.sapia.ubik.log.Category;
+import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.BroadcastDispatcher;
+import org.sapia.ubik.mcast.MulticastAddress;
 import org.sapia.ubik.mcast.RemoteEvent;
 import org.sapia.ubik.mcast.Response;
 import org.sapia.ubik.net.ServerAddress;
@@ -23,24 +28,31 @@ import org.sapia.ubik.net.ServerAddress;
  * @author yduchesne
  *
  */
-final class InMemoryDispatchChannel {
+public final class InMemoryDispatchChannel {
 
-  private static long SYNC_RESPONSE_TIMEOUT                                     = 5000;
+  private static long SYNC_RESPONSE_TIMEOUT                                     = 30000;
   
   private static InMemoryDispatchChannel                   instance             = new InMemoryDispatchChannel();
   
-  private List<SoftReference<InMemoryBroadcastDispatcher>> broadcastDispatchers = Collections.synchronizedList(
-                                                                     new ArrayList<SoftReference<InMemoryBroadcastDispatcher>>()
-                                                                   );
   
-  private List<SoftReference<InMemoryUnicastDispatcher>>   unicastDispatchers   = Collections.synchronizedList(
-                                                                     new ArrayList<SoftReference<InMemoryUnicastDispatcher>>()
-                                                                   );  
+  private Category log = Log.createCategory(getClass());
   
-  private ExecutorService                                  eventProcessor       = Executors.newFixedThreadPool(
+  private Map<MulticastAddress, SoftReference<InMemoryBroadcastDispatcher>> broadcastDispatchers = 
+  		new ConcurrentHashMap<MulticastAddress, SoftReference<InMemoryBroadcastDispatcher>>();
+  		
+  private Map<ServerAddress, SoftReference<InMemoryUnicastDispatcher>>  unicastDispatchers   = 
+  		new ConcurrentHashMap<ServerAddress, SoftReference<InMemoryUnicastDispatcher>>();
+  
+  private ExecutorService                                  asyncEventProcessor  = Executors.newFixedThreadPool(
                                                                      3,
                                                                      NamedThreadFactory.createWith("InMemoryBroadcastChannel")
                                                                    );
+
+  private ExecutorService                                  syncEventProcessor  = Executors.newFixedThreadPool(
+                                                                     3,
+                                                                     NamedThreadFactory.createWith("InMemoryBroadcastChannel")
+                                                                   );
+  
 
   private InMemoryDispatchChannel() {}
   
@@ -49,107 +61,72 @@ final class InMemoryDispatchChannel {
   }
   
   void registerDispatcher(InMemoryBroadcastDispatcher dispatcher) {
-    broadcastDispatchers.add(new SoftReference<InMemoryBroadcastDispatcher>(dispatcher));
+    broadcastDispatchers.put(dispatcher.getMulticastAddress(), new SoftReference<InMemoryBroadcastDispatcher>(dispatcher));
   }
   
   void unregisterDispatcher(InMemoryBroadcastDispatcher dispatcher) {
-    synchronized(broadcastDispatchers) {
-      for(int i = 0; i < broadcastDispatchers.size(); i++) {
-        SoftReference<InMemoryBroadcastDispatcher> dispatcherRef = broadcastDispatchers.get(i);
-        BroadcastDispatcher registered = dispatcherRef.get();
-        if(registered == null) {
-          broadcastDispatchers.remove(i--);
-        } else if(registered.equals(dispatcher)) {
-          broadcastDispatchers.remove(i--);
-        }
-      }
-    }
+  	broadcastDispatchers.remove(dispatcher.getMulticastAddress());
   }
   
   boolean isRegistered(InMemoryBroadcastDispatcher dispatcher) {
-    synchronized(broadcastDispatchers) {
-      for(int i = 0; i < broadcastDispatchers.size(); i++) {
-        SoftReference<InMemoryBroadcastDispatcher> dispatcherRef = broadcastDispatchers.get(i);
-        BroadcastDispatcher registered = dispatcherRef.get();
-        if(registered == null) {
-          broadcastDispatchers.remove(i--);
-        } else if(registered.equals(dispatcher)) {
-          return true;
-        }
-      }
-    }
-    return false;
+    SoftReference<InMemoryBroadcastDispatcher> dispatcherRef = broadcastDispatchers.get(dispatcher.getMulticastAddress());
+    return dispatcherRef != null && dispatcherRef.get() != null;
   }
   
   void registerDispatcher(InMemoryUnicastDispatcher dispatcher) {
-    unicastDispatchers.add(new SoftReference<InMemoryUnicastDispatcher>(dispatcher));
+    unicastDispatchers.put(dispatcher.getAddress(), new SoftReference<InMemoryUnicastDispatcher>(dispatcher));
   }
   
   void unregisterDispatcher(InMemoryUnicastDispatcher dispatcher) {
-    synchronized(unicastDispatchers) {
-      for(int i = 0; i < unicastDispatchers.size(); i++) {
-        SoftReference<InMemoryUnicastDispatcher> dispatcherRef = unicastDispatchers.get(i);
-        InMemoryUnicastDispatcher registered = dispatcherRef.get();
-        if(registered == null) {
-          unicastDispatchers.remove(i--);
-        } else if(registered.equals(dispatcher)) {
-          unicastDispatchers.remove(i--);
-        }
-      }
-    }
+  	unicastDispatchers.remove(dispatcher.getAddress());
   } 
   
   boolean isRegistered(InMemoryUnicastDispatcher dispatcher) {
-    synchronized(unicastDispatchers) {
-      for(int i = 0; i < unicastDispatchers.size(); i++) {
-        SoftReference<InMemoryUnicastDispatcher> dispatcherRef = unicastDispatchers.get(i);
-        InMemoryUnicastDispatcher registered = dispatcherRef.get();
-        if(registered == null) {
-          unicastDispatchers.remove(i--);
-        } else if(registered.equals(dispatcher)) {
-          return true;
-        }
-      }
-    }
-    return false;
+    SoftReference<InMemoryUnicastDispatcher> dispatcherRef = unicastDispatchers.get(dispatcher.getAddress());
+    return dispatcherRef != null && dispatcherRef.get() != null;
   }
   
   void dispatch(final InMemoryBroadcastDispatcher from, final RemoteEvent event) {
     
-    eventProcessor.execute(new Runnable() {
+    asyncEventProcessor.execute(new Runnable() {
       @Override
       public void run() {
-        synchronized(broadcastDispatchers) {
-          for(int i = 0; i < broadcastDispatchers.size(); i++) {
-            SoftReference<InMemoryBroadcastDispatcher> ref = broadcastDispatchers.get(i);
-            InMemoryBroadcastDispatcher dispatcher = ref.get();
-            if(dispatcher == null) {
-              broadcastDispatchers.remove(i--);
-            } else if(!from.equals(dispatcher)) {
-              dispatcher.getConsumer().onAsyncEvent(event);
-            }
-          }
-        }
+      	
+      	for(MulticastAddress addr : broadcastDispatchers.keySet()) {
+      		SoftReference<InMemoryBroadcastDispatcher> ref = broadcastDispatchers.get(addr);
+      		if (ref == null) {
+      			broadcastDispatchers.remove(addr);
+      		} else {
+      			InMemoryBroadcastDispatcher dispatcher = ref.get();
+      			if (dispatcher == null) {
+      				broadcastDispatchers.remove(addr);
+      			} else if (!from.equals(dispatcher)) {
+      				dispatcher.getConsumer().onAsyncEvent(event);
+      			}
+      		}
+      	}
       }
     });
   }
   
   void sendASync(final ServerAddress destination, final RemoteEvent event) {
-    eventProcessor.execute(new Runnable() {
+    asyncEventProcessor.execute(new Runnable() {
       
       @Override
       public void run() {
-        synchronized(unicastDispatchers) {
-          for(int i = 0; i < unicastDispatchers.size(); i++) {
-            SoftReference<InMemoryUnicastDispatcher> ref = unicastDispatchers.get(i);
-            InMemoryUnicastDispatcher dispatcher = ref.get();
-            if(dispatcher == null) {
-              unicastDispatchers.remove(i--);
-            } else  if(dispatcher.getAddress().equals(destination)) {
-              dispatcher.getConsumer().onAsyncEvent(event);
-            }
-          }
-        }        
+      	for(ServerAddress addr : unicastDispatchers.keySet()) {
+      		SoftReference<InMemoryUnicastDispatcher> ref = unicastDispatchers.get(addr);
+      		if (ref == null) {
+      			unicastDispatchers.remove(addr);
+      		} else {
+      			InMemoryUnicastDispatcher dispatcher = ref.get();
+      			if (dispatcher == null) {
+      				unicastDispatchers.remove(addr);
+      			} else if (dispatcher.getAddress().equals(destination)) {
+      				dispatcher.getConsumer().onAsyncEvent(event);
+      			}
+      		}
+      	}
       }
       
     });
@@ -159,31 +136,49 @@ final class InMemoryDispatchChannel {
     
     final BlockingRef<Response> resp = new BlockingRef<Response>();
     
-    eventProcessor.execute(new Runnable() {
+    System.out.println("--------------------------- " + syncEventProcessor);
+    
+    
+    syncEventProcessor.execute(new Runnable() {
       
       @Override
       public void run() {
-        synchronized(unicastDispatchers) {
-          for(int i = 0; i < unicastDispatchers.size(); i++) {
-            SoftReference<InMemoryUnicastDispatcher> ref = unicastDispatchers.get(i);
-            InMemoryUnicastDispatcher dispatcher = ref.get();
-            if(dispatcher == null) {
-              unicastDispatchers.remove(i--);
-            } else if(dispatcher.getAddress().equals(destination)) {
+        System.out.println("--------------------------- Executing....");
+        System.out.println("--------------------------- Dispatchers...." + unicastDispatchers.size());
+        
+        for(ServerAddress addr : unicastDispatchers.keySet()) {
+      		SoftReference<InMemoryUnicastDispatcher> ref = unicastDispatchers.get(addr);
+      		if (ref == null) {
+      			unicastDispatchers.remove(addr);
+      		} else {
+      			InMemoryUnicastDispatcher dispatcher = ref.get();
+      			if (dispatcher == null) {
+      				unicastDispatchers.remove(addr);
+      			} else if (dispatcher.getAddress().equals(destination)) {
               if(dispatcher.getConsumer().hasSyncListener(event.getType())) {
+              	log.debug("Dispatching to sync listener: %s", event.getType());
                 resp.set(new Response(event.getId(), dispatcher.getConsumer().onSyncEvent(event)));
+                return;
               } else {
-                resp.set(new Response(event.getId(), null).setNone());                
+              	log.debug("No listener found for %s", event.getType());
+                resp.set(new Response(event.getId(), null).setNone());
+                return;
               }
-            }
-
-          }
-        }        
+      			}
+      		}
+        }
+        log.debug("Could not dispatch %s (no listener found)", event.getType());
+        resp.set(new Response(event.getId(), null).setNone().setStatusSuspect());
       }
       
     });
     
-    return resp.await(SYNC_RESPONSE_TIMEOUT);
+    Response r = resp.await(SYNC_RESPONSE_TIMEOUT);
+    
+    if (r == null) {
+    	r =  new Response(event.getId(), null).setNone().setStatusSuspect();
+    }
+    return r;
   }  
   
 }

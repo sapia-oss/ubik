@@ -6,7 +6,7 @@ import java.util.Set;
 public class IncludeClassFilter implements LogFilter {
   
   private Set<String> classNames = new HashSet<String>();
-
+  
   public IncludeClassFilter addClass(Class<?>... classes) {
     for(Class<?> c : classes) {
       classNames.add(c.getName());
@@ -20,6 +20,12 @@ public class IncludeClassFilter implements LogFilter {
       return true;
     }
     return false;
+  }
+  
+  public static IncludeClassFilter newInstance(Class<?>...classes) {
+  	IncludeClassFilter filter = new IncludeClassFilter();
+  	filter.addClass(classes);
+  	return filter;
   }
   
 }

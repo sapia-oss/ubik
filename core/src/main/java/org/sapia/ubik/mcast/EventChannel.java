@@ -26,6 +26,7 @@ import org.sapia.ubik.mcast.udp.UDPBroadcastDispatcher;
 import org.sapia.ubik.mcast.udp.UDPUnicastDispatcher;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.util.Clock;
 import org.sapia.ubik.util.Props;
 
 
@@ -44,6 +45,9 @@ import org.sapia.ubik.util.Props;
  */
 public class EventChannel {
   
+	/**
+	 * This enum holds constants pertaining to an {@link EventChannel}'s role in a domain/cluster. 
+	 */
 	public enum Role {
 		
 		UNDEFINED,
@@ -54,8 +58,14 @@ public class EventChannel {
 		public boolean isMaster() {
 			return this == MASTER;
 		}
-		
 	}
+ 
+	/** Internal state */
+  private enum State {
+    CREATED, STARTED, CLOSED;
+  }
+  
+  // ==========================================================================
 	
 	/**
 	 * Sent by a node when it receives a publish event. Allows discovery by the node that just published itself.
@@ -77,7 +87,7 @@ public class EventChannel {
    */  
   static final String  CONTROL_EVT   	 = "ubik/mcast/control";
   
-  private static final int MIN_STARTUP_DELAY = 5000; 
+  private static final int MIN_STARTUP_DELAY 				= 5000; 
   private static final int MIN_STARTUP_DELAY_OFFSET = 10000;
   
   private Category                log              = Log.createCategory(getClass());
@@ -87,10 +97,13 @@ public class EventChannel {
   private EventConsumer           consumer;
   private ChannelEventListener    listener;
   private View                    view             = new View();
-  private EventChannelController controller;
+  private EventChannelController  controller;
   private int                     controlBatchSize;
   private ServerAddress           address;
-  private List<SoftReference<DiscoveryListener>> discoListeners = Collections.synchronizedList(new ArrayList<SoftReference<DiscoveryListener>>());
+  private List<SoftReference<DiscoveryListener>> 
+  																discoListeners   = Collections.synchronizedList(
+  																										 new ArrayList<SoftReference<DiscoveryListener>>()
+  																									 );
   private volatile State          state            = State.CREATED;
   
   /**
@@ -186,7 +199,7 @@ public class EventChannel {
   public ServerAddress getUnicastAddress() {
     return unicast.getAddress();
   }
-
+  
   /**
    * Starts this instances. This method should be called after instantiating this instance, prior to start
    * receiving/sending remote events.
@@ -419,9 +432,11 @@ public class EventChannel {
     return broadcast.getNode();
   }
   
-  private enum State {
-    CREATED, STARTED, CLOSED;
+  EventChannelController getController() {
+	  return controller;
   }
+  
+  // ==========================================================================
   
   private class ChannelCallbackImpl implements ChannelCallback {
 
@@ -436,7 +451,7 @@ public class EventChannel {
 
   	@Override
   	public Set<String> getNodes() {
-  	  return EventChannel.this.getView().getNodesAsSet();
+  	  return view.getNodesAsSet();
   	}
   	
   	@Override
@@ -455,23 +470,21 @@ public class EventChannel {
   		if(!notif.getTargetedNodes().isEmpty()) {
   			List<ControlNotification> split = notif.split(controlBatchSize);
   			for(ControlNotification toSend : split) {
-  				if(!toSend.getTargetedNodes().isEmpty()) {
-  					ServerAddress address = null;
-  					do {
-    					try {
-      					String next = toSend.getTargetedNodes().iterator().next();
-      	  			log.debug("Sending control notification to next nodes %s", next);  					
-      					toSend.getTargetedNodes().remove(next);
-    						address = view.getAddressFor(next);
-    						if(address != null) {
-    							unicast.dispatch(address, CONTROL_EVT, toSend);
-    						}
-    						Thread.yield();
-    					} catch (IOException e) {
-    						log.error("Could not send control request", e);
-    						break;
-    					}
-  					} while (address == null && !toSend.getTargetedNodes().isEmpty());
+					ServerAddress address = null;  				
+  				while(address == null && !toSend.getTargetedNodes().isEmpty()) {
+  					try {
+    					String next = toSend.getTargetedNodes().iterator().next();
+    	  			log.debug("Sending control notification with %s targeted nodes to next node %s", toSend.getTargetedNodes().size() - 1, next);  					
+    					toSend.getTargetedNodes().remove(next);
+  						address = view.getAddressFor(next);
+  						if(address != null) {
+  							unicast.dispatch(address, CONTROL_EVT, toSend);
+  						}
+  						Thread.yield();
+  						break;
+  					} catch (IOException e) {
+  						log.info("Could not send control notification to %s", e, address);
+  					}
   				}
   			}
   		}
@@ -508,23 +521,21 @@ public class EventChannel {
   			log.debug("Sending control request to nodes: %s", req.getTargetedNodes());
   			List<ControlRequest> split = req.split(controlBatchSize);
   			for(ControlRequest toSend : split) {
-  				if(!toSend.getTargetedNodes().isEmpty()) {
-  					ServerAddress address = null;
-  					do {
-    					try {
-      					String next = toSend.getTargetedNodes().iterator().next();
-      	  			log.debug("Sending control request to next nodes %s", next);  					
-      					toSend.getTargetedNodes().remove(next);
-    						address = view.getAddressFor(next);
-    						if(address != null) {
-    							unicast.dispatch(address, CONTROL_EVT, toSend);
-    						}
-    						Thread.yield();    						
-    					} catch (IOException e) {
-    						log.error("Could not send control request", e);
-    						break;
-    					}
-  					} while (address == null && !toSend.getTargetedNodes().isEmpty());
+					ServerAddress address = null;
+  				while(address == null && !toSend.getTargetedNodes().isEmpty()) {
+  					try {
+    					String next = toSend.getTargetedNodes().iterator().next();
+    	  			log.debug("Sending control request with %s targeted nodes to next node %s", toSend.getTargetedNodes().size() - 1, next);  					
+    					toSend.getTargetedNodes().remove(next);
+  						address = view.getAddressFor(next);
+  						if(address != null) {
+  							unicast.dispatch(address, CONTROL_EVT, toSend);
+  						}
+  						Thread.yield();
+  						break;
+  					} catch (IOException e) {
+  						log.info("Could not send control request to %s", e, address);
+  					}
   				}
   			}
   		}
@@ -536,6 +547,8 @@ public class EventChannel {
 				ServerAddress addr = view.getAddressFor(masterNode);
 				if(addr != null) {
 					unicast.dispatch(addr, CONTROL_EVT, res);
+				} else {
+					log.debug("Address for master node %s not found. Currently have nodes: %s", masterNode, view.getNodes());
 				}
 			} catch (IOException e) {
 				log.error("Could not send control response", e);
@@ -648,7 +661,7 @@ public class EventChannel {
     consumer.registerAsyncListener(SHUTDOWN_EVT,  listener);
     consumer.registerAsyncListener(CONTROL_EVT,   listener);
     try {
-    	consumer.registerSyncListener(CONTROL_EVT, 	  listener);
+    	consumer.registerSyncListener(CONTROL_EVT, 	listener);
     } catch (ListenerAlreadyRegisteredException e) {
     	throw new IllegalStateException("Could not register sync event listener", e);
     }
@@ -668,11 +681,13 @@ public class EventChannel {
     config.setHeartbeatInterval(heartbeatInterval);
     config.setHeartbeatTimeout(heartbeatTimeout);
     config.setResponseTimeout(controlResponseTimeout);
-    controller = new EventChannelController(config, new ChannelCallbackImpl());
-    
+    controller = new EventChannelController(createClock(), config, new ChannelCallbackImpl());
+    startTimer(heartbeatInterval);
+  }
+  
+  protected void startTimer(long heartbeatInterval) {
     Random random = new Random();
     long firstTaskStartupDelay = MIN_STARTUP_DELAY + random.nextInt(MIN_STARTUP_DELAY_OFFSET);
-    
     heartbeatTimer.schedule(
         new TimerTask() {
           @Override
@@ -684,6 +699,9 @@ public class EventChannel {
         }, firstTaskStartupDelay, 
         heartbeatInterval
     );
-    
+  }
+  
+  protected Clock createClock() {
+  	return Clock.SystemClock.getInstance();
   }
 }

@@ -27,6 +27,7 @@ public class InMemoryBroadcastDispatcher implements BroadcastDispatcher{
   private InMemoryDispatchChannel  channel   = InMemoryDispatchChannel.getInstance();
   private EventConsumer            consumer;
   private String                   domain;
+
   private InMemoryMulticastAddress address;
   
   /**
@@ -34,7 +35,7 @@ public class InMemoryBroadcastDispatcher implements BroadcastDispatcher{
    */
   public InMemoryBroadcastDispatcher(EventConsumer consumer) {
     this.consumer = consumer;
-    this.address  = new InMemoryMulticastAddress();
+    this.address  = new InMemoryMulticastAddress(UUID.randomUUID().toString());
     this.domain   = consumer.getDomainName().toString();
   }
   
@@ -50,7 +51,7 @@ public class InMemoryBroadcastDispatcher implements BroadcastDispatcher{
   
   @Override
   public String getNode() {
-    return address.getNode();
+    return consumer.getNode();
   }
   
   @Override
@@ -106,10 +107,7 @@ public class InMemoryBroadcastDispatcher implements BroadcastDispatcher{
     
     public static final String TRANSPORT  = "mem/broadcast";
     
-    private String node = UUID.randomUUID().toString();
-    
-    public InMemoryMulticastAddress() {
-    }
+    private String node;
     
     public InMemoryMulticastAddress(String node) {
       this.node = node;

@@ -1,5 +1,7 @@
 package org.sapia.ubik.mcast.control;
 
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.sapia.ubik.mcast.EventChannel;
@@ -15,12 +17,14 @@ import org.sapia.ubik.util.Clock;
  */
 public class ControllerContext {
 
+	private List<EventChannelControllerListener> listeners = new CopyOnWriteArrayList<EventChannelControllerListener>();
+	
 	private Role 						role;
 	private ChannelCallback channelCallback;
 	private Clock						clock; 
-	private AtomicLong 			lastHeartbeatReqRcvTime 		= new AtomicLong();
+	private AtomicLong 			lastHeartbeatReqRcvTime 	= new AtomicLong();
 	private AtomicLong 			lastHeartbeatReqSentTime 	= new AtomicLong();
-	private AtomicLong 			lastChallengeReqRcvTime 		= new AtomicLong();
+	private AtomicLong 			lastChallengeReqRcvTime 	= new AtomicLong();
 	private AtomicLong 			lastChallengeReqSentTime 	= new AtomicLong();
 	
 	/**
@@ -135,5 +139,39 @@ public class ControllerContext {
 		lastChallengeReqRcvTime.set(clock.currentTimeMillis());
 	}
 	
+	/**
+	 * Internally notifies this instance's listeners that the challenge to elect 
+	 * the master node has completed.
+	 */
+	public void notifyChallengeCompleted() {
+		for (EventChannelControllerListener listener : listeners) {
+			listener.onChallengeCompleted(this);
+		}
+	}
 
+	/**
+	 * Internally notifies this instance's listeners that the challenge to elect 
+	 * the master node has completed.
+	 */
+	public void notifyHeartbeatCompleted(int expectedCount, int effectiveCount) {
+		for (EventChannelControllerListener listener : listeners) {
+			listener.onHeartBeatCompleted(this, expectedCount, effectiveCount);
+		}
+	}
+	
+	/**
+	 * Adds the given listener to this instance.
+	 * 
+	 * @param listener an {@link EventChannelControllerListener} to add to this instance.
+	 */
+	public void addControllerListener(EventChannelControllerListener listener) {
+		listeners.add(listener);
+	}
+
+	/**
+	 * @param listener an {@link EventChannelControllerListener} to remove from this instance.
+	 */
+	public void removeControllerListener(EventChannelControllerListener listener) {
+		listeners.remove(listener);
+	}
 }

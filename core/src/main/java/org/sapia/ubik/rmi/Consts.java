@@ -62,7 +62,7 @@ public interface Consts {
   /**
    * This constant corresponds to the 'ubik.rmi.naming.mcast.bufsize' property key. It
    * is used to set the size of buffers that handle UDP datagrams. A too small value
-   * may result in multicast events not being sent/received. Defaults to 2048 bytes.
+   * may result in multicast events not being sent/received. Defaults to 3072 bytes.
    */
   public static final String MCAST_BUFSIZE_KEY = "ubik.rmi.naming.mcast.bufsize";  
   
@@ -113,7 +113,7 @@ public interface Consts {
   
   /**
    * This constant corresponds to the 'ubik.rmi.naming.mcast.control.batch.size' property key. It is used 
-   * to specify the size of the batches of control notifications and requests (defaults to 5).
+   * to specify the size of the batches of control notifications and requests (defaults to 50).
    */
   public static final String MCAST_CONTROL_BATCH_SIZE = "ubik.rmi.naming.mcast.control.batch.size";
 
