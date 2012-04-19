@@ -43,9 +43,7 @@ public class SocketClientConnectionPool implements Connections {
              .build();
   }
 
-  /**
-   * @see org.sapia.ubik.rmi.server.transport.Connections#acquire()
-   */
+  @Override
   public RmiConnection acquire() throws RemoteException, ThreadInterruptedException {
     try {
       return (RmiConnection) pool.acquire();
@@ -58,23 +56,22 @@ public class SocketClientConnectionPool implements Connections {
     }
   }
 
-  /**
-   * @see org.sapia.ubik.rmi.server.transport.Connections#release(RmiConnection)
-   */
+  @Override
   public void release(RmiConnection conn) {
     pool.release(conn);
   }
 
-  /**
-   * @see org.sapia.ubik.rmi.server.transport.Connections#clear()
-   */
+  @Override
   public void clear() {
     pool.shrinkTo(0);
   }
+  
+  @Override
+  public void invalidate(RmiConnection conn) {
+  	pool.invalidate(conn);
+  }
 
-  /**
-   * @see org.sapia.ubik.rmi.server.transport.Connections#getTransportType()
-   */
+  @Override
   public String getTransportType() {
     return transportType;
   }

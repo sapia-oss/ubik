@@ -6,14 +6,15 @@ import java.util.Properties;
 import javax.naming.Context;
 
 import org.sapia.ubik.concurrent.NamedThreadFactory;
-import org.sapia.ubik.concurrent.ThreadStartup;
 import org.sapia.ubik.concurrent.ThreadShutdown;
+import org.sapia.ubik.concurrent.ThreadStartup;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.AsyncEventListener;
 import org.sapia.ubik.mcast.EventChannel;
 import org.sapia.ubik.mcast.RemoteEvent;
 import org.sapia.ubik.net.TCPAddress;
+import org.sapia.ubik.rmi.naming.remote.archie.UbikRemoteContext;
 import org.sapia.ubik.rmi.server.Hub;
 import org.sapia.ubik.rmi.server.transport.socket.MultiplexSocketTransportProvider;
 import org.sapia.ubik.util.Localhost;
@@ -196,7 +197,7 @@ public class EmbeddableJNDIServer implements RemoteContextProvider, AsyncEventLi
       channel.dispatch(JndiConsts.JNDI_SERVER_DISCO,
           new TCPAddress(MultiplexSocketTransportProvider.MPLEX_TRANSPORT_TYPE, Localhost.getAnyLocalAddress().getHostAddress(), port));
 
-      root = JNDIServerHelper.newRootContext(channel);
+      root = UbikRemoteContext.newInstance(channel);
 
       Hub.exportObject(this, port);
       

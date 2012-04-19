@@ -34,7 +34,7 @@ class RemoteResponseSender implements ResponseSender {
        } catch (Exception e) {
          log.error("Error sending command to %s" + dest.getServerAddress(), e);
          if (conn != null) {
-           conn.close();
+           pool.invalidate(conn);
          }
          return;
        }

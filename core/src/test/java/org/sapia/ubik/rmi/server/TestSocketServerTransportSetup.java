@@ -15,7 +15,7 @@ public class TestSocketServerTransportSetup {
   Context context;
   
   public void setUp() throws Exception{
-    System.setProperty(Consts.ENABLE_COLOCATED_CALLS, "false");
+    System.setProperty(Consts.COLOCATED_CALLS_ENABLED, "false");
     jndi = new EmbeddableJNDIServer("testDomain", 1099);
     jndi.start(true);
     Thread.sleep(10000);
@@ -28,7 +28,7 @@ public class TestSocketServerTransportSetup {
   }
   
   public void tearDown() {
-    System.clearProperty(Consts.ENABLE_COLOCATED_CALLS);
+    System.clearProperty(Consts.COLOCATED_CALLS_ENABLED);
     if(jndi != null) {
       jndi.stop();
     }

@@ -201,6 +201,7 @@ public class Hub {
       try {
         conn.send(new CommandConnect(address.getTransportType()));
       } catch (RemoteException e) {
+        pool.invalidate(conn);      	
         pool.clear();
         conn = pool.acquire();
         conn.send(new CommandConnect(address.getTransportType()));

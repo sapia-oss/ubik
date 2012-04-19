@@ -27,7 +27,13 @@
       <sapia:vitem name="Protocol" href="group_communication.html#control_protocol" />    
       <sapia:vitem name="Avis" href="group_communication.html#using_avis" />
       <sapia:vitem name="TCP Unicast" href="group_communication.html#tcp_unicast" />
-    </sapia:vsection>      
+    </sapia:vsection>
+    
+    <sapia:vsection name="FAQ" href="faq.html">
+      <sapia:vitem name="Licensing" href="faq.html#licensing" />    
+      <sapia:vitem name="Networking" href="faq.html#networking" />
+      <sapia:vitem name="Misc" href="faq.html#misc" />    
+    </sapia:vsection>          
     
     <sapia:vsection name="Javadoc" href="maven/api/index.html"/>
     <sapia:vsection name="Download" href="download.html"/>
@@ -62,7 +68,7 @@
         <li>A-la-Jini discovery of JNDI servers is supported.</li>
       </ul>
       
-      <p>Ubik JNDI uses UDP multicast by default to implement binding replication and fail-over among multiple Ubik JNDI 
+      <p>Ubik JNDI uses IP multicast by default to implement binding replication and fail-over among multiple Ubik JNDI 
       servers in a domain.</p>
       
       <p>This feature is supported through the <sapia:class>EventChannel</sapia:class>, which is better documented in the
@@ -122,19 +128,38 @@
         <sapia:note>Your application classes need not being present in the JNDI server's classpath.</sapia:note>
         
         <p>By default, the server is started on port 1099 and the domain "default". This can be overridden at the
-        command-line. Type the <sapia:command>-h</sapia:command> option (for "help") to see syntax information.</p>
+        command-line (with the <sapia:command>-p</sapia:command> and <sapia:command>-d</sapia:command> switches, respectively). 
+        Type the <sapia:command>-h</sapia:command> option (for "help") to see syntax information.</p>
         
+        
+        <p>You can additionnally configure the server by providing the path to a Java properties file, 
+        using the <sapia:command>-f</sapia:command> option:</p>
+        
+        <sapia:code>./jndi.sh -f /usr/bin/local/ubik/jndi.properties</sapia:code>
+        
+        <p>The path can be either relative or absolute. The properties corresponding to the above-mentioned command-line switches are the following:</p>
+        
+        <ul>
+        	<li><tt>ubik.jndi.server.port</tt>: corresponds to the port the server should listen on.</li>
+        	<li><tt>ubik.jndi.domain</tt>: indicates the domain the server is part of.</li>
+        </ul>
+        
+        <p>You can in addition specify any other property that is used to configure the Ubik runtime (see the <sapia:class link="maven/api/org/sapia/ubik/rmi/Consts.html">Consts</sapia:class>
+        class for the available properties). This also applies to any property described in the <a href="#advanced">Advanced</a> section of this page.</p>
+        
+        <p>The properties that are loaded from the configuration will be exported as a set of system properties from within the JNDI server's VM, 
+        at startup. Therefore they will be made available to Ubik's internal components that use them.</p>
+        
+        <p>One of the properties that you will find necessary to configure at times is <tt><a href="tutorial.html#bindaddr">ubik.rmi.address-pattern</a></tt></p>
       </sapia:sect3>
       
       <sapia:sect3 title="Binding a server to the JNDI tree">
       
         <p>A Ubik RMI server can be bound to a Ubik JNDI tree in the following way:</p>
         
-        <sapia:code>
-package org.sapia.rmi.hello;
+        <sapia:code>package org.sapia.rmi.hello;
 
-import org.sapia.ubik.rmi.naming.
-           remote.RemoteInitialContextFactory;
+import org.sapia.ubik.rmi.naming.remote.RemoteInitialContextFactory;
 import org.sapia.ubik.rmi.server.Hub;
 
 import java.rmi.RemoteException;
@@ -169,12 +194,12 @@ public class HelloImpl implements Hello{
     }
   }
 }</sapia:code>
-      <p>Conversely, the lookup would be performed as such:</p>
-<sapia:code>
-package org.sapia.rmi.hello;
 
-import org.sapia.ubik.rmi.naming.
-        remote.RemoteInitialContextFactory;
+      <p>Conversely, the lookup would be performed as such:</p>
+
+<sapia:code>package org.sapia.rmi.hello;
+
+import org.sapia.ubik.rmi.naming.remote.RemoteInitialContextFactory;
 import org.sapia.ubik.rmi.server.Hub;
 
 import java.rmi.RemoteException;
@@ -291,6 +316,7 @@ public class HelloLookup {
     try{
     	
     	Context context = JNDIContextBuilder.newInstance()
+    	        .host("localhost").port(1099)
     			.property(Consts.BROADCAST_PROVIDER, Consts.BROADCAST_PROVIDER_AVIS)
     			.property(Consts.BROADCAST_AVIS_URL, "elvin://localhost")
     			.build();
@@ -337,8 +363,7 @@ InitialContext context = new InitialContext(props);
 <p>Using the <sapia:class>JNDIContextBuilder</sapia:class> the above would be:</p>
 
 <sapia:code>Context context = JNDIContextBuilder.newInstance()
-    			.property(Consts.BROADCAST_PROVIDER, Consts.BROADCAST_PROVIDER_AVIS)
-    			.property(Consts.BROADCAST_AVIS_URL, "elvin://localhost")
+    	        .host("localhost").port(1099)
     			.domain("someDomain");
     			.build();
 ...</sapia:code>

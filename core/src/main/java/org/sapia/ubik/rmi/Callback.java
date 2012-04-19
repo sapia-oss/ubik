@@ -16,9 +16,4 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 public @interface Callback {
 
-  /**
-   * @return the array of {@link Class} instances corresponding to the interfaces that
-   * should be exported as part of remoting.
-   */
-  public Class<?>[] interfaces();
 }

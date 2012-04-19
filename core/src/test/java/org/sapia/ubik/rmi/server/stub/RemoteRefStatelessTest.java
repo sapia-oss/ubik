@@ -13,6 +13,7 @@ import java.util.List;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.sapia.ubik.log.Log;
 import org.sapia.ubik.rmi.server.TestSocketServerTransportSetup;
 import org.sapia.ubik.rmi.server.TestStatelessRemoteInterface;
 
@@ -23,6 +24,8 @@ public class RemoteRefStatelessTest {
   
   @Before
   public void setUp() throws Exception {
+  	Log.setDebug();
+  	
     transport = new TestSocketServerTransportSetup();
     transport.setUp();
   }  

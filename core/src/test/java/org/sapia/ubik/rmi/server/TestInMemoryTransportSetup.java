@@ -23,13 +23,13 @@ public class TestInMemoryTransportSetup {
     // making sure we're shut down
     Hub.shutdown();
     ServiceLocator.registerHandler("ubik-local", new MapServiceHandler());
-    System.setProperty(Consts.ENABLE_COLOCATED_CALLS, "false");
+    System.setProperty(Consts.COLOCATED_CALLS_ENABLED, "false");
     System.setProperty(InMemoryTransportProvider.MARSHALLING, "true");
   }
   
   public void tearDown() {
     ServiceLocator.unregisterHandler("ubik-local");
-    System.setProperty(Consts.ENABLE_COLOCATED_CALLS, "true");
+    System.setProperty(Consts.COLOCATED_CALLS_ENABLED, "true");
     System.setProperty(InMemoryTransportProvider.MARSHALLING, "false");
     Hub.shutdown();
   }

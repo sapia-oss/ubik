@@ -1,6 +1,7 @@
 package org.sapia.ubik.rmi.server.invocation;
 
 import java.io.IOException;
+import java.rmi.RemoteException;
 
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
@@ -77,9 +78,13 @@ public class RemoteInvocationStrategy implements InvocationStrategy {
       perf.invokeReceive.start();
       toReturn = conn.receive();
       perf.invokeReceive.end();
-      
-    } finally {
-      pool.release(conn);
+      pool.release(conn);      
+    } catch (RemoteException e) {
+    	pool.invalidate(conn);
+    	throw e;
+    } catch (Exception e) {
+    	pool.release(conn);
+    	throw e;
     }
     
     if (cmd.usesMarshalledObjects() && (toReturn != null)) {
@@ -114,8 +119,12 @@ public class RemoteInvocationStrategy implements InvocationStrategy {
       conn.send(cmd, cmd.getVmId(), conn.getServerAddress().getTransportType());
       log.debug("Waiting for ACK...");
       conn.receive();
-    } finally {
-      pool.release(conn);
+      pool.release(conn);      
+    } catch (RemoteException e) {
+    	pool.invalidate(conn);
+    	throw e;
+    } catch (Exception e) {
+    	pool.release(conn);
     }
     
     try {

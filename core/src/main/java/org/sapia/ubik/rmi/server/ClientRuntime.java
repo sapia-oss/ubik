@@ -180,7 +180,7 @@ public class ClientRuntime implements Module{
       conn.receive();
     } catch (Exception e) {
     	if (conn != null) {
-    		conn.close();
+    		conns.invalidate(conn);
     	}
     } finally {
       if (conn != null) {

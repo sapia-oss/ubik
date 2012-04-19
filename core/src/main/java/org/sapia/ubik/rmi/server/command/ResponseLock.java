@@ -1,5 +1,7 @@
 package org.sapia.ubik.rmi.server.command;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.sapia.ubik.rmi.server.stats.Stats;
 import org.sapia.ubik.rmi.server.stats.Timer;
 import org.sapia.ubik.util.Delay;
@@ -13,7 +15,9 @@ import org.sapia.ubik.util.Delay;
  */
 public class ResponseLock {
   
-  private static volatile int   count            = 0;
+	private static final long MAX_VALUE = Long.MAX_VALUE - 10000;
+	
+  private static AtomicLong     count            = new AtomicLong();
   private static Timer          callBackExecTime = Stats.getInstance().createTimer(
                                                      ResponseLock.class, 
                                                      "CallbackExecTime", 
@@ -91,11 +95,11 @@ public class ResponseLock {
     notify();
   }
 
-  private static synchronized long generateId() {
-    if (count == Long.MAX_VALUE) {
-      count = 0;
-    }
-
-    return count++;
+  private static long generateId() {
+  	long value = count.incrementAndGet();
+  	if(value >= MAX_VALUE) {
+  		count.compareAndSet(value, 0);
+  	}
+  	return value;
   }
 }

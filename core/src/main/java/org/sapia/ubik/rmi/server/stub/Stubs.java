@@ -133,7 +133,7 @@ public class Stubs {
       return returnValue;
     } catch (RemoteException re) {
       if(conn != null) {
-        conn.close();
+        pool.invalidate(conn);
       }
       pool.clear();
       throw re;

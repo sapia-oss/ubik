@@ -50,5 +50,5 @@ public class Defaults {
   /**
    * The size for the batches of control requests/notifications.
    */
-  public static final int DEFAULT_CONTROL_BATCH_SIZE        = 50;
+  public static final int DEFAULT_CONTROL_BATCH_SIZE        = 20;
 }

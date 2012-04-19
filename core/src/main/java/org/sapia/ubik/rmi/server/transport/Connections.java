@@ -23,6 +23,13 @@ public interface Connections {
    * @param conn a {@link RmiConnection}
    */
   public void release(RmiConnection conn);
+  
+  /**
+   * Notifies this pool that it should close the given connection and discard it.
+   *  
+   * @param conn a {@link RmiConnection} to invalidate.
+   */
+  public void invalidate(RmiConnection conn);
 
   /**
    * Closes all connections kept internally and removes them.

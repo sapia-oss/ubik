@@ -65,18 +65,11 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
     );
   }
   
-  /**
-   * @param senderCount the numnber of threads to use for sending remove events.
-   * 
-   * @see #send(List, String, Object)
-   */
   public void setSenderCount(int senderCount) {
     this.senderCount = senderCount;
   }
 
-  /**
-   * @see org.sapia.ubik.mcast.UnicastDispatcher#start()
-   */
+  @Override
   public void start() {
     super.start();
     
@@ -105,18 +98,14 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
     addr = new UDPUnicastAddress(inetAddr, getPort());
   }
 
-  /**
-   * @see org.sapia.ubik.mcast.UnicastDispatcher#close()
-   */
+  @Override
   public void close() {
     if (sock != null) {
       sock.close();
     }
   }
 
-  /**
-   * @see org.sapia.ubik.mcast.UnicastDispatcher#dispatch(ServerAddress, String, Object)
-   */
+  @Override
   public void dispatch(ServerAddress addr, String type, Object data)
     throws IOException {
     
@@ -139,9 +128,7 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
     }
   }
 
-  /**
-   * @see UnicastDispatcher#send(ServerAddress, String, Object)
-   */
+  @Override
   public Response send(ServerAddress addr, String type, Object data)
     throws IOException {
     
@@ -163,9 +150,7 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
     }
   }
 
-  /**
-   * @see UnicastDispatcher#send(java.util.List, String, Object)
-   */
+  @Override
   public RespList send(List<ServerAddress> addresses, final String type, Object data) 
     throws IOException, InterruptedException {
     
@@ -205,9 +190,7 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
     
   }
 
-  /**
-   * @see org.sapia.ubik.mcast.UnicastDispatcher#getAddress()
-   */
+  @Override
   public ServerAddress getAddress() throws IllegalStateException {
     if (addr == null) {
       throw new IllegalStateException(
@@ -217,23 +200,17 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
     return addr;
   }
 
-  /**
-   * @see org.sapia.ubik.mcast.server.UDPServer#handlePacketSizeToShort(DatagramPacket)
-   */
+  @Override
   protected void handlePacketSizeToShort(DatagramPacket pack) {
     log.error("Buffer size to short; set to: %s. This size is not enough to receive some incoming packets", bufSize());
   }
 
-  /**
-   * @see org.sapia.ubik.mcast.server.UDPServer#bufSize()
-   */
+  @Override
   protected int bufSize() {
     return super.bufSize();
   }
   
-  /**
-   * @see org.sapia.ubik.mcast.server.UDPServer#handle(DatagramPacket, DatagramSocket)
-   */
+  @Override
   protected void handle(final DatagramPacket pack, final DatagramSocket sock) {
   	handlers.execute(new Runnable() {
 			@Override
@@ -284,7 +261,7 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
         log.error("Object not a remote event: %s", o);
       }
     } catch (IOException e) {
-      log.error(e);
+      log.error("IO Problem handling remote event", e);
     } catch (ClassNotFoundException e) {
       log.error(e);
     }

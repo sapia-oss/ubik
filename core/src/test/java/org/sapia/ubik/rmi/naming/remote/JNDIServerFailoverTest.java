@@ -29,7 +29,7 @@ public class JNDIServerFailoverTest {
 	@Before
 	public void setUp() throws Exception {
 		System.setProperty(Consts.UBIK_DOMAIN_NAME, "ubik.test");
-		System.setProperty(Consts.ENABLE_COLOCATED_CALLS, "false");
+		System.setProperty(Consts.COLOCATED_CALLS_ENABLED, "false");
 		System.setProperty(Consts.BROADCAST_PROVIDER, Consts.BROADCAST_PROVIDER_MEMORY);
 		System.setProperty(Consts.BROADCAST_MEMORY_NODE, "test");
 		server = new EmbeddableJNDIServer(new EventChannel("ubik.test", Props.getSystemProperties()), 1099);
@@ -40,7 +40,7 @@ public class JNDIServerFailoverTest {
 	public void tearDown() throws Exception {
 		System.clearProperty(Consts.BROADCAST_PROVIDER);
 		System.clearProperty(Consts.BROADCAST_MEMORY_NODE);
-		System.clearProperty(Consts.ENABLE_COLOCATED_CALLS);
+		System.clearProperty(Consts.COLOCATED_CALLS_ENABLED);
 		server.stop();
 		Hub.shutdown(3000);
 	}	

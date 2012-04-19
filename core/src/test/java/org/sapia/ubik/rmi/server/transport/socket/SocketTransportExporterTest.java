@@ -14,13 +14,13 @@ public class SocketTransportExporterTest {
 	@Before
 	public void setUp() {
 		Hub.shutdown();
-		System.setProperty(Consts.ENABLE_COLOCATED_CALLS, "false");
+		System.setProperty(Consts.COLOCATED_CALLS_ENABLED, "false");
 	}
 	
 	@After
 	public void tearDown() {
 		Hub.shutdown();
-		System.clearProperty(Consts.ENABLE_COLOCATED_CALLS);
+		System.clearProperty(Consts.COLOCATED_CALLS_ENABLED);
 	}
 
   @Test

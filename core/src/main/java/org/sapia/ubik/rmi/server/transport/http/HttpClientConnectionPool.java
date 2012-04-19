@@ -37,9 +37,7 @@ public class HttpClientConnectionPool implements Connections {
     this.address = new HttpAddress(serverUri);
   }
 
-  /**
-   * @see org.sapia.ubik.rmi.server.transport.Connections#acquire()
-   */
+  @Override
   public HttpRmiClientConnection acquire() throws RemoteException {
     try {
       return ((HttpRmiClientConnection) this.pool.acquire()).setUp(client, address);
@@ -52,25 +50,24 @@ public class HttpClientConnectionPool implements Connections {
     }
   }
 
-  /**
-   * @see org.sapia.ubik.rmi.server.transport.Connections#clear()
-   */
+  @Override
   public void clear() {
   }
 
-  /**
-   * @see org.sapia.ubik.rmi.server.transport.Connections#getTransportType()
-   */
+  @Override
   public String getTransportType() {
     return address.getTransportType();
   }
-
-  /**
-   * @see org.sapia.ubik.rmi.server.transport.Connections#release(RmiConnection)
-   */
+  
+  @Override
   public void release(RmiConnection conn) {
     conn.close();
     pool.release((HttpRmiClientConnection)conn);
+  }
+  
+  @Override
+  public void invalidate(RmiConnection conn) {
+  	pool.invalidate((HttpRmiClientConnection) conn);
   }
 
   ///// INNER CLASS /////////////////////////////////////////////////////////////

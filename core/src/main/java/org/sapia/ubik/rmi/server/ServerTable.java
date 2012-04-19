@@ -3,6 +3,7 @@ package org.sapia.ubik.rmi.server;
 import java.rmi.RemoteException;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.sapia.ubik.log.Category;
@@ -10,6 +11,7 @@ import org.sapia.ubik.log.Log;
 import org.sapia.ubik.module.Module;
 import org.sapia.ubik.module.ModuleContext;
 import org.sapia.ubik.net.ServerAddress;
+import org.sapia.ubik.rmi.Callback;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.gc.ServerGC;
 import org.sapia.ubik.rmi.server.oid.DefaultOID;
@@ -22,8 +24,6 @@ import org.sapia.ubik.rmi.server.stub.StubInvocationHandler;
 import org.sapia.ubik.rmi.server.transport.TransportManager;
 import org.sapia.ubik.util.Props;
 import org.sapia.ubik.util.TypeCache;
-
-import com.google.inject.cglib.proxy.Callback;
 
 /**
  * An instance of this class internally keeps a table of running servers, on a per-transport-type-to-server-instance
@@ -164,7 +164,7 @@ public class ServerTable implements Module {
     }
     RemoteRefContext refContext   = new RemoteRefContext(oid, server.getServerAddress());
     refContext.setCallback(callbackEnabled && 
-                           typeCache.getAnnotationsFor(toExport.getClass()).contains(Callback.class));
+    											 typeCache.getAnnotationsFor(toExport.getClass()).contains(Callback.class));
     
     StubInvocationHandler handler   = stubProcessor.createInvocationHandlerFor(toExport, refContext);
     Stub                  stub      = (Stub) stubProcessor.createStubFor(toExport, handler);

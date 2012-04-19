@@ -19,7 +19,7 @@ class ResponseSenderFactoryImpl implements ResponseSenderFactory {
   private ResponseSender remote;
   private ResponseSender local;
   private boolean        supportsColocatedCalls = Props.getSystemProperties()
-                                                     .getBooleanProperty(Consts.ENABLE_COLOCATED_CALLS, false);
+                                                     .getBooleanProperty(Consts.COLOCATED_CALLS_ENABLED, false);
   
   /**
    * @param transports the {@link TransportManager} that is used to internally create the {@link RemoteResponseSender}.

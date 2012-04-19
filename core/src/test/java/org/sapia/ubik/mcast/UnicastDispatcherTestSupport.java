@@ -12,6 +12,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.sapia.ubik.concurrent.BlockingCompletionQueue;
+import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.ServerAddress;
 
 public abstract class UnicastDispatcherTestSupport {

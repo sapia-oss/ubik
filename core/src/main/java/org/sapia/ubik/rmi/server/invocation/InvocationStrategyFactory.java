@@ -21,7 +21,7 @@ class InvocationStrategyFactory {
     colocated.init(modules);
     remote.init(modules);
     
-    supportsColocatedCalls = Props.getSystemProperties().getBooleanProperty(Consts.ENABLE_COLOCATED_CALLS, true);
+    supportsColocatedCalls = Props.getSystemProperties().getBooleanProperty(Consts.COLOCATED_CALLS_ENABLED, true);
     log.debug("Supports colocated calls: %s", Boolean.toString(supportsColocatedCalls));
   }
   

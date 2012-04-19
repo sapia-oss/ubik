@@ -56,17 +56,17 @@ class SendHelper implements Runnable {
       conn.send(toSend);
       toReturn = conn.receive();
     } catch (RemoteException e) {
-      conn.close();
+    	conns.invalidate(conn);
       throw e;
     } catch (IOException e) {
       RemoteException re = new RemoteException("Could not send replicated command",
           e);
-      conn.close();
+    	conns.invalidate(conn);
       throw re;
     } catch (ClassNotFoundException e) {
       RemoteException re = new RemoteException("Could not receive response for replicated command",
           e);
-      conn.close();
+    	conns.invalidate(conn);
       throw re;
     }
 

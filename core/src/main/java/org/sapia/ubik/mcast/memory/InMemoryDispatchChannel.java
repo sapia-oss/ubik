@@ -136,15 +136,10 @@ public final class InMemoryDispatchChannel {
     
     final BlockingRef<Response> resp = new BlockingRef<Response>();
     
-    System.out.println("--------------------------- " + syncEventProcessor);
-    
-    
     syncEventProcessor.execute(new Runnable() {
       
       @Override
       public void run() {
-        System.out.println("--------------------------- Executing....");
-        System.out.println("--------------------------- Dispatchers...." + unicastDispatchers.size());
         
         for(ServerAddress addr : unicastDispatchers.keySet()) {
       		SoftReference<InMemoryUnicastDispatcher> ref = unicastDispatchers.get(addr);

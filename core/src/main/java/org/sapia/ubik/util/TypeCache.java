@@ -18,8 +18,8 @@ import org.sapia.ubik.rmi.server.stub.Stub;
  */
 public class TypeCache {
   
-  private Map<Class<?>, Set<Class<?>>>   interfaceCache  = new ConcurrentHashMap<Class<?>, Set<Class<?>>>();
-  private Map<Class<?>, Set<Annotation>> annotationCache = new ConcurrentHashMap<Class<?>, Set<Annotation>>();
+  private Map<Class<?>, Set<Class<?>>> interfaceCache  = new ConcurrentHashMap<Class<?>, Set<Class<?>>>();
+  private Map<Class<?>, Set<Class<?>>> annotationCache = new ConcurrentHashMap<Class<?>, Set<Class<?>>>();
 
   /**
    * Clears this instance's entries.
@@ -135,10 +135,10 @@ public class TypeCache {
    * @param current the class/interface whose annotations should be collected.
    * @param collector the {@link Set} to which the collected annotations are added.
    */
-  public Set<Annotation> getAnnotationsFor(Class<?> clazz) {
-    Set<Annotation> annotations = this.annotationCache.get(clazz);
+  public Set<Class<?>> getAnnotationsFor(Class<?> clazz) {
+    Set<Class<?>> annotations = this.annotationCache.get(clazz);
     if(annotations == null) {
-      annotations = new HashSet<Annotation>();
+      annotations = new HashSet<Class<?>>();
       collectAnnotationsFor(clazz, annotations);
       annotationCache.put(clazz, Collections.unmodifiableSet(annotations));
     }
@@ -153,11 +153,11 @@ public class TypeCache {
    * whose annotations should be returned.
    * @return a {@link Set} of {@link Annotation}s.
    */  
-  public void collectAnnotationsFor(Class<?> clazz, Set<Annotation> collector) {
+  public void collectAnnotationsFor(Class<?> clazz, Set<Class<?>> collector) {
     Class<?> current = clazz;
     do {
       for(Annotation anno : current.getAnnotations()) {
-        collector.add(anno);
+        collector.add(anno.annotationType());
       }
       for(Class<?> intf : current.getInterfaces()) {
         collectAnnotationsFor(intf, collector);

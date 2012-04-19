@@ -113,7 +113,7 @@ public interface Consts {
   
   /**
    * This constant corresponds to the 'ubik.rmi.naming.mcast.control.batch.size' property key. It is used 
-   * to specify the size of the batches of control notifications and requests (defaults to 50).
+   * to specify the size of the batches of control notifications and requests (defaults to 20).
    */
   public static final String MCAST_CONTROL_BATCH_SIZE = "ubik.rmi.naming.mcast.control.batch.size";
 
@@ -274,7 +274,7 @@ public interface Consts {
    * Specifies if colocated calls should be supported or not (defaults to <code>true</code>).
    * System property: System property: <code>ubik.rmi.colocated.calls.enabled</code>.
    */
-  public static final String ENABLE_COLOCATED_CALLS  = "ubik.rmi.colocated.calls.enabled";
+  public static final String COLOCATED_CALLS_ENABLED  = "ubik.rmi.colocated.calls.enabled";
   
   /**
    * This constant corresponds to the system property that defines the load factor

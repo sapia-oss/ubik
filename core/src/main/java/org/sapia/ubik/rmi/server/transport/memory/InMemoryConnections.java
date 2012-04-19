@@ -48,5 +48,8 @@ public class InMemoryConnections implements Connections {
   public void clear() {
   }
   
+  @Override
+  public void invalidate(RmiConnection conn) {
+  }
 
 }

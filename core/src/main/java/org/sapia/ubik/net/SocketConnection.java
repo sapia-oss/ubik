@@ -14,6 +14,8 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.rmi.RemoteException;
 
+import org.sapia.ubik.serialization.SerializationStreams;
+
 /**
  * A {@link Connection} implemented through a {@link Socket}.
  *
@@ -139,7 +141,7 @@ public class SocketConnection implements Connection {
    */
   protected ObjectOutputStream newOutputStream(OutputStream os,
     ClassLoader loader) throws IOException {
-    return new ObjectOutputStream(os);
+    return SerializationStreams.createObjectOutputStream(os);
   }
 
   /**
@@ -158,7 +160,7 @@ public class SocketConnection implements Connection {
    */
   protected ObjectInputStream newInputStream(InputStream is, ClassLoader loader)
     throws IOException {
-    return new ObjectInputStream(is);
+    return SerializationStreams.createObjectInputStream(is);
   }
   
   protected void doSend(Object toSend, ObjectOutputStream mos) throws IOException{

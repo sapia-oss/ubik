@@ -15,12 +15,11 @@ import java.util.Map;
  *
  * @author Yanick Duchesne
  */
-@SuppressWarnings(value="unchecked")
 public class ClassDescriptor implements Externalizable {
   
   private static final long serialVersionUID = 6382603348796329430l;
   
-  private static Map primitives = new HashMap();
+  private static Map<String, Class<?>> primitives = new HashMap<String, Class<?>>();
 
   static {
     primitives.put(boolean.class.getName(), boolean.class);
@@ -33,7 +32,7 @@ public class ClassDescriptor implements Externalizable {
     primitives.put(double.class.getName(), double.class);
   }
 
-  private transient Class type;
+  private transient Class<?> type;
   private String          className;
   private boolean         primitive;
 
@@ -41,7 +40,7 @@ public class ClassDescriptor implements Externalizable {
   public ClassDescriptor() {
   }
 
-  public ClassDescriptor(Class type) {
+  public ClassDescriptor(Class<?> type) {
     this.type        = type;
     this.primitive   = type.isPrimitive();
     this.className   = type.getName();
@@ -58,9 +57,9 @@ public class ClassDescriptor implements Externalizable {
     out.writeBoolean(primitive);
   }
 
-  public Class resolve(ClassLoader loader) throws ClassNotFoundException {
+  public Class<?> resolve(ClassLoader loader) throws ClassNotFoundException {
     if (primitive) {
-      Class clazz = (Class) primitives.get(className);
+      Class<?> clazz = (Class<?>) primitives.get(className);
 
       if (clazz == null) {
         throw new ClassNotFoundException(className);

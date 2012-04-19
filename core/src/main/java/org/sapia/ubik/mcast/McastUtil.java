@@ -9,6 +9,7 @@ import java.net.DatagramPacket;
 
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
+import org.sapia.ubik.serialization.SerializationStreams;
 
 
 /**
@@ -33,7 +34,7 @@ public final class McastUtil {
     ObjectInputStream    ois = null;
     
     try {
-      ois = new ObjectInputStream(bis);
+      ois = SerializationStreams.createObjectInputStream(bis);
 
       Object o = ois.readObject();
 
@@ -51,7 +52,7 @@ public final class McastUtil {
   	log.debug("Deserializing bytes (length=%s)", bytes.length);
 
     try {
-      ois = new ObjectInputStream(new ByteArrayInputStream(bytes));
+      ois = SerializationStreams.createObjectInputStream(new ByteArrayInputStream(bytes));
       Object o = ois.readObject();
       return o;
     } finally {
@@ -63,18 +64,21 @@ public final class McastUtil {
 
   public static byte[] toBytes(Object o, int bufsize) throws IOException {
     ByteArrayOutputStream bos = new ByteArrayOutputStream(bufsize);
-    ObjectOutputStream    ous = new ObjectOutputStream(bos);
+    ObjectOutputStream    ous = SerializationStreams.createObjectOutputStream(bos);
 
     ous.writeObject(o);
     ous.flush();
     ous.close();
 
     byte[] toReturn = bos.toByteArray();
-  	log.debug("Serializing as bytes (length=%s)", toReturn.length);
+  	log.debug("Serializing %s as bytes (length=%s)", o, toReturn.length);
   	return toReturn;
   }
 
   public static int getSizeInBytes(Object o) throws IOException {
     return toBytes(o, 1000).length;
   }
+  
+
+  
 }
