@@ -3,6 +3,7 @@ package org.sapia.ubik.rmi;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
+import org.sapia.ubik.log.LogOutput;
 import org.sapia.ubik.mcast.BroadcastDispatcher;
 import org.sapia.ubik.mcast.EventChannel;
 import org.sapia.ubik.mcast.UnicastDispatcher;
@@ -22,6 +23,18 @@ public interface Consts {
    * (the property is <code>ubik.jndi.domain</code>).
    */  
   public static final String UBIK_DOMAIN_NAME = "ubik.jndi.domain";    
+  
+  /**
+   * Defines the logging verbosity; must be one of the following:
+   * debug, info, warning, error - system property name: <code>ubik.rmi.log.level</code>.
+   * Defaults to "error".
+   */
+  public static final String LOG_LEVEL = "ubik.rmi.log.level";
+  
+  /**
+   * Defines the {@link LogOutput} to use.
+   */
+  public static final String LOG_OUTPUT_CLASS = "ubik.rmi.log.output.class";
   
   /**
    * The default multicast address.
@@ -186,13 +199,6 @@ public interface Consts {
    * The default marshalling buffer size (see {@link #MARSHALLING_BUFSIZE}).
    */
   public static final int DEFAULT_MARSHALLING_BUFSIZE = 512;
-  
-  /**
-   * Defines the logging verbosity; must be one of the following:
-   * debug, info, warning, error - system property name: <code>ubik.rmi.log.level</code>.
-   * Defaults to "error".
-   */
-  public static final String LOG_LEVEL = "ubik.rmi.log.level";
 
   /**
    * Specifies if call-back should be used (true) or not  (false) - system property name:
@@ -312,10 +318,10 @@ public interface Consts {
   public static final String STATS_DUMP_INTERVAL = "ubik.rmi.stats.dump.interval";  
   
   /**
-   * Determines if Ubik's JMX beans should be registered with the platform's MBeanServer - system property: <code>ubik.rmi.stats.enabled</code>. 
+   * Determines if Ubik's JMX beans should be registered with the platform's MBeanServer - system property: <code>ubik.rmi.jmx.enabled</code>. 
    * Value must be <code>true</code> or <code>false</code> (if not set, same effect as <code>false</code>).
    */
-  public static final String JMX_ENABLED = "ubik.rmi.stats.enabled";    
+  public static final String JMX_ENABLED = "ubik.rmi.jmx.enabled";    
 
   /**
    * This constant corresponds to the system property that prefixes the configured

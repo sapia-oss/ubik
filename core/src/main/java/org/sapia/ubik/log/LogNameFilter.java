@@ -13,6 +13,8 @@ import java.util.Set;
  */
 public class LogNameFilter implements LogFilter {
 	
+	private static final String ANY = "*";
+	
 	private Set<String> inclusionPatterns = new HashSet<String>();
 	private Set<String> exclusionPatterns = new HashSet<String>();
 	
@@ -43,7 +45,7 @@ public class LogNameFilter implements LogFilter {
 	
 	private static boolean contains(String toCheck, Set<String> patterns) {
 		for(String pattern : patterns) {
-			if(toCheck.contains(pattern)) {
+			if(pattern.equals(ANY) || toCheck.contains(pattern)) {
 				return true;
 			}
 		}

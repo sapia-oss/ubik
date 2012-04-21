@@ -1,8 +1,14 @@
 package org.sapia.ubik.rmi.server.oid;
 
+import org.sapia.ubik.rmi.server.StubProcessor;
+
 /**
  * This interface specifies {@link OID} creation behavior. It allows plugging in
  * custom logic.
+ * <p>
+ * Implementations of this interface must be registered with the {@link StubProcessor} module (using either the
+ * {@link StubProcessor#appendOIDCreationStrategy(OIDCreationStrategy)} and {@link StubProcessor#insertOIDCreationStrategy(OIDCreationStrategy)}
+ * methods).
  * 
  * @author yduchesne
  *

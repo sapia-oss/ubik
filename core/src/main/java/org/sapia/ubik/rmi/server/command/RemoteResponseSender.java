@@ -25,27 +25,31 @@ class RemoteResponseSender implements ResponseSender {
 
      if (responses.size() > 0) {
        RmiConnection conn = null;
-       Connections   pool = null; 
+       Connections   pool = null;
+       
+       // sending
        try {
          pool = transports.getConnectionsFor(dest.getServerAddress());
          conn = pool.acquire();
          conn.send(new CallbackResponseCommand(responses), dest.getVmId(), dest.getServerAddress().getTransportType());
-         conn.receive();
        } catch (Exception e) {
-         log.error("Error sending command to %s" + dest.getServerAddress(), e);
-         if (conn != null) {
-           pool.invalidate(conn);
-         }
-         return;
+      	  log.error("Error sending command to %s", e, dest.getServerAddress());
+          if (conn != null) {
+            pool.invalidate(conn);
+            pool.clear();
+          }
+          return;
        }
-
-       if (conn != null) {
-         try {
-           pool.release(conn);
-         } catch (Exception e) {
-           log.error("Error releasing connection", e);
-
-         }
+       
+       // receiving ack
+       try  {
+         conn.receive();
+         pool.release(conn);
+       } catch (Exception e) {
+     	   log.info("Error receiving ack from %s", e, dest.getServerAddress());
+         pool.invalidate(conn);     	  
+         pool.clear();
+         return;
        }
      }
    }

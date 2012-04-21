@@ -1,4 +1,4 @@
-<sapia:page title="Ubik" xmlns:sapia="http://www.sapia-oss.org/2003/XSL/Transform">
+<sapia:page title="FAQ" xmlns:sapia="http://www.sapia-oss.org/2003/XSL/Transform">
 
   <sapia:vmenu>
     <sapia:vsection name="Project Home" href="home.html"/>
@@ -29,6 +29,13 @@
       <sapia:vitem name="Avis" href="group_communication.html#using_avis" />
       <sapia:vitem name="TCP Unicast" href="group_communication.html#tcp_unicast" />
     </sapia:vsection>  
+    
+    <sapia:vsection name="Customization" href="customization.html">
+      <sapia:vitem name="Logging" href="customization.html#logging" />    
+      <sapia:vitem name="Stats" href="customization.html#stats" />
+      <sapia:vitem name="JMX" href="customization.html#jmx" />
+      <sapia:vitem name="Stubs" href="customization.html#stubs" />    
+    </sapia:vsection>          
     
     <sapia:vsection name="FAQ" href="faq.html">
       <sapia:vitem name="Licensing" href="faq.html#licensing" />    
@@ -76,7 +83,7 @@
         <p>All other things equal, we cannot claim that Ubik is as fast as a network communication framework built for message
         compactness and low-latency - such as Google's Protocol Buffers. Ubik's goal is to provide reliable, robust object remoting 
         that's fast enough for most cases.</p>
-        <p>We've integrated the JBoss Serialization library, and most if not all of Ubik built-in serializable objects implement the <sapia:class>java.io.Externalizable</sapia:class>
+        <p>We've integrated the <a href="http://www.jboss.org/serialization/">JBoss Serialization</a> library, and most if not all of Ubik built-in serializable objects implement the <sapia:class>java.io.Externalizable</sapia:class>
         interface - we recommend you do the same in your applications.</p>
         <p>Also, do not abuse remote objects. These should be reserved for implementing reliable services: remote method calls on such services should use pass-by-value as much
         as possible.</p>
@@ -84,7 +91,10 @@
       
       <sapia:sect3 title="Is Ubik scalable?">
         <p>Qualitatively speaking, Ubik has features that make it scalable and minimize configuration hassle: it features dynamic discovery, distributed JNDI and
-        smart stubs (which perform failover and load-balancing transparently) to maximize service availability and share load among multiple service instances.</p>
+        smart stubs (which perform failover and load-balancing transparently) to maximize service availability and share load among multiple service instances. 
+        Ubik also supports <a href="tutorial.html#callbacks">callbacks</a>.
+        </p>
+        
       </sapia:sect3>      
 
     </sapia:sect2>
@@ -107,14 +117,14 @@
            <sapia:class>UnicastDispatcher</sapia:class>. Check out the <a href="group_communication.html#tcp_unicast">documentation</a> for more details.
         </p>
         
-        <p>Lastly, another cause might be that the configured packet size is not large enough. You can configure it with the <tt>ubik.rmi.naming.mcast.bufsize</tt>
+        <p>Lastly, another cause might be that the configured packet size is not large enough. You can configure it with the <sapia:command>ubik.rmi.naming.mcast.bufsize</sapia:command>
         JVM property (3072 bytes is assumed by default).</p>
       </sapia:sect3>
 
       <sapia:sect3 title="How is the state of an EventChannel domain maintained?">
         <p>
            The master triggers the heartbeat requests that are sent to each slave, as part of the control protocol. The master keeps track of the nodes that
-           respond to the requests. After a given timeout (configurable through the <tt>ubik.rmi.naming.mcast.heartbeat.timeout</tt> JVM property), for the nodes that did 
+           respond to the requests. After a given timeout (configurable through the <sapia:command>ubik.rmi.naming.mcast.heartbeat.timeout</sapia:command> JVM property), for the nodes that did 
            not respond, the master will notify all slave nodes still alive about the missing nodes, so that all nodes can update their view of the domain accordingly. 
         </p>
       </sapia:sect3>

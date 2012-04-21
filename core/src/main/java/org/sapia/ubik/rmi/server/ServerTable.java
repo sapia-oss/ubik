@@ -3,7 +3,6 @@ package org.sapia.ubik.rmi.server;
 import java.rmi.RemoteException;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.sapia.ubik.log.Category;

@@ -1,11 +1,10 @@
 package org.sapia.ubik.rmi.server.stub;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.sapia.ubik.log.Log;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.Hub;
 
@@ -15,7 +14,6 @@ public class CallbackTest {
 
 	@Before
 	public void setUp() {
-		Log.setDebug();
 		System.setProperty(Consts.COLOCATED_CALLS_ENABLED, "false");
 		System.setProperty(Consts.CALLBACK_ENABLED, "true");
 		callback = new TestCallBack();

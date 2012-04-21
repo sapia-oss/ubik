@@ -50,7 +50,7 @@ fi
 
 MAINCLASS=org.sapia.ubik.rmi.naming.remote.JNDIServer
 
-JNDI_CLASSPATH=../dist/sapia_ubik.jar
+JNDI_CLASSPATH=""
 for JAR in ../lib/*.jar
 do
     # if the directory is empty, then it will return the input string

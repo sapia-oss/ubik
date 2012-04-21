@@ -66,12 +66,10 @@ public class EventChannelControlAlgoTest {
 		
 		// triggering heartbeat request and waiting
 		// for responses to come in
+		clock.increaseCurrentTimeMillis(Defaults.DEFAULT_HEARTBEAT_INTERVAL+1);		
 		do {
-			clock.increaseCurrentTimeMillis(Defaults.DEFAULT_HEARTBEAT_INTERVAL+1);			
 			checkStatus();
 		} while (!listener.waitHeartbeatCompleted(3000));
-		
-		doAssertLastHeartbeatRequestReceived(clock.currentTimeMillis());
 	}
 	
 	

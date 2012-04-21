@@ -3,7 +3,9 @@ package org.sapia.ubik.log;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
+import org.sapia.ubik.log.LogOutput.DefaultLogOutput;
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.util.Props;
 
 
 /**
@@ -11,6 +13,7 @@ import org.sapia.ubik.rmi.Consts;
  *
  * @author Yanick Duchesne
  */
+@SuppressWarnings("unchecked")
 public class Log {
   
   /**
@@ -24,7 +27,8 @@ public class Log {
     INFO(2),
     WARNING(3),
     ERROR(4),
-    REPORT(5);
+    OFF(5),
+    REPORT(6);
     
     private int value;
     
@@ -42,17 +46,56 @@ public class Log {
   private static       Level      lvl         = Level.ERROR;
 
   static {
-    String label = System.getProperty(Consts.LOG_LEVEL);
+  	Props props = Props.getSystemProperties();  	
+    determineLogLevel(props);
+    determineLogOutput(props);
+  }
+  
+  /**
+   * Assigns log level (package visibility for unit testing purposes) 
+   */
+  static final boolean determineLogLevel(Props props) {
+  	// log level
+    String label = props.getProperty(Consts.LOG_LEVEL);
 
     if (label != null) {
       for (Level l : Level.values()) {
         if (l.name().equalsIgnoreCase(label)) {
           lvl = l;
-
-          break;
+          return true;
         }
       }
     }
+    return false;
+  }
+  
+  /**
+   * Sets the log level to the default one (package visibility for unit testing purposes).
+   */
+  static final void setDefaultLogLevel() {
+  	lvl = Level.ERROR;
+  }
+  
+  /**
+   * Assigns the {@link LogOutput} to use (package visibility for unit testing purposes).
+   * @return <code>true</code> if the log output could be determined.
+   */
+  static final boolean determineLogOutput(Props props) {
+    try {
+    	Class<LogOutput> logOutputClass = (Class<LogOutput>) props.getClass(Consts.LOG_OUTPUT_CLASS, DefaultLogOutput.class);
+    	output = logOutputClass.newInstance();
+    	return true;
+    } catch (Exception e) {
+    	e.printStackTrace();
+    	return false;
+    }
+  }
+  
+  /**
+   * Sets the log output to the default one (package visibility for unit testing purposes).
+   */
+  static final void setDefaultLogOutput() {
+  	setLogOutput(new LogOutput.DefaultLogOutput());
   }
 
   // -------------------------------------------------------------------------- 
@@ -85,6 +128,10 @@ public class Log {
 
   public static final void setError() {
     lvl = Level.ERROR;
+  }
+  
+  public static final void turnOff() {
+  	lvl = Level.OFF;
   }
 
   // --------------------------------------------------------------------------
@@ -190,20 +237,24 @@ public class Log {
   }
   
   public static boolean isDebug() {
-    return lvl.value <= Level.DEBUG.value;
+    return isLoggable(Level.DEBUG);
   }
 
   public static boolean isInfo() {
-    return lvl.value <= Level.INFO.value;
+    return isLoggable(Level.INFO);
   }
 
   public static boolean isWarning() {
-    return lvl.value <= Level.WARNING.value;
+    return isLoggable(Level.WARNING);
   }
 
   public static boolean isError() {
-    return lvl.value <= Level.ERROR.value;
+    return isLoggable(Level.ERROR);
   }
+  
+  public static boolean isOff() {
+    return isLoggable(Level.OFF);
+  }  
 
   public static Level getLevel() {
     return lvl;

@@ -29,6 +29,19 @@
       <sapia:vitem name="TCP Unicast" href="group_communication.html#tcp_unicast" />
     </sapia:vsection>
           
+    <sapia:vsection name="Customization" href="customization.html">
+      <sapia:vitem name="Logging" href="customization.html#logging" />    
+      <sapia:vitem name="Stats" href="customization.html#stats" />
+      <sapia:vitem name="JMX" href="customization.html#jmx" />
+      <sapia:vitem name="Stubs" href="customization.html#stubs" />    
+    </sapia:vsection>          
+    
+    <sapia:vsection name="FAQ" href="faq.html">
+      <sapia:vitem name="Licensing" href="faq.html#licensing" />    
+      <sapia:vitem name="Networking" href="faq.html#networking" />
+      <sapia:vitem name="Misc" href="faq.html#misc" />    
+    </sapia:vsection>
+    
     <sapia:vsection name="Javadoc" href="maven/api/index.html"/>
     <sapia:vsection name="Download" href="download.html"/>
     <sapia:vsection name="Mailing List" href="list.html"/>
@@ -296,19 +309,22 @@ public class HelloWorldCommand extends RMICommand {
       more they pile up, and the more resources are consumed - expecially threads.</p>
       
       <p>Ubik RMI allows to spare server resources by dividing the work between servers and clients more
-      evenly. To do so, it uses a mechanism of callback, that can be explained simply: when a command is received
-      by the server, it is piled locally in a command queue for later execution, while the server thread returns immediately.
+      evenly. To do so, it uses callbacks: when a command is received by the server, it is piled locally in 
+      a command queue for later execution, while the server thread returns immediately.
       At this point, the client blocks until it receives a response. The latter is sent back to the client once the 
       corresponding command has been executed - it is the command's result; for this to happen, the client <b>also</b> 
       becomes a server, to which the response is eventually sent. The command that is sent to the server encapsulates the 
       address of the client's server - as weird as this might sound - so that the response can be sent back appropriately.</p>
       
-      <p>Although sacrificing on raw performance, this pattern allows servers to scale extremely well, distributing 
+      <p>Although sacrificing on raw throughput performance, this pattern allows servers to scale extremely well, distributing 
       the load of remote method invocations more equally among clients and servers. Ubik RMI allows to
       set the number of callback processing threads on the server-side, with the following system property:
-      <b><sapia:command>ubik.rmi.callback.max-threads</sapia:command></b>. If the property is not specified,Ubik RMI uses
-      <b>one</b> thread by default - which is probably not what you want. In addition, to enable callbacks (which are not active by default), 
-      set the <b><sapia:command>ubik.rmi.callback.enabled</sapia:command></b> system property to "true" - <b>this property
+      <b><sapia:command>ubik.rmi.callback.max-threads</sapia:command></b>. If the property is not specified, Ubik RMI uses
+      <b>one</b> thread by default - which is probably not what you want.</p>
+      
+      <p>To enabled callbacks, the classes of your remote objects must be annotated with the 
+      <sapia:class link="maven/api/org/sapia/ubik/rmi/Callback.html">@Callback</sapia:class> annotation. In addition, you must set the 
+      <b><sapia:command>ubik.rmi.callback.enabled</sapia:command></b> system property to <sapia:command>true</sapia:command> - <b>this property
       must be set both on the client and server sides</b>. The requirement to set it on the client-side stems from the fact
       that some clients might not be allowed to open servers on their side (in the case of applets, for example).</p>
       
@@ -384,7 +400,7 @@ public class HelloWorldCommand extends RMICommand {
       before being sent over the wire. These "marshalled objects" are deserialized upon reaching their destination, but it is only
       before performing the actual method call that their internal object is itself resurrected from byte form.</p>
       
-      <p>To enable marshalling, the <sapia:class>ubik.rmi.marshalling</sapia:class> system property has to be set to <b>true</b>
+      <p>To enable marshalling, the <sapia:command>ubik.rmi.marshalling</sapia:command> system property has to be set to <b>true</b>
       at the client.</p>
       
     </sapia:sect2>    
@@ -395,14 +411,13 @@ public class HelloWorldCommand extends RMICommand {
       to be cleanly relinquished.</p>
       
       <p>The following code demonstrates how a shutdown is invoked:</p>
-<sapia:code>
-try{
+      
+<sapia:code>try{
       Hub.shutdown(30000)
 }catch(InterruptedException e){
       // could not shut down within specified time-out
       // either retry shutdown or display error message.
-}
-</sapia:code>
+}</sapia:code>
 
       <p>Internally, the runtime cleanly shuts down Ubik RMI's subcompopnents. The application must specify a timeout
       that indicates the amount of time that is given to these subcomponents to abort their activities. The

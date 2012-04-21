@@ -71,8 +71,8 @@ public class PoolTest {
 			});	
 		}
 		
-		latch.await(1000, TimeUnit.MILLISECONDS);
-		String s = pool.acquire(100);
+		latch.await();
+		pool.acquire(10);
 	}
 
 	@Test

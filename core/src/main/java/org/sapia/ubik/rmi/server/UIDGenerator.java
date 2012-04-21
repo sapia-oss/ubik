@@ -14,7 +14,7 @@ public class UIDGenerator {
   /**
    * @return a unique long for this VM.
    */
-  public synchronized static long createdUID() {
+  public synchronized static long createUID() {
     long newUid = uid + (offset++);
 
     if (newUid < 0 || offset < 0) {

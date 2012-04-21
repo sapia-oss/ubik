@@ -1,7 +1,5 @@
 package org.sapia.ubik.rmi.server.stub;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Proxy;
 import java.rmi.RemoteException;
 
 import javax.naming.Name;
@@ -27,49 +25,30 @@ public class Stubs {
    * @return <code>true</code> if the given object is a Ubik stub.
    */
   public static boolean isStub(Object toCheck) {
-    return toCheck instanceof Stub &&
-           Proxy.isProxyClass(toCheck.getClass()) && 
-           Proxy.getInvocationHandler(toCheck) instanceof StubInvocationHandler;
+  	if (toCheck instanceof Stub) {
+  		Stub stub = (Stub) toCheck;
+  		return stub.getStubInvocationHandler() != null;
+  	}
+  	return false;
   }
   
   /**
    * Returns the invocation handler that the given stub wraps.
    * 
-   * @param stub a Ubik stub.
+   * @param object an {@link Object} that is expected to be a {@link Stub}.
    * @return the {@link StubInvocationHandler} that the stub/dynamic proxy wraps.
    */
-  public static StubInvocationHandler getStubInvocationHandler(Object stub) {
-    if(!Proxy.isProxyClass(stub.getClass())) {
+  public static StubInvocationHandler getStubInvocationHandler(Object object) {
+  	if (!(object instanceof Stub)) {
       throw new IllegalArgumentException(
           String.format(
-              "Instance of %s not recognized as a Ubik stub: not a dynamic proxy", 
-              stub.getClass().getName()
+              "Instance of %s not recognized as a Ubik stub", 
+              object.getClass().getName()
           )
       );
     }
-    
-    if(!(stub instanceof Stub)) {
-      throw new IllegalArgumentException(
-          String.format(
-              "Instance of %s not recognized as a Ubik stub: does not implement the %s interface", 
-              stub.getClass().getName(),
-              Stub.class.getName()
-          )
-      );
-    }
-    
-    InvocationHandler handler = Proxy.getInvocationHandler(stub);
-    if(handler instanceof StubInvocationHandler) {
-      return (StubInvocationHandler) handler;
-    } 
-    throw new IllegalArgumentException(
-        String.format(
-            "Instance of %s not recognized as a Ubik stub: invocation handler does not implement the %s interface", 
-            stub.getClass().getName(),
-            StubInvocationHandler.class.getName()
-        )
-    );
-        
+  	Stub stub = (Stub) object;
+  	return stub.getStubInvocationHandler();
   }
 
   /**

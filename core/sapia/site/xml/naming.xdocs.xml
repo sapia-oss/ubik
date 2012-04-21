@@ -29,11 +29,18 @@
       <sapia:vitem name="TCP Unicast" href="group_communication.html#tcp_unicast" />
     </sapia:vsection>
     
+    <sapia:vsection name="Customization" href="customization.html">
+      <sapia:vitem name="Logging" href="customization.html#logging" />    
+      <sapia:vitem name="Stats" href="customization.html#stats" />
+      <sapia:vitem name="JMX" href="customization.html#jmx" />
+      <sapia:vitem name="Stubs" href="customization.html#stubs" />    
+    </sapia:vsection>          
+    
     <sapia:vsection name="FAQ" href="faq.html">
       <sapia:vitem name="Licensing" href="faq.html#licensing" />    
       <sapia:vitem name="Networking" href="faq.html#networking" />
       <sapia:vitem name="Misc" href="faq.html#misc" />    
-    </sapia:vsection>          
+    </sapia:vsection>       
     
     <sapia:vsection name="Javadoc" href="maven/api/index.html"/>
     <sapia:vsection name="Download" href="download.html"/>
@@ -140,8 +147,8 @@
         <p>The path can be either relative or absolute. The properties corresponding to the above-mentioned command-line switches are the following:</p>
         
         <ul>
-        	<li><tt>ubik.jndi.server.port</tt>: corresponds to the port the server should listen on.</li>
-        	<li><tt>ubik.jndi.domain</tt>: indicates the domain the server is part of.</li>
+        	<li><sapia:command>ubik.jndi.server.port</sapia:command>: corresponds to the port the server should listen on.</li>
+        	<li><sapia:command>ubik.jndi.domain</sapia:command>: indicates the domain the server is part of.</li>
         </ul>
         
         <p>You can in addition specify any other property that is used to configure the Ubik runtime (see the <sapia:class link="maven/api/org/sapia/ubik/rmi/Consts.html">Consts</sapia:class>
@@ -150,7 +157,7 @@
         <p>The properties that are loaded from the configuration will be exported as a set of system properties from within the JNDI server's VM, 
         at startup. Therefore they will be made available to Ubik's internal components that use them.</p>
         
-        <p>One of the properties that you will find necessary to configure at times is <tt><a href="tutorial.html#bindaddr">ubik.rmi.address-pattern</a></tt></p>
+        <p>One of the properties that you will find necessary to configure at times is <sapia:command><a href="tutorial.html#bindaddr">ubik.rmi.address-pattern</a></sapia:command></p>
       </sapia:sect3>
       
       <sapia:sect3 title="Binding a server to the JNDI tree">
@@ -244,8 +251,8 @@ public class HelloLookup {
         are the following:</p>
         
         <ul>
-           <li><tt>ubik.rmi.naming.mcast.address</tt></li>
-           <li><tt>ubik.rmi.naming.mcast.port</tt></li>
+           <li><sapia:command>ubik.rmi.naming.mcast.address</sapia:command></li>
+           <li><sapia:command>ubik.rmi.naming.mcast.port</sapia:command></li>
         </ul>
         
         <p>If you are using an alernate discovery mechanism, you must configure the JVM
@@ -259,8 +266,8 @@ public class HelloLookup {
         </p>
         
         <ul>
-           <li><tt>ubik.rmi.naming.broadcast.provider</tt> should be set to <tt>ubik.rmi.naming.broadcast.avis</tt></li>
-           <li><tt>ubik.rmi.naming.broadcast.avis.url</tt> should be set to the URL of your Avis router.</li>
+           <li><sapia:command>ubik.rmi.naming.broadcast.provider</sapia:command> should be set to <sapia:command>ubik.rmi.naming.broadcast.avis</sapia:command></li>
+           <li><sapia:command>ubik.rmi.naming.broadcast.avis.url</sapia:command> should be set to the URL of your Avis router.</li>
         </ul>
         
         <p>
@@ -370,7 +377,7 @@ InitialContext context = new InitialContext(props);
         
       </sapia:sect3>
       
-      <sapia:sect3 title="Embdding a JNDI server" alias="embedded_jndi">
+      <sapia:sect3 title="Embedding a JNDI server" alias="embedded_jndi">
       	<p>You can embed a JNDI server if you wish, making it potentially more convenient in certain deployment scenarios.
         To that end, you use the <sapia:class class="maven/api/org/sapia/ubik/rmi/naming/remote/EmbeddableJNDIServer.html">EmbeddedableJNDIServer</sapia:class> class, 
         that you instantiate following the 
@@ -406,7 +413,7 @@ Runtime.getRuntime().addShutdownHook(new Thread() {
 	}
 });</sapia:code>  
     	
-    	<p>The <tt>true</tt> flag specifies that the server should be started as a daemon. Note how you're responsible for ensuring the clean 
+    	<p>The <sapia:command>true</sapia:command> flag specifies that the server should be started as a daemon. Note how you're responsible for ensuring the clean 
     	shutdown of the server (in this case we're doing it in a JVM shutdown hook). 
     	The server's <sapia:command>stop()</sapia:command> method will also close the event channel.</p>
     

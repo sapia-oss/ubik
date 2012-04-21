@@ -17,7 +17,6 @@ import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
 import org.sapia.ubik.rmi.server.transport.TransportManager;
 import org.sapia.ubik.rmi.server.transport.socket.MultiplexSocketTransportProvider;
-import org.sapia.ubik.rmi.server.transport.socket.SocketTransportProvider;
 
 /**
  * This class is the single-entry point into Ubik RMI's API.

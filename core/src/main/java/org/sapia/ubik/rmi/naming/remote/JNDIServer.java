@@ -45,8 +45,9 @@ public class JNDIServer {
    *   <li><code>-d</code>.
    * <ul>
    * 
-   * Additionally the <code>-f</code> switches can be used to specify a path that holding Ubik runtime properties
-   * (see the {@link Consts} class for all the properties that can be specified).
+   * Additionally the <code>-f</code> switch can be used to specify a path holding Ubik runtime properties
+   * (see the {@link Consts} class for all the properties that can be specified). The properties in such a 
+   * file will be exported to the system properties.
    * <p>
    * If no properties specify otherwise, broadcast will use IP multicast, using the default multicast address and port, respectively:
    *
@@ -56,7 +57,7 @@ public class JNDIServer {
    * </ul>
    */
   public static void main(String[] args) throws Exception {
-    Args argsObj = parseArgs(args);
+    Args argsObj = parseArgs(args, true);
 
     Props props = new Props();
     props.addProperties(argsObj.properties);
@@ -85,7 +86,7 @@ public class JNDIServer {
    *
    * @return an {@link Args} instance holding command-line arguments.
    */
-  static Args parseArgs(String[] args) {
+  static Args parseArgs(String[] args, boolean doExitOnHelp) {
   	
     int    		 port  = JndiConsts.DEFAULT_PORT;
     Properties props = new Properties();
@@ -96,7 +97,7 @@ public class JNDIServer {
       // ----------------------------------------------------------------------
       // help
       if (cmd.hasSwitch("h")) {
-        help();
+        help(doExitOnHelp);
       }
       
       // ----------------------------------------------------------------------
@@ -106,7 +107,7 @@ public class JNDIServer {
       		port = cmd.getOpt("p").getIntValue();
       	} catch (NumberFormatException e) {
       		System.out.println("Invalid port: " + cmd.getOpt("p").getValue());
-      		help();
+      		help(doExitOnHelp);
       	}
       } else {
       	port = JndiConsts.DEFAULT_PORT;
@@ -127,7 +128,7 @@ public class JNDIServer {
       	if (configFile.exists()) {
       		if (configFile.isDirectory()) {
         		System.out.println("Specified config file is a directory: " + cmd.getOpt("f"));
-        		help();
+        		help(doExitOnHelp);
       		}
       		FileInputStream is = null;
       		try {
@@ -136,7 +137,7 @@ public class JNDIServer {
       		} catch (IOException e) {
       			System.out.println("Could not load config file: " + cmd.getOpt("f"));
       			e.printStackTrace(System.out);
-      			help();
+      			help(doExitOnHelp);
       		} finally {
       			if (is != null) {
       				try {
@@ -148,7 +149,7 @@ public class JNDIServer {
       		}
       	} else {
       		System.out.println("Specified config file does not exist: " + cmd.getOpt("f"));
-      		help();
+      		help(doExitOnHelp);
       	}
       }
     }
@@ -157,7 +158,7 @@ public class JNDIServer {
   }
   
   
-  static final void help() {
+  static final void help(boolean doExitOnHelp) {
     System.out.println();
     System.out.println("Syntax: jndi [-p <port>] [-d <domain>] [-f <path_to_config>]");
     System.out.println("where:");
@@ -169,7 +170,9 @@ public class JNDIServer {
         "<path_to_config>: is the path to the properties file for configuring this server.");    
     System.out.println();
     System.out.println();
-    System.exit(1);
+    if(doExitOnHelp) {
+    	System.exit(1);
+    }
   }  
   
   // ==========================================================================

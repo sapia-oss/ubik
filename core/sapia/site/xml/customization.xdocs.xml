@@ -1,0 +1,204 @@
+<sapia:page title="Customization" xmlns:sapia="http://www.sapia-oss.org/2003/XSL/Transform">
+
+  <sapia:vmenu>
+    <sapia:vsection name="Project Home" href="home.html"/>
+    <sapia:vsection name="Wiki" href="hsapia:commandp://code.google.com/p/sapia/wiki/Ubik"/>
+    <sapia:vsection name="RMI" href="rmi.html">
+      <sapia:vitem name="For Dummies" href="rmi.html#dummies" />
+      <sapia:vitem name="Believing" href="rmi.html#believing" />
+      <sapia:vitem name="Architecture" href="architecture.html" />
+      <sapia:vitem name="Tutorial" href="tutorial.html" />    
+    </sapia:vsection>
+    
+    <sapia:vsection name="Naming" href="naming.html">
+      <sapia:vitem name="Robust Naming" href="naming.html#robust" />
+      <sapia:vitem name="Usage" href="naming.html#usage" />
+      <sapia:vitem name="Advanced" href="naming.html#advanced" />    
+    </sapia:vsection>
+    
+    <sapia:vsection name="Transports">
+      <sapia:vitem name="HTTP" href="transport/http.html" />
+      <sapia:vitem name="Mplex" href="transport/mplex.html" />
+	  <sapia:vitem name="Standard/TCP" href="transport/standard_tcp.html" />
+      <sapia:vitem name="NIO/TCP" href="transport/nio_tcp.html" />
+    </sapia:vsection>  
+    
+    <sapia:vsection name="Group Comm" href="group_communication.html">
+      <sapia:vitem name="Event Channel" href="group_communication.html#eventchannel" />
+      <sapia:vitem name="Protocol" href="group_communication.html#control_protocol" />    
+      <sapia:vitem name="Avis" href="group_communication.html#using_avis" />
+      <sapia:vitem name="TCP Unicast" href="group_communication.html#tcp_unicast" />
+    </sapia:vsection>  
+
+    <sapia:vsection name="Customization" href="customization.html">
+      <sapia:vitem name="Logging" href="customization.html#logging" />    
+      <sapia:vitem name="Stats" href="customization.html#stats" />
+      <sapia:vitem name="JMX" href="customization.html#jmx" />
+      <sapia:vitem name="Stubs" href="customization.html#stubs" />    
+    </sapia:vsection>          
+    
+    <sapia:vsection name="FAQ" href="faq.html">
+      <sapia:vitem name="Licensing" href="faq.html#licensing" />    
+      <sapia:vitem name="Networking" href="faq.html#networking" />
+      <sapia:vitem name="Misc" href="faq.html#misc" />    
+    </sapia:vsection>          
+    
+    <sapia:vsection name="Javadoc" href="maven/api/index.html"/>
+    <sapia:vsection name="Download" href="download.html"/>
+    <sapia:vsection name="Mailing List" href="list.html"/>
+  </sapia:vmenu>
+
+  <sapia:sect1 title="Customization">
+    <sapia:section>
+      <sapia:path name="home" href="../../home.html" />
+      <sapia:path name="projects" />
+      <sapia:path name="ubik" href="home.html" />      
+      <sapia:path name="customization" />
+    </sapia:section>
+    
+    <sapia:sect-desc>Ubik's behavior can be customized/altered in different ways. This section addresses some of these.</sapia:sect-desc>
+    
+    <toc/>
+
+    <sapia:sect2 title="Logging" alias="logging">
+    
+      <p>Ubik has its own logging system, in order to avoid forcing dependency on an external toolkit (if you're using Ubik with the JBoss Serialization library though,
+      you'll be forced to depend on Log4j).</p>
+      
+      <p>In general, you will not be interested in Ubik's logs: they're mostly meant for diagnostics purposes in the course of Ubik development.</p>
+      
+      <p>By default, Ubik's logging level is set to <sapia:command>ERROR</sapia:command>. You can change that by sesapia:commanding the log level that you wish, using the <sapia:command>ubik.rmi.log.level</sapia:command> JVM property.
+      The available levels are as follows - from lowest to highest priority:
+      </p>
+      
+      <ul>
+      	<li><sapia:command>TRACE</sapia:command></li>
+      	<li><sapia:command>DEBUG</sapia:command></li>
+      	<li><sapia:command>INFO</sapia:command></li>
+      	<li><sapia:command>WARNING</sapia:command></li>
+      	<li><sapia:command>ERROR</sapia:command></li>
+      	<li><sapia:command>OFF</sapia:command></li>
+      	<li><sapia:command>REPORT</sapia:command></li>
+      </ul>
+      
+      <p>At runtime, Ubik asapia:commandempts to match the value of the <sapia:command>ubik.rmi.log.level</sapia:command> JVM property (if found) to one of the above levels - matching is case-insensitive.
+      For example, the <sapia:command>debug</sapia:command> value for the property would set the level to <sapia:command>DEBUG</sapia:command>.</p>
+    
+      <p>In addition, you can also redirect logging output to a file (Ubik logs to <sapia:command>stdout</sapia:command> by default). The abstraction for logging output is
+      defined by the <sapia:class link="maven/api/org/sapia/ubik/log/LogOutput.html">LogOutput</sapia:class> interface. Implementations of the interface must have a public no-args constructor
+      that allows instantiating the desired output at runtime, based on the following JVM property: <sapia:command>ubik.rmi.log.output.class</sapia:command>. As its name indicates, the
+      value of the property must correspond to the fully-qualified name of the <sapia:class>LogOutput</sapia:class> implementation class to use.</p>
+      
+      <p>To redirect to a file, you specify the <sapia:class link="">FileLogOutput</sapia:class> class. Upon instantiation, an instance of that class will initialize itself based
+      on specific JVM properties (for which defaults will be used if the corresponding properties are not found). These properties are as follows:</p>
+      
+      <ul>
+        <li><sapia:command>ubik.rmi.log.file.name</sapia:command>: specifies the name of the log file to create - defaults to <sapia:command>ubik-&lt;index&gt;.log</sapia:command>, where <sapia:command>&lt;index&gt;</sapia:command>
+        corresponds to the rotation number.</li>
+      	<li><sapia:command>ubik.rmi.log.file.max-archive</sapia:command>: specifies the maximum number of archived log files to keep around.</li>
+      	<li><sapia:command>ubik.rmi.log.file.size</sapia:command>: indicates the maximum size (in MB) of the log file before it's rotated (defaults to 3 megs).</li>
+      	<li><sapia:command>ubik.rmi.log.file.dir</sapia:command>: specifies the path to the directory where log files are to be kept (defaults to the value of the 
+      		<sapia:command>user.dir</sapia:command> JVM property).</li>
+      	<li></li>
+      </ul>
+      
+    </sapia:sect2>
+    
+    <sapia:sect2 title="Statistics" alias="stats">
+    	<p>Ubik provides built-in statistics generation, which is disabled by default. You can turn it on by sesapia:commanding the <sapia:command>ubik.rmi.stats.enabled</sapia:command>
+    	JVM property to <sapia:command>true</sapia:command>.</p>
+    	
+    	<p>If statistics generation is enabled, periodic output of these statistics will be performed. At what interval this output implementation occurs
+    	is configurable through the <sapia:command>ubik.rmi.stats.dump.interval</sapia:command> JVM property (whose value is expected to be expressed in seconds). If the interval
+    	is not supplied (or if it's zero or less), no output will be performed.</p>
+    	
+    	<p>By default, the output will be done to a file (named <sapia:command>ubik-stats-&lt;index&gt;.log</sapia:command> - where <sapia:command>&lt;index&gt;</sapia:command> corresponds to the rotation number) 
+    	under the <sapia:command>user.dir</sapia:command> directory. Which log file is used and how it is managed can be configured with JVM properties that are similar to the one used for configuring logging output:</p>
+
+      <ul>
+        <li><sapia:command>ubik.rmi.stats.log.file.name</sapia:command>: specifies the name of the log file to create - defaults to <sapia:command>ubik-stats-&lt;index&gt;.log</sapia:command>, where <sapia:command>&lt;index&gt;</sapia:command>
+        corresponds to the rotation number.</li>
+      	<li><sapia:command>ubik.rmi.stats.log.file.max-archive</sapia:command>: specifies the maximum number of archived log files to keep around.</li>
+      	<li><sapia:command>ubik.rmi.stats.log.file.size</sapia:command>: indicates the maximum size (in MB) of the log file before it's rotated (defaults to 3 megs).</li>
+      	<li><sapia:command>ubik.rmi.stats.log.file.dir</sapia:command>: specifies the path to the directory where log files are to be kept (defaults to the value of the 
+      		<sapia:command>user.dir</sapia:command> JVM property).</li>
+      	<li></li>
+      </ul>	
+    	
+    </sapia:sect2>
+    
+    <sapia:sect2 title="JMX" alias="jmx">
+    	<p>
+    		Ubik provides MBeans that you can use for introspecting runtime behavior. To activate these MBeans, you have to set the <sapia:command>ubik.rmi.jmx.enabled</sapia:command>
+    		JVM property to <sapia:command>true</sapia:command>.
+    	</p>
+    </sapia:sect2>
+    
+    <sapia:sect2 title="Stubs" alias="stubs">
+		<sapia:sect-desc>How stubs and related objects are created can be customized. Although doing this can be considered a bit low-level, 
+		we thought it was worth mentioning. Three types of customizations are supported:
+			<ol>
+				<li><sapia:class link="maven/api/org/sapia/ubik/rmi/server/oid/OID.html">OID</sapia:class> generation.</li>
+				<li><sapia:class link="maven/api/org/sapia/ubik/rmi/server/stub/StubInvocationHandler.html">StubInvocationHandler</sapia:class> generation.</li>
+			</ol>
+		</sapia:sect-desc>
+		
+		<sapia:sect3 title="OID Generation">
+			<p>The <sapia:class link="maven/api/org/sapia/ubik/rmi/server/oid/OIDCreationStrategy.html">OIDCreationStrategy</sapia:class> interface specifies the behavior 
+			for creating the unique identifiers (instances of <sapia:class link="maven/api/org/sapia/ubik/rmi/server/oid/OIDCreationStrategy.html">OID</sapia:class>)
+			for remote objects. One such <sapia:class>OID</sapia:class> is generated for each stub: it is kept in that stub's <sapia:class>StubInvocationHandler</sapia:class>
+			(that interface is described in the next section).</p>
+			
+			<p>The javadoc for both the <sapia:class>OIDCreationStrategy</sapia:class> and <sapia:class>OID</sapia:class> is complete enough to provide you with clear guidelines 
+			as to how to proceed. Once you have implementations for but, you have to register them with the Ubik runtime.
+			</p>
+			
+			<p>That is typically done prior to exporting remote objects. You would implement code such as the following:</p>
+			
+			<sapia:code>Hub.getModules().getStubProcessor().insertOIDCreationStrategy(myStrategy);</sapia:code>
+		
+		</sapia:sect3>
+		
+		<sapia:sect3 title="StubInvocationHandler Generation">
+			<p>The <sapia:class link="maven/api/org/sapia/ubik/rmi/server/stub/StubInvocationHandler.html">StubInvocationHandler</sapia:class> interface extends the JDK's 
+			<sapia:class>java.lang.reflect.InvocationHandler</sapia:class> interface. There exists by default different implementations of the 
+			<sapia:class>StubInvocationHandler</sapia:class> interface: one for each type of stub that Ubik supports.
+			</p>
+			
+			<p>Indeed, a <sapia:class>StubInvocationHandler</sapia:class> implementation is meant to be wrapped in a stub (which is a dynamic proxy), and provide the logic for
+			that stub (that is, how that stub behaves on the client-side).</p>
+			
+			<p>Delving into the details of how to implement an <sapia:class>StubInvocationHandler</sapia:class> is beyond the scope of this documentation: we would suggest you
+			look at one of the existing implementations for starters: it is quite clear once you get your head around it. Basically, a <sapia:class>StubInvocationHandler</sapia:class>
+			will wrap one or more <sapia:class link="maven/api/org/sapia/ubik/rmi/server/stub/RemoteRefContext.html">RemoteRefContext</sapia:class>s - each corresponding to and 
+			endpoint (i.e.: a server) with which the stub communicates.</p>
+			
+			<p>Along with your <sapia:class>StubInvocationHandler</sapia:class>, you have to implement a 
+			<sapia:class link="maven/api/org/sapia/ubik/rmi/server/stub/StubInvocationHandlerCreationStrategy.html">StubInvocationHandlerCreationStrategy</sapia:class>
+			and register it with the <sapia:class link="maven/api/org/sapia/ubik/rmi/server/StubProcessor.html">StubProcessor</sapia:class> module, like so:</p>
+			
+			<sapia:code>Hub.getModules().getStubProcessor().insertHandlerCreationStrategy(myStrategy);</sapia:code>
+			
+		</sapia:sect3>
+		
+		<sapia:sect3 title="Stub Generation">
+			<p>By default, Ubik stubs are dynamic proxies: the JDK's mechanism for generating such proxies is used by default. You can provide your own 
+			<sapia:class link="maven/api/org/sapia/ubik/rmi/server/stub/creation/StubCreationStrategy.html">StubCreationStrategy</sapia:class>: the constraint you
+			must respect is that the stub you generate implement the <sapia:class link="maven/api/org/sapia/ubik/rmi/server/stub/Stub.html">Stub</sapia:class> interface:
+			a stub is expected to be able to return the <sapia:class link="maven/api/org/sapia/ubik/rmi/server/stub/StubInvocationHandler.html">StubInvocationHandler</sapia:class> 
+			it encapsulates (meaning that whatever type of stub you decide to implement, it must somehow encompass a <sapia:class>StubInvocationHandler</sapia:class>). The
+			default <sapia:class>StubCreationStrategy</sapia:class> should get you started on how to implement your own.
+			</p>
+			
+					
+			<p>For Ubik's runtime to use your strategy, you have to register it with the <sapia:class link="maven/api/org/sapia/ubik/rmi/server/StubProcessor.html">StubProcessor</sapia:class> 
+			module:</p>
+			
+			<sapia:code>Hub.getModules().getStubProcessor().insertStubCreationStrategy(myStrategy);</sapia:code>
+			
+		</sapia:sect3>		
+    
+    </sapia:sect2>
+    
+  </sapia:sect1>
+</sapia:page>

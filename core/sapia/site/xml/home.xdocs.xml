@@ -29,11 +29,18 @@
       <sapia:vitem name="TCP Unicast" href="group_communication.html#tcp_unicast" />
     </sapia:vsection>
     
+    <sapia:vsection name="Customization" href="customization.html">
+      <sapia:vitem name="Logging" href="customization.html#logging" />    
+      <sapia:vitem name="Stats" href="customization.html#stats" />
+      <sapia:vitem name="JMX" href="customization.html#jmx" />
+      <sapia:vitem name="Stubs" href="customization.html#stubs" />    
+    </sapia:vsection>          
+    
     <sapia:vsection name="FAQ" href="faq.html">
       <sapia:vitem name="Licensing" href="faq.html#licensing" />    
       <sapia:vitem name="Networking" href="faq.html#networking" />
       <sapia:vitem name="Misc" href="faq.html#misc" />    
-    </sapia:vsection>          
+    </sapia:vsection>         
     
     <sapia:vsection name="Javadoc" href="maven/api/index.html"/>
     <sapia:vsection name="Download" href="download.html"/>
@@ -89,18 +96,18 @@
           <li>supports client-side and server-side interceptors;</li>
           <li>client-side discovery (naming service is automatically discovered, stateless stubs 
           automatically discover new servers and add them to their round-robin list);</li>
-          <li>supports callbacks - very important for scalability;</li>
+          <li>supports <a href="tutorial.html#callbacks">callbacks</a> - very important for scalability;</li>
           <li>isolated transport layer - potentially allowing for RMI over HTTP, UDP, etc.;</li>
           <li>HTTP transport layer provided: you can even embed Ubik in a servlet;</li>          
           <li>inherently secure: Ubik does not support dynamic code download (therefore, no "foreign code" can enter a Ubik server). This greatly
           reduces configuration and security-related hassles (setting setting up a remote distributed codebase, 
           managing security managers and permissions, etc.);</li>
           <li>clean shutdown - incoming request threads are given time to complete;</li>
-          <li>different discovery mechanisms (IP Multicast, TCP-based broadcast relying on <a href="http://avis.sourceforge.net/">Avis</a>).</li>
-          <li>faster serialization with the <a href="http://www.jboss.org/serialization/">JBoss Serialization</a> library.</li>
+          <li>different discovery mechanisms (IP Multicast, TCP-based broadcast relying on <a href="http://avis.sourceforge.net/">Avis</a>);</li>
+          <li>faster serialization with the <a href="http://www.jboss.org/serialization/">JBoss Serialization</a> library;</li>
           <li>features a <sapia:class link="maven/api/org/sapia/ubik/rmi/Remote.html">@Remote</sapia:class> annotation, which can be used
-          instead of implementing the JDK's <sapia:class>Remote</sapia:class> interface.</li>
-          <li>performant.</li>
+          instead of implementing the JDK's <sapia:class>Remote</sapia:class> interface;</li>
+          <li><a href="customization.html">customizable</a>: extend Ubik for generating your own stubs.</li>
         </ul>
       </sapia:sect3>
       

@@ -24,4 +24,10 @@ public class LocalMethodInvokerDefaultsTest {
     LocalMethodInvoker invoker = LocalMethodInvoker.HASH_CODE;
     assertTrue(invoker.apply(Object.class.getDeclaredMethod("hashCode", new Class<?>[]{})));
   }
+  
+  @Test
+  public void testGetStubInvocationHandlerInvoker() throws Exception  {
+    LocalMethodInvoker invoker = LocalMethodInvoker.GET_STUB_INVOCATION_HANDLER;
+    assertTrue(invoker.apply(Stub.class.getDeclaredMethod("getStubInvocationHandler", new Class<?>[]{})));
+  }  
 }

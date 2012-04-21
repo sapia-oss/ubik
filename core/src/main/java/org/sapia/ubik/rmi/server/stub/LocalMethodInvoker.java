@@ -51,6 +51,21 @@ public interface LocalMethodInvoker {
     
   };
   
+  
+  // --------------------------------------------------------------------------
+  
+  public static LocalMethodInvoker GET_STUB_INVOCATION_HANDLER = new LocalMethodInvoker() {
+    
+    public boolean apply(Method toInvoke) {
+      return toInvoke.getDeclaringClass().equals(Stub.class);
+    }
+    
+    public Object invoke(StubInvocationHandler handler, Object[] params) throws Throwable {
+      return handler;
+    }
+    
+  };  
+  
   // ==========================================================================
   
   /**

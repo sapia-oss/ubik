@@ -29,11 +29,18 @@
       <sapia:vitem name="TCP Unicast" href="group_communication.html#tcp_unicast" />
     </sapia:vsection>      
     
+    <sapia:vsection name="Customization" href="customization.html">
+      <sapia:vitem name="Logging" href="customization.html#logging" />    
+      <sapia:vitem name="Stats" href="customization.html#stats" />
+      <sapia:vitem name="JMX" href="customization.html#jmx" />
+      <sapia:vitem name="Stubs" href="customization.html#stubs" />    
+    </sapia:vsection>          
+    
     <sapia:vsection name="FAQ" href="faq.html">
       <sapia:vitem name="Licensing" href="faq.html#licensing" />    
       <sapia:vitem name="Networking" href="faq.html#networking" />
       <sapia:vitem name="Misc" href="faq.html#misc" />    
-    </sapia:vsection>          
+    </sapia:vsection>    
     
     <sapia:vsection name="Javadoc" href="maven/api/index.html"/>
     <sapia:vsection name="Download" href="download.html"/>
@@ -88,11 +95,11 @@
       	By default, the implementations of the dispacher abstractions that are used by an <sapia:class>EventChannel</sapia:class> are 
         <sapia:class>UDPBroadcastDispatcher</sapia:class> and <sapia:class>UDPUnicastDispatcher</sapia:class> respectively. The former
         uses IP multicast to broadcast <sapia:class>RemoteEvent</sapia:class>s. It is by default configured to listen to multicast address and port
-        <tt>231.173.5.7</tt> and <tt>5454</tt>, respectively. This can be configured through the following JVM properties:
+        <sapia:command>231.173.5.7</sapia:command> and <sapia:command>5454</sapia:command>, respectively. This can be configured through the following JVM properties:
         
         <ul>
-          <li><tt>ubik.rmi.naming.mcast.address</tt>: used to specify the multicast address.</li>        
-          <li><tt>ubik.rmi.naming.mcast.port</tt>: used to specifiy the multicast port.</li>
+          <li><sapia:command>ubik.rmi.naming.mcast.address</sapia:command>: used to specify the multicast address.</li>        
+          <li><sapia:command>ubik.rmi.naming.mcast.port</sapia:command>: used to specifiy the multicast port.</li>
         </ul>
       </p>
       <p>This the dispatcher implementations that are used can be configured otherwise - which is explained in sections further below.</p>
@@ -111,7 +118,7 @@
       <p>Rather then, the protocol is implemented over unicast, but using a cascading scheme where slave nodes are put
       to contribution: a first set of nodes is determined, where each is ordered to relay the control messages to other 
       nodes, and so on, until no nodes are left to contact. The size of the batch of nodes to contact, at every stage, 
-      is determined by the <tt>ubik.rmi.naming.mcast.control.batch.size</tt> JVM property - which defaults to 5.</p>
+      is determined by the <sapia:command>ubik.rmi.naming.mcast.control.batch.size</sapia:command> JVM property - which defaults to 5.</p>
       
       <p>
       For example, let's say there are 101 nodes, one of them being the master - it is always the master that initiates a control sequence
@@ -123,8 +130,8 @@
       </p>
       
       <p>
-      There is one caveat: in large clusters, since UDP is used by default and the packet size is set to 2048 kb (configurable through the
-      <tt>ubik.rmi.naming.mcast.bufsize</tt> JVM property), you may risk having some messages not going through. Indeed, the payload
+      There is one caveat: in large clusters, since UDP is used by default and the packet size is set to 3.072 kb (configurable through the
+      <sapia:command>ubik.rmi.naming.mcast.bufsize</sapia:command> JVM property), you may risk having some messages not going through. Indeed, the payload
       transported in the control messages is larger - since the IDs of the nodes to contact at the next stages are transported from
       one stage to the next. You have two choices in this case: increase the UDP packet size with the above-mentioned property, 
       or <a href="#tcp_unicast">use TCP unicast</a> - which we would recommend for clusters of 25 nodes or more.
@@ -143,11 +150,11 @@
       <p>To use Avis broadcast implementation, you have to configure the following JVM properties:</p>
       
       <ul>
-        <li><tt>ubik.rmi.naming.broadcast.provider</tt> should have its value set to <tt>ubik.rmi.naming.broadcast.avis</tt>: 
+        <li><sapia:command>ubik.rmi.naming.broadcast.provider</sapia:command> should have its value set to <sapia:command>ubik.rmi.naming.broadcast.avis</sapia:command>: 
         this indicates that the <sapia:class link="maven/api/org/sapia/ubik/mcast/avis/AvisBroadcastDispatcher.html">AvisBroadcastDispatcher</sapia:class> 
         should be used for broadcasting.</li>
-      	<li><tt>ubik.rmi.naming.broadcast.avis.url</tt> should be set to the URL to use to connect to the Avis router - 
-      	For example: <tt>elvin://localhost:2917</tt>. 
+      	<li><sapia:command>ubik.rmi.naming.broadcast.avis.url</sapia:command> should be set to the URL to use to connect to the Avis router - 
+      	For example: <sapia:command>elvin://localhost:2917</sapia:command>. 
       	</li>
       </ul>
       <p>The programmatic version would be:</p>
@@ -176,7 +183,7 @@ EventChannel channel = new EventChannel("myDomain", new Props().addProperties(pr
    		
    		<p>To configure the <sapia:class link="maven/api/org/sapia/ubik/mcast/tcp/TCPUnicastDispatcher.html">TCPUnicastDispatcher</sapia:class>, set the following JVM property as follows:
    		  <ul>
-   		  	<li><tt>ubik.rmi.naming.unicast.provider</tt> should be set to <tt>ubik.rmi.naming.unicast.tcp</tt>.</li>
+   		  	<li><sapia:command>ubik.rmi.naming.unicast.provider</sapia:command> should be set to <sapia:command>ubik.rmi.naming.unicast.tcp</sapia:command>.</li>
    		  </ul>
    		</p>
    		

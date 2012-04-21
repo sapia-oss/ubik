@@ -54,7 +54,7 @@ public class EmbeddableJNDIServer implements RemoteContextProvider, AsyncEventLi
    * @see JndiConsts#DEFAULT_MCAST_PORT
    */
   public EmbeddableJNDIServer() {
-    this(JNDIServerHelper.DEFAULT_DOMAIN, JNDIServerHelper.DEFAULT_PORT,
+    this(JndiConsts.DEFAULT_DOMAIN, JndiConsts.DEFAULT_PORT,
       org.sapia.ubik.rmi.Consts.DEFAULT_MCAST_ADDR,
       org.sapia.ubik.rmi.Consts.DEFAULT_MCAST_PORT);
   }

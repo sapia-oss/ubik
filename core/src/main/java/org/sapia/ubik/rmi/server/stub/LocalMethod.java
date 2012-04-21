@@ -94,7 +94,8 @@ public class LocalMethod {
       map
         .addLocalMethod(new LocalMethod("toString").addLocalMethodInvoker(LocalMethodInvoker.TO_STRING))
         .addLocalMethod(new LocalMethod("hashCode").addLocalMethodInvoker(LocalMethodInvoker.HASH_CODE))
-        .addLocalMethod(new LocalMethod("equals").addLocalMethodInvoker(LocalMethodInvoker.EQUALS));
+        .addLocalMethod(new LocalMethod("equals").addLocalMethodInvoker(LocalMethodInvoker.EQUALS))
+      	.addLocalMethod(new LocalMethod("getStubInvocationHandler").addLocalMethodInvoker(LocalMethodInvoker.GET_STUB_INVOCATION_HANDLER));
         
       return map;
     }

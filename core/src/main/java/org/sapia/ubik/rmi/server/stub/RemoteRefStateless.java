@@ -55,7 +55,7 @@ public class RemoteRefStateless implements StubInvocationHandler, Externalizable
   private Name                                    name;
   private String                                  domain;
   private MulticastAddress                        multicastAddress;
-  private OID                                     oid            = new DefaultOID(UIDGenerator.createdUID());
+  private OID                                     oid            = new DefaultOID(UIDGenerator.createUID());
   private transient ContextList                   contexts       = new ContextList();           
   private transient volatile InvocationDispatcher dispatcher;
   

@@ -24,7 +24,7 @@ public class DefaultOIDCreationStrategy implements OIDCreationStrategy {
 	 */
 	@Override
 	public OID createOID(Object toExport) {
-    return new DefaultOID(UIDGenerator.createdUID());
+    return new DefaultOID(UIDGenerator.createUID());
 	}
 
 }
