@@ -4,6 +4,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
+import java.util.Properties;
+
 import org.junit.Test;
 
 public class CmdTest {
@@ -87,4 +89,36 @@ public class CmdTest {
 		assertEquals(3, cmd.getOpts().size());
 	}			
 	
+	@Test
+	public void testGetOptWithValue() {
+		String args[] = new String[]{ "-sw1", "val1" };
+		Cmd cmd = Cmd.fromArgs(args);
+		assertEquals("val1", cmd.getOptWithValue("sw1").getTrimmedValueOrBlank());
+	} 
+	
+	@Test(expected = IllegalArgumentException.class)
+	public void testGetOptWithValueNoValue() {
+		String args[] = new String[]{ "-sw1" };
+		Cmd cmd = Cmd.fromArgs(args);
+		assertEquals("val1", cmd.getOptWithValue("sw1").getTrimmedValueOrBlank());
+	}
+	
+	@Test(expected = IllegalArgumentException.class)
+	public void testGetOptWithValueBlank() {
+		String args[] = new String[]{ "-sw1", "" };
+		Cmd cmd = Cmd.fromArgs(args);
+		assertEquals("val1", cmd.getOptWithValue("sw1").getTrimmedValueOrBlank());
+	}		
+
+	@Test
+	public void testGetSwitchesAsProperties() {
+		String args[] = new String[]{ "-sw1", "val1", "-sw2", "-sw3", "val2"};
+		Cmd cmd = Cmd.fromArgs(args);
+		Properties props = cmd.getSwitchesAsProperties();
+		assertEquals(2, props.size());
+		
+		assertEquals("val1", props.getProperty("sw1"));
+		assertEquals("val2", props.getProperty("sw3"));
+	}
+
 }

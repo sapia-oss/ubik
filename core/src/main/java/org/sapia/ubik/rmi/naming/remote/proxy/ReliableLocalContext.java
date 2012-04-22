@@ -17,7 +17,7 @@ import org.sapia.ubik.mcast.EventChannel;
 import org.sapia.ubik.mcast.RemoteEvent;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.TCPAddress;
-import org.sapia.ubik.rmi.naming.remote.JndiConsts;
+import org.sapia.ubik.rmi.naming.remote.JNDIConsts;
 import org.sapia.ubik.rmi.naming.remote.RemoteContext;
 import org.sapia.ubik.rmi.naming.remote.RemoteInitialContextFactory;
 import org.sapia.ubik.rmi.naming.remote.discovery.DiscoveryHelper;
@@ -58,12 +58,12 @@ public class ReliableLocalContext extends LocalContext
     super(url, ctx);
     helper        = new DiscoveryHelper(channel);
     this.resolver = resolver;
-    channel.registerAsyncListener(JndiConsts.JNDI_SERVER_DISCO, this);
-    channel.registerAsyncListener(JndiConsts.JNDI_SERVER_PUBLISH, this);
+    channel.registerAsyncListener(JNDIConsts.JNDI_SERVER_DISCO, this);
+    channel.registerAsyncListener(JNDIConsts.JNDI_SERVER_PUBLISH, this);
 
     if (publish) {
       if (!channel.isClosed()) {
-        channel.dispatch(JndiConsts.JNDI_CLIENT_PUBLISH, "");
+        channel.dispatch(JNDIConsts.JNDI_CLIENT_PUBLISH, "");
       }
     }
     
@@ -134,13 +134,13 @@ public class ReliableLocalContext extends LocalContext
   public void onAsyncEvent(RemoteEvent evt) {
     try {
       ServerAddress serverAddress;      
-      if (evt.getType().equals(JndiConsts.JNDI_SERVER_DISCO)) {
+      if (evt.getType().equals(JNDIConsts.JNDI_SERVER_DISCO)) {
         serverAddress = (TCPAddress) evt.getData();
         Context remoteCtx = (Context) resolver.resolve(serverAddress);
         servers.add(remoteCtx);
         bindings.copyTo(remoteCtx, domainInfo.getDomainName(), super.url, helper.getChannel().getMulticastAddress());
 
-      } else if (evt.getType().equals(JndiConsts.JNDI_SERVER_PUBLISH) && (getInternalContext() != null)) {
+      } else if (evt.getType().equals(JNDIConsts.JNDI_SERVER_PUBLISH) && (getInternalContext() != null)) {
         Log.info(getClass(), "Discovered naming service; binding cached stubs...");
         serverAddress = (TCPAddress) evt.getData();
 

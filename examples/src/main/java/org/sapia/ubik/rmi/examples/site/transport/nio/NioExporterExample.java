@@ -8,7 +8,7 @@ public class NioExporterExample {
 	public static void main(String[] args) {
 	  
 		NioServerExporter exporter = new NioServerExporter();
-		exporter.setPort(7070);
+		exporter.port(7070);
 		// Hello stub = exporter.export(new HelloImpl());
 		
 		

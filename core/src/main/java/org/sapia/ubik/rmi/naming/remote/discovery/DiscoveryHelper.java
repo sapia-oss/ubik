@@ -21,7 +21,7 @@ import org.sapia.ubik.mcast.EventChannel;
 import org.sapia.ubik.mcast.RemoteEvent;
 import org.sapia.ubik.net.TCPAddress;
 import org.sapia.ubik.rmi.naming.ServiceLocator;
-import org.sapia.ubik.rmi.naming.remote.JndiConsts;
+import org.sapia.ubik.rmi.naming.remote.JNDIConsts;
 import org.sapia.ubik.rmi.naming.remote.RemoteContext;
 import org.sapia.ubik.rmi.naming.remote.archie.SyncPutEvent;
 import org.sapia.ubik.rmi.naming.remote.proxy.ContextResolver;
@@ -73,8 +73,8 @@ public class DiscoveryHelper implements AsyncEventListener {
   public DiscoveryHelper(String domain, String mcastAddr, int mcastPort)
     throws IOException {
     Properties props = new Properties();
-    props.setProperty(JndiConsts.MCAST_ADDR_KEY, mcastAddr);
-    props.setProperty(JndiConsts.MCAST_PORT_KEY, Integer.toString(mcastPort));
+    props.setProperty(JNDIConsts.MCAST_ADDR_KEY, mcastAddr);
+    props.setProperty(JNDIConsts.MCAST_PORT_KEY, Integer.toString(mcastPort));
     channel = new EventChannel(domain, new Props().addProperties(props).addSystemProperties());
     initChannel();
   }
@@ -116,7 +116,7 @@ public class DiscoveryHelper implements AsyncEventListener {
     if(!jndiListeners.contains(listener)){
       jndiListeners.add(listener);
       try{
-        channel.dispatch(JndiConsts.JNDI_CLIENT_PUBLISH, "");
+        channel.dispatch(JNDIConsts.JNDI_CLIENT_PUBLISH, "");
       }catch(IOException e){}      
     }
   }
@@ -137,8 +137,8 @@ public class DiscoveryHelper implements AsyncEventListener {
     TCPAddress tcp;
     
     try {
-      if (evt.getType().equals(JndiConsts.JNDI_SERVER_PUBLISH)
-          || evt.getType().equals(JndiConsts.JNDI_SERVER_DISCO)) {
+      if (evt.getType().equals(JNDIConsts.JNDI_SERVER_PUBLISH)
+          || evt.getType().equals(JNDIConsts.JNDI_SERVER_DISCO)) {
         tcp = (TCPAddress) evt.getData();
 
         Context remoteCtx = (Context) resolver.resolve(tcp);
@@ -213,8 +213,8 @@ public class DiscoveryHelper implements AsyncEventListener {
   }
   
   void initChannel() throws IOException {
-    channel.registerAsyncListener(JndiConsts.JNDI_SERVER_PUBLISH, this);
-    channel.registerAsyncListener(JndiConsts.JNDI_SERVER_DISCO, this);
+    channel.registerAsyncListener(JNDIConsts.JNDI_SERVER_PUBLISH, this);
+    channel.registerAsyncListener(JNDIConsts.JNDI_SERVER_DISCO, this);
     channel.registerAsyncListener(SyncPutEvent.class.getName(), this);
     
     if(!channel.isStarted()) {

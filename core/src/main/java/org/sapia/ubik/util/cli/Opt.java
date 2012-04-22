@@ -79,7 +79,7 @@ public class Opt {
 	
 	@Override
 	public String toString() {
-	  return Strings.toStringFor(this, "name", name, "value", value, "type", type);
+	  return Strings.toString("name", name, "value", value, "type", type);
 	}
 	 
 	

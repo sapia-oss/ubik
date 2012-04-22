@@ -9,21 +9,27 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 public class PoolTest {
 	
-	private ExecutorService threads = Executors.newCachedThreadPool();
+	private ExecutorService threads;
 	
 	private TestPool pool;
 	
 	@Before
   public void setUp() {
+		threads = Executors.newCachedThreadPool();
 		pool = new TestPool(5);
 		pool.setDefaultAcquireTimeout(0);
 	}
-
+	
+	@After
+	public void tearDown() {
+		threads.shutdownNow();
+	} 
 
 	@Test
 	public void testAcquire() throws Exception {
@@ -62,7 +68,7 @@ public class PoolTest {
 					try {
 						latch.countDown();
 						String s = pool.acquire();
-						Thread.sleep(1000);
+						Thread.sleep(10000);
 						pool.release(s);
 					} catch (InterruptedException e) {
 						

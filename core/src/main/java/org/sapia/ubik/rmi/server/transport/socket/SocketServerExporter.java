@@ -23,14 +23,14 @@ public class SocketServerExporter {
 	 * consult the {@link Consts#SERVER_MAX_THREADS} property first, and will use this value as a fallback).
 	 * @return this instance.
 	 */
-	public SocketServerExporter setMaxThreads(int maxThreads) {
+	public SocketServerExporter maxThreads(int maxThreads) {
 	  this.maxThreads = maxThreads;
 	  return this;
   }
 	
 	/**
 	 * @return the maximum number of worker threads on the server-side.
-	 * @see #setMaxThreads(int) 
+	 * @see #maxThreads(int) 
 	 */
 	public int getMaxThreads() {
 	  return maxThreads;
@@ -41,13 +41,13 @@ public class SocketServerExporter {
 	 * network interfaces if not set.
 	 * @return this instance.
 	 */
-	public SocketServerExporter setBindAddress(String bindAddress) {
+	public SocketServerExporter bindAddress(String bindAddress) {
 	  this.bindAddress = bindAddress;
 	  return this;
   }
 	
 	/**
-	 * @return the bind addresss (see {@link #setBindAddress(String)})
+	 * @return the bind addresss (see {@link #bindAddress(String)})
 	 */
 	public String getBindAddress() {
 	  return bindAddress;
@@ -57,14 +57,14 @@ public class SocketServerExporter {
 	 * @param port the port on which the server should listen (defaults to a random port if not set).
 	 * @return this instance.
 	 */
-	public SocketServerExporter setPort(int port) {
+	public SocketServerExporter port(int port) {
 	  this.port = port;
 	  return this;
   }
 	
 	/**
 	 * @return the port on which the server should listen.
-	 * @see #setPort(int)
+	 * @see #port(int)
 	 */
 	public int getPort() {
 	  return port;

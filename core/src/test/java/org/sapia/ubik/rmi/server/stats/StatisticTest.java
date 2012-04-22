@@ -55,16 +55,4 @@ public class StatisticTest {
     assertEquals(new Double(10), new Double(stat.getStat()));    
   }
 
-  @Test
-  public void testMaxCount(){
-    for(int i = 0; i < 10; i++){
-      stat.incrementInt(i+1);
-    }
-    Double avg = new Double(stat.getStat());
-    assertEquals(new Double(5.5), avg);
-    stat.incrementInt(22);
-    avg = new Double(stat.getStat());
-    assertEquals(new Double(7), avg);    
-  }
-
 }

@@ -21,6 +21,8 @@ public class StatsTest {
   public void tearDown() throws Exception {
     Stats.getInstance().clear();
   }
+  
+  
 
   @Test
   public void testClear() {
@@ -62,5 +64,16 @@ public class StatsTest {
     }
     assertEquals(10, Stats.getInstance().getStatistics().size());
   }
+  
+  @Test
+  public void testGetStatisticFor() {
+  	Stats.getInstance().createTimer(getClass(), "TestTimer", "Test timer");
+  	Stats.getInstance().getStatisticFor(getClass().getSimpleName(), "TestTimer");
+  }
+  
+  @Test(expected = IllegalArgumentException.class)
+  public void testGetStatisticForUnexisting() {
+  	Stats.getInstance().getStatisticFor(getClass().getName(), "TestTimer2");
+  }  
 
 }

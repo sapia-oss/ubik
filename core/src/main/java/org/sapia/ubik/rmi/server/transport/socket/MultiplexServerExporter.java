@@ -23,14 +23,14 @@ public class MultiplexServerExporter extends SocketServerExporter {
 	 * @return this instance.
 	 * @see MultiplexSocketTransportProvider#ACCEPTOR_THREADS
 	 */
-	public MultiplexServerExporter setAcceptorThreads(int acceptorThreads) {
+	public MultiplexServerExporter acceptorThreads(int acceptorThreads) {
 		this.acceptorThreads = acceptorThreads;
 		return this;
 	}
 	
 	/**
 	 * @return the number of acceptor threads.
-	 * @see #setAcceptorThreads(int)
+	 * @see #acceptorThreads(int)
 	 */
 	public int getAcceptorThreads() {
 	  return acceptorThreads;
@@ -40,19 +40,19 @@ public class MultiplexServerExporter extends SocketServerExporter {
 	 * @param selectorThreads the number of selector threads.
 	 * @return this instance.
 	 */
-	public MultiplexServerExporter setSelectorThreads(int selectorThreads) {
+	public MultiplexServerExporter selectorThreads(int selectorThreads) {
 		this.selectorThreads = selectorThreads;
 		return this;
 	}
 	
 	/**
 	 * @return the number of selector threads.
-	 * @see #setSelectorThreads(int)
+	 * @see #selectorThreads(int)
 	 */
 	public int getSelectorThreads() {
 	  return selectorThreads;
   }
-	
+
 	@Override
 	protected void addProperties(Properties props) {
 		props.setProperty(
