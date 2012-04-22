@@ -45,9 +45,6 @@ public final class Stats {
   private Map<StatisticKey, Statistic>           stats      = Collections.synchronizedMap(
                                                                 new HashMap<StatisticKey, Statistic>()
                                                               );
-  private Map<StatisticKey, StatInstanceCounter> statsCount = Collections.synchronizedMap(
-                                                                new HashMap<StatisticKey, StatInstanceCounter>()
-                                                              );
   
   private static Stats       instance  = new Stats();
   
@@ -129,15 +126,9 @@ public final class Stats {
    * @return a new {@link Timer}.
    */
   public synchronized Timer createTimer(String source, String name, String description) {
-    StatisticKey key = new StatisticKey(source, name);
-    TimerStatistic t = (TimerStatistic) stats.get(key);
-    if(t == null) {
-      t = new TimerStatistic(source, name, description);
-      t.setEnabled(isEnabled);
-      add(t);
-    } else {
-      
-    }
+    TimerStatistic t = new TimerStatistic(source, name, description);
+    t.setEnabled(isEnabled);
+    add(t);
     return t.getTimer();
   }
 
@@ -202,7 +193,7 @@ public final class Stats {
     Function<StatCapable, Statistic> converter = new Function<StatCapable, Statistic>() {
       @Override
       public StatCapable call(Statistic s) {
-        return new ImmutableStat(s.getSource(), s.getName(), s.getDescription(), s.getValue(), s.isEnabled());
+        return new ImmutableStat(s.getKey(), s.getDescription(), s.getStat(), s.isEnabled());
       }
     };
     
@@ -216,14 +207,10 @@ public final class Stats {
    * @param customStat an arbitrary, app-specific {@link Statistic}.
    */
   public synchronized Stats add(Statistic stat) {
-    if(stats.containsKey(stat.getKey())) {
-      StatInstanceCounter counter = statsCount.get(stat.getKey());
-      stat.getKey().setCounter(counter.increment());
-    } else {
+    if(!stats.containsKey(stat.getKey())) {
       stats.put(stat.getKey(), stat);
-      statsCount.put(stat.getKey(), new StatInstanceCounter());
+      stat.setEnabled(isEnabled);
     }
-    stat.setEnabled(isEnabled);
     return this;
   }
   
@@ -233,7 +220,7 @@ public final class Stats {
     
     for(StatCapable stat : stats){
       if(stat.isEnabled()){
-        dumpStat(ps, stat.getName(), stat.getValue());
+        dumpStat(ps, stat.getKey().getName(), stat.getValue());
       }
     }
   }
@@ -249,15 +236,6 @@ public final class Stats {
     int space = 60 - name.length();
     for(int i = 0; i < space; i++){
       ps.print(' ');
-    }
-  }
-  
-  private class StatInstanceCounter {
-    
-    private int count;
-    
-    int increment() {
-      return ++count;
     }
   }
   

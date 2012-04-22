@@ -12,37 +12,20 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class Statistic {
   
-  static final int DEFAULT_MAX_COUNT = 25;
-
   private StatisticKey  key;
   private String        description;
   private StatValue     value    = new StatValue();
   private AtomicInteger count    = new AtomicInteger();
-  private int           maxCount;
   volatile boolean      enabled;
-  
-  /**
-   * Creates a statistic with a max count of 100 by default.
-   * 
-   * @see #Statistic(String, int)
-   */
-  public Statistic(String source, String name, String description){
-    this(source, name, description, DEFAULT_MAX_COUNT);
-  }
   
   /**
    * @param source the stat's source.
    * @param name the stat's name.
    * @param description the stat's description.
-   * @param maxCount the maximum number of occurrences over which averages
-   * are to be calculated. Once that number is reached, the value of the
-   * statistic is set to its current average, and the internal count is
-   * reset to 0. 
    */
-  public Statistic(String source, String name, String description, int maxCount){
+  public Statistic(String source, String name, String description){
     this.key = new StatisticKey(source, name);
     this.description = description;
-    this.maxCount = maxCount;
   }
   
   /**
@@ -127,34 +110,30 @@ public class Statistic {
   }
  
   /**
-   * @return this instance's average, in one of the primitive wrappers (Integer, Long, Float, Double).
+   * @return this instance's average.
    */
   public double getStat(){
-    return value.avg(count.get());
+    double stat = value.avg(count.get());
+    reset();
+    return stat;
   }
   
   /**
    * Internally resets this instance's counter.
    */
   public void reset(){
-    doReset();
+    onPreReset();      
+    value.set(0);      
+    count.set(0);
+    onPostReset();      
   } 
   
   /**
    * @see java.lang.Comparable#compareTo(Object)
    */
   public int compareTo(StatCapable other) {
-    return getName().compareTo(other.getName());
+    return getKey().compareTo(other.getKey());
   }
-  
-  private void doReset(){
-    if(count.get() > maxCount){
-      onPreReset();      
-      value.set(value.avg(count.get()));      
-      count.set(0);
-      onPostReset();      
-    }    
-  }  
   
   public String toString(){
     return "[" + key.getName() + " = "+ value + "]";
@@ -163,19 +142,16 @@ public class Statistic {
   private void doIncrementLong(long inc){
     count.incrementAndGet();
     value.incrementLong(inc);
-    doReset();
   }
   
   private void doIncrementDouble(double inc){
     count.incrementAndGet();
     value.incrementDouble(inc);
-    doReset();
   }   
   
   private void doIncrementInt(int inc){    
     count.incrementAndGet();
     value.incrementInt(inc);
-    doReset();
   }
   
   protected void onPreReset(){}

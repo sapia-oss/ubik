@@ -210,6 +210,7 @@ public class EventConsumer {
     
     if(log.isDebug()){
       log.debug("Received remote event: " + evt.getType() + "@" + evt.getNode() + "@" + evt.getDomainName());
+      log.debug("This node: '%s'", node);
       log.debug("Event from this node: " + evt.getNode().equals(node));
     }
 

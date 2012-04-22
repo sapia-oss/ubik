@@ -175,8 +175,13 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
             Response resp = (Response) doSend(addr.getInetAddress(), addr.getPort(), sock, bytes, true, type);
             queue.add(resp);
           } catch (TimeoutException e) {
-            log.error("Response from %s not received in timely manner", addr);
-            queue.add(new Response(evt.getId(), e).setStatusSuspect());
+            log.warning("Response from %s not received in timely manner", addr);
+            
+            try {
+            	queue.add(new Response(evt.getId(), e).setStatusSuspect());
+            } catch (IllegalStateException ise) {
+            	log.info("Could not add response to queue", ise, new Object[]{});
+            }
           } catch (IOException e) { 
             log.error("IO problem sending remote event to " + addr, e);
           } finally {

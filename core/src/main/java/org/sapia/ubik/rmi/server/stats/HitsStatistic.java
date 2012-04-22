@@ -15,8 +15,6 @@ import org.sapia.ubik.util.Clock.SystemClock;
  */
 public class HitsStatistic extends Statistic implements StatCapable {
   
-  private static final long DEFAULT_SAMPLE_RATE = 1000;
-
   /**
    * Use to build an instance of this class.
    * @author yduchesne
@@ -28,18 +26,12 @@ public class HitsStatistic extends Statistic implements StatCapable {
     private String        source;
     private String        name;
     private String        description;
-    private long          sampleRate   = DEFAULT_SAMPLE_RATE;
     private StatsTimeUnit unit         = StatsTimeUnit.SECONDS;
     
     Builder(String source, String name, String description) {
       this.source      = source;
       this.name        = name;
       this.description = description;      
-    }
-    
-    public Builder sampleRate(long rate) {
-      this.sampleRate = rate;
-      return this;
     }
     
     public Builder timeUnit(TimeUnit timeUnit) {
@@ -74,7 +66,7 @@ public class HitsStatistic extends Statistic implements StatCapable {
     }
     
     public Hits build() {
-      HitsStatistic stat = new HitsStatistic(clock, source, name, description, sampleRate, unit);
+      HitsStatistic stat = new HitsStatistic(clock, source, name, description, unit);
       Stats.getInstance().add(stat);
       return new Hits(stat);
     }
@@ -84,8 +76,7 @@ public class HitsStatistic extends Statistic implements StatCapable {
   // --------------------------------------------------------------------------
 
 	private Clock          clock      = SystemClock.getInstance();
-  private long           sampleRate = DEFAULT_SAMPLE_RATE;
-  private AtomicLong     startTime  = new AtomicLong(System.currentTimeMillis());
+  private AtomicLong     startTime;
   private AtomicInteger  counter    = new AtomicInteger();
   private Hits           hits;
   private StatsTimeUnit  unit       = StatsTimeUnit.SECONDS;
@@ -93,20 +84,12 @@ public class HitsStatistic extends Statistic implements StatCapable {
   /**
    * @see Statistic#Statistic(String, String, String)
    */
-  protected HitsStatistic(Clock clock, String source, String name, String description, long sampleRate, StatsTimeUnit unit){
+  protected HitsStatistic(Clock clock, String source, String name, String description, StatsTimeUnit unit){
     super(source, name, description);
     this.clock = clock;
-    this.sampleRate = sampleRate;
-    this.startTime  = new AtomicLong(clock.currentTimeMillis());
+    this.startTime  = new AtomicLong(clock.nanoTime());
     this.unit       = unit;
     hits = new Hits(this);
-  }
-  
-  /**
-   * @see Statistic#Statistic(String, String, String)
-   */
-  protected HitsStatistic(Clock clock, String source, String name, String description, StatsTimeUnit unit){
-    this(clock, source, name, description, DEFAULT_SAMPLE_RATE, unit);
   }
 
   /**
@@ -142,33 +125,22 @@ public class HitsStatistic extends Statistic implements StatCapable {
   }
   
   public synchronized double getStat() {
-    Long start = startTime.get();
-    if(clock.currentTimeMillis() - start > sampleRate){
-      double timebase = convertMillis((clock.currentTimeMillis() - start));
-      double ratio;
-      if(timebase == 0) {
-        ratio = 0;
-      } else {
-        ratio = counter.doubleValue() / timebase;
-      }
-      super.incrementDouble(ratio);
-      startTime.set(clock.currentTimeMillis());
-      double value = super.getStat();
-      counter.set(0);
-      return value;
-    } else {
-      return super.getStat();
-    }
+    long   start         = startTime.get();
+    double elapsedMillis = convertToMillis(clock.nanoTime() - start);
+    double rate          = elapsedMillis == 0 ? 0 : counter.doubleValue() / elapsedMillis;
+    super.incrementDouble(rate);
+    startTime.set(clock.nanoTime());
+    counter.set(0);
+    return super.getStat();
   }
   
   protected synchronized void onPostReset() {
     counter.set(0);
-    startTime.set(clock.currentTimeMillis());
+    startTime.set(clock.nanoTime());
   }
   
-  private double convertMillis(long delay){
-    return unit.convertFrom(delay, StatsTimeUnit.MILLISECONDS);
+  private double convertToMillis(long delayNanos){
+    return unit.convertFrom(delayNanos, StatsTimeUnit.NANOSECONDS);
   }
-
 }
 

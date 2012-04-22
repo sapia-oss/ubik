@@ -15,7 +15,7 @@ public class JBossMarshalOutputStream extends JBossObjectOutputStream implements
   private static Timer stubOutput = Stats.getInstance().createTimer(
                                       JBossMarshalOutputStream.class, 
                                       "StubOutput", 
-                                      "Avg time to serialize a stub"
+                                      "Avg time to create a stub"
                                     );
 
   private VmId                  id;

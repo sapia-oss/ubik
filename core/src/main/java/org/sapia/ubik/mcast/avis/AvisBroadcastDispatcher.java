@@ -57,7 +57,7 @@ public class AvisBroadcastDispatcher implements BroadcastDispatcher {
   
   @Override
   public String getNode() {
-    return address.getNode();
+    return consumer.getNode();
   }
   
   @Override
@@ -70,12 +70,12 @@ public class AvisBroadcastDispatcher implements BroadcastDispatcher {
     RemoteEvent evt;
 
     if (alldomains) {
-      evt = new RemoteEvent(null, evtType, data).setNode(address.getNode());
+      evt = new RemoteEvent(null, evtType, data).setNode(consumer.getNode());
       evt.setUnicastAddress(unicastAddr);
       elvinConnection.send(createNotification(evt, ANY_DOMAIN));
 
     } else {
-      evt = new RemoteEvent(domain, evtType, data).setNode(address.getNode());
+      evt = new RemoteEvent(domain, evtType, data).setNode(consumer.getNode());
       evt.setUnicastAddress(unicastAddr);
       elvinConnection.send(createNotification(evt, domain));
 
@@ -89,7 +89,7 @@ public class AvisBroadcastDispatcher implements BroadcastDispatcher {
       String evtType,
       Object data) throws IOException {
     log.debug("Sending event bytes for: %s", evtType);
-    RemoteEvent evt = new RemoteEvent(domain, evtType, data).setNode(address.getNode());
+    RemoteEvent evt = new RemoteEvent(domain, evtType, data).setNode(consumer.getNode());
     evt.setUnicastAddress(unicastAddr);
     elvinConnection.send(createNotification(evt, domain));    
   }
@@ -131,7 +131,7 @@ public class AvisBroadcastDispatcher implements BroadcastDispatcher {
     notification.set("Type", NOTIF_TYPE);
     notification.set("Payload", Base64.encodeBytes(McastUtil.toBytes(evt, bufsize)));
     notification.set("Domain", domain);
-    notification.set("Node", address.getNode());
+    notification.set("Node", consumer.getNode());
     return notification;
   }
   
@@ -144,7 +144,7 @@ public class AvisBroadcastDispatcher implements BroadcastDispatcher {
     
     public static final String TRANSPORT  = "avis/broadcast";
     
-    private String node = UUID.randomUUID().toString();
+    private String uuid = UUID.randomUUID().toString();
     private String avisUrl;
     
     public AvisAddress(String avisUrl) {
@@ -156,20 +156,20 @@ public class AvisBroadcastDispatcher implements BroadcastDispatcher {
       return TRANSPORT;
     }
     
-    public String getNode() {
-      return node;
+    public String getUUID() {
+      return uuid;
     }
     
     @Override
     public int hashCode() {
-      return node.hashCode();
+      return uuid.hashCode();
     }
     
     @Override
     public boolean equals(Object obj) {
       if(obj instanceof AvisAddress) {
         AvisAddress other = (AvisAddress) obj;
-        return other.node.equals(node);
+        return other.uuid.equals(uuid);
       }
       return false;
     }

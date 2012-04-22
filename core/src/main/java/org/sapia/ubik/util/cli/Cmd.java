@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import org.sapia.ubik.util.Strings;
 import org.sapia.ubik.util.cli.Opt.Type;
@@ -33,6 +34,22 @@ public class Cmd {
 	 */
 	public Opt getOpt(String name) {
 		return optsByName.get(name);
+	}
+
+	/**
+	 * @param name the name of the {@link Opt} instance to return.
+	 * @return the {@link Opt} corresponding to the given name.
+	 * @throws IllegalArgumentException if the option with the given does not exist, or if it has no value.
+	 */
+	public Opt getOptWithValue(String name) throws IllegalArgumentException {
+		Opt opt = optsByName.get(name);
+		if (opt == null) {
+			throw new IllegalArgumentException("No option found with name: " + name);
+		}
+		if (opt == null || opt.getTrimmedValueOrBlank().length() == 0) {
+			throw new IllegalArgumentException("No value specified for " + name);
+		}
+		return opt;
 	}
 	
 	/**
@@ -70,6 +87,10 @@ public class Cmd {
 		return opt.getType() == Type.SWITCH;
 	}
 	
+	/**
+	 * @param args some arguments (typically from a <code>main()</code> method).
+	 * @return a new {@link Cmd} from the given arguments.
+	 */
 	public static Cmd fromArgs(String[] args) {
 		
 		List<Opt> opts = new ArrayList<Opt>();
@@ -100,9 +121,40 @@ public class Cmd {
 		
 	} 
 	
+	/**
+	 * @param name the name of the option to remove.
+	 */
+	public void removeOpt(String name) {
+		this.optsByName.remove(name);
+	}
+	
+	/**
+	 * Returns this instance's {@link Opt}s that are of {@link Type#SWITCH} type in a
+	 * {@link Properties} instance.
+	 * 
+	 * @return this instance's switches in a {@link Properties} instance.
+	 */
+	public Properties getSwitchesAsProperties() {
+		Properties props = new Properties();
+		copySwitchesTo(props);
+		return props;
+	}
+	
+	/**
+	 * Copies this instance's {@link Opt}s that are of {@link Type#SWITCH} type to
+	 * the given {@link Properties} instance.
+	 */
+	public void copySwitchesTo(Properties props) {
+		for (Opt opt : opts) {
+			if (opt.getType() == Type.SWITCH && opt.getValue() != null) {
+				props.setProperty(opt.getName(), opt.getValue());
+			}
+		}		
+	}
+	
 	@Override
 	public String toString() {
-	  return Strings.toStringFor(this, "opts", opts, "optsByName", optsByName);
+	  return Strings.toString("opts", opts, "optsByName", optsByName);
 	}
 
 }

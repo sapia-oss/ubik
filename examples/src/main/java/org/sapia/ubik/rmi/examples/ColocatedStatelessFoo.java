@@ -47,7 +47,11 @@ public class ColocatedStatelessFoo implements Foo, Stateless,
 
       Thread t = new Thread() {
           public void run() {
-            JNDIServer.main(new String[] {  });
+          	try {
+          		JNDIServer.main(new String[] {  });
+          	} catch (Exception e) {
+          		e.printStackTrace();
+          	}
           }
         };
 

@@ -1,53 +1,62 @@
 package org.sapia.ubik.rmi.server.stats;
 
+import org.sapia.ubik.util.Strings;
+
 /**
- * Identifies a {@link Statistic} uniquely. 
+ * Identifies a {@link Statistic} uniquely.
+ *  
  * @author yduchesne
  *
  */
-public class StatisticKey {
+public class StatisticKey implements Comparable<StatisticKey>{
 
   private String source;
   private String name;
-  private int    counter;
   
   public StatisticKey(String source, String name) {
     this.source = source;
     this.name   = name;
   }
   
+  /**
+   * @return this instance's source.
+   */
   public String getSource() {
     return source;
   }
   
+  /**
+   * @return the name that was passed to this instance, concatenated with the counter (if any).
+   */
   public String getName() {
-    if(counter == 0) {
-      return name;
-    } else { 
-      return name + "-" + counter;
-    }
-  }
-  
-  void setCounter(int counter) {
-    this.counter = counter;
+    return name;
   }
   
   @Override
   public int hashCode() {
-    return source.hashCode() * 31 + name.hashCode() * 31 + counter * 31;
+    return source.hashCode() * 31 + name.hashCode() * 31;
   }
   
   @Override
   public boolean equals(Object obj) {
     if(obj instanceof StatisticKey) {
       StatisticKey other = (StatisticKey)obj;
-      return source.equals(other.source) && name.equals(other.name) && counter == other.counter;
+      return source.equals(other.source) && name.equals(other.name);
     }
     return false;
   }
   
   @Override
+  public int compareTo(StatisticKey o) {
+  	int c = this.source.compareTo(o.getSource());
+  	if (c == 0) {
+  		c = this.name.compareTo(o.getName());
+  	}
+    return c;
+  }
+  
+  @Override
   public String toString() {
-    return "[source=" + source + ", name=" + name + "]";
+    return Strings.toStringFor(this, "source", source, "name", "name");
   }
 }

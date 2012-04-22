@@ -25,10 +25,10 @@ public final class Strings {
   public static String toString(Object... fields){
     StringBuilder sb = new StringBuilder();
     sb.append("[");
-    for(int i = 0; i < fields.length; i+=2) {
+    for(int i = 0; i < fields.length; i += 2) {
       sb.append(fields[i].toString())
         .append("=")
-        .append(i+1 < fields.length && fields[i+1] != null ? fields[i+1].toString() : "null");
+        .append(i + 1 < fields.length && fields[i + 1] != null ? fields[i+1].toString() : "null");
       
       if(i+1 < fields.length - 1) {
         sb.append(",");
@@ -53,10 +53,10 @@ public final class Strings {
     StringBuilder sb = new StringBuilder();
     sb.append("[");
     sb.append(owner.getClass().getSimpleName()).append("@").append(Integer.toHexString(owner.hashCode())).append(":");
-    for(int i = 0; i < fields.length; i+=2) {
+    for(int i = 0; i < fields.length; i += 2) {
       sb.append(fields[i].toString())
         .append("=")
-        .append(i+1 < fields.length && fields[i+1] != null ? fields[i+1].toString() : "null");
+        .append(i + 1 < fields.length && fields[i + 1] != null ? fields[i + 1].toString() : "null");
       
       if(i+1 < fields.length - 1) {
         sb.append(",");

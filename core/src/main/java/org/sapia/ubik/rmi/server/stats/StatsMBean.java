@@ -140,7 +140,7 @@ public class StatsMBean implements DynamicMBean{
   
   private MBeanAttributeInfo getAttributeFor(StatCapable stat){
     MBeanAttributeInfo info = new MBeanAttributeInfo(
-       stat.getSource() + "." + stat.getName(),
+       stat.getKey().getSource() + "." + stat.getKey().getName(),
        Double.class.getName(),
        stat.getDescription(),
        true,

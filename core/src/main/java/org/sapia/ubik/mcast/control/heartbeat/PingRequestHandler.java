@@ -1,5 +1,6 @@
 package org.sapia.ubik.mcast.control.heartbeat;
 
+import org.sapia.ubik.mcast.control.ControlResponseFactory;
 import org.sapia.ubik.mcast.control.ControllerContext;
 import org.sapia.ubik.mcast.control.SynchronousControlRequest;
 import org.sapia.ubik.mcast.control.SynchronousControlRequestHandler;
@@ -15,7 +16,7 @@ public class PingRequestHandler implements SynchronousControlRequestHandler {
 	
 	@Override
 	public SynchronousControlResponse handle(String originNode, SynchronousControlRequest request) {
-	  return new PingResponse(context.getNode());
+	  return ControlResponseFactory.createPingResponse(context.getNode());
 	}
 
 }

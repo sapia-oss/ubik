@@ -42,13 +42,8 @@ public class Hits implements StatCapable {
   }
   
   @Override
-  public String getSource() {
-    return stat.getSource();
-  }
-  
-  @Override
-  public String getName() {
-    return stat.getName();
+  public StatisticKey getKey() {
+    return stat.getKey();
   }
   
   @Override
@@ -63,7 +58,7 @@ public class Hits implements StatCapable {
   
   @Override
   public int compareTo(StatCapable other) {
-    return stat.getName().compareTo(other.getName());
+    return stat.getKey().compareTo(other.getKey());
   }
 }
 

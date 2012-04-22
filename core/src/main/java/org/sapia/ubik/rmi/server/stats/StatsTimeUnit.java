@@ -12,16 +12,17 @@ import java.util.concurrent.TimeUnit;
  */
 public enum StatsTimeUnit {
 
-  MILLISECONDS(1),
-  SECONDS(MILLISECONDS.unitInMillis * 1000),
-  MINUTES(SECONDS.unitInMillis * 60),
-  HOURS(MINUTES.unitInMillis * 60),
-  DAYS(HOURS.unitInMillis * 24);
+	NANOSECONDS(1),
+  MILLISECONDS(NANOSECONDS.unitInNanos * 1000000),
+  SECONDS(MILLISECONDS.unitInNanos * 1000),
+  MINUTES(SECONDS.unitInNanos * 60),
+  HOURS(MINUTES.unitInNanos * 60),
+  DAYS(HOURS.unitInNanos * 24);
   
-  private double unitInMillis;
+  private double unitInNanos;
   
-  StatsTimeUnit(double unitInMillis) {
-    this.unitInMillis = unitInMillis;
+  StatsTimeUnit(double unitInNanos) {
+    this.unitInNanos= unitInNanos;
   }
 
   /**
@@ -29,6 +30,7 @@ public enum StatsTimeUnit {
    * JDK time units are supported:
    * 
    * <ul>
+   *   <li> {@link TimeUnit#NANOSECONDS}
    *   <li> {@link TimeUnit#SECONDS}
    *   <li> {@link TimeUnit#MINUTES}
    *   <li> {@link TimeUnit#HOURS}
@@ -40,6 +42,7 @@ public enum StatsTimeUnit {
    */
   public static final StatsTimeUnit fromJdkTimeUnit(TimeUnit timeunit) {
     switch(timeunit) {
+      case NANOSECONDS:  return StatsTimeUnit.NANOSECONDS;
       case MILLISECONDS: return StatsTimeUnit.MILLISECONDS;
       case SECONDS:      return StatsTimeUnit.SECONDS;
       case MINUTES:      return StatsTimeUnit.MINUTES;
@@ -56,8 +59,8 @@ public enum StatsTimeUnit {
    * @return the time, converted to this instance.
    */
   public double convertFrom(double time, StatsTimeUnit srcTimeUnit) {
-    double srcMillis = srcTimeUnit.unitInMillis * time;
-    return srcMillis / unitInMillis;
+    double srcNanos = srcTimeUnit.unitInNanos * time;
+    return srcNanos / unitInNanos;
   }
   
   /**
@@ -71,8 +74,7 @@ public enum StatsTimeUnit {
   }
   
   public static void main(String[] args) {
-    System.out.println(StatsTimeUnit.HOURS.convertFrom(20, StatsTimeUnit.MINUTES));
-    System.out.println(StatsTimeUnit.getConversionFactor(StatsTimeUnit.HOURS, StatsTimeUnit.MINUTES));
-    System.out.println(StatsTimeUnit.getConversionFactor(StatsTimeUnit.MINUTES, StatsTimeUnit.HOURS));
+	  System.out.println(StatsTimeUnit.MILLISECONDS.convertFrom(50000, StatsTimeUnit.NANOSECONDS));
   }
+
 }

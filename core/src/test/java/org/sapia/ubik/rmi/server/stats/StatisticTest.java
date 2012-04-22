@@ -13,7 +13,7 @@ public class StatisticTest {
 
   @Before
   public void setUp() throws Exception {
-    stat = new Statistic("testSource", "test", "this is a test stat", 10);
+    stat = new Statistic("testSource", "test", "this is a test stat");
     stat.setEnabled(true);
   }
 

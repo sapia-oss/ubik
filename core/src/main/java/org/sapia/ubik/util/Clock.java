@@ -30,6 +30,11 @@ public interface Clock {
 			return System.currentTimeMillis();
 		}
 		
+		@Override
+		public long nanoTime() {
+		  return System.nanoTime();
+		}
+		
 		/**
 		 * @return the {@link SystemClock} singleton.
 		 */
@@ -71,6 +76,11 @@ public interface Clock {
 		  return currentTime.get();
 		}
 		
+		@Override
+		public long nanoTime() {
+  	  return TimeUnit.NANOSECONDS.convert(currentTime.get(),TimeUnit.MILLISECONDS);
+		}
+		
 		public static MutableClock getInstance() {
 			return new MutableClock();
 		}
@@ -82,4 +92,9 @@ public interface Clock {
 	 * @return the current time, in millis.
 	 */
 	public long currentTimeMillis();
+	
+	/**
+	 * @return the nano time.
+	 */
+	public long nanoTime();
 }

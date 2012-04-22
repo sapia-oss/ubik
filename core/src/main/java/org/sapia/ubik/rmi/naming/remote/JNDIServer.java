@@ -1,15 +1,16 @@
 package org.sapia.ubik.rmi.naming.remote;
 
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.EventChannel;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.Hub;
+import org.sapia.ubik.util.PropertiesUtil;
 import org.sapia.ubik.util.Props;
 import org.sapia.ubik.util.cli.Cmd;
 
@@ -57,17 +58,16 @@ public class JNDIServer {
    * </ul>
    */
   public static void main(String[] args) throws Exception {
+  	
+  	// disabling log4j output at startup
+  	Logger.getRootLogger().setLevel(Level.OFF);
+  	
     Args argsObj = parseArgs(args, true);
-
     Props props = new Props();
     props.addProperties(argsObj.properties);
+    PropertiesUtil.copy(argsObj.properties, System.getProperties());
     
-    for(String name : argsObj.properties.stringPropertyNames()) {
-    	String value = argsObj.properties.getProperty(name);
-    	System.setProperty(name, value);
-    }
-    
-    EventChannel 				 channel = new EventChannel(props.getProperty(Consts.UBIK_DOMAIN_NAME, Consts.DEFAULT_DOMAIN));
+    EventChannel 				 channel = new EventChannel(props.getProperty(Consts.UBIK_DOMAIN_NAME, Consts.DEFAULT_DOMAIN), props);
     EmbeddableJNDIServer server  = new EmbeddableJNDIServer(channel, argsObj.port);
     server.start(false);
     Runtime.getRuntime().addShutdownHook(new ShutdownHook(server));
@@ -88,7 +88,7 @@ public class JNDIServer {
    */
   static Args parseArgs(String[] args, boolean doExitOnHelp) {
   	
-    int    		 port  = JndiConsts.DEFAULT_PORT;
+    int    		 port  = JNDIConsts.DEFAULT_PORT;
     Properties props = new Properties();
     
     if (args.length > 0) {
@@ -110,7 +110,7 @@ public class JNDIServer {
       		help(doExitOnHelp);
       	}
       } else {
-      	port = JndiConsts.DEFAULT_PORT;
+      	port = JNDIConsts.DEFAULT_PORT;
       }
 
       // ----------------------------------------------------------------------
@@ -124,29 +124,26 @@ public class JNDIServer {
       // ----------------------------------------------------------------------
       // loading properties from file if -f swith specified.
       if (cmd.hasSwitch("f")) {
-      	File configFile = new File(cmd.getOpt("f").getTrimmedValueOrBlank());
+      	File configFile = new File(cmd.getOptWithValue("f").getTrimmedValueOrBlank());
       	if (configFile.exists()) {
       		if (configFile.isDirectory()) {
         		System.out.println("Specified config file is a directory: " + cmd.getOpt("f"));
         		help(doExitOnHelp);
       		}
-      		FileInputStream is = null;
       		try {
-      			is = new FileInputStream(configFile);
-      			props.load(new BufferedInputStream(is));
+      			PropertiesUtil.loadIntoPropertiesFrom(props, configFile);
+      			System.out.println();
+      			System.out.println("Found properties (" + configFile.getName() + "):");
+      			for (String name : props.stringPropertyNames()) {
+      				System.out.println(name + " = " + props.getProperty(name));
+      			}
+      			System.out.println();
+      			
       		} catch (IOException e) {
       			System.out.println("Could not load config file: " + cmd.getOpt("f"));
       			e.printStackTrace(System.out);
       			help(doExitOnHelp);
-      		} finally {
-      			if (is != null) {
-      				try {
-      					is.close();
-      				} catch (IOException e) {
-      					// noop
-      				}
-      			}
-      		}
+      		} 
       	} else {
       		System.out.println("Specified config file does not exist: " + cmd.getOpt("f"));
       		help(doExitOnHelp);
@@ -161,15 +158,29 @@ public class JNDIServer {
   static final void help(boolean doExitOnHelp) {
     System.out.println();
     System.out.println("Syntax: jndi [-p <port>] [-d <domain>] [-f <path_to_config>]");
-    System.out.println("where:");
-    System.out.println(
-      "<port>: is the port on which JNDI server should listen (defaults to 1099).");
-    System.out.println(
-      "<domain>: is the domain name that JNDI server is part of (defaults to 'default').");
-    System.out.println(
-        "<path_to_config>: is the path to the properties file for configuring this server.");    
+    System.out.println();    
+    System.out.println("Where:");
+    System.out.println("  <port>..........: The port on which the JNDI server should listen (defaults to 1099).");
+    System.out.println("  <domain>........: The name of the domain that the JNDI server should join (defaults to 'default').");
+    System.out.println("  <path_to_config>: The path to the Java properties file with which to configure this server.");
+    System.out.println("                    The properties in the file will be exported to the JVM's system properties.");
     System.out.println();
+    System.out.println(String.format("This server will use the default IP multicast address (%s) and port (%s)", 
+    		Consts.DEFAULT_MCAST_ADDR, Consts.DEFAULT_MCAST_PORT));
+    System.out.println("for group communication. If you wish otherwise, you have to configure these properties");
+    System.out.println("in a file and use the -f option to point to that file.");
     System.out.println();
+    System.out.println("Notes:");
+    System.out.println("  1) You do not have to use the default group communication network transports, based on IP");
+    System.out.println("     multicast and UDP. You could for example use Avis for broadcast, and TCP for unicast.");
+    System.out.println("     How to configure these is explained on the Ubik website.");
+    System.out.println("  2) If you are running the JNDI server on a host with more than one multicast address,");
+    System.out.println("     you should specify the ubik.rmi.address-pattern JVM property - which consists of a");
+    System.out.println("     regexp that should match the address of the interface you wish the server to bind to.");
+    System.out.println("     This address will also be returned to clients as part of the JNDI server stub itself");
+    System.out.println("     (since the server is implemented using Ubik RMI). The property in question should also");
+    System.out.println("     be specified in the properties file that you use to configure this server.");
+    
     if(doExitOnHelp) {
     	System.exit(1);
     }

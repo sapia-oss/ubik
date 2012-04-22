@@ -14,7 +14,9 @@ import org.sapia.archie.jndi.proxy.ContextProxy;
 import org.sapia.ubik.rmi.naming.remote.DomainInfo;
 import org.sapia.ubik.rmi.naming.remote.RemoteContext;
 import org.sapia.ubik.rmi.server.Hub;
+import org.sapia.ubik.rmi.server.StubProcessor;
 import org.sapia.ubik.rmi.server.stub.StubContainer;
+import org.sapia.ubik.rmi.server.stub.Stubs;
 import org.sapia.ubik.rmi.server.stub.enrichment.StubEnrichmentStrategy.JndiBindingInfo;
 
 
@@ -393,14 +395,18 @@ public class LocalContext extends ContextProxy implements java.rmi.Remote {
   protected Object onBind(Name n, Object toBind) throws NamingException {
     JndiBindingInfo info = new JndiBindingInfo(url, n, domainInfo.getDomainName(), domainInfo.getMulticastAddress());
     try {
-      toBind = Hub.getModules().getStubProcessor().enrichForJndiBinding(toBind, info);
+    	StubProcessor processor = Hub.getModules().getStubProcessor();
+    	toBind = processor.enrichForJndiBinding(toBind, info);
+    	if (Stubs.isStub(toBind)) {
+    		return Stubs.getStubInvocationHandler(toBind).toStubContainer(toBind);
+    	} 
+      return toBind;
     } catch (RemoteException e) {
       NamingException ne = new NamingException("Could not enrich stub for binding");
       ne.setRootCause(e);
       ne.fillInStackTrace();
       throw ne;
     }
-    return toBind;
   }
 
   /**

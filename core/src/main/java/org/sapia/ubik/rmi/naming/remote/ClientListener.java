@@ -15,8 +15,8 @@ import org.sapia.ubik.net.ServerAddress;
  * This class implements an {@link AsyncEventListener} that listens for appearing JNDI clients and servers on
  * a given {@link EventChannel}.
  * <p>
- * An instance of this class is meant to handle remote events corresponding to {@link JndiConsts#JNDI_CLIENT_PUBLISH}.
- * In response, it dispatches to the appearing client a {@link JndiConsts#JNDI_SERVER_DISCO} event.
+ * An instance of this class is meant to handle remote events corresponding to {@link JNDIConsts#JNDI_CLIENT_PUBLISH}.
+ * In response, it dispatches to the appearing client a {@link JNDIConsts#JNDI_SERVER_DISCO} event.
  * <p>
  * An instance of this class must be explicitely registered/unregistered with/from an {@link EventChannel} using the 
  * {@link #registerWithChannel()} and {@link #unregisterFromChannel()} methods, respectively. The methods will add/remove
@@ -47,8 +47,8 @@ public class ClientListener implements AsyncEventListener {
    * Registers this instance with its internally kept {@link EventChannel}.
    */
   public void registerWithChannel() {
-    this.channel.registerAsyncListener(JndiConsts.JNDI_CLIENT_PUBLISH, this);
-    this.channel.registerAsyncListener(JndiConsts.JNDI_SERVER_DISCO, this);
+    this.channel.registerAsyncListener(JNDIConsts.JNDI_CLIENT_PUBLISH, this);
+    this.channel.registerAsyncListener(JNDIConsts.JNDI_SERVER_DISCO, this);
   }
   
   /**
@@ -59,21 +59,21 @@ public class ClientListener implements AsyncEventListener {
   }
 
   /**
-   * This method expects {@link RemoteEvent}s of type {@link JndiConsts#JNDI_CLIENT_PUBLISH}.
+   * This method expects {@link RemoteEvent}s of type {@link JNDIConsts#JNDI_CLIENT_PUBLISH}.
    * 
    * @param evt a {@link RemoteEvent}.
    */
   public void onAsyncEvent(RemoteEvent evt) {
-    if (evt.getType().equals(JndiConsts.JNDI_CLIENT_PUBLISH)) {
+    if (evt.getType().equals(JNDIConsts.JNDI_CLIENT_PUBLISH)) {
       ServerAddress addr = channel.getView().getAddressFor(evt.getNode());
 
       try {
         if (addr != null) {        
           log.debug("Dispatching JNDI discovery event to expecting client: ", addr);
-          channel.dispatch(addr, JndiConsts.JNDI_SERVER_DISCO, serverAddress);          
+          channel.dispatch(addr, JNDIConsts.JNDI_SERVER_DISCO, serverAddress);          
         } else{
           log.debug("Dispatching JNDI discovery event to whole domain");
-          channel.dispatch(JndiConsts.JNDI_SERVER_DISCO, serverAddress);
+          channel.dispatch(JNDIConsts.JNDI_SERVER_DISCO, serverAddress);
         }
       } catch (IOException e) {
         log.error("Could not dispatch client presence", e);

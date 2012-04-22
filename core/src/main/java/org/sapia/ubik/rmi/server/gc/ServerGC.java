@@ -3,7 +3,6 @@ package org.sapia.ubik.rmi.server.gc;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.sapia.ubik.log.Category;
@@ -47,16 +46,13 @@ public class ServerGC implements Module, Task, ServerGCMBean {
                                            getClass(), 
                                            "RefPerMin", 
                                            "The number of remote references registered per minute")
-                                           .sampleRate(TimeUnit.MILLISECONDS.convert(2, TimeUnit.MINUTES))
                                            .perMinute().build();
   
   private Hits          gcDerefPerMin  = Stats.getInstance().getHitsBuilder(
                                            getClass(), 
                                            "DeRefPerMin", 
                                            "The number of remote references that are de registered per minute")
-                                           .sampleRate(TimeUnit.MILLISECONDS.convert(2, TimeUnit.MINUTES))
                                            .perMinute().build();
-
   
   
   private Map<VmId, ClientInfo> clientTable = new ConcurrentHashMap<VmId, ClientInfo>();

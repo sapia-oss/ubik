@@ -152,6 +152,7 @@ public class EventChannel {
    * @see BroadcastDispatcher
    */
   public EventChannel(String domain, Props config) throws IOException {
+  	config.addSystemProperties();
     consumer  = new EventConsumer(domain);
     unicast   = DispatcherFactory.createUnicastDispatcher(consumer, config);
     broadcast = DispatcherFactory.createBroadcastDispatcher(consumer, config);
@@ -507,7 +508,7 @@ public class EventChannel {
   		Set<SynchronousControlResponse> toReturn = new HashSet<SynchronousControlResponse>();
   		for(int i = 0; i < responses.count(); i++) {
   			Response r = responses.get(i);
-  			if(!r.isNone() && !r.isError()) {
+  			if(!r.isNone() && !r.isError() && r.getData() != null) {
   				toReturn.add((SynchronousControlResponse) r.getData());
   			} 
   		}

@@ -21,14 +21,14 @@ public class ExecQueue<T extends Executable> {
   private volatile boolean shutdown;
   private Hits             insertionsBerSecond = Stats.getInstance().getHitsBuilder(
                                                    getClass(), 
-                                                   "InserstionsPerSec", 
+                                                   "InsertionsPerSec", 
                                                    "Number of queue insertions per second")
                                                    .perSecond().build();
   
   private Hits             removalsBerSecond   = Stats.getInstance().getHitsBuilder(
                                                    getClass(), 
-                                                   "InserstionsPerSec", 
-                                                   "Number of queue insertions per second")
+                                                   "RemovalsPerSec", 
+                                                   "Number of queue removals per second")
                                                    .perSecond().build();  
   
   public ExecQueue() {

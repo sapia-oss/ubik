@@ -161,19 +161,39 @@ public class TCPUnicastDispatcher implements UnicastDispatcher {
             queue.add((Response) doSend(addr, evt, true, type));
           } catch (ClassNotFoundException e) {
             log.error("Could not deserialize response received from " + addr, e);
-            queue.add(new Response(evt.getId(), e));      
+            try {
+            	queue.add(new Response(evt.getId(), e));
+            } catch (IllegalStateException ise) {
+            	log.info("Could not add response to queue", ise, new Object[]{});
+            }
           } catch (TimeoutException e) {
             log.error("Response from %s not received in timely manner", addr);
-            queue.add(new Response(evt.getId(), e).setStatusSuspect());
+            try {
+            	queue.add(new Response(evt.getId(), e).setStatusSuspect());
+            } catch (IllegalStateException ise) {
+            	log.info("Could not add response to queue", ise, new Object[]{});
+            }            	
           } catch (ConnectException e) {
             log.error("Remote node probably down: %s" + addr, e);
-            queue.add(new Response(evt.getId(), e).setStatusSuspect()); 
+            try {
+            	queue.add(new Response(evt.getId(), e).setStatusSuspect());
+            } catch (IllegalStateException ise) {
+            	log.info("Could not add response to queue", ise, new Object[]{});
+            }            	
           } catch (RemoteException e) {
             log.error("Remote node probably down: %s" + addr, e);
-            queue.add(new Response(evt.getId(), e).setStatusSuspect());
+            try {
+            	queue.add(new Response(evt.getId(), e).setStatusSuspect());
+            } catch (IllegalStateException ise) {
+            	log.info("Could not add response to queue", ise, new Object[]{});
+            }             
           } catch (IOException e) {
             log.error("IO error caught trying to send to %s" + addr, e);
-            queue.add(new Response(evt.getId(), e)); 
+            try {
+            	queue.add(new Response(evt.getId(), e));
+            } catch (IllegalStateException ise) {
+            	log.info("Could not add response to queue", ise, new Object[]{});
+            }
           } catch (InterruptedException e) {
             ThreadInterruptedException tie = new ThreadInterruptedException();
             tie.fillInStackTrace();

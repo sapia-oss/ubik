@@ -1,6 +1,6 @@
 package org.sapia.ubik.rmi.server.stats;
 
-
+import org.sapia.ubik.util.Clock;
 
 /**
  * An instance of this class is used to calculate the duration of
@@ -20,31 +20,23 @@ package org.sapia.ubik.rmi.server.stats;
  * @author Yanick Duchesne
  */
 public class Timer implements StatCapable {
+	
+	private Clock 						clock;
   private ThreadLocal<Long> start = new ThreadLocal<Long>();
-  private Statistic  stat;
+  private Statistic  			  stat;
   
   /**
    * Constructor for Topic.
    */
-  Timer(Statistic stat) {
-    this.stat = stat;
-    start.set(System.currentTimeMillis());
+  Timer(Statistic stat, Clock clock) {
+  	this.clock = clock;
+    this.stat  = stat;
+    start.set(clock.nanoTime());
   }
   
-  /**
-   * @return this instance's source.
-   */
   @Override
-  public String getSource() {
-    return stat.getSource();
-  }
-  
-  /**
-   * @return the name of this instance.
-   */
-  @Override  
-  public String getName() {
-    return stat.getName();
+  public StatisticKey getKey() {
+    return stat.getKey();
   }
   
   /**
@@ -60,7 +52,7 @@ public class Timer implements StatCapable {
    */
   public void start() {
     if(stat.enabled) {
-      start.set(System.currentTimeMillis());
+      start.set(clock.nanoTime());
     }
   }
 
@@ -71,14 +63,11 @@ public class Timer implements StatCapable {
    * 
    * @see #start()
    */
-  public long end() {
+  public double end() {
     if(stat.enabled) {
-      long duration = System.currentTimeMillis() - start.get();
-      if(duration > 0) { 
-        stat.incrementLong(duration);
-        return duration;
-      }
-      return 0;
+      double duration = StatsTimeUnit.MILLISECONDS.convertFrom(clock.nanoTime() - start.get(), StatsTimeUnit.NANOSECONDS);
+      stat.incrementDouble(duration);
+      return duration;
     }
     return 0;
   }
@@ -124,6 +113,6 @@ public class Timer implements StatCapable {
    * @see java.lang.Comparable#compareTo(Object)
    */
   public int compareTo(StatCapable other) {
-    return getName().compareTo(other.getName());
+  	return stat.getKey().compareTo(other.getKey());
   }
 }

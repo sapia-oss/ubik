@@ -1,29 +1,28 @@
 package org.sapia.ubik.rmi.server.stats;
 
+/**
+ * An immutable {@link StatCapable} implementation.
+ * 
+ * @author yduchesne
+ *
+ */
 class ImmutableStat implements StatCapable, Comparable<StatCapable>{
+	
+	private   StatisticKey key;
+  private   String  		 description;
+  protected double  		 value;
+  private   boolean 		 isEnabled;
   
-  private String  source;
-  private String  name;
-  private String  description;
-  private double  value;
-  private boolean isEnabled;
-  
-  public ImmutableStat(String source, String name, String description, double value, boolean isEnabled) {
-    this.source      = source;
-    this.name        = name;
+  ImmutableStat(StatisticKey key, String description, double value, boolean isEnabled) {
+  	this.key         = key;
     this.description = description;
     this.value       = value;
     this.isEnabled   = isEnabled;
   }
-  
+
   @Override
-  public String getSource() {
-    return source;
-  }
-   
-  @Override
-  public String getName() {
-    return name;
+  public StatisticKey getKey() {
+    return key;
   }
   
   @Override
@@ -36,15 +35,15 @@ class ImmutableStat implements StatCapable, Comparable<StatCapable>{
     return value;
   }
   
+  @Override
   public boolean isEnabled() {
     return isEnabled;
   }
   
   public int compareTo(StatCapable other) {
-    
-    int c = source.compareTo(other.getSource());
+    int c = key.getSource().compareTo(other.getKey().getSource());
     if(c == 0) {
-      c = name.compareTo(other.getName());
+      c = key.getName().compareTo(other.getKey().getName());
     }
     return c;
   }

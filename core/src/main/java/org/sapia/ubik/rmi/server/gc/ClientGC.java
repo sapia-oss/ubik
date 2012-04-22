@@ -82,28 +82,24 @@ public class ClientGC implements Module, Task, ClientGCMBean {
                                    getClass(), 
                                    "ConnectionsPerMin", 
                                    "The number of connections per minute create to send GC commands")
-                                   .sampleRate(gcInterval)
                                    .perMinute().build();
     
     this.gcRefPerMin           = Stats.getInstance().getHitsBuilder(
                                    getClass(),
                                    "RefPerMin",
                                    "The number of remote object that are referenced per minute")
-                                   .sampleRate(gcInterval)
                                    .perMinute().build();
 
     this.gcDerefPerMin         = Stats.getInstance().getHitsBuilder(
                                    getClass(), 
                                    "DerefPerMin",
                                    "The number of remote object that are dereferenced per minute")
-                                   .sampleRate(gcInterval)
                                    .perMinute().build();
     
     this.forcedGcPerHour       = Stats.getInstance().getHitsBuilder(
                                    getClass(),
                                   "ForcedGcPerHour",
                                   "The number of forced JVM gc per hour")
-                                  .sampleRate(gcInterval)
                                   .perHour().build();
     
     context.registerMbean(this);

@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.concurrent.TimeUnit;
 
 import org.sapia.ubik.module.Module;
 import org.sapia.ubik.module.ModuleContext;
@@ -41,12 +42,13 @@ public class StatsModule implements Module {
       long dumpInterval = props.getLongProperty(Consts.STATS_DUMP_INTERVAL, 0);
       if(dumpInterval > 0){
         statsLog = new StatsLogOutput();
-        dumpInterval = dumpInterval * 1000;
+        dumpInterval = TimeUnit.MILLISECONDS.convert(dumpInterval, TimeUnit.SECONDS);
         Task task = new Task(){
           public void exec(TaskContext ctx) {
             long currentTime = System.currentTimeMillis();
             String startTime = dateFor(lastDumpTime);
             String endTime   = dateFor(currentTime);
+            
             for(StatCapable stat : Stats.getInstance().getStatistics()){
               if(stat.isEnabled()){
                 statsLog.log(format(stat, startTime, endTime));
@@ -74,9 +76,9 @@ public class StatsModule implements Module {
       .append(",")
       .append(field(endTime))
       .append(",")
-      .append(field(stat.getSource()))
+      .append(field(stat.getKey().getSource()))
       .append(",")
-      .append(field(stat.getName()))
+      .append(field(stat.getKey().getName()))
       .append(",")
       .append(field(stat.getDescription()))
       .append(",")

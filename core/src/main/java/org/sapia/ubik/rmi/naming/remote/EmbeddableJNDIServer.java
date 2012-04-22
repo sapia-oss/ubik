@@ -50,11 +50,11 @@ public class EmbeddableJNDIServer implements RemoteContextProvider, AsyncEventLi
    * on the "default" domain. Also internally binds its multicast event channel to the
    * default multicast address and port.
    *
-   * @see JndiConsts#DEFAULT_MCAST_ADDR
-   * @see JndiConsts#DEFAULT_MCAST_PORT
+   * @see JNDIConsts#DEFAULT_MCAST_ADDR
+   * @see JNDIConsts#DEFAULT_MCAST_PORT
    */
   public EmbeddableJNDIServer() {
-    this(JndiConsts.DEFAULT_DOMAIN, JndiConsts.DEFAULT_PORT,
+    this(JNDIConsts.DEFAULT_DOMAIN, JNDIConsts.DEFAULT_PORT,
       org.sapia.ubik.rmi.Consts.DEFAULT_MCAST_ADDR,
       org.sapia.ubik.rmi.Consts.DEFAULT_MCAST_PORT);
   }
@@ -63,8 +63,8 @@ public class EmbeddableJNDIServer implements RemoteContextProvider, AsyncEventLi
    * Creates an instance of this class that will listen on the given port and domain.
    * Also internally binds its multicast event channel to the default multicast address and port.
    *
-   * @see JndiConsts#DEFAULT_MCAST_ADDR
-   * @see JndiConsts#DEFAULT_MCAST_PORT
+   * @see JNDIConsts#DEFAULT_MCAST_ADDR
+   * @see JNDIConsts#DEFAULT_MCAST_PORT
    */
   public EmbeddableJNDIServer(String domain, int port) {
     this(
@@ -87,8 +87,8 @@ public class EmbeddableJNDIServer implements RemoteContextProvider, AsyncEventLi
     this.domain      = domain;
     this.port        = port;
     Properties props = new Properties();
-    props.setProperty(JndiConsts.MCAST_ADDR_KEY, mcastAddress);
-    props.setProperty(JndiConsts.MCAST_PORT_KEY, Integer.toString(mcastPort));
+    props.setProperty(JNDIConsts.MCAST_ADDR_KEY, mcastAddress);
+    props.setProperty(JNDIConsts.MCAST_PORT_KEY, Integer.toString(mcastPort));
     try {
       channel = new EventChannel(domain, new Props().addProperties(props).addSystemProperties());
     } catch (IOException e) {
@@ -120,13 +120,13 @@ public class EmbeddableJNDIServer implements RemoteContextProvider, AsyncEventLi
   }
 
   /**
-   * Handles {@link JndiConsts#JNDI_CLIENT_PUBLISH} remote events. Dispatches {@link JndiConsts#JNDI_SERVER_DISCO}
+   * Handles {@link JNDIConsts#JNDI_CLIENT_PUBLISH} remote events. Dispatches {@link JNDIConsts#JNDI_SERVER_DISCO}
    * remote events in response.
    */
   public void onAsyncEvent(RemoteEvent evt) {
-    if(evt.getType().equals(JndiConsts.JNDI_CLIENT_PUBLISH)){
+    if(evt.getType().equals(JNDIConsts.JNDI_CLIENT_PUBLISH)){
       try{
-        channel.dispatch(JndiConsts.JNDI_SERVER_DISCO,
+        channel.dispatch(JNDIConsts.JNDI_SERVER_DISCO,
             new TCPAddress(MultiplexSocketTransportProvider.MPLEX_TRANSPORT_TYPE, Localhost.getAnyLocalAddress().getHostAddress(), port));
       }catch(Exception e){
         log.warning("Could not dispatch JNDI server publishing event", e);
@@ -190,11 +190,11 @@ public class EmbeddableJNDIServer implements RemoteContextProvider, AsyncEventLi
     		channel.start();
     	}
       
-      channel.registerAsyncListener(JndiConsts.JNDI_CLIENT_PUBLISH, this);
+      channel.registerAsyncListener(JNDIConsts.JNDI_CLIENT_PUBLISH, this);
 
-      channel.dispatch(JndiConsts.JNDI_SERVER_PUBLISH,
+      channel.dispatch(JNDIConsts.JNDI_SERVER_PUBLISH,
           new TCPAddress(MultiplexSocketTransportProvider.MPLEX_TRANSPORT_TYPE, Localhost.getAnyLocalAddress().getHostAddress(), port));
-      channel.dispatch(JndiConsts.JNDI_SERVER_DISCO,
+      channel.dispatch(JNDIConsts.JNDI_SERVER_DISCO,
           new TCPAddress(MultiplexSocketTransportProvider.MPLEX_TRANSPORT_TYPE, Localhost.getAnyLocalAddress().getHostAddress(), port));
 
       root = UbikRemoteContext.newInstance(channel);

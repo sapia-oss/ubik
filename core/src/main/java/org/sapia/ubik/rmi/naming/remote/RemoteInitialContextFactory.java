@@ -112,7 +112,7 @@ import org.sapia.ubik.util.Props;
  */
 
 @SuppressWarnings(value="unchecked")
-public class RemoteInitialContextFactory implements InitialContextFactory, JndiConsts {
+public class RemoteInitialContextFactory implements InitialContextFactory, JNDIConsts {
   private String scheme = ServiceLocator.UBIK_SCHEME;
   
   public RemoteInitialContextFactory() {
@@ -148,7 +148,7 @@ public class RemoteInitialContextFactory implements InitialContextFactory, JndiC
     
     uri.setScheme(scheme);
     
-    String domain = allProps.getProperty(UBIK_DOMAIN_NAME, JndiConsts.DEFAULT_DOMAIN);
+    String domain = allProps.getProperty(UBIK_DOMAIN_NAME, JNDIConsts.DEFAULT_DOMAIN);
     
     EventChannel ec = null;
     RemoteContext ctx = null;

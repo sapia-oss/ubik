@@ -18,12 +18,12 @@ public final class JNDIContextBuilder {
 	
 	private Properties properties = new Properties();
 	
-	private String domain  = JndiConsts.DEFAULT_DOMAIN;
+	private String domain  = JNDIConsts.DEFAULT_DOMAIN;
 	private String host;
-	private int 	 port    = JndiConsts.DEFAULT_PORT;
+	private int 	 port    = JNDIConsts.DEFAULT_PORT;
 	
 	/**
-	 * @param domain the domain of the JNDI server to which to connect (defaults to {@link JndiConsts#DEFAULT_DOMAIN}.
+	 * @param domain the domain of the JNDI server to which to connect (defaults to {@link JNDIConsts#DEFAULT_DOMAIN}.
 	 * @return this instance.
 	 */
 	public JNDIContextBuilder domain(String domain) {
@@ -41,7 +41,7 @@ public final class JNDIContextBuilder {
 	}
 	
 	/**
-	 * @param port the port of the JNDI server to connect to (defaults to {@link JndiConsts#DEFAULT_PORT}.
+	 * @param port the port of the JNDI server to connect to (defaults to {@link JNDIConsts#DEFAULT_PORT}.
 	 * @return this instance.
 	 */
 	public JNDIContextBuilder port(int port) {
@@ -61,6 +61,17 @@ public final class JNDIContextBuilder {
 		this.properties.setProperty(name, value);
 		return this;
 	}
+	
+	/**
+	 * @param props some {@link Properties} to copy to this instance's own properties.
+	 * @return this instance.
+	 */
+	public JNDIContextBuilder properties(Properties props) {
+		for (String name : props.stringPropertyNames()) {
+			this.properties.setProperty(name, props.getProperty(name));
+		}
+		return this;
+	}
 
 	/**
 	 * @return a new JNDI {@link Context}, which may be used to perform lookup.
@@ -76,7 +87,7 @@ public final class JNDIContextBuilder {
     InitialContext ctx = new InitialContext(props);
     return ctx;
 	}
-
+	
 	/**
 	 * @return a new instance of this class.
 	 */
