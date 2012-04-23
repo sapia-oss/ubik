@@ -11,8 +11,6 @@ import java.util.Properties;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.sapia.ubik.log.IncludeClassFilter;
-import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.EventChannel.Role;
 import org.sapia.ubik.mcast.control.ControllerContext;
 import org.sapia.ubik.mcast.control.EventChannelControllerListener;
@@ -34,7 +32,7 @@ public class EventChannelControlAlgoTest {
 		channels = new ArrayList<EventChannel>();
 		listener = new TestControllerListener();
 		
-		for (int i = 0; i < 100; i++) {
+		for (int i = 0; i < 20; i++) {
 			EventChannel channel = createChannel();
 			channels.add(channel);
 			channel.getController().getContext().addControllerListener(listener);
@@ -98,6 +96,7 @@ public class EventChannelControlAlgoTest {
 	
 	private EventChannel createChannel() throws Exception {
     Properties properties = new Properties();
+    properties.setProperty(Consts.MCAST_CONTROL_BATCH_SIZE, Integer.toString(3));
     properties.setProperty(Consts.BROADCAST_PROVIDER, Consts.BROADCAST_PROVIDER_MEMORY);
     properties.setProperty(Consts.UNICAST_PROVIDER, Consts.UNICAST_PROVIDER_MEMORY);
     EventChannel channel = new TestEventChannel("test", new Props().addProperties(properties));
