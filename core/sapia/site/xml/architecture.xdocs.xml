@@ -34,8 +34,9 @@
       <sapia:vitem name="Logging" href="customization.html#logging" />    
       <sapia:vitem name="Stats" href="customization.html#stats" />
       <sapia:vitem name="JMX" href="customization.html#jmx" />
-      <sapia:vitem name="Stubs" href="customization.html#stubs" />    
-    </sapia:vsection>          
+      <sapia:vitem name="Stubs" href="customization.html#stubs" />
+      <sapia:vitem name="Callbacks" href="customization.html#callbacks" />    
+    </sapia:vsection>           
     
     <sapia:vsection name="FAQ" href="faq.html">
       <sapia:vitem name="Licensing" href="faq.html#licensing" />    

@@ -72,38 +72,22 @@ public class BaseFileLogOutput implements LogOutput {
   @Override
   public void log(String msg) {
     if(output == null || closed) {
-      try {
-        createOutput();
-      } catch (FileNotFoundException e) {
-        throw new IllegalStateException("Could not create log file", e);
-      }
+      createOutput();
     }
     output.write(msg);
     if(logCounter.incrementAndGet() >= logCheckInterval) {
-      try {
-        rotate();
-      } catch (FileNotFoundException e) {
-        throw new IllegalStateException("Could not rotate log file", e);
-      }
+      rotate();
     }
   }
   
   @Override
   public void log(Throwable error) {
     if(output == null || closed) {
-      try {
-        createOutput();
-      } catch (FileNotFoundException e) {
-        throw new IllegalStateException("Could not create log file", e);
-      }
+      createOutput();
     }
     output.write(error);
     if(logCounter.incrementAndGet() >= logCheckInterval) {
-      try {
-        rotate();
-      } catch (FileNotFoundException e) {
-        throw new IllegalStateException("Could not rotate log file", e);
-      }
+      rotate();
     }
   }
   
@@ -115,18 +99,28 @@ public class BaseFileLogOutput implements LogOutput {
     closed = true;    
   }
   
-  private synchronized void createOutput() throws FileNotFoundException {
+  final void setLogCheckInterval(int logCheckInterval) {
+	  this.logCheckInterval = logCheckInterval;
+  }
+  
+  final Config getConf() {
+	  return conf;
+  }
+  
+  final int getFileCounter() {
+  	return fileCounter.get();
+  }
+  
+  private synchronized void createOutput() {
     if(output == null || closed) {
       currentLogFile = new File(conf.getLogDirectory(), conf.getLogFileName() + ".log");
-      PrintWriter stream = new PrintWriter(currentLogFile);
-      StreamFileWriter writer = new StreamFileWriter(stream);
-      output = writer;
+      output = createFileWriter(currentLogFile);
       closed = false;
     } 
   }
   
-  private synchronized void rotate() throws FileNotFoundException {
-    if(currentLogFile.length() >= ONE_MEG * conf.getMaxFileSize()) {
+  private synchronized void rotate() {
+    if(isMaxSizeReached(currentLogFile)) {
       InMemoryFileWriter inMemory = new InMemoryFileWriter();
       FileWriter oldOutput = output;
       output = inMemory;
@@ -135,16 +129,15 @@ public class BaseFileLogOutput implements LogOutput {
       if(fileCounter.incrementAndGet() > conf.getMaxArchive()) {
         fileCounter.set(1);
       }
+      
       File backLogFile = new File(conf.getLogDirectory(), conf.getLogFileName() + "-" + fileCounter + ".log");
-      if(backLogFile.exists()) { 
-        backLogFile.delete(); 
-      }
-      currentLogFile.renameTo(backLogFile);
+      deleteIfExists(backLogFile);
+      rename(currentLogFile, backLogFile);
+      
       currentLogFile = new File(conf.getLogDirectory(), conf.getLogFileName() + ".log");
       
       synchronized(inMemory) {
-        PrintWriter stream = new PrintWriter(currentLogFile);
-        FileWriter newOutput = new StreamFileWriter(stream);
+        FileWriter newOutput = createFileWriter(currentLogFile);
         inMemory.flushTo(newOutput);
         output = newOutput;
       }
@@ -156,6 +149,31 @@ public class BaseFileLogOutput implements LogOutput {
       }
       logCounter.set(0);
     }
+  }
+  
+  protected FileWriter createFileWriter(File target) {
+  	try {
+      PrintWriter stream = new PrintWriter(target);
+      return new StreamFileWriter(stream);  	
+  	} catch (FileNotFoundException e) {
+  		System.out.println("Could not create log file, will log to DEV/NULL");
+  		e.printStackTrace();
+  		return new NullFileWriter();
+  	}
+  }
+  
+  protected boolean isMaxSizeReached(File currentLogFile) {
+  	return currentLogFile.length() >= ONE_MEG * conf.getMaxFileSize();
+  }
+  
+  protected void deleteIfExists(File file) {
+    if(file.exists()) { 
+      file.delete(); 
+    }
+  }
+  
+  protected void rename(File toRename, File to) {
+  	toRename.renameTo(to);
   }
   
   // ==========================================================================
@@ -234,7 +252,7 @@ public class BaseFileLogOutput implements LogOutput {
 
   // --------------------------------------------------------------------------
   
-  private interface FileWriter {
+  interface FileWriter {
     
     public void write(String content);
     
@@ -243,6 +261,24 @@ public class BaseFileLogOutput implements LogOutput {
     public void close();
     
   }
+  
+  // --------------------------------------------------------------------------
+  
+  class NullFileWriter implements FileWriter {
+
+    @Override	
+    public void write(String content){
+    }
+    
+    @Override    
+    public void write(Throwable err) {
+    }
+    
+    @Override	    
+    public void close() {
+    }
+    
+  }  
   
   // --------------------------------------------------------------------------
   
@@ -276,22 +312,28 @@ public class BaseFileLogOutput implements LogOutput {
   
   class InMemoryFileWriter implements FileWriter {
     
+  	private static final int MAX_LINES = 1000;
+  	
     private List<String> lines = new ArrayList<String>();
     
     @Override
     public synchronized void write(String content) {
-      lines.add(content);
+    	if (lines.size() >= MAX_LINES) {
+    		lines.remove(0);
+    	}
+  		lines.add(content);
     }
     
     @Override
     public synchronized void write(Throwable err) {
-      lines.add(Exceptions.stackTraceToString(err));
+      write(Exceptions.stackTraceToString(err));
     }
     
     public synchronized void flushTo(FileWriter other) {
       for(String line : lines) {
         other.write(line);
       }
+      lines.clear();
     }
     
     @Override

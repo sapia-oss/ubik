@@ -8,7 +8,9 @@ import org.sapia.ubik.util.Clock;
 import org.sapia.ubik.util.Clock.SystemClock;
 
 /**
- * Calculates hits per second. 
+ * Calculates hits per unit of time.
+ * 
+ * @see StatsTimeUnit
  * 
  * @author yduchesne
  *
@@ -17,6 +19,7 @@ public class HitsStatistic extends Statistic implements StatCapable {
   
   /**
    * Use to build an instance of this class.
+   * 
    * @author yduchesne
    *
    */
@@ -124,6 +127,10 @@ public class HitsStatistic extends Statistic implements StatCapable {
     return startTime.get();
   }
   
+  /**
+   * @return the average hits per unit of time, over the time period since this was last called.
+   */
+  @Override
   public synchronized double getStat() {
     long   start         = startTime.get();
     double elapsedMillis = convertToMillis(clock.nanoTime() - start);

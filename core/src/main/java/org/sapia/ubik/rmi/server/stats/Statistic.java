@@ -136,7 +136,7 @@ public class Statistic {
   }
   
   public String toString(){
-    return "[" + key.getName() + " = "+ value + "]";
+    return key.toString();
   }
   
   private void doIncrementLong(long inc){

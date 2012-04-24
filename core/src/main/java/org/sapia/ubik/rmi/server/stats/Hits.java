@@ -2,7 +2,8 @@ package org.sapia.ubik.rmi.server.stats;
 
 
 /**
- * Calculates hits per second. 
+ * Wraps a {@link HitsStatistic}: provides {@link #hit()} methods that perform the necessary logic and
+ * hides {@link HitsStatistic} mutators.
  * 
  * @author yduchesne
  *
@@ -35,6 +36,9 @@ public class Hits implements StatCapable {
   public void hit(int increment){
     stat.increment(increment);
   }    
+  
+  // --------------------------------------------------------------------------
+  // StatsCapable interface
   
   @Override
   public boolean isEnabled() {

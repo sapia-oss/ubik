@@ -34,8 +34,9 @@
       <sapia:vitem name="Logging" href="customization.html#logging" />    
       <sapia:vitem name="Stats" href="customization.html#stats" />
       <sapia:vitem name="JMX" href="customization.html#jmx" />
-      <sapia:vitem name="Stubs" href="customization.html#stubs" />    
-    </sapia:vsection>          
+      <sapia:vitem name="Stubs" href="customization.html#stubs" />
+      <sapia:vitem name="Callbacks" href="customization.html#callbacks" />    
+    </sapia:vsection>                 
     
     <sapia:vsection name="FAQ" href="faq.html">
       <sapia:vitem name="Licensing" href="faq.html#licensing" />    
@@ -80,21 +81,14 @@
       </sapia:sect-desc>
       
       <sapia:sect3 title="Is Ubik fast?">
-        <p>All other things equal, we cannot claim that Ubik is as fast as a network communication framework built for message
-        compactness and low-latency - such as Google's Protocol Buffers. Ubik's goal is to provide reliable, robust object remoting 
-        that's fast enough for most cases.</p>
-        <p>We've integrated the <a href="http://www.jboss.org/serialization/">JBoss Serialization</a> library, and most if not all of Ubik built-in serializable objects implement the <sapia:class>java.io.Externalizable</sapia:class>
-        interface - we recommend you do the same in your applications.</p>
-        <p>Also, do not abuse remote objects. These should be reserved for implementing reliable services: remote method calls on such services should use pass-by-value as much
-        as possible.</p>
+  	    <p>We've taken precautions to ensure that Ubik is fast: Ubik relies on <a href="http://www.jboss.org/serialization/">JBoss Serialization</a> by default - rather than Java's own serialization. 
+  	    Also, most if not all of Ubik built-in serializable objects implement the <sapia:class>java.io.Externalizable</sapia:class> interface.</p>
       </sapia:sect3>
       
       <sapia:sect3 title="Is Ubik scalable?">
-        <p>Qualitatively speaking, Ubik has features that make it scalable and minimize configuration hassle: it features dynamic discovery, distributed JNDI and
-        smart stubs (which perform failover and load-balancing transparently) to maximize service availability and share load among multiple service instances. 
-        Ubik also supports <a href="tutorial.html#callbacks">callbacks</a>.
-        </p>
-        
+        <p>Yes. Ubik has features that allow it to scale across the board (from the system and administration standpoints): distributed JNDI tree that guarantees 
+        availabity in case one node fails; smart stubs supporting failover, load balancing and dynamic discovery; a <a href="transport/nio_tcp.html">NIO transport</a>; 
+        and support for <a href="tutorial.html#callbacks">callbacks</a>.</p>       
       </sapia:sect3>      
 
     </sapia:sect2>
@@ -104,6 +98,24 @@
         This section addresses questions pertaining to Ubik networking.
       </sapia:sect-desc>
 
+	  <sapia:sect3 title="My client can't seem to be able to connect to my server. What's happening?">
+	  	<p>
+	  	 	This often is observed when you server is running on a machine with multiple network interfaces: by default, Ubik will bind to all 
+	  	 	interfaces, but then only of these addresses will be chosen to be returned as part of stubs sent back to clients. It might be that Ubik's
+	  	 	best attempt at picking such an address is not good enough, and that the address that's returned is one to which some clients cannot connect.
+	  	 	In such a case, you need to configure the <tt>ubik.rmi.address-pattern</tt> JVM property, which specifies (through a regexp), which address
+	  	 	to select. Here are a few example regexps:
+	  	</p>
+	  
+	  	<sapia:code>\\d{3}\\.\\d{3}\\.\\d{3}\\.\\d{3}
+10\\.10\\.\\d+\\.\\d+
+192\\.168\\.\\d+\\.\\d+</sapia:code>
+
+		<p>
+			
+		</p>
+	  
+	  </sapia:sect3>
       <sapia:sect3 title="Multicast does not seem to work. Any workaround?">
         <p>
            The explanation that comes to mind is that your network is not set up to support IP multicast - or that multicast is not supported
@@ -143,20 +155,11 @@
            one of the node from which the request emanates: if it comes first alphabetically, it will deny the request - else it will grant it and remain slave itself.
         </p>
         <p>
-           Since node identifier are 128 bit UUIDs, there's a very <a href="http://en.wikipedia.org/wiki/Universally_unique_identifier#Random_UUID_probability_of_duplicates">infinitesimal probability</a> 
+           Since node identifiers are 128 bit UUIDs, there's a very <a href="http://en.wikipedia.org/wiki/Universally_unique_identifier#Random_UUID_probability_of_duplicates">infinitesimal probability</a> 
            of having two such identifiers that are the same.
         </p>
       </sapia:sect3>
     </sapia:sect2>
     
-    <sapia:sect2 title="Miscellaneous" alias="misc">
-      <sect-desc>This section groups questions that do not fall into any specific category.</sect-desc>
-
-	  <sapia:sect3 title="No">
-	  
-	  </sapia:sect3>      
-    
-    </sapia:sect2>
-
   </sapia:sect1>
 </sapia:page>

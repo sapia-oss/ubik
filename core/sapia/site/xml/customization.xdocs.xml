@@ -34,7 +34,8 @@
       <sapia:vitem name="Logging" href="customization.html#logging" />    
       <sapia:vitem name="Stats" href="customization.html#stats" />
       <sapia:vitem name="JMX" href="customization.html#jmx" />
-      <sapia:vitem name="Stubs" href="customization.html#stubs" />    
+      <sapia:vitem name="Stubs" href="customization.html#stubs" />
+      <sapia:vitem name="Callbacks" href="customization.html#callbacks" />    
     </sapia:vsection>          
     
     <sapia:vsection name="FAQ" href="faq.html">
@@ -198,6 +199,23 @@
 			
 		</sapia:sect3>		
     
+    </sapia:sect2>
+    
+    <sapia:sect2 title="Callbacks" alias="callbacks">
+    	<p>The support for <a href="tutorial.html#callbacks">callbacks</a> in Ubik can be further customized with specific JVM properties: </p>
+    	<ul>
+    		<li><tt>ubik.rmi.server.callback.max-threads</tt>: indicates how many threads (the default is 5) should be used to process incoming callback 
+    		remote method calls. Such calls are processed asynchronously: their corresponding commands are put on a queue, where they sit until they're
+    		processed. It is threads impacted by this property that do this processing. If using callbacks, you should benchmark you're application against
+    		expected levels of traffic, and determine the best configuration for you.
+    		</li>
+    		
+    		<li><tt>ubik.rmi.server.callback.outqueue.threads</tt>: indicates how many threads (default is 2) are used to send responses corresponding to the
+    		return value of remote method calls invoked through callbacks. When the thread that processes a callback is finished, it will put the
+    		result on an outgoing queue. The threads configured by this property are in turn in charge of relaying these results (in the form of callback 
+    		responses) to the appropriate clients. It is important that the number of such threads be configured appropriately. Again, you should test
+    		to find the optimal configuration.</li>
+    	</ul>
     </sapia:sect2>
     
   </sapia:sect1>

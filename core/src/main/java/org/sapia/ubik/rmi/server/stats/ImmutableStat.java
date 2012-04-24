@@ -40,6 +40,7 @@ class ImmutableStat implements StatCapable, Comparable<StatCapable>{
     return isEnabled;
   }
   
+  @Override
   public int compareTo(StatCapable other) {
     int c = key.getSource().compareTo(other.getKey().getSource());
     if(c == 0) {

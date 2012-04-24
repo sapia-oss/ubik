@@ -14,6 +14,9 @@ import org.sapia.ubik.util.Clock;
  *  t.end();
  *  System.out.println(t.getValue());
  * </pre>
+ * <p>
+ * An instance of this class is thread-safe.
+ * 
  * 
  * @see Stats
  * 

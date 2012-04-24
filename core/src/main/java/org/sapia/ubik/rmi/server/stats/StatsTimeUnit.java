@@ -72,9 +72,5 @@ public enum StatsTimeUnit {
   public static double getConversionFactor(StatsTimeUnit from, StatsTimeUnit to) {
     return to.convertFrom(1, from);
   }
-  
-  public static void main(String[] args) {
-	  System.out.println(StatsTimeUnit.MILLISECONDS.convertFrom(50000, StatsTimeUnit.NANOSECONDS));
-  }
 
 }
