@@ -40,7 +40,6 @@
     <sapia:vsection name="FAQ" href="faq.html">
       <sapia:vitem name="Licensing" href="faq.html#licensing" />    
       <sapia:vitem name="Networking" href="faq.html#networking" />
-      <sapia:vitem name="Misc" href="faq.html#misc" />    
     </sapia:vsection>
     
     <sapia:vsection name="Javadoc" href="maven/api/index.html"/>
@@ -75,8 +74,16 @@
         indicate to Ubik which one to use. That regular expression must be specified as a 
         JVM property, under the <sapia:command>ubik.rmi.address-pattern</sapia:command>
         key. If no address could be found that matches the given regexp, then Ubik also
-        resorts to localhost.
+        resorts to localhost. Here are a few regexps:
       </p>
+	  	<sapia:code>\\d{3}\\.\\d{3}\\.\\d{3}\\.\\d{3}
+10\\.10\\.\\d+\\.\\d+
+192\\.168\\.\\d+\\.\\d+</sapia:code>
+
+		<p>Note the double backslashes: in Java the backslash is an escape character, therefore it must be doubled in 
+		order to be treated as a normal character.</p>      
+      
+      
     </sapia:sect2>
     <sapia:sect2 title="Interception" alias="interception">
       <p>The <b>Interceptor</b> pattern describes the transparent insertion of "custom" behavior at specific 
@@ -164,10 +171,7 @@ public class HitCountInterceptor implements Interceptor {
 // the hitInterceptor variable is an 
 // instance of HitCountInterceptor
  
-Hub.getModules().getServerRuntime().
-    dispatcher.
-        addInterceptor(ServerPreInvokeEvent.class, 
-                       hitInterceptor);        
+Hub.getModules().getServerRuntime().addInterceptor(ServerPreInvokeEvent.class, hitInterceptor);        
         </sapia:code>
         
         <p>As can be seen, the <sapia:class><a href="maven/api/org/sapia/ubik/rmi/server/ServerRuntime.html">ServerRuntime</a>
@@ -176,10 +180,7 @@ Hub.getModules().getServerRuntime().
         would take place:</p>
         
         <sapia:code>
-Hub.getModules().getClientRuntime().
-    getDispatcher().
-        addInterceptor(someEventClass,  
-                       someInterceptor);        
+Hub.getModules().getClientRuntime().addInterceptor(someEventClass, someInterceptor);        
         </sapia:code>
         
         <p/>
@@ -187,7 +188,7 @@ Hub.getModules().getClientRuntime().
         Interception events are dispatched <b>synchronously</b>; therefore, it is important that interceptors
         perform their task as fast as possible, in order to minimize the impact on performance. In addition,
         <b>multiple interceptors</b> can be added for a given event class. The interceptors are called in the 
-        order they were added. It is important that subsequent interceptors do not contradict the intended effect 
+        order in which they were added. It is important that subsequent interceptors do not contradict the intended effect 
         of previous ones. It is the application developer's responsibility to use interceptors in a consistent
         manner. Ubik RMI's runtime does not internally use interceptors, a precaution that is taken in order to avoid
         conflict with potential application interceptors.
@@ -202,7 +203,7 @@ Hub.getModules().getClientRuntime().
         registered. The following snippet shows how to dispatch an event:</p>
         
         <sapia:code>
-Hub.getClientRuntime().getDispatcher().dispatchEvent(someEvent);        
+Hub.getClientRuntime().dispatchEvent(someEvent);        
         </sapia:code>
       </sapia:sect3>
     </sapia:sect2>
@@ -297,7 +298,7 @@ public class HelloWorldCommand extends RMICommand {
       
     </sapia:sect2>
     <sapia:sect2 title="Callbacks" alias="callbacks">
-      <p>For servers to be scalable, it is important that they spawn a minimal amount of threads when
+      <p>For servers to be scalable, it is important that they spawn a reasonnable amount of threads when
       handling incoming requests. By default, Ubik RMI servers process all requests (or commands) synchronously:
       when a command is received at the server, it is immediately executed, and the response is sent back
       to the client in the same thread. If the commands execute fast enough and the amount of concurrent clients
@@ -308,6 +309,9 @@ public class HelloWorldCommand extends RMICommand {
       <p>Yet, in this world of massive traffic, uncertain quality of service and heterogeneous system 
       integration, execution speed is the first victim; and the longer it takes to process requests, the
       more they pile up, and the more resources are consumed - expecially threads.</p>
+      
+      <sapia:note>In addition, note that the <a href="transport/nio_tcp.html">NIO transport</a> should preferrably be
+      used: it offers the best scalability guarantees.</sapia:note>
       
       <p>Ubik RMI allows to spare server resources by dividing the work between servers and clients more
       evenly. To do so, it uses callbacks: when a command is received by the server, it is piled locally in 
@@ -321,9 +325,10 @@ public class HelloWorldCommand extends RMICommand {
       the load of remote method invocations more equally among clients and servers. Ubik RMI allows to
       set the number of callback processing threads on the server-side, with the following system property:
       <b><sapia:command>ubik.rmi.callback.max-threads</sapia:command></b>. If the property is not specified, Ubik RMI uses
-      <b>one</b> thread by default - which is probably not what you want.</p>
+      <b>5</b> threads by default - which is probably not what you want (see the <a href="customization.html#callbacks">customization</a> 
+      page for more details).</p>
       
-      <p>To enabled callbacks, the classes of your remote objects must be annotated with the 
+      <p>To enable callbacks, the classes of your remote objects must be annotated with the 
       <sapia:class link="maven/api/org/sapia/ubik/rmi/Callback.html">@Callback</sapia:class> annotation. In addition, you must set the 
       <b><sapia:command>ubik.rmi.callback.enabled</sapia:command></b> system property to <sapia:command>true</sapia:command> - <b>this property
       must be set both on the client and server sides</b>. The requirement to set it on the client-side stems from the fact

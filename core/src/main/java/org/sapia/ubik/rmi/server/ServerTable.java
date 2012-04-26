@@ -46,9 +46,9 @@ public class ServerTable implements Module {
   private Object                    serverCreationLock = new Object();
   
   private Timer                     remoteObjectCreation = Stats.getInstance().createTimer(
-      getClass(), 
-      "RemoteObjectCreation", 
-      "Avg remote object creation time");
+                                                              getClass(), 
+                                                              "RemoteObjectCreation", 
+                                                              "Avg remote object creation time");
   
   @Override
   public void init(ModuleContext context) {
@@ -203,7 +203,7 @@ public class ServerTable implements Module {
 
   /**
    * Returns a stub for the given object. This method is usually
-   * not called by client application. It is meant for use by the different
+   * not called by client applications. It is meant for use by the different
    * transport layers.
    *
    * @param toRemote an object.

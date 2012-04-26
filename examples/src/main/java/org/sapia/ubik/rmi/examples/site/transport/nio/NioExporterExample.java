@@ -1,6 +1,5 @@
 package org.sapia.ubik.rmi.examples.site.transport.nio;
 
-import org.sapia.ubik.rmi.examples.site.naming.Hello;
 import org.sapia.ubik.rmi.server.transport.nio.tcp.NioServerExporter;
 
 public class NioExporterExample {

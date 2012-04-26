@@ -14,7 +14,7 @@ import org.sapia.ubik.rmi.server.Hub;
  */
 public class SocketServerExporter {
 	
-	private int 	 maxThreads;
+	private int    maxThreads;
 	private String bindAddress;
 	private int    port;
 	

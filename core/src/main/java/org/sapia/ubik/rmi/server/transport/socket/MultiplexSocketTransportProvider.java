@@ -9,7 +9,7 @@ import java.util.Properties;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.TcpPortSelector;
-import org.sapia.ubik.net.ThreadPool;
+import org.sapia.ubik.net.WorkerPool;
 import org.sapia.ubik.net.UbikServerSocketFactory;
 import org.sapia.ubik.net.mplex.MultiplexServerSocket;
 import org.sapia.ubik.rmi.Consts;
@@ -70,40 +70,13 @@ public class MultiplexSocketTransportProvider extends SocketTransportProvider {
     super(MPLEX_TRANSPORT_TYPE);
   }
 
-  /**
-   * Creates a new socket connector for the stream selector passed in.
-   *
-   * @param aSelector The stream selector of the connector to create.
-   * @return The created socket connector.
-   */
-  /*public MultiplexSocketConnector createSocketConnector(StreamSelector aSelector) {
-    
-    Multipl
-    if (multiplexServer == null) {
-      throw new IllegalStateException(
-        "Could not create a connector - no multiplex server is created");
-    }
-
-    return multiplexServer.createSocketConnector(aSelector);
-  }*/
-
-  /**
-   * Removes the passed in connector from the multiplex server.
-   *
-   * @param anInterceptor The connector to remove.
-   */
-  /*public void removeSocketConnector(MultiplexSocketConnector anInterceptor) {
-    multiplexServer.removeSocketConnector(anInterceptor);
-  }*/
-
-  /**
-   * @see org.sapia.ubik.rmi.server.transport.TransportProvider#newServer(Properties)
-   */
+  @Override
   public Server newServer(Properties properties) throws RemoteException {
     Props props = new Props().addProperties(properties).addProperties(System.getProperties());
     return doNewServer(props.getIntProperty(PORT, 0), props);
   }
   
+  @Override
   public Server newServer(int port) throws RemoteException {
     Props props = Props.getSystemProperties();
     return doNewServer(port, props);
@@ -114,9 +87,9 @@ public class MultiplexSocketTransportProvider extends SocketTransportProvider {
     int acceptorCount;
     int selectorCount;
         
-    maxThreads = props.getIntProperty(Consts.SERVER_MAX_THREADS, ThreadPool.NO_MAX);   
+    maxThreads = props.getIntProperty(Consts.SERVER_MAX_THREADS, WorkerPool.NO_MAX);   
     if (maxThreads == 0) {
-      maxThreads = props.getIntProperty(MAX_THREADS, ThreadPool.NO_MAX);
+      maxThreads = props.getIntProperty(MAX_THREADS, WorkerPool.NO_MAX);
     }
     
     acceptorCount = props.getIntProperty(ACCEPTOR_THREADS, 0);

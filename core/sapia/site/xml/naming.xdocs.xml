@@ -40,7 +40,6 @@
     <sapia:vsection name="FAQ" href="faq.html">
       <sapia:vitem name="Licensing" href="faq.html#licensing" />    
       <sapia:vitem name="Networking" href="faq.html#networking" />
-      <sapia:vitem name="Misc" href="faq.html#misc" />    
     </sapia:vsection>       
     
     <sapia:vsection name="Javadoc" href="maven/api/index.html"/>
@@ -338,8 +337,24 @@ public class HelloLookup {
     }catch(Exception e){
       e.printStackTrace();
     }
-  }		
+  }	
 }</sapia:code>
+      </sapia:sect3>
+      
+      <sapia:sect3 title="The Lookup class">
+      
+      	<p>As a complement to the <sapia:class>JNDIContextBuilder</sapia:class> class, the 
+      	<sapia:class link="maven/api/org/sapia/ubik/rmi/naming/remote/JndiContextBuilder.html">Lookup</sapia:class> class may be used
+      	to facilitate JNDI lookups. The class expects a <sapia:class>javax.naming.Context</sapia:class> (such as one built with the 
+      	<sapia:class>JNDIContextBuilder</sapia:class>):</p>
+<sapia:code>...
+import org.sapia.ubik.rmi.naming.remote.Lookup;
+
+Hello hello = Lookup.with(context).name("server/hello").ofClass(Hello.class);</sapia:code>
+
+		<p>As can be seen, the <sapia:class>Lookup</sapia:class> class takes the name of the object to lookup, and the type (either class or interface) 
+		it should be cast to.</p>
+      
       </sapia:sect3>      
       
       
@@ -375,6 +390,12 @@ InitialContext context = new InitialContext(props);
     			.domain("someDomain");
     			.build();
 ...</sapia:code>
+		
+		<p>
+			Discovery uses Ubik's default group communication configuration, which relies on UDP and IP multicast. If 
+			you wish otherwise, you need to set the appropriate JVM properties. The <a href="group_communication.html">group communication</a>
+			page has more details about how to proceed.
+		</p>
         
       </sapia:sect3>
       
@@ -394,7 +415,7 @@ InitialContext context = new InitialContext(props);
     	<sapia:code>EventChannel channel = new EventChannel("mydomain");
 channel.start();</sapia:code>
           
-    	<p>You can also specify an alternate configuration (for example you could rely on <a href="">Avis</a> for broadcasting, or
+    	<p>You can also specify an alternate configuration (for example you could rely on <a href="http://avis.sourceforge.net/">Avis</a> for broadcasting, or
     	you could wish that point-to-point communication between members of the cluster be done over UDP). See the
     	<a href="group_communication.html">Group Communication</a> section for the details.</p>
  
@@ -416,7 +437,8 @@ Runtime.getRuntime().addShutdownHook(new Thread() {
     	
     	<p>The <sapia:command>true</sapia:command> flag specifies that the server should be started as a daemon. Note how you're responsible for ensuring the clean 
     	shutdown of the server (in this case we're doing it in a JVM shutdown hook). 
-    	The server's <sapia:command>stop()</sapia:command> method will also close the event channel.</p>
+    	The server's <sapia:command>stop()</sapia:command> method will also close the <sapia:class>EventChannel</sapia:class> that was passed to the 
+    	server's constructor.</p>
     
       </sapia:sect3>
       

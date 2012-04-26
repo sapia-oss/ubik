@@ -41,7 +41,6 @@
     <sapia:vsection name="FAQ" href="faq.html">
       <sapia:vitem name="Licensing" href="faq.html#licensing" />    
       <sapia:vitem name="Networking" href="faq.html#networking" />
-      <sapia:vitem name="Misc" href="faq.html#misc" />    
     </sapia:vsection>
     
     <sapia:vsection name="Javadoc" href="maven/api/index.html"/>

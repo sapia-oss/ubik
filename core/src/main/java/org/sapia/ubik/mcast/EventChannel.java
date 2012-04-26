@@ -627,6 +627,7 @@ public class EventChannel {
       } else if (evt.getType().equals(CONTROL_EVT)) {
         try {
         	Object data = evt.getData();
+        	view.addHost(getUnicastAddress(), evt.getNode());
           if(data instanceof ControlRequest) {
           	controller.onRequest(evt.getNode(), (ControlRequest) data);
           } else if (data instanceof ControlNotification) {

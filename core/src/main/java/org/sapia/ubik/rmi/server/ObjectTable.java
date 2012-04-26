@@ -57,10 +57,10 @@ public class ObjectTable implements ObjectTableMBean, Module {
                                                 .perMinute().build();
   
   private Hits          objectReadPerSec = Stats.getInstance().getHitsBuilder(
-                                                 "ObjectTable", 
-                                                 "ReadPerSec", 
-                                                 "Number of object references that are read per second")
-                                                 .perSecond().build();
+                                                "ObjectTable", 
+                                                "ReadPerSec", 
+                                                "Number of object references that are read per second")
+                                                .perSecond().build();
                                                  
   private Statistic     refCount         = new RefCountStat();
   

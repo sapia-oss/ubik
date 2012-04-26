@@ -29,20 +29,8 @@ public class ServerStarter {
 				Class<?> serverClass = Class.forName(cmd.getOptWithValue("c").getTrimmedValueOrBlank());
 				Method method = serverClass.getDeclaredMethod("main", String[].class);
 				if (Modifier.isStatic(method.getModifiers())) {
-					
-					method.invoke(null, (Object[]) args);
-					
-					out.println("Server " + serverClass.getName() + " started...");
-					
-					while (true) {
-						try {
-							Thread.sleep(100000);
-						} catch (InterruptedException e) {
-							out.println("Thread interrupted, exiting");
-							break;
-						}
-					}
-					
+				     out.println("Starting server " + serverClass.getName() + " started...");
+			         method.invoke(null, (Object[]) args);
 				} else {
 					out.println("main() method must be static");
 				}

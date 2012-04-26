@@ -9,7 +9,7 @@ import org.sapia.ubik.rmi.interceptor.MultiDispatcher;
 
 
 /**
- * Implements the server-side behavior of RMI.
+ * Encapsulates a server-side {@link MultiDispatcher}.
  *
  * @author Yanick Duchesne
  */
@@ -20,7 +20,7 @@ public final class ServerRuntime implements Module {
    * Dispatches server-side events. This mechanism can conveniently be used by client apps
    * to dispatch their own custom events.
    */
-  private MultiDispatcher     dispatcher = new MultiDispatcher();
+  private MultiDispatcher dispatcher = new MultiDispatcher();
 
   
   @Override

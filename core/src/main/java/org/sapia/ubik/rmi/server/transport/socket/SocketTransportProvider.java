@@ -13,7 +13,7 @@ import org.sapia.ubik.net.ConnectionFactory;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.TCPAddress;
 import org.sapia.ubik.net.TcpPortSelector;
-import org.sapia.ubik.net.ThreadPool;
+import org.sapia.ubik.net.WorkerPool;
 import org.sapia.ubik.net.UbikServerSocketFactory;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.Hub;
@@ -161,7 +161,7 @@ public class SocketTransportProvider implements TransportProvider {
 
   protected Server doNewServer(int port, Props props) throws RemoteException{
     SocketRmiServer         server;
-    int                     maxThreads = ThreadPool.NO_MAX;
+    int                     maxThreads = WorkerPool.NO_MAX;
     long                    resetInterval; 
     String                  bindAddress = null;
     UbikServerSocketFactory serverSocketFactory = null;

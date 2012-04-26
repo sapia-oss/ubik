@@ -8,7 +8,8 @@ import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.avis.AvisBroadcastDispatcher;
 import org.sapia.ubik.mcast.memory.InMemoryBroadcastDispatcher;
 import org.sapia.ubik.mcast.memory.InMemoryUnicastDispatcher;
-import org.sapia.ubik.mcast.tcp.TCPUnicastDispatcher;
+import org.sapia.ubik.mcast.tcp.NioTcpUnicastDispatcher;
+import org.sapia.ubik.mcast.tcp.TcpUnicastDispatcher;
 import org.sapia.ubik.mcast.udp.UDPBroadcastDispatcher;
 import org.sapia.ubik.mcast.udp.UDPUnicastDispatcher;
 import org.sapia.ubik.rmi.Consts;
@@ -22,14 +23,25 @@ import org.sapia.ubik.util.Props;
  */
 public final class DispatcherFactory {
 
+  private static Category log = Log.createCategory(DispatcherFactory.class);
+  private static boolean  isNioEnabled;
+  
+  static {
+    try {
+      Class.forName("org.apache.mina.filter.codec.ProtocolCodecFactory");
+    } catch (Exception e) {
+      log.info("Mina not detected in classpath, will use non-NIO TCP unicast", log.noArgs());
+      isNioEnabled = false;
+    }
+    
+  }
+  
   /**
    * Private constructor.
    */
   private DispatcherFactory() {
   }
   
-  private static Category log = Log.createCategory(DispatcherFactory.class);
-
   /**
    * Creates a {@link UnicastDispatcher}, based on the given {@link Properties}, and returns it.
    * 
@@ -43,19 +55,32 @@ public final class DispatcherFactory {
     if(provider.equals(Consts.UNICAST_PROVIDER_MEMORY)) {
       log.info("Creating in-memory unicast provider");
       return new InMemoryUnicastDispatcher(consumer);
-    } else if(provider.equals(Consts.UNICAST_PROVIDER_TCP)) {
-      log.info("Creating TCP unicast provider");
-      TCPUnicastDispatcher dispatcher = new TCPUnicastDispatcher(consumer, props.getIntProperty(Consts.MCAST_HANDLER_COUNT, Defaults.DEFAULT_HANDLER_COUNT));
-      dispatcher.setSenderCount(props.getIntProperty(Consts.MCAST_SENDER_COUNT, Defaults.DEFAULT_SENDER_COUNT));
-      dispatcher.setMaxConnectionsPerHost(props.getIntProperty(TCPUnicastDispatcher.MAX_CONNECTIONS, TCPUnicastDispatcher.DEFAULT_MAX_CONNECTIONS_PER_HOST));
-      dispatcher.setResponseTimeout(props.getIntProperty(Consts.MCAST_SYNC_RESPONSE_TIMEOUT, Defaults.DEFAULT_SYNC_RESPONSE_TIMEOUT));
-      return dispatcher;
-    } else {
+    } else if (provider.equals(Consts.UNICAST_PROVIDER_UDP)){
       log.info("Creating UDP unicast provider");      
       UDPUnicastDispatcher dispatcher = new UDPUnicastDispatcher(consumer, props.getIntProperty(Consts.MCAST_HANDLER_COUNT, Defaults.DEFAULT_HANDLER_COUNT));  
       dispatcher.setBufsize(props.getIntProperty(Consts.MCAST_BUFSIZE_KEY, Defaults.DEFAULT_UDP_PACKET_SIZE));
       dispatcher.setSenderCount(props.getIntProperty(Consts.MCAST_SENDER_COUNT, Defaults.DEFAULT_SENDER_COUNT));
       return dispatcher;
+    } else {
+      if (isNioEnabled) {
+        log.info("Creating NIO-based TCP unicast provider");
+        NioTcpUnicastDispatcher dispatcher = new NioTcpUnicastDispatcher(
+            consumer, 
+            props.getIntProperty(Consts.MCAST_HANDLER_COUNT, Defaults.DEFAULT_HANDLER_COUNT),
+            props.getIntProperty(Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE)
+        );
+        dispatcher.setSenderCount(props.getIntProperty(Consts.MCAST_SENDER_COUNT, Defaults.DEFAULT_SENDER_COUNT));
+        dispatcher.setMaxConnectionsPerHost(props.getIntProperty(TcpUnicastDispatcher.MAX_CONNECTIONS, TcpUnicastDispatcher.DEFAULT_MAX_CONNECTIONS_PER_HOST));
+        dispatcher.setResponseTimeout(props.getIntProperty(Consts.MCAST_SYNC_RESPONSE_TIMEOUT, Defaults.DEFAULT_SYNC_RESPONSE_TIMEOUT));
+        return dispatcher;
+      } else {
+        log.info("Creating TCP unicast provider");
+        TcpUnicastDispatcher dispatcher = new TcpUnicastDispatcher(consumer, props.getIntProperty(Consts.MCAST_HANDLER_COUNT, Defaults.DEFAULT_HANDLER_COUNT));
+        dispatcher.setSenderCount(props.getIntProperty(Consts.MCAST_SENDER_COUNT, Defaults.DEFAULT_SENDER_COUNT));
+        dispatcher.setMaxConnectionsPerHost(props.getIntProperty(TcpUnicastDispatcher.MAX_CONNECTIONS, TcpUnicastDispatcher.DEFAULT_MAX_CONNECTIONS_PER_HOST));
+        dispatcher.setResponseTimeout(props.getIntProperty(Consts.MCAST_SYNC_RESPONSE_TIMEOUT, Defaults.DEFAULT_SYNC_RESPONSE_TIMEOUT));
+        return dispatcher;
+      }
     }
 
   }  

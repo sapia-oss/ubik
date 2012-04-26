@@ -2,7 +2,7 @@ package org.sapia.ubik.rmi.server.transport.http;
 
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
-import org.sapia.ubik.net.PooledThread;
+import org.sapia.ubik.net.Worker;
 import org.sapia.ubik.net.Request;
 import org.sapia.ubik.rmi.server.Config;
 import org.sapia.ubik.rmi.server.command.RMICommand;
@@ -14,20 +14,17 @@ import org.sapia.ubik.rmi.server.transport.CommandHandler;
  *
  * @author Yanick Duchesne
  */
-class HttpRmiServerThread extends PooledThread<Request> {
+class HttpRmiServerThread implements Worker<Request> {
   
   private Category       log      = Log.createCategory(getClass());
   private CommandHandler handler;
   
-  public HttpRmiServerThread(String name) {
-    super(name);
+  public HttpRmiServerThread() {
     handler = new CommandHandler(getClass());
   }
-
-  /**
-   * @see org.sapia.ubik.net.PooledThread#doExec(java.lang.Object)
-   */
-  protected void doExec(Request req) {
+  
+  @Override
+  public void execute(Request req) {
     log.debug("Handling request");
     
     RMICommand    cmd;
@@ -47,13 +44,6 @@ class HttpRmiServerThread extends PooledThread<Request> {
     cmd.init(new Config(req.getServerAddress(), req.getConnection()));
     
     handler.handleCommand(cmd, req.getConnection());
-
   }
-
-  @Override
-  protected void handleExecutionException(Exception e) {
-    Log.warning(getClass(), "Error executing thread", e);
-  }
-  
   
 }

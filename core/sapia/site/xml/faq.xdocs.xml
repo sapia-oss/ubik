@@ -41,7 +41,6 @@
     <sapia:vsection name="FAQ" href="faq.html">
       <sapia:vitem name="Licensing" href="faq.html#licensing" />    
       <sapia:vitem name="Networking" href="faq.html#networking" />
-      <sapia:vitem name="Misc" href="faq.html#misc" />    
     </sapia:vsection>          
     
     <sapia:vsection name="Javadoc" href="maven/api/index.html"/>
@@ -101,7 +100,7 @@
 	  <sapia:sect3 title="My client can't seem to be able to connect to my server. What's happening?">
 	  	<p>
 	  	 	This often is observed when you server is running on a machine with multiple network interfaces: by default, Ubik will bind to all 
-	  	 	interfaces, but then only of these addresses will be chosen to be returned as part of stubs sent back to clients. It might be that Ubik's
+	  	 	interfaces, but then only one of these addresses will be chosen to be returned as part of stubs sent back to clients. It might be that Ubik's
 	  	 	best attempt at picking such an address is not good enough, and that the address that's returned is one to which some clients cannot connect.
 	  	 	In such a case, you need to configure the <tt>ubik.rmi.address-pattern</tt> JVM property, which specifies (through a regexp), which address
 	  	 	to select. Here are a few example regexps:
@@ -111,9 +110,8 @@
 10\\.10\\.\\d+\\.\\d+
 192\\.168\\.\\d+\\.\\d+</sapia:code>
 
-		<p>
-			
-		</p>
+		<p>Note the double backslashes: in Java the backslash is an escape character, therefore it must be doubled in order to be treated as a normal
+		character.</p>
 	  
 	  </sapia:sect3>
       <sapia:sect3 title="Multicast does not seem to work. Any workaround?">

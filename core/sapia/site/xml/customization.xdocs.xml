@@ -41,7 +41,6 @@
     <sapia:vsection name="FAQ" href="faq.html">
       <sapia:vitem name="Licensing" href="faq.html#licensing" />    
       <sapia:vitem name="Networking" href="faq.html#networking" />
-      <sapia:vitem name="Misc" href="faq.html#misc" />    
     </sapia:vsection>          
     
     <sapia:vsection name="Javadoc" href="maven/api/index.html"/>
@@ -171,7 +170,7 @@
 			
 			<p>Delving into the details of how to implement an <sapia:class>StubInvocationHandler</sapia:class> is beyond the scope of this documentation: we would suggest you
 			look at one of the existing implementations for starters: it is quite clear once you get your head around it. Basically, a <sapia:class>StubInvocationHandler</sapia:class>
-			will wrap one or more <sapia:class link="maven/api/org/sapia/ubik/rmi/server/stub/RemoteRefContext.html">RemoteRefContext</sapia:class>s - each corresponding to and 
+			will wrap one or more <sapia:class link="maven/api/org/sapia/ubik/rmi/server/stub/RemoteRefContext.html">RemoteRefContext</sapia:class>s - each corresponding to an 
 			endpoint (i.e.: a server) with which the stub communicates.</p>
 			
 			<p>Along with your <sapia:class>StubInvocationHandler</sapia:class>, you have to implement a 
@@ -205,9 +204,9 @@
     	<p>The support for <a href="tutorial.html#callbacks">callbacks</a> in Ubik can be further customized with specific JVM properties: </p>
     	<ul>
     		<li><tt>ubik.rmi.server.callback.max-threads</tt>: indicates how many threads (the default is 5) should be used to process incoming callback 
-    		remote method calls. Such calls are processed asynchronously: their corresponding commands are put on a queue, where they sit until they're
-    		processed. It is threads impacted by this property that do this processing. If using callbacks, you should benchmark you're application against
-    		expected levels of traffic, and determine the best configuration for you.
+    		remote method calls, which are processed asynchronously by the threads (the command object corresponding to the method call sits on a queue
+    		until it is picked up by one of the threads). If using callbacks, you should benchmark you're application against expected levels of traffic, 
+    		and determine the best configuration for you.
     		</li>
     		
     		<li><tt>ubik.rmi.server.callback.outqueue.threads</tt>: indicates how many threads (default is 2) are used to send responses corresponding to the

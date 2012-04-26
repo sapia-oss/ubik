@@ -21,8 +21,7 @@ import org.sapia.ubik.rmi.server.transport.RmiConnection;
 
 
 /**
- * Implements Ubik RMI's client-side runtime environment. This class' main
- * task is to manage remote references and client-side interceptors.
+ * Implements part of Ubik's client-side logic.
  *
  * @author Yanick Duchesne
  */

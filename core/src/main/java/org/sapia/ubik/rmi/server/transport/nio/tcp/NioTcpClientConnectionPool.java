@@ -55,16 +55,17 @@ public class NioTcpClientConnectionPool implements Connections {
     pool.release(conn);
   }
 
-  /**
-   * @see org.sapia.ubik.rmi.server.transport.Connections#clear()
-   */
+  @Override
   public void clear() {
     pool.shrinkTo(0);
   }
+  
+  @Override
+  public void invalidate(RmiConnection conn) {
+    pool.invalidate(conn);
+  }
 
-  /**
-   * @see org.sapia.ubik.rmi.server.transport.Connections#getTransportType()
-   */
+  @Override
   public String getTransportType() {
     return NioTcpTransportProvider.TRANSPORT_TYPE;
   }

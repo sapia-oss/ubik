@@ -5,9 +5,8 @@ import java.rmi.RemoteException;
 
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
-import org.sapia.ubik.net.Connection;
-import org.sapia.ubik.net.PooledThread;
 import org.sapia.ubik.net.Request;
+import org.sapia.ubik.net.Worker;
 import org.sapia.ubik.rmi.server.Config;
 import org.sapia.ubik.rmi.server.command.RMICommand;
 import org.sapia.ubik.rmi.server.transport.CommandHandler;
@@ -17,36 +16,18 @@ import org.sapia.ubik.rmi.server.transport.CommandHandler;
  *
  * @author Yanick Duchesne
  */
-public class SocketRmiServerThread extends PooledThread<Request> {
+public class SocketRmiServerThread implements Worker<Request> {
 
   private Category       log      = Log.createCategory(getClass());
-  private Connection     current;
   private CommandHandler handler;
 
-  SocketRmiServerThread(String name) {
-    super(name);
+  SocketRmiServerThread() {
     handler = new CommandHandler(getClass());
   }
-
-  /**
-   * @see java.lang.Thread#interrupt()
-   */
-  public void interrupt() {
-    super.interrupt();
-
-    if (current != null) {
-      current.close();
-    }
-  }
-
-  /**
-   * @see org.sapia.ubik.net.PooledThread#doExec(Object)
-   */
-  protected void doExec(Request req) {
+  
+  @Override
+  public void execute(Request req) {
     log.debug("Handling request");
-    
-    current = req.getConnection();
-
     RMICommand cmd;
 
     while (true) {
@@ -73,11 +54,6 @@ public class SocketRmiServerThread extends PooledThread<Request> {
       
       handler.handleCommand(cmd, req.getConnection());
     }
-  }
-  
-  @Override
-  protected void handleExecutionException(Exception e) {
-    Log.warning(getClass(), "Error executing thread", e);
   }
   
 }

@@ -16,9 +16,9 @@ import org.sapia.ubik.util.Strings;
  */
 public class NioServerExporter {
 	
-	private int 		port;
+	private int 	port;
 	private String 	bindAddress;
-	private int 		bufferSize 		= Consts.DEFAULT_MARSHALLING_BUFSIZE;
+	private int 	bufferSize 		= Consts.DEFAULT_MARSHALLING_BUFSIZE;
 	private int     maxThreads;
 	
 	/**
@@ -49,7 +49,7 @@ public class NioServerExporter {
 	 * @return this instance.
 	 * @see #getPort()
 	 */
-	public NioServerExporter setPort(int port) {
+	public NioServerExporter port(int port) {
 	  this.port = port;
 	  return this;
   }
@@ -66,7 +66,7 @@ public class NioServerExporter {
 	 * @return this instance.
 	 * @see #getBindAddress()
 	 */
-	public NioServerExporter setBindAddress(String bindAddress) {
+	public NioServerExporter bindAddress(String bindAddress) {
 	  this.bindAddress = bindAddress;
 	  return this;
   }
@@ -84,7 +84,7 @@ public class NioServerExporter {
 	 * @return this instance
 	 * @see #getMaxThreads()
 	 */
-	public NioServerExporter setMaxThreads(int maxThreads) {
+	public NioServerExporter maxThreads(int maxThreads) {
 	  this.maxThreads = maxThreads;
 	  return this;
   }

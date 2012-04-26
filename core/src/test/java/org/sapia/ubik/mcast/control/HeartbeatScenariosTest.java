@@ -5,7 +5,6 @@ import static org.junit.Assert.assertFalse;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.sapia.ubik.log.Log;
 
 public class HeartbeatScenariosTest extends EventChannelControllerTestSupport {
 

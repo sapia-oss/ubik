@@ -6,7 +6,9 @@ import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.module.Module;
 import org.sapia.ubik.module.ModuleContext;
+import org.sapia.ubik.module.ModuleContext.State;
 import org.sapia.ubik.rmi.server.ClientRuntime;
+import org.sapia.ubik.rmi.server.ShutdownException;
 import org.sapia.ubik.rmi.server.VmId;
 import org.sapia.ubik.rmi.server.command.InvokeCommand;
 import org.sapia.ubik.rmi.server.stats.Stats;
@@ -53,12 +55,15 @@ public class InvocationDispatcher implements Module {
 
   private Category                  log              = Log.createCategory(getClass());
   private InvocationStats           stats            = new InvocationStats();
+  private ModuleContext             context;
   private ClientRuntime             clientRuntime;
   private InvocationStrategyFactory invocationStrategyFactory;
  
+  
   @Override
   public void init(ModuleContext context) {
-    clientRuntime  = context.lookup(ClientRuntime.class);
+    this.context              = context;
+    clientRuntime             = context.lookup(ClientRuntime.class);
     invocationStrategyFactory = new InvocationStrategyFactory(context);
   }
   @Override
@@ -87,6 +92,10 @@ public class InvocationDispatcher implements Module {
    */
   public Object dispatchInvocation(VmId vmId, Connections pool, InvokeCommand cmd)
     throws java.io.IOException, ClassNotFoundException, Throwable {
+    
+    if (context.getState() == State.STOPPING) {
+      throw new ShutdownException();
+    }
     
     Object toReturn;
     

@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.After;
 import org.junit.Test;
 import org.sapia.ubik.concurrent.BlockingRef;
+import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.util.Props;
@@ -27,16 +28,11 @@ public class EventChannelTest {
   
   @Test
   public void testEventChannelState() throws Exception {
-  	
   	source      = createEventChannel(1000, 2000);
-    source.start();
-    Thread.sleep(1000);
-    destination = createEventChannel(1000, 2000);
-    destination.start();
 
     final BlockingRef<Boolean> isUpRef   = new BlockingRef<Boolean>();
     final BlockingRef<Boolean> isDownRef = new BlockingRef<Boolean>();
-    
+  	
     EventChannelStateListener listener = new EventChannelStateListener() {
       @Override
       public void onDown(EventChannelEvent event) {
@@ -50,14 +46,19 @@ public class EventChannelTest {
     }; 
     
     source.addEventChannelStateListener(listener);
-    
-    Boolean isUp = isUpRef.await(5000);
+  	
+    source.start();
+    Thread.sleep(1000);
+    destination = createEventChannel(1000, 2000);
+    destination.start();
+
+    Boolean isUp = isUpRef.await(10000);
     assertTrue("Destination not detected as up (event channel listener not called)", isUp != null);
     assertTrue("Destination not detected as up", isUp);
   
     destination.close();
     
-    Boolean isDown = isDownRef.await(5000);
+    Boolean isDown = isDownRef.await(10000);
     assertTrue("Destination not detected as down (event channel listener not called)", isDown != null);
     assertTrue("Destination not detected as down", isDown);
   }

@@ -13,6 +13,11 @@ package org.sapia.ubik.log;
 public class Category {
   
   /**
+   * An empty to pass to the different log methods when no arguments are passed in.
+   */
+  public static final Object[] EMPTY_ARGS = new Object[]{};
+  
+  /**
    * The name of the entity that uses this instance for logging.
    */
   private String name;
@@ -106,5 +111,9 @@ public class Category {
   
   public boolean isError() {
     return Log.isError();
+  }
+  
+  public Object[] noArgs() {
+    return EMPTY_ARGS;
   }
 }

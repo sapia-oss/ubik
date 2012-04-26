@@ -26,12 +26,12 @@ public abstract class SocketServer implements Runnable {
   private   ServerSocket              server;
   protected SocketConnectionFactory   fac;
   private   String                    address;
-  private   ThreadPool<Request>       tp;
+  private   WorkerPool<Request>       tp;
   private   ThreadStartup             startupBarrier = new ThreadStartup();
 
   /**
    * @param port the port that this server should listen on.
-   * @param tp the {@link ThreadPool} to use to create worker threads for request processing.
+   * @param tp the {@link WorkerPool} to use to create worker threads for request processing.
    * @param socketFactory the {@link UbikServerSocketFactory} that will be used to create this instance's
    * {@link ServerSocket}.
    * @throws java.io.IOException if an IO problem occurs construction this instance.
@@ -39,7 +39,7 @@ public abstract class SocketServer implements Runnable {
   protected SocketServer(
   		String transportType,
       int port, 
-      ThreadPool<Request> tp,
+      WorkerPool<Request> tp,
       UbikServerSocketFactory socketFactory) throws java.io.IOException {
     this(port, new SocketConnectionFactory(transportType), tp, socketFactory);
   }
@@ -47,7 +47,7 @@ public abstract class SocketServer implements Runnable {
   /**
    * @param bindAddr the address to which the server should be bound.
    * @param port the port that this server should listen on.
-   * @param tp the {@link ThreadPool} to use to create worker threads for request processing.
+   * @param tp the {@link WorkerPool} to use to create worker threads for request processing.
    * @param socketFactory the {@link UbikServerSocketFactory} that will be used to create this instance's
    * {@link ServerSocket}.
    * @throws java.io.IOException if an IO problem occurs construction this instance.
@@ -56,7 +56,7 @@ public abstract class SocketServer implements Runnable {
   		String transportType,
       String bindAddr, 
       int port, 
-      ThreadPool<Request> tp,
+      WorkerPool<Request> tp,
       UbikServerSocketFactory socketFactory) throws java.io.IOException {
     this(bindAddr, port, new SocketConnectionFactory(transportType), tp, socketFactory);
   }
@@ -64,7 +64,7 @@ public abstract class SocketServer implements Runnable {
   /**
    * @param port the port that this server should listen on.
    * @param fac the {@link SocketConnectionFactory} for which to create server-side {@link Connection} instances.
-   * @param tp the {@link ThreadPool} to use to create worker threads for request processing.
+   * @param tp the {@link WorkerPool} to use to create worker threads for request processing.
    * @param socketFactory the {@link UbikServerSocketFactory} that will be used to create this instance's
    * {@link ServerSocket}.
    * @throws java.io.IOException if an IO problem occurs construction this instance.
@@ -72,7 +72,7 @@ public abstract class SocketServer implements Runnable {
   protected SocketServer(
       int port, 
       SocketConnectionFactory fac, 
-      ThreadPool<Request> tp,
+      WorkerPool<Request> tp,
       UbikServerSocketFactory socketFactory) throws java.io.IOException {
     server   = socketFactory.createServerSocket(port);
     this.fac      = fac;
@@ -83,7 +83,7 @@ public abstract class SocketServer implements Runnable {
    * @param bindAddr the address to which the server should be bound.
    * @param port the port that this server should listen on.
    * @param fac the {@link SocketConnectionFactory} for which to create server-side {@link Connection} instances.
-   * @param tp the {@link ThreadPool} to use to create worker threads for request processing.
+   * @param tp the {@link WorkerPool} to use to create worker threads for request processing.
    * @param socketFactory the {@link UbikServerSocketFactory} that will be used to create this instance's
    * {@link ServerSocket}.
    * @throws java.io.IOException if an IO problem occurs construction this instance.
@@ -92,7 +92,7 @@ public abstract class SocketServer implements Runnable {
       String bindAddr, 
       int port,
       SocketConnectionFactory fac, 
-      ThreadPool<Request> tp,
+      WorkerPool<Request> tp,
       UbikServerSocketFactory socketFactory) throws java.io.IOException {
     this.server = socketFactory.createServerSocket(port, bindAddr);
     this.fac    = fac;
@@ -106,7 +106,7 @@ public abstract class SocketServer implements Runnable {
    * @param server
    * @throws IOException
    */
-  protected SocketServer(String transportType, ThreadPool<Request> tp, ServerSocket server)
+  protected SocketServer(String transportType, WorkerPool<Request> tp, ServerSocket server)
     throws IOException {
     this(new SocketConnectionFactory(transportType), tp, server);
   }
@@ -121,7 +121,7 @@ public abstract class SocketServer implements Runnable {
    */
   protected SocketServer(
       SocketConnectionFactory fac, 
-      ThreadPool<Request> tp,
+      WorkerPool<Request> tp,
       ServerSocket server) throws IOException {
     this.server = server;
     this.fac    = fac;
@@ -157,19 +157,12 @@ public abstract class SocketServer implements Runnable {
     try {
       tp.shutdown();
       server.close();
-    } catch (Throwable t) {
-      log.error("Error caught while closing server", t);
+    } catch (Exception e) {
+      log.error("Error caught while closing server", e);
     }
   }
 
   public void run() {
-    try {
-      tp.fill(1);
-    } catch (Throwable t) {
-      log.error("Error while trying to start server; aborting", t);
-      return;
-    }
-
     while (true) {
       try {
         Socket client = null;
@@ -209,7 +202,7 @@ public abstract class SocketServer implements Runnable {
         final Connection conn = fac.newConnection(client);
 
         Request req = new Request(conn, new TCPAddress(fac.getTransportType(), getAddress(), getPort()));
-        tp.acquire().exec(req);
+        tp.submit(req);
       } catch (Throwable t) {
         if (handleError(t)) {
           close();

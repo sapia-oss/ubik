@@ -2,10 +2,10 @@ package org.sapia.ubik.rmi.examples;
 
 import org.sapia.ubik.net.Connection;
 import org.sapia.ubik.net.DefaultUbikServerSocketFactory;
-import org.sapia.ubik.net.PooledThread;
+import org.sapia.ubik.net.Worker;
 import org.sapia.ubik.net.Request;
 import org.sapia.ubik.net.SocketServer;
-import org.sapia.ubik.net.ThreadPool;
+import org.sapia.ubik.net.WorkerPool;
 
 
 /**
@@ -35,7 +35,7 @@ public class MyServer extends SocketServer {
     }
   }
 
-  static class MyThreadPool extends ThreadPool<Request> {
+  static class MyThreadPool extends WorkerPool<Request> {
     MyThreadPool() {
       super("MyThreadPool", true, 10);
     }
@@ -43,19 +43,19 @@ public class MyServer extends SocketServer {
     /**
      * @see org.sapia.ubik.util.pool.Pool#doNewObject()
      */
-    protected PooledThread<Request> newThread(String name) throws Exception {
+    protected Worker<Request> newThread(String name) throws Exception {
       return new MyPooledThread(name);
     }
   }
 
-  static class MyPooledThread extends PooledThread<Request> {
+  static class MyPooledThread extends Worker<Request> {
     
     public MyPooledThread(String name) {
       super(name);
     }
     
     /**
-     * @see org.sapia.ubik.net.PooledThread#doExec(Object)
+     * @see org.sapia.ubik.net.Worker#doExec(Object)
      */
     protected void doExec(Request request) {
       Connection conn = request.getConnection();

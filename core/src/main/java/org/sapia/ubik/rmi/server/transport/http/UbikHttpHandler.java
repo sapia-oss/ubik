@@ -1,7 +1,6 @@
 package org.sapia.ubik.rmi.server.transport.http;
 
 import org.sapia.ubik.log.Log;
-import org.sapia.ubik.net.PooledThread;
 import org.sapia.ubik.net.Uri;
 
 import simple.http.ProtocolHandler;
@@ -29,8 +28,7 @@ public class UbikHttpHandler implements ProtocolHandler{
   public void handle(Request req, Response res) {
     HttpRmiServerConnection conn = new HttpRmiServerConnection(addr, req, res);
     try{
-      PooledThread<org.sapia.ubik.net.Request>   th = pool.acquire();
-      th.exec(new org.sapia.ubik.net.Request(conn, addr));
+      pool.submit(new org.sapia.ubik.net.Request(conn, addr));
     }catch(Exception e){
       Log.error(getClass(), "Error handling request", e);
     }

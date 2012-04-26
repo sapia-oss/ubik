@@ -5,7 +5,7 @@ import java.rmi.RemoteException;
 
 
 /**
- * Base implementation of the <code>StubContainer</code> interface.
+ * Base implementation of the {@link StubContainer} interface.
  *
  * @author Yanick Duchesne
  *

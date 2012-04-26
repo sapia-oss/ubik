@@ -10,6 +10,24 @@ import javax.management.ObjectName;
  */
 public interface ModuleContext {
   
+  /**
+   * Holds constants corresponding to the {@link ModuleContainer}'s
+   * different possible states.
+   */
+  public enum State {
+    CREATED,
+    INITIALIZING,
+    INITIALIZED,
+    STARTING,
+    STARTED,
+    STOPPING,
+    STOPPED;
+  }
+  
+  /**
+   * @return the container's {@link State}.
+   */
+  public State getState();
 
   /**
    * Looks up the module corresponding to the given class and returns it.
@@ -20,14 +38,17 @@ public interface ModuleContext {
    * @throws ModuleNotFoundException if no such module could be found.
    */
   public <T> T lookup(Class<T> type) throws ModuleNotFoundException;
-
   
   /**
    * Registers an object as a MBean.
    * @param name the bean's {@link ObjectName}.
-   * @param mbean the MBean {@link Object}
+   * @param mbean the MBean {@link Object}.
    */
   public void registerMbean(Class<?> toNameFrom, Object mbean);
-  
+
+  /**
+   * Registers an object an a MBean.
+   * @param mbean the MBean {@link Object}.
+   */
   public void registerMbean(Object mbean);
 }

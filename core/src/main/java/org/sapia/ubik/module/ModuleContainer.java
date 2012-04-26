@@ -10,6 +10,7 @@ import javax.management.ObjectName;
 import org.sapia.ubik.jmx.JmxHelper;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
+import org.sapia.ubik.module.ModuleContext.State;
 
 /**
  * An instance of this class holds and manages {@link Module}s.
@@ -19,16 +20,6 @@ import org.sapia.ubik.log.Log;
  */
 public class ModuleContainer {
 
-  
-  private enum State {
-    CREATED,
-    INITIALIZING,
-    INITIALIZED,
-    STARTING,
-    STARTED,
-    STOPPING,
-    STOPPED;
-  }
   
   private Category            log           = Log.createCategory(getClass());
   private Map<String, Module> modulesByName = new HashMap<String, Module>();
@@ -207,6 +198,11 @@ public class ModuleContainer {
         throw new ModuleNotFoundException(type.getName());
       }
       return type.cast(module);
+    }
+    
+    @Override
+    public State getState() {
+      return state;
     }
     
     @Override

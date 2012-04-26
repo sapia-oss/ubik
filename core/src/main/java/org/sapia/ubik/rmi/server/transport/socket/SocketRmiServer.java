@@ -13,7 +13,7 @@ import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.SocketConnectionFactory;
 import org.sapia.ubik.net.SocketServer;
 import org.sapia.ubik.net.TCPAddress;
-import org.sapia.ubik.net.ThreadPool;
+import org.sapia.ubik.net.WorkerPool;
 import org.sapia.ubik.net.UbikServerSocketFactory;
 import org.sapia.ubik.rmi.server.Server;
 import org.sapia.ubik.rmi.server.command.RMICommand;
@@ -39,8 +39,8 @@ public class SocketRmiServer extends SocketServer implements Server, SocketRmiSe
     private int                     port;
     private long                    resetInterval;
     private SocketConnectionFactory connectionFactory;
-    private ThreadPool<Request>     threadPool;
-    private int                     maxThreads            = ThreadPool.NO_MAX;
+    private WorkerPool<Request>     threadPool;
+    private int                     maxThreads            = WorkerPool.NO_MAX;
     private UbikServerSocketFactory serverSocketFactory;
     
     private Builder(String transportType) {
@@ -67,7 +67,7 @@ public class SocketRmiServer extends SocketServer implements Server, SocketRmiSe
     }
     
     /**
-     * @param maxThreads the maximum number of threads that the {@link ThreadPool} created by this instance
+     * @param maxThreads the maximum number of threads that the {@link WorkerPool} created by this instance
      * will handle.
      * @return this instance.
      */
@@ -91,10 +91,10 @@ public class SocketRmiServer extends SocketServer implements Server, SocketRmiSe
     /**
      * If the thread pool is specified, any value set by {@link #setMaxThreads(int)} will be ignored.
      * 
-     * @param threadPool the {@link ThreadPool} that the server will be using.
+     * @param threadPool the {@link WorkerPool} that the server will be using.
      * @return this instance.
      */
-    public Builder setThreadPool(ThreadPool<Request> threadPool) {
+    public Builder setThreadPool(WorkerPool<Request> threadPool) {
       this.threadPool = threadPool;
       return this;
     }
@@ -135,7 +135,7 @@ public class SocketRmiServer extends SocketServer implements Server, SocketRmiSe
         } 
         this.threadPool = new SocketRmiServerThreadPool("ubik.rmi.tcp.SocketServerThread", true, maxThreads);
       } else if (threadPool == null) {
-        this.threadPool = new SocketRmiServerThreadPool("ubik.rmi.tcp.SocketServerThread", true, ThreadPool.NO_MAX);
+        this.threadPool = new SocketRmiServerThreadPool("ubik.rmi.tcp.SocketServerThread", true, WorkerPool.NO_MAX);
       }
       
       if(connectionFactory == null) {
@@ -168,7 +168,7 @@ public class SocketRmiServer extends SocketServer implements Server, SocketRmiSe
   		String transportType,
       String bindAddr, 
       int port, 
-      ThreadPool<Request> tp,
+      WorkerPool<Request> tp,
       SocketConnectionFactory connectionFactory,
       UbikServerSocketFactory serverSocketFactory) throws IOException {
     super(bindAddr, 
@@ -182,7 +182,7 @@ public class SocketRmiServer extends SocketServer implements Server, SocketRmiSe
   protected SocketRmiServer(
     		String transportType,
         int port, 
-        ThreadPool<Request> tp,
+        WorkerPool<Request> tp,
         SocketConnectionFactory connectionFactory,
         UbikServerSocketFactory serverSocketFactory) throws IOException {
       super(port, 

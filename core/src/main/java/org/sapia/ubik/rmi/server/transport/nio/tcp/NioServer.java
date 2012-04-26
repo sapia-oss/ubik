@@ -64,7 +64,7 @@ class NioServer implements Server{
     }
     else{
       int randomPort = new TcpPortSelector().select(inetAddr.getAddress().getHostAddress());
-    	log.info("Using random port %s", inetAddr.getPort());      
+    	log.info("Using random port %s", randomPort);      
       this.inetAddr = new InetSocketAddress(inetAddr.getAddress().getHostAddress(), randomPort);
     }
     log.info("Binding to address: %s", this.inetAddr);      

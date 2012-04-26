@@ -87,34 +87,18 @@ public abstract class Pool<T> {
 
     T obj;
 
-    if (objects.size() == 0) {
-      if (maxSize <= NO_MAX) {
+    if (objects.isEmpty()) {
+      if (!hasLimit()) {
         try {
           obj = newObject();
         } catch (Exception e) {
           throw new PooledObjectCreationException(e);
         }
       } else {
-        long start = System.currentTimeMillis();
-        
-        while (objects.size() == 0) {
-          if (timeout > 0) {
-            wait(timeout);
-
-            if ((System.currentTimeMillis() - start) > timeout) {
-              break;
-            }
-          } else {
-            if (createdCount.get() >= maxSize) {
-              wait();
-            } else {
-              break;
-            }
-          }
-        }
-
-        if (objects.size() == 0) {
-          if (createdCount.get() >= maxSize && maxSize > NO_MAX) {
+        if (available(timeout)) {
+          obj = objects.remove(0);          
+        } else {
+          if (!canCreateNewObject()) {
             throw new NoObjectAvailableException();
           } else {
             try {
@@ -123,20 +107,47 @@ public abstract class Pool<T> {
               throw new PooledObjectCreationException(e);
             }
           }
-        } else {
-          obj = objects.remove(0);
-        }
+        } 
       }
     } else {
       obj = objects.remove(0);
     }
-
     acquireTime.end();
     try {
       return onAcquire(obj);
     } catch (Exception e) {
       throw new PooledObjectCreationException(e);
     }
+  }
+  
+  private boolean hasLimit() {
+    return maxSize > NO_MAX;
+  }
+  
+  private boolean canCreateNewObject() {
+    return !(createdCount.get() >= maxSize && maxSize > NO_MAX);    
+  }
+  
+  private synchronized boolean available(long timeout) throws InterruptedException {
+    long start = System.currentTimeMillis();
+    while (objects.size() == 0) {
+      // if the timeout is specified, wait for corresponding amount
+      // of time or until an object becomes available
+      if (timeout > 0) {
+        wait(timeout);
+        if ((System.currentTimeMillis() - start) > timeout) {
+          return objects.size() > 0;
+        }
+      // no timeout: wait indefinitely.
+      } else {
+        if (createdCount.get() >= maxSize) {
+          wait();
+        } else {
+          break;
+        } 
+      }
+    }
+    return objects.size() > 0;    
   }
 
   /**

@@ -6,7 +6,7 @@ import java.util.Properties;
 import org.sapia.ubik.mcast.avis.AvisBroadcastDispatcher;
 import org.sapia.ubik.mcast.memory.InMemoryBroadcastDispatcher;
 import org.sapia.ubik.mcast.memory.InMemoryUnicastDispatcher;
-import org.sapia.ubik.mcast.tcp.TCPUnicastDispatcher;
+import org.sapia.ubik.mcast.tcp.TcpUnicastDispatcher;
 import org.sapia.ubik.mcast.udp.UDPBroadcastDispatcher;
 import org.sapia.ubik.mcast.udp.UDPUnicastDispatcher;
 import org.sapia.ubik.rmi.Consts;
@@ -48,7 +48,7 @@ public class EventChannels {
   }
   
   /**
-   * Creates an event channel that uses a {@link UDPBroadcastDispatcher} and a {@link TCPUnicastDispatcher}. 
+   * Creates an event channel that uses a {@link UDPBroadcastDispatcher} and a {@link TcpUnicastDispatcher}. 
    * The {@link UDPBroadcastDispatcher} will be created using the given multicast address and port.
    * 
    * @param domain the channel's domain.
@@ -62,7 +62,7 @@ public class EventChannels {
   }
   
   /**
-   * Creates an {@link EventChannel} that uses an {@link AvisBroadcastDispatcher} and a {@link TCPUnicastDispatcher}.
+   * Creates an {@link EventChannel} that uses an {@link AvisBroadcastDispatcher} and a {@link TcpUnicastDispatcher}.
    * 
    * @param domain the channel's domain.
    * @param avisUrl the URL of the Avis router to connect to.

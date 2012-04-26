@@ -41,7 +41,7 @@ import org.sapia.ubik.util.Strings;
  * Indeed, an instance of this class corresponds to all servers that were bound
  * under a given name.
  * <p>
- * This design might review eventually, to provide a more consistent class hierarchy.
+ * This design might reviewed eventually, to provide a more consistent class hierarchy.
  *
  */
 public class RemoteRefStateless implements StubInvocationHandler, Externalizable, HealthCheck {
