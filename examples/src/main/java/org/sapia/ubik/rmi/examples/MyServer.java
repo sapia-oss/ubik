@@ -12,9 +12,7 @@ import org.sapia.ubik.net.WorkerPool;
  * @author Yanick Duchesne
  */
 public class MyServer extends SocketServer {
-  /**
-   * Constructor for MyServer.
-   */
+
   public MyServer() throws java.io.IOException {
     super("test", 6666, new MyThreadPool(), new DefaultUbikServerSocketFactory());
   }
@@ -40,26 +38,17 @@ public class MyServer extends SocketServer {
       super("MyThreadPool", true, 10);
     }
 
-    /**
-     * @see org.sapia.ubik.util.pool.Pool#doNewObject()
-     */
-    protected Worker<Request> newThread(String name) throws Exception {
-      return new MyPooledThread(name);
+    @Override
+    protected Worker<Request> newWorker() {
+      return new MyWorker();
     }
   }
 
-  static class MyPooledThread extends Worker<Request> {
+  static class MyWorker implements Worker<Request> {
     
-    public MyPooledThread(String name) {
-      super(name);
-    }
-    
-    /**
-     * @see org.sapia.ubik.net.Worker#doExec(Object)
-     */
-    protected void doExec(Request request) {
+    @Override
+    public void execute(Request request) {
       Connection conn = request.getConnection();
-
       try {
         while (true) {
           System.out.println(conn.receive());
@@ -71,9 +60,5 @@ public class MyServer extends SocketServer {
       }
     }
     
-    @Override
-    protected void handleExecutionException(Exception e) {
-      e.printStackTrace();
-    }
   }
 }

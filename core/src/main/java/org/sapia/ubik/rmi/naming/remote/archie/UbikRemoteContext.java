@@ -63,6 +63,7 @@ public class UbikRemoteContext extends JndiContext implements RemoteContext {
     return new UbikRemoteContext(sync);
   }
 
+  @SuppressWarnings("rawtypes")
   protected NamingEnumeration newNamingEnum(Iterator entries,
     Iterator childNodes, int listType) {
     return new UbikNamingEnum(entries, childNodes, listType);

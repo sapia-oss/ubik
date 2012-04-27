@@ -14,6 +14,7 @@ import org.sapia.ubik.mcast.EventChannelStateListener.EventChannelEvent;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.util.Collections2;
 import org.sapia.ubik.util.Function;
+import org.sapia.ubik.util.SoftReferenceList;
 
 
 /**
@@ -30,7 +31,7 @@ public class View {
   
   private Category               log                   = Log.createCategory(getClass());
   private Map<String, NodeInfo>  nodeToNodeInfo        = new ConcurrentHashMap<String, NodeInfo>();
-  private List<SoftReference<EventChannelStateListener>> listeners = Collections.synchronizedList(new ArrayList<SoftReference<EventChannelStateListener>>());
+  private SoftReferenceList<EventChannelStateListener> listeners = new SoftReferenceList<EventChannelStateListener>();
 
   /**
    * Adds the given listener to this instance, which will be kept in a {@link SoftReference}.
@@ -38,7 +39,7 @@ public class View {
    * @param listener an {@link EventChannelStateListener}.
    */
   public void addEventChannelStateListener(EventChannelStateListener listener){
-    listeners.add(new SoftReference<EventChannelStateListener>(listener));
+    listeners.add(listener);
   }
   
   /**
@@ -47,17 +48,7 @@ public class View {
    * @param listener
    */
   public boolean removeEventChannelStateListener(EventChannelStateListener listener) {
-    synchronized(listeners) {
-      for(int i = 0; i < listeners.size(); i++) {
-        SoftReference<EventChannelStateListener> listenerRef = listeners.get(i);
-        EventChannelStateListener registered = listenerRef.get();
-        if(registered != null && registered.equals(listener)) {
-          listeners.remove(i);
-          return true;
-        }
-      }
-    }
-    return false;
+    return listeners.remove(listener);
   }
 
   /**
@@ -152,21 +143,14 @@ public class View {
   
   private void notifyListeners(EventChannelEvent event, boolean added){
     synchronized(listeners){
-      for(int i = 0; i < listeners.size(); i++){
-        SoftReference<EventChannelStateListener> listenerRef = listeners.get(i);
-        EventChannelStateListener listener = listenerRef.get();
-        if(listener == null){
-          listeners.remove(i--);
+      for (EventChannelStateListener listener : listeners) {
+        if(added){
+          log.debug("Node %s is up", event.getNode());
+          listener.onUp(event);
         }
         else{
-          if(added){
-            log.debug("Node %s is up", event.getNode());
-            listener.onUp(event);
-          }
-          else{
-            log.debug("Node %s is down", event.getNode());
-            listener.onDown(event);
-          }
+          log.debug("Node %s is down", event.getNode());
+          listener.onDown(event);
         }
       }
     }

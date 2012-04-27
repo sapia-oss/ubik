@@ -1,9 +1,6 @@
 package org.sapia.ubik.mcast.memory;
 
 import java.lang.ref.SoftReference;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -13,7 +10,6 @@ import org.sapia.ubik.concurrent.BlockingRef;
 import org.sapia.ubik.concurrent.NamedThreadFactory;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
-import org.sapia.ubik.mcast.BroadcastDispatcher;
 import org.sapia.ubik.mcast.MulticastAddress;
 import org.sapia.ubik.mcast.RemoteEvent;
 import org.sapia.ubik.mcast.Response;
@@ -43,15 +39,11 @@ public final class InMemoryDispatchChannel {
   private Map<ServerAddress, SoftReference<InMemoryUnicastDispatcher>>  unicastDispatchers   = 
   		new ConcurrentHashMap<ServerAddress, SoftReference<InMemoryUnicastDispatcher>>();
   
-  private ExecutorService                                  asyncEventProcessor  = Executors.newFixedThreadPool(
-                                                                     3,
-                                                                     NamedThreadFactory.createWith("InMemoryBroadcastChannel")
-                                                                   );
+  private ExecutorService asyncEventProcessor = 
+      Executors.newFixedThreadPool(3, NamedThreadFactory.createWith("InMemoryBroadcastChannel"));
 
-  private ExecutorService                                  syncEventProcessor  = Executors.newFixedThreadPool(
-                                                                     3,
-                                                                     NamedThreadFactory.createWith("InMemoryBroadcastChannel")
-                                                                   );
+  private ExecutorService syncEventProcessor  = 
+      Executors.newFixedThreadPool(3, NamedThreadFactory.createWith("InMemoryBroadcastChannel"));
   
 
   private InMemoryDispatchChannel() {}

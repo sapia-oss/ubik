@@ -18,7 +18,7 @@ import org.sapia.ubik.util.Collections2;
  * @author yduchesne
  *
  */
-public abstract class ControlRequest implements Externalizable {
+public abstract class ControlRequest implements Externalizable, SplittableMessage {
 	
 	private long 				  requestId;
 	private long 				  creationTime;
@@ -103,9 +103,10 @@ public abstract class ControlRequest implements Externalizable {
 	 * 
 	 * @return a {@link List} of {@link ControlRequest}s.
 	 */
-	public List<ControlRequest> split(int batchSize) {
+	
+	public List<SplittableMessage> split(int batchSize) {
 		List<Set<String>> 	  batches  = Collections2.splitAsSets(targetedNodes, batchSize);
-		List<ControlRequest> 	requests = new ArrayList<ControlRequest>();
+		List<SplittableMessage> requests = new ArrayList<SplittableMessage>();
 		for(Set<String> batch : batches) {
 			ControlRequest copy = getCopy(batch);
 			copy.creationTime 	= this.creationTime;

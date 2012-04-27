@@ -15,7 +15,7 @@ import org.sapia.archie.jndi.JndiNamingEnum;
  */
 public class UbikNamingEnum extends JndiNamingEnum implements java.rmi.Remote {
   
-  @SuppressWarnings(value = "unchecked")
+  @SuppressWarnings("rawtypes")
   public UbikNamingEnum(Iterator entries, Iterator nodes, int listType) {
     super(entries, nodes, listType);
   }

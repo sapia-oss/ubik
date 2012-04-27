@@ -15,6 +15,7 @@ import org.sapia.ubik.rmi.naming.remote.RemoteContext;
 public class LocalNamingEnum extends EnumProxy {
   private String url;
 
+  @SuppressWarnings("rawtypes")
   public LocalNamingEnum(String url, Name ctxName, NamingEnumeration en) {
     super(ctxName, en);
     this.url = url;

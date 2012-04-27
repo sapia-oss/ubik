@@ -49,6 +49,7 @@ public class HttpRmiClientConnection implements RmiConnection {
   /**
    * @see org.sapia.ubik.rmi.server.transport.RmiConnection#send(java.lang.Object, org.sapia.ubik.rmi.server.VmId, java.lang.String)
    */
+  @SuppressWarnings("deprecation")
   public void send(Object o, VmId associated, String transportType)
     throws IOException, RemoteException {
     post = new PostMethod(address.toString());

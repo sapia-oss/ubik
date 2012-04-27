@@ -1,9 +1,7 @@
 package org.sapia.ubik.mcast;
 
 import java.io.IOException;
-import java.lang.ref.SoftReference;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
@@ -20,6 +18,7 @@ import org.sapia.ubik.mcast.control.ControlRequest;
 import org.sapia.ubik.mcast.control.ControlResponse;
 import org.sapia.ubik.mcast.control.ControllerConfiguration;
 import org.sapia.ubik.mcast.control.EventChannelController;
+import org.sapia.ubik.mcast.control.SplittableMessage;
 import org.sapia.ubik.mcast.control.SynchronousControlRequest;
 import org.sapia.ubik.mcast.control.SynchronousControlResponse;
 import org.sapia.ubik.mcast.udp.UDPBroadcastDispatcher;
@@ -28,6 +27,7 @@ import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.util.Clock;
 import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.SoftReferenceList;
 
 
 /**
@@ -100,10 +100,8 @@ public class EventChannel {
   private EventChannelController  controller;
   private int                     controlBatchSize;
   private ServerAddress           address;
-  private List<SoftReference<DiscoveryListener>> 
-  																discoListeners   = Collections.synchronizedList(
-  																										 new ArrayList<SoftReference<DiscoveryListener>>()
-  																									 );
+  private SoftReferenceList<DiscoveryListener> 
+  																discoListeners   = new SoftReferenceList<DiscoveryListener>();
   private volatile State          state            = State.CREATED;
   
   /**
@@ -380,7 +378,7 @@ public class EventChannel {
    * @param listener a {@link DiscoveryListener}.
    */
   public void addDiscoveryListener(DiscoveryListener listener) {
-    discoListeners.add(new SoftReference<DiscoveryListener>(listener));
+    discoListeners.add(listener);
   }
   
   /**
@@ -389,17 +387,7 @@ public class EventChannel {
    * @return <code>true</code> if the removal occurred.
    */
   public boolean removeDiscoveryListener(DiscoveryListener listener) {
-    synchronized(discoListeners) {
-      for(int i = 0; i < discoListeners.size(); i++) {
-        SoftReference<DiscoveryListener> listenerRef = discoListeners.get(i);
-        DiscoveryListener registered = listenerRef.get();
-        if(registered != null && registered.equals(listener)) {
-          discoListeners.remove(i);
-          return true;
-        }
-      }
-    }
-    return false;
+    return discoListeners.remove(listener);
   }
 
   
@@ -437,6 +425,34 @@ public class EventChannel {
 	  return controller;
   }
   
+  void sendControlMessage(SplittableMessage msg) {
+    msg.getTargetedNodes().remove(getNode());
+    if(!msg.getTargetedNodes().isEmpty()) {
+      log.debug("Sending control message %s to nodes: %s", msg.getClass().getSimpleName(), msg.getTargetedNodes());
+      List<SplittableMessage> splits = msg.split(controlBatchSize);
+      for(SplittableMessage toSend : splits) {
+        ServerAddress address = null;
+        while(address == null && !toSend.getTargetedNodes().isEmpty()) {
+          try {
+            String next = toSend.getTargetedNodes().iterator().next();
+            log.debug("Sending control message %s with %s targeted nodes to next node %s", 
+                toSend.getClass().getSimpleName(),
+                toSend.getTargetedNodes().size() - 1, next);            
+            toSend.getTargetedNodes().remove(next);
+            address = view.getAddressFor(next);
+            if(address != null) {
+              unicast.dispatch(address, CONTROL_EVT, toSend);
+            }
+            Thread.yield();
+            break;
+          } catch (IOException e) {
+            log.info("Could not send control message to %s", e, address);
+          }
+        }
+      }
+    }
+  }
+  
   // ==========================================================================
   
   private class ChannelCallbackImpl implements ChannelCallback {
@@ -467,28 +483,7 @@ public class EventChannel {
   	
   	@Override
   	public void sendNotification(ControlNotification notif) {
-			notif.getTargetedNodes().remove(getNode());
-  		if(!notif.getTargetedNodes().isEmpty()) {
-  			List<ControlNotification> split = notif.split(controlBatchSize);
-  			for(ControlNotification toSend : split) {
-					ServerAddress address = null;  				
-  				while(address == null && !toSend.getTargetedNodes().isEmpty()) {
-  					try {
-    					String next = toSend.getTargetedNodes().iterator().next();
-    	  			log.debug("Sending control notification with %s targeted nodes to next node %s", toSend.getTargetedNodes().size() - 1, next);  					
-    					toSend.getTargetedNodes().remove(next);
-  						address = view.getAddressFor(next);
-  						if(address != null) {
-  							unicast.dispatch(address, CONTROL_EVT, toSend);
-  						}
-  						Thread.yield();
-  						break;
-  					} catch (IOException e) {
-  						log.info("Could not send control notification to %s", e, address);
-  					}
-  				}
-  			}
-  		}
+  	  sendControlMessage(notif);
   	}
  	
     @Override
@@ -517,29 +512,7 @@ public class EventChannel {
   	
   	@Override
   	public void sendRequest(ControlRequest req) {
-			req.getTargetedNodes().remove(getNode());
-  		if(!req.getTargetedNodes().isEmpty()) {
-  			log.debug("Sending control request to nodes: %s", req.getTargetedNodes());
-  			List<ControlRequest> split = req.split(controlBatchSize);
-  			for(ControlRequest toSend : split) {
-					ServerAddress address = null;
-  				while(address == null && !toSend.getTargetedNodes().isEmpty()) {
-  					try {
-    					String next = toSend.getTargetedNodes().iterator().next();
-    	  			log.debug("Sending control request with %s targeted nodes to next node %s", toSend.getTargetedNodes().size() - 1, next);  					
-    					toSend.getTargetedNodes().remove(next);
-  						address = view.getAddressFor(next);
-  						if(address != null) {
-  							unicast.dispatch(address, CONTROL_EVT, toSend);
-  						}
-  						Thread.yield();
-  						break;
-  					} catch (IOException e) {
-  						log.info("Could not send control request to %s", e, address);
-  					}
-  				}
-  			}
-  		}
+  	  sendControlMessage(req);
   	}
   	
   	@Override
@@ -558,7 +531,7 @@ public class EventChannel {
 
   }
   
-  // --------------------------------------------------------------------------
+  // ==========================================================================
   
   private class ChannelEventListener implements AsyncEventListener, SyncEventListener {
   	
@@ -643,17 +616,9 @@ public class EventChannel {
   }
   
   private void notifyDiscoListeners(ServerAddress addr, RemoteEvent evt) {
-    synchronized(discoListeners) {
-      for (int i = 0; i < discoListeners.size(); i++){
-        SoftReference<DiscoveryListener> listenerRef = discoListeners.get(i);
-        DiscoveryListener listener = listenerRef.get();
-        if(listener != null) {
-          listener.onDiscovery(addr, evt);
-        } else {
-          discoListeners.remove(i--);
-        } 
-      }
-    }
+    for (DiscoveryListener listener : discoListeners) {
+      listener.onDiscovery(addr, evt);
+    } 
   }
   
   private void init(Props props){

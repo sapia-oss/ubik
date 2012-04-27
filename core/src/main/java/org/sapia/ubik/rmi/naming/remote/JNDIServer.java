@@ -167,13 +167,14 @@ public class JNDIServer {
     System.out.println();
     System.out.println(String.format("This server will use the default IP multicast address (%s) and port (%s)", 
     		Consts.DEFAULT_MCAST_ADDR, Consts.DEFAULT_MCAST_PORT));
-    System.out.println("for group communication. If you wish otherwise, you have to configure these properties");
+    System.out.println("for group communication. If you wish otherwise, you have to configure the relevant properties");
     System.out.println("in a file and use the -f option to point to that file.");
     System.out.println();
     System.out.println("Notes:");
-    System.out.println("  1) You do not have to use the default group communication network transports, based on IP");
-    System.out.println("     multicast and UDP. You could for example use Avis for broadcast, and TCP for unicast.");
-    System.out.println("     How to configure these is explained on the Ubik website.");
+    System.out.println("  1) You do not have to use the default transport for broadcast. You can configure group");
+    System.out.println("     communication to use Avis, which may prove more robust (and will allow you to work");    
+    System.out.println("     use broadcast in networks that do not support IP multicast. How to configure broadcast");
+    System.out.println("     based on Avis is explained on Ubik's web site.");
     System.out.println("  2) If you are running the JNDI server on a host with more than one multicast address,");
     System.out.println("     you should specify the ubik.rmi.address-pattern JVM property - which consists of a");
     System.out.println("     regexp that should match the address of the interface you wish the server to bind to.");

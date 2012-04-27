@@ -48,18 +48,18 @@ if [ ! -x "${JAVACMD}" ] ; then
     exit 1
 fi
 
-MAINCLASS=org.sapia.ubik.rmi.naming.remote.JNDIServer
+MAINCLASS=org.sapia.ubik.rmi.server.ServerStarter
 
-JNDI_CLASSPATH=""
+STARTER_CLASSPATH=""
 for JAR in ../lib/*.jar
 do
     # if the directory is empty, then it will return the input string
     # this is stupid, so case for it
     if [ "${JAR}" != "../lib/*.jar" ] ; then
-        if [ -z "${JNDI_CLASSPATH}" ] ; then
-            JNDI_CLASSPATH=${JAR}
+        if [ -z "${STARTER_CLASSPATH}" ] ; then
+            STARTER_CLASSPATH=${JAR}
         else
-            JNDI_CLASSPATH="${JAR}":${JNDI_CLASSPATH}
+            STARTER_CLASSPATH="${JAR}":${STARTER_CLASSPATH}
         fi
     fi
 done
@@ -68,8 +68,8 @@ done
 if $cygwin; then
     JAVA_HOME=`cygpath --path --windows "${JAVA_HOME}"`
     JAVA_HOME_OVERRIDE=`cygpath --path --windows "${JAVA_HOME_OVERRIDE}"`
-    JNDI_CLASSPATH=`cygpath --path --windows "${JNDI_CLASSPATH}"`
+    STARTER_CLASSPATH=`cygpath --path --windows "${STARTER_CLASSPATH}"`
 fi
 
-${JAVACMD} ${UBIK_OPTS} -cp ${JNDI_CLASSPATH}:${UBIK_CP} ${MAINCLASS} "$@"
+${JAVACMD} ${UBIK_OPTS} -cp ${STARTER_CLASSPATH}:${UBIK_CP} ${MAINCLASS} "$@"
 

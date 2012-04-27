@@ -125,6 +125,7 @@ public class RemoteInitialContextFactory implements InitialContextFactory, JNDIC
   /**
    * @see javax.naming.spi.InitialContextFactory#getInitialContext(Hashtable)
    */
+  @SuppressWarnings("rawtypes")
   public Context getInitialContext(Hashtable props) throws NamingException {
     
     Props allProps = new Props().addMap((Map<String, String>)props).addSystemProperties();

@@ -3,8 +3,8 @@ package org.sapia.ubik.rmi.naming.remote.archie;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.rmi.Remote;
-import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.sapia.archie.ProcessingException;
 import org.sapia.archie.impl.AttributeNode;
@@ -23,15 +23,16 @@ public class UbikSyncNode extends SynchronizedNode implements java.rmi.Remote {
     super(new UbikReliableNode(fac));
   }
 
-  @SuppressWarnings(value = "unchecked")
   static final class UbikReliableNode extends AttributeNode implements Remote {
+    @SuppressWarnings("rawtypes")
     public UbikReliableNode(UbikNodeFactory fac) throws ProcessingException {
-      super(new HashMap(), new HashMap(), fac);
+      super(new ConcurrentHashMap(), new ConcurrentHashMap(), fac);
     }
 
     /**
      * @see org.sapia.archie.impl.AttributeNode#onSelectOffer(java.util.List)
      */
+    @SuppressWarnings("rawtypes")
     protected Offer onSelectOffer(List offers) {
       return super.onSelectOffer(offers);
     }

@@ -19,7 +19,6 @@ import org.sapia.ubik.mcast.control.heartbeat.HeartbeatRequest;
 import org.sapia.ubik.mcast.control.heartbeat.HeartbeatRequestHandler;
 import org.sapia.ubik.mcast.control.heartbeat.PingRequest;
 import org.sapia.ubik.mcast.control.heartbeat.PingRequestHandler;
-import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.util.Clock;
 
 

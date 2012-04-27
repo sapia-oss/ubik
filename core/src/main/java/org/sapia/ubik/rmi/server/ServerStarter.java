@@ -30,7 +30,7 @@ public class ServerStarter {
 				Method method = serverClass.getDeclaredMethod("main", String[].class);
 				if (Modifier.isStatic(method.getModifiers())) {
 				     out.println("Starting server " + serverClass.getName() + " started...");
-			         method.invoke(null, (Object[]) args);
+			         method.invoke(null, new Object[]{args});
 				} else {
 					out.println("main() method must be static");
 				}

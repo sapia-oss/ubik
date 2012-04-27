@@ -185,6 +185,7 @@ public class LocalContext extends ContextProxy implements java.rmi.Remote {
   /**
    * @see javax.naming.Context#list(Name)
    */
+  @SuppressWarnings("rawtypes")
   public NamingEnumeration list(Name n) throws NamingException {
     try {
       return super.list(n);
@@ -198,6 +199,7 @@ public class LocalContext extends ContextProxy implements java.rmi.Remote {
   /**
    * @see javax.naming.Context#list(String)
    */
+  @SuppressWarnings("rawtypes")
   public NamingEnumeration list(String name) throws NamingException {
     try {
       return super.list(name);
@@ -211,6 +213,7 @@ public class LocalContext extends ContextProxy implements java.rmi.Remote {
   /**
    * @see javax.naming.Context#listBindings(Name)
    */
+  @SuppressWarnings("rawtypes")
   public NamingEnumeration listBindings(Name n) throws NamingException {
     try {
       return super.listBindings(n);
@@ -224,6 +227,7 @@ public class LocalContext extends ContextProxy implements java.rmi.Remote {
   /**
    * @see javax.naming.Context#listBindings(String)
    */
+  @SuppressWarnings("rawtypes")
   public NamingEnumeration listBindings(String name) throws NamingException {
     try {
       return super.listBindings(name);
@@ -419,6 +423,7 @@ public class LocalContext extends ContextProxy implements java.rmi.Remote {
   /**
    * @see ContextProxy#onEnum(javax.naming.Name, javax.naming.NamingEnumeration)
    */
+  @SuppressWarnings("rawtypes")
   protected NamingEnumeration onEnum(Name n, NamingEnumeration en) {
     return new LocalNamingEnum(url, n, en);
   }
