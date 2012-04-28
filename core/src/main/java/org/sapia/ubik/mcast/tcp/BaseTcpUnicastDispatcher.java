@@ -157,7 +157,6 @@ public abstract class BaseTcpUnicastDispatcher implements UnicastDispatcher {
             }
           } catch (InterruptedException e) {
             ThreadInterruptedException tie = new ThreadInterruptedException();
-            tie.fillInStackTrace();
             throw tie;
           }
         }
@@ -192,7 +191,6 @@ public abstract class BaseTcpUnicastDispatcher implements UnicastDispatcher {
       return new Response(evt.getId(), e); 
     } catch (InterruptedException e) {
       ThreadInterruptedException tie = new ThreadInterruptedException();
-      tie.fillInStackTrace();
       throw tie;
     }
   }
@@ -212,7 +210,6 @@ public abstract class BaseTcpUnicastDispatcher implements UnicastDispatcher {
       log.error("Did not receive ack from peer", e);
     } catch (InterruptedException e) {
       ThreadInterruptedException tie = new ThreadInterruptedException();
-      tie.fillInStackTrace();
       throw tie;
     }
     
