@@ -33,7 +33,7 @@ public class NioServerExporter {
    * @param bufferSize a buffer size.
    * @return this instance.
    */
-  public NioServerExporter setBufferSize(int bufferSize) {
+  public NioServerExporter bufferSize(int bufferSize) {
     this.bufferSize = bufferSize;
     return this;
   }
