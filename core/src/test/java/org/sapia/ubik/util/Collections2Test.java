@@ -137,5 +137,57 @@ public class Collections2Test {
 		}
 	}	
 	
+	@Test 
+	public void testDivideAsSets() {
+	  Set<String>  toSplit = Collections2.arrayToSet("1", "2", "3", "4", "5", "6");
+	  List<Set<String>> splits = Collections2.divideAsSets(toSplit, 3);
+	  assertEquals(3, splits.size());
+	  assertEquals(2, splits.get(0).size());
+	  assertEquals(2, splits.get(1).size());
+    assertEquals(2, splits.get(2).size());
+
+	}
+
+	 @Test 
+	  public void testDivideAsSetsWithZeroDivisor() {
+	    Set<String>  toSplit = Collections2.arrayToSet("1", "2", "3", "4", "5", "6");
+	    List<Set<String>> splits = Collections2.divideAsSets(toSplit, 0);
+	    assertEquals(1, splits.size());
+	    assertEquals(6, splits.get(0).size());
+	  }
+	 
+   @Test 
+   public void testDivideAsSetsDivisorSameAsSize() {
+     Set<String>  toSplit = Collections2.arrayToSet("1", "2", "3", "4", "5", "6");
+     List<Set<String>> splits = Collections2.divideAsSets(toSplit, 6);
+     assertEquals(6, splits.size());
+     assertEquals(1, splits.get(0).size());
+   }
+   
+   @Test 
+   public void testDivideAsLists() {
+     List<String>  toSplit = Collections2.arrayToList("1", "2", "3", "4", "5", "6");
+     List<List<String>> splits = Collections2.divideAsLists(toSplit, 3);
+     assertEquals(3, splits.size());
+     assertEquals(2, splits.get(0).size());
+     assertEquals(2, splits.get(1).size());
+     assertEquals(2, splits.get(1).size());
+   }
+
+    @Test 
+     public void testDivideAsListsWithZeroDivisor() {
+       List<String>  toSplit = Collections2.arrayToList("1", "2", "3", "4", "5", "6");
+       List<List<String>> splits = Collections2.divideAsLists(toSplit, 0);
+       assertEquals(1, splits.size());
+       assertEquals(6, splits.get(0).size());
+     }
+    
+    @Test 
+    public void testDivideAsListsDivisorSameAsSize() {
+      List<String>  toSplit = Collections2.arrayToList("1", "2", "3", "4", "5", "6");
+      List<List<String>> splits = Collections2.divideAsLists(toSplit, 6);
+      assertEquals(6, splits.size());
+      assertEquals(1, splits.get(0).size());
+    }
 
 }

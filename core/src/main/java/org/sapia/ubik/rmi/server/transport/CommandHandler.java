@@ -91,7 +91,7 @@ public class CommandHandler {
     } catch (RemoteException e) {
       log.warning("Could not send response; client " + client.getServerAddress()  + " has probably terminated connection");
     } catch (Exception e) {
-      log.error("Exception caught try to send response", e);
+      log.warning("Exception caught try to send response", e);
       sendErrorResponse(e, client);
     } finally {
       if (invokeCommand) sendResponse.end();

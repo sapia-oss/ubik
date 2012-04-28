@@ -49,7 +49,7 @@ public abstract class ControlNotification implements Externalizable, SplittableM
 	 * @return a {@link List} of {@link ControlNotification}s.
 	 */
 	public List<SplittableMessage> split(int batchSize) {
-		List<Set<String>> 				batches 			= Collections2.splitAsSets(targetedNodes, batchSize);
+		List<Set<String>> 				batches 			= Collections2.divideAsSets(targetedNodes, batchSize);
 		List<SplittableMessage>   notifications = new ArrayList<SplittableMessage>();
 		for(Set<String> batch : batches) {
 			notifications.add(getCopy(batch));

@@ -11,8 +11,9 @@
   
     <sapia:sect-desc>
       <p>The NIO/TCP transport provider would probably be more aptly named the Mina provider, since it is based on 
-      <a href="http://mina.apache.org/">Apache Mina</a> (1.1.7).
-	  </p>
+      <a href="http://mina.apache.org/">Apache Mina</a> (1.1.7). This transport is extremely performant and scalable,
+      and is the recommended one for sustaining heavy load.</p>
+      
     </sapia:sect-desc>
     
     <sapia:sect2 title="Exporting a Server">

@@ -163,6 +163,12 @@ public final class Collections2 {
   	
   	int count = 0;
   	List<List<T>> aggregate = new ArrayList<List<T>>();
+    if (batchSize == 0) {
+       List<T> batch = new ArrayList<T>();
+       batch.addAll(toSplit);
+       aggregate.add(batch);
+       return aggregate;
+    }
   	
   	List<T> batch = new ArrayList<T>(batchSize);
   	for(T item : toSplit) {
@@ -181,21 +187,36 @@ public final class Collections2 {
 
   	return aggregate;
   }
+
+  /**
+   * @param toDivide the Collection to divide.
+   * @param divisor the divisor by which to divide the given collection.
+   * @return a {@link List} of batches (each batch itself being represented as a {@link List}).
+   */
+  public static <T> List<List<T>> divideAsLists(Collection<T> toDivide, int divisor) {
+    return splitAsLists(toDivide, divisor <= 0 ? 0 : toDivide.size() / divisor);
+  }
   
   /**
-   * @param toSplit the Collection to split.
+   * @param toSplit the Collection to split
    * @param batchSize the size of the batches into which the given collection should be split.
    * @return a {@link List} of batches (each batch itself being represented as a {@link Set}).
    */
   public static <T> List<Set<T>> splitAsSets(Collection<T> toSplit, int batchSize) {
   	int count = 0;
   	List<Set<T>> aggregate = new ArrayList<Set<T>>();
+  	if (batchSize == 0) {
+  	   Set<T> batch = new HashSet<T>();
+  	   batch.addAll(toSplit);
+  	   aggregate.add(batch);
+  	   return aggregate;
+  	}
   	
-  	Set<T> batch = new HashSet<T>(batchSize);
+  	Set<T> batch = new HashSet<T>();
   	for(T item : toSplit) {
   		if(count >= batchSize) {
   			aggregate.add(batch);
-  			batch = new HashSet<T>(batchSize);
+  			batch = new HashSet<T>();
   			count = 0;
   		}
   		batch.add(item);
@@ -209,4 +230,13 @@ public final class Collections2 {
   	return aggregate;
   }
   
+  /**
+   * @param toDivide the Collection to divide.
+   * @param divisor the divisor by which to divide the given collection.
+   * @return a {@link List} of batches (each batch itself being represented as a {@link Set}).
+   */
+  public static <T> List<Set<T>> divideAsSets(Collection<T> toDivide, int divisor) {
+    return splitAsSets(toDivide, divisor <= 0 ? 0 : toDivide.size() / divisor);
+  } 
 }
+  

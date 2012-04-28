@@ -96,7 +96,7 @@ public class EventChannelControlAlgoTest {
 	
 	private EventChannel createChannel() throws Exception {
     Properties properties = new Properties();
-    properties.setProperty(Consts.MCAST_CONTROL_BATCH_SIZE, Integer.toString(3));
+    properties.setProperty(Consts.MCAST_CONTROL_SPLIT_SIZE, Integer.toString(3));
     properties.setProperty(Consts.BROADCAST_PROVIDER, Consts.BROADCAST_PROVIDER_MEMORY);
     properties.setProperty(Consts.UNICAST_PROVIDER, Consts.UNICAST_PROVIDER_MEMORY);
     EventChannel channel = new TestEventChannel("test", new Props().addProperties(properties));

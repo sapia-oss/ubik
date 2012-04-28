@@ -59,7 +59,7 @@ public class LoadClient {
 		
 		if (cmd.hasSwitch("help")) {
 			System.out.println("-t: The number of concurrent threads that should be spawned. Defaults to 3.");
-			System.out.println("-s: The random pause offset between each call, for each thread.");
+			System.out.println("-r: The random pause offset between each call, for each thread.");
 			System.out.println("    Interpreted in millis. Defaults to 50.");
 			System.out.println("-h: The host of the JNDI server to connect to. Defaults to localhost.");
 			System.out.println("-p: The port of the JNDI server to connect to. Defaults to " + JNDIConsts.DEFAULT_PORT);
@@ -68,7 +68,7 @@ public class LoadClient {
 		}
 		
 		int       numThreads = cmd.hasSwitch("t") ? cmd.getOptWithValue("t").getIntValue() : 3;
-		final int pause      = cmd.hasSwitch("s") ? cmd.getOptWithValue("s").getIntValue() : 50;
+		final int pause      = cmd.hasSwitch("r") ? cmd.getOptWithValue("r").getIntValue() : 50;
 		
 		Properties props = new Properties(System.getProperties());
 		if (cmd.hasSwitch("f")) {

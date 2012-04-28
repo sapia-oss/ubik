@@ -638,7 +638,7 @@ public class EventChannel {
     		Consts.MCAST_CONTROL_RESPONSE_TIMEOUT, 
     		Defaults.DEFAULT_CONTROL_RESPONSE_TIMEOUT
     );
-    this.controlBatchSize = props.getIntProperty(Consts.MCAST_CONTROL_BATCH_SIZE, Defaults.DEFAULT_CONTROL_BATCH_SIZE);
+    this.controlBatchSize = props.getIntProperty(Consts.MCAST_CONTROL_SPLIT_SIZE, Defaults.DEFAULT_CONTROL_SPLIT_SIZE);
     
     log.debug("Heartbeat timeout set to %s", heartbeatTimeout);
     log.debug("Heartbeat interval set to %s", heartbeatInterval);

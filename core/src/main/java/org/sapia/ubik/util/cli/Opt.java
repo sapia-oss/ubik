@@ -16,6 +16,14 @@ public class Opt {
 		
 		ARG, SWITCH;
 		
+		public boolean isArg() {
+		  return this == ARG;
+		}
+		
+		public boolean isSwitch() {
+		  return this == SWITCH;
+		}
+		
 	}
 
 	private Type 	 type;

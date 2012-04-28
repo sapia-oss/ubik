@@ -26,7 +26,7 @@
       <sapia:vitem name="Event Channel" href="group_communication.html#eventchannel" />
       <sapia:vitem name="Protocol" href="group_communication.html#control_protocol" />    
       <sapia:vitem name="Avis" href="group_communication.html#using_avis" />
-      <sapia:vitem name="TCP Unicast" href="group_communication.html#tcp_unicast" />
+      <sapia:vitem name="UDP Unicast" href="group_communication.html#udp_unicast" />
     </sapia:vsection>
     
     <sapia:vsection name="Customization" href="customization.html">
@@ -54,26 +54,9 @@
     </sapia:section>
     <sapia:sect2 title="Overview">
     
-      <p>Ubik aims to provide a set of distributed computing APIs that
-      complement Java's current "official" offerings - such as EJB and Jini. 
-      The main API of the Ubik project is a RMI-like framework that allows to
-      easily and transparently perform method invocations over the wire. The whole process 
-      is simplified by (not exclusively): generating stubs dynamically; 
-      not enforcing the declaration of remote exceptions.</p>
-      
-      <p>In a more general fashion, Ubik tries to offer an alternative to the
-      complexity of Jini, and to the overkill and limitations of EJB. In the long run, the Ubik project's aim is 
-      to make the distribution of objects as transparent as possible, without compromises 
-      on scalability, robustness and performance.</p>
-      
-      <p>In addition, Ubik supports plugging in different transport mechanisms; proof of this
-      is its HTTP transport layer: Ubik can even be embedded in a servlet!</p>
-      
-      <p>Ubik RMI is <b>not</b> an implementation of Java's RMI specification; it is therefore <b>not</b>
-      a drop-in replacement of the JDK's RMI implementation.</p>
-      
-      <sapia:note>Ubik RMI brings you feature-complete, easy remoting, without the burden of an 
-      application server.</sapia:note>
+      <p>Ubik is a performant, scalable, feature-rich distributed objects framework. 
+ 	  It offers a RMI-like framework that allows easily and transparently performing method invocations 
+ 	  over the wire, and packs features that guarantee across the board scalability.</p>
       
     </sapia:sect2>
     
@@ -86,28 +69,27 @@
         <p>Ubik RMI is similar to the JDK's RMI. Yet it differs from it in many ways. The following
         features illustrate how:</p>
         <ul>
-          <li>Dynamically generated stubs (no stub compilation);</li>
+          <li><a href="transport/nio_tcp.html">NIO-based transport</a>: extremely performant and scalabale;</li>
+          <li>fast serialization based upon the <a href="http://www.jboss.org/serialization/">JBoss Serialization</a> library;</li>                  
+          <li>automatic fail-over for stubs that are bound into Ubik JNDI - see next section;</li>
+          <li><a href="naming.html#smartstubs">sticky stubs</a> and <a href="naming.html#smartstubs">stateless stubs</a> 
+          (that perform round-robin over the different servers);</li>
+          <li>client-side discovery (naming service is automatically discovered, stateless stubs 
+          automatically discover new servers and add them to their round-robin list);</li>
+          <li>different discovery mechanisms (IP Multicast, TCP-based broadcast relying on <a href="http://avis.sourceforge.net/">Avis</a>);</li>          
+          <li>support for <a href="tutorial.html#callbacks">callbacks</a>;</li>                            
+          <li>dynamically generated stubs (no stub compilation);</li>
           <li>no need to throw <sapia:class>RemoteException</sapia:class>s;</li>
           <li>no need to extend <sapia:class>UnicastRemoteObject</sapia:class>;</li>
           <li>supports colocated method calls (no invocation via network if client and server are in
           the same VM;</li>
-          <li>automatic fail-over for stubs that are bound into Ubik JNDI - see next section;</li>
-          <li><a href="naming.html#smartstubs">sticky stubs</a> and <a href="naming.html#smartstubs">stateless stubs</a> (that perform round-robin over the different servers);</li>          
           <li>supports client-side and server-side interceptors;</li>
-          <li>client-side discovery (naming service is automatically discovered, stateless stubs 
-          automatically discover new servers and add them to their round-robin list);</li>
-          <li>supports <a href="tutorial.html#callbacks">callbacks</a> - very important for scalability;</li>
-          <li>isolated transport layer - potentially allowing for RMI over HTTP, UDP, etc.;</li>
-          <li>HTTP transport layer provided: you can even embed Ubik in a servlet;</li>          
+          <li>a <sapia:class link="maven/api/org/sapia/ubik/rmi/Remote.html">@Remote</sapia:class> annotation, which can be used
+          instead of implementing the JDK's <sapia:class>Remote</sapia:class> interface;</li>
+          <li><a href="customization.html">customizable</a>: extend Ubik for generating your own stubs.</li>
           <li>inherently secure: Ubik does not support dynamic code download (therefore, no "foreign code" can enter a Ubik server). This greatly
           reduces configuration and security-related hassles (setting setting up a remote distributed codebase, 
           managing security managers and permissions, etc.);</li>
-          <li>clean shutdown - incoming request threads are given time to complete;</li>
-          <li>different discovery mechanisms (IP Multicast, TCP-based broadcast relying on <a href="http://avis.sourceforge.net/">Avis</a>);</li>
-          <li>faster serialization with the <a href="http://www.jboss.org/serialization/">JBoss Serialization</a> library;</li>
-          <li>features a <sapia:class link="maven/api/org/sapia/ubik/rmi/Remote.html">@Remote</sapia:class> annotation, which can be used
-          instead of implementing the JDK's <sapia:class>Remote</sapia:class> interface;</li>
-          <li><a href="customization.html">customizable</a>: extend Ubik for generating your own stubs.</li>
         </ul>
       </sapia:sect3>
       
@@ -121,9 +103,8 @@
           <li>Ubik RMI stubs that are bound into a Ubik JNDI server are automatically made 
           "naming aware": they will automatically handle fail-over and/or round-robin (depending
           on the type of stub) provided that connection to their server of origin fails;</li>
-          <li>allows to bind multiple servers under the same name - essential for scalability;</li>
+          <li>allows binding multiple servers under the same name - essential for scalability;</li>
           <li>client-side discovery of JNDI servers.</li>
-          <li>supports <a href="naming.html#attributes">attributes</a> (offers same possibilities as Jini templates).</li>          
         </ul>
       </sapia:sect3>
     </sapia:sect2>    

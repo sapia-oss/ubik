@@ -27,7 +27,7 @@
       <sapia:vitem name="Event Channel" href="group_communication.html#eventchannel" />
       <sapia:vitem name="Protocol" href="group_communication.html#control_protocol" />    
       <sapia:vitem name="Avis" href="group_communication.html#using_avis" />
-      <sapia:vitem name="TCP Unicast" href="group_communication.html#tcp_unicast" />
+      <sapia:vitem name="UDP Unicast" href="group_communication.html#udp_unicast" />
     </sapia:vsection>  
     
     <sapia:vsection name="Customization" href="customization.html">
@@ -123,8 +123,9 @@
 
         <p>
            Second, it may be that you're experiencing UDP packet loss. That's also network relevant and at the Ubik level, the surest way to avoid that
-           is to avoid completely. This is done by going through the workaround suggested above, and in addition to configure the TCP 
-           <sapia:class>UnicastDispatcher</sapia:class>. Check out the <a href="group_communication.html#tcp_unicast">documentation</a> for more details.
+           is to avoid completely. This is done by going through the workaround suggested above, and in addition make sure you're using the TCP 
+           <sapia:class>UnicastDispatcher</sapia:class> - which should be the case since it's the one that's set up by default. Check out the 
+           <a href="group_communication.html#tcp_unicast">documentation</a> for more details.
         </p>
         
         <p>Lastly, another cause might be that the configured packet size is not large enough. You can configure it with the <sapia:command>ubik.rmi.naming.mcast.bufsize</sapia:command>
@@ -137,6 +138,8 @@
            respond to the requests. After a given timeout (configurable through the <sapia:command>ubik.rmi.naming.mcast.heartbeat.timeout</sapia:command> JVM property), for the nodes that did 
            not respond, the master will notify all slave nodes still alive about the missing nodes, so that all nodes can update their view of the domain accordingly. 
         </p>
+        <p>In addition, upon shutting down, nodes broadcast a "shutdown event" to the domain so that the other nodes can update their state in "real time". This reduces the possibility
+        for nodes to have an inconsistent view of the domain.</p>
       </sapia:sect3>
 
       <sapia:sect3 title="What if the master disappears?">

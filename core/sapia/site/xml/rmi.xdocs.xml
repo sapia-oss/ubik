@@ -27,7 +27,7 @@
       <sapia:vitem name="Event Channel" href="group_communication.html#eventchannel" />
       <sapia:vitem name="Protocol" href="group_communication.html#control_protocol" />    
       <sapia:vitem name="Avis" href="group_communication.html#using_avis" />
-      <sapia:vitem name="TCP Unicast" href="group_communication.html#tcp_unicast" />
+      <sapia:vitem name="UDP Unicast" href="group_communication.html#udp_unicast" />
     </sapia:vsection>  
     
     <sapia:vsection name="Customization" href="customization.html">
@@ -195,9 +195,9 @@ public class HelloImpl implements Hello{
   indicate to Ubik which one to use. That regular expression must be specified as a 
   System property, under the <sapia:command>ubik.rmi.address-pattern</sapia:command>
   key. If no address could be found that matches the given regexp, then Ubik also
-  resorts to localhost.</sapia:note>
+  resorts to localhost. See <a href="tutorial.html#bindaddr">the tutorial</a> for more on this.</sapia:note>
 
-  <p>Note that our Hello interface in this case did not need to extend <sapia:class>Remote</sapia:class>; 
+  <p>Note that our Hello interface in this case did not need to extend <sapia:class>java.rmi.Remote</sapia:class>; 
   the Hub class "knows" that we want to remote-enable our instance (since we export it as a server), so it 
   would internally generate a stub even if our object would not be an instance of <sapia:class>Remote</sapia:class>. 
   As for methods that return remote objects, the <sapia:class>Remote</sapia:class> interface has to be extended by 

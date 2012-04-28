@@ -10,8 +10,8 @@
     </sapia:section>  
   
     <sapia:sect-desc>
-      <p>The so-called Standard TCP transport uses standard Java sockets to implement a TCP transport layer.
-	  </p>
+      <p>The so-called Standard TCP transport uses standard Java sockets to implement a TCP transport layer. This transport is considered
+      legacy and the <a href="nio_tcp.html">NIO transport</a> should be used instead.</p>
     </sapia:sect-desc>
     
     <sapia:sect2 title="Exporting a Server">

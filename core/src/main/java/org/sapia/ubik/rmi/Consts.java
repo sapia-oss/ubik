@@ -125,10 +125,10 @@ public interface Consts {
   public static final String MCAST_CONTROL_RESPONSE_TIMEOUT = "ubik.rmi.naming.mcast.control.response.timeout";
   
   /**
-   * This constant corresponds to the 'ubik.rmi.naming.mcast.control.batch.size' property key. It is used 
-   * to specify the size of the batches of control notifications and requests (defaults to 20).
+   * This constant corresponds to the 'ubik.rmi.naming.mcast.control.split.size' property key. It is used 
+   * to specify the size of the batches of control notifications and requests (defaults to 5).
    */
-  public static final String MCAST_CONTROL_BATCH_SIZE = "ubik.rmi.naming.mcast.control.batch.size";
+  public static final String MCAST_CONTROL_SPLIT_SIZE = "ubik.rmi.naming.mcast.control.split.size";
 
   /**
    * Identifies the unicast provider to use as part of {@link EventChannel}s.

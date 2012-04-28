@@ -1,6 +1,9 @@
 package org.sapia.ubik.mcast.control;
 
+import static org.junit.Assert.assertEquals;
+
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -8,8 +11,35 @@ import org.junit.Test;
 import org.sapia.ubik.mcast.McastUtil;
 import org.sapia.ubik.rmi.server.transport.socket.MultiplexSocketAddress;
 import org.sapia.ubik.util.Clock;
+import org.sapia.ubik.util.Collections2;
 
 public class ControlRequestTest {
+
+  @Test
+  public void testSplit() {
+    Set<String> targetedNodes = new HashSet<String>();
+    for (int i = 0; i < 100; i++) {
+      targetedNodes.add("node_" + i);
+    }
+    TestControlRequest req = new TestControlRequest(targetedNodes);
+    
+    List<SplittableMessage> splits = req.split(10);
+    for (int i = 0; i < splits.size(); i++) {
+      assertEquals(10, splits.get(i).getTargetedNodes().size());
+      List<SplittableMessage> nestedSplits = splits.get(i).split(5);
+      for (int j = 0; j < nestedSplits.size(); j++) {
+        assertEquals(2, nestedSplits.get(j).getTargetedNodes().size());
+      }
+    }
+  }
+  
+  @Test
+  public void testBatchSizeLargerSplit() {
+    Set<String> targetedNodes = Collections2.arrayToSet("1", "2");
+    TestControlRequest req = new TestControlRequest(targetedNodes);
+    assertEquals(1, req.split(3).size());
+  }
+  
 
 	@Test
 	public void testSizeFor10Nodes() throws Exception {

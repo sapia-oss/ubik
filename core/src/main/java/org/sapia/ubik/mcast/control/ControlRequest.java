@@ -105,7 +105,7 @@ public abstract class ControlRequest implements Externalizable, SplittableMessag
 	 */
 	
 	public List<SplittableMessage> split(int batchSize) {
-		List<Set<String>> 	  batches  = Collections2.splitAsSets(targetedNodes, batchSize);
+		List<Set<String>> 	  batches  = Collections2.divideAsSets(targetedNodes, batchSize);
 		List<SplittableMessage> requests = new ArrayList<SplittableMessage>();
 		for(Set<String> batch : batches) {
 			ControlRequest copy = getCopy(batch);

@@ -27,7 +27,7 @@
       <sapia:vitem name="Event Channel" href="group_communication.html#eventchannel" />
       <sapia:vitem name="Protocol" href="group_communication.html#control_protocol" />    
       <sapia:vitem name="Avis" href="group_communication.html#using_avis" />
-      <sapia:vitem name="TCP Unicast" href="group_communication.html#tcp_unicast" />
+      <sapia:vitem name="UDP Unicast" href="group_communication.html#udp_unicast" />
     </sapia:vsection>  
 
     <sapia:vsection name="Customization" href="customization.html">
@@ -81,7 +81,7 @@
       	<li><sapia:command>REPORT</sapia:command></li>
       </ul>
       
-      <p>At runtime, Ubik asapia:commandempts to match the value of the <sapia:command>ubik.rmi.log.level</sapia:command> JVM property (if found) to one of the above levels - matching is case-insensitive.
+      <p>At runtime, Ubik attempts to match the value of the <sapia:command>ubik.rmi.log.level</sapia:command> JVM property (if found) to one of the above levels - matching is case-insensitive.
       For example, the <sapia:command>debug</sapia:command> value for the property would set the level to <sapia:command>DEBUG</sapia:command>.</p>
     
       <p>In addition, you can also redirect logging output to a file (Ubik logs to <sapia:command>stdout</sapia:command> by default). The abstraction for logging output is
@@ -89,12 +89,12 @@
       that allows instantiating the desired output at runtime, based on the following JVM property: <sapia:command>ubik.rmi.log.output.class</sapia:command>. As its name indicates, the
       value of the property must correspond to the fully-qualified name of the <sapia:class>LogOutput</sapia:class> implementation class to use.</p>
       
-      <p>To redirect to a file, you specify the <sapia:class link="">FileLogOutput</sapia:class> class. Upon instantiation, an instance of that class will initialize itself based
-      on specific JVM properties (for which defaults will be used if the corresponding properties are not found). These properties are as follows:</p>
+      <p>To redirect to a file, you specify the <sapia:class link="maven/api/org/sapia/ubik/log/FileLogOutput.html">FileLogOutput</sapia:class> class. Upon instantiation, an instance of 
+      that class will initialize itself based on specific JVM properties (for which defaults will be used if the corresponding properties are not found). These properties are as follows:</p>
       
       <ul>
-        <li><sapia:command>ubik.rmi.log.file.name</sapia:command>: specifies the name of the log file to create - defaults to <sapia:command>ubik-&lt;index&gt;.log</sapia:command>, where <sapia:command>&lt;index&gt;</sapia:command>
-        corresponds to the rotation number.</li>
+        <li><sapia:command>ubik.rmi.log.file.name</sapia:command>: specifies the name of the log file to create - defaults to <sapia:command>ubik.log</sapia:command>. Note that the file
+        name specified by this property is expected NOT to have the extension. Ubik will add the <sapia:command>.log</sapia:command> extension at runtime.</li>
       	<li><sapia:command>ubik.rmi.log.file.max-archive</sapia:command>: specifies the maximum number of archived log files to keep around.</li>
       	<li><sapia:command>ubik.rmi.log.file.size</sapia:command>: indicates the maximum size (in MB) of the log file before it's rotated (defaults to 3 megs).</li>
       	<li><sapia:command>ubik.rmi.log.file.dir</sapia:command>: specifies the path to the directory where log files are to be kept (defaults to the value of the 
@@ -112,12 +112,12 @@
     	is configurable through the <sapia:command>ubik.rmi.stats.dump.interval</sapia:command> JVM property (whose value is expected to be expressed in seconds). If the interval
     	is not supplied (or if it's zero or less), no output will be performed.</p>
     	
-    	<p>By default, the output will be done to a file (named <sapia:command>ubik-stats-&lt;index&gt;.log</sapia:command> - where <sapia:command>&lt;index&gt;</sapia:command> corresponds to the rotation number) 
+    	<p>By default, the output will be done to a file (named <sapia:command>ubik-stats.log</sapia:command>) 
     	under the <sapia:command>user.dir</sapia:command> directory. Which log file is used and how it is managed can be configured with JVM properties that are similar to the one used for configuring logging output:</p>
 
       <ul>
-        <li><sapia:command>ubik.rmi.stats.log.file.name</sapia:command>: specifies the name of the log file to create - defaults to <sapia:command>ubik-stats-&lt;index&gt;.log</sapia:command>, where <sapia:command>&lt;index&gt;</sapia:command>
-        corresponds to the rotation number.</li>
+        <li><sapia:command>ubik.rmi.log.file.name</sapia:command>: specifies the name of the log file to create - defaults to <sapia:command>ubik-stats.log</sapia:command>. Note that the file
+        name specified by this property is expected NOT to have the extension. Ubik will add the <sapia:command>.log</sapia:command> extension at runtime.</li>
       	<li><sapia:command>ubik.rmi.stats.log.file.max-archive</sapia:command>: specifies the maximum number of archived log files to keep around.</li>
       	<li><sapia:command>ubik.rmi.stats.log.file.size</sapia:command>: indicates the maximum size (in MB) of the log file before it's rotated (defaults to 3 megs).</li>
       	<li><sapia:command>ubik.rmi.stats.log.file.dir</sapia:command>: specifies the path to the directory where log files are to be kept (defaults to the value of the 
@@ -182,7 +182,7 @@
 		</sapia:sect3>
 		
 		<sapia:sect3 title="Stub Generation">
-			<p>By default, Ubik stubs are dynamic proxies: the JDK's mechanism for generating such proxies is used by default. You can provide your own 
+			<p>Ubik stubs are dynamic proxies, generated using the JDK's mechanism. You can provide your own 
 			<sapia:class link="maven/api/org/sapia/ubik/rmi/server/stub/creation/StubCreationStrategy.html">StubCreationStrategy</sapia:class>: the constraint you
 			must respect is that the stub you generate implement the <sapia:class link="maven/api/org/sapia/ubik/rmi/server/stub/Stub.html">Stub</sapia:class> interface:
 			a stub is expected to be able to return the <sapia:class link="maven/api/org/sapia/ubik/rmi/server/stub/StubInvocationHandler.html">StubInvocationHandler</sapia:class> 

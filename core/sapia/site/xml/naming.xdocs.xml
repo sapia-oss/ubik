@@ -26,7 +26,7 @@
       <sapia:vitem name="Event Channel" href="group_communication.html#eventchannel" />
       <sapia:vitem name="Protocol" href="group_communication.html#control_protocol" />    
       <sapia:vitem name="Avis" href="group_communication.html#using_avis" />
-      <sapia:vitem name="TCP Unicast" href="group_communication.html#tcp_unicast" />
+      <sapia:vitem name="UDP Unicast" href="group_communication.html#udp_unicast" />
     </sapia:vsection>
     
     <sapia:vsection name="Customization" href="customization.html">
@@ -516,7 +516,7 @@ while(true){
         </sapia:sect4>        
         
       </sapia:sect3>
-      <sapia:sect3 title="Attributes" alias="attributes">
+      <!-- sapia:sect3 title="Attributes" alias="attributes">
         <p>
           It is now possible to bind and lookup items to/from the JNDI using additional attributes, specified
           in the JNDI name. This allows distinguishing services bound under the same name, but that may be
@@ -567,7 +567,7 @@ ctx.rebind("services/myService?version=1.0&amp;vmId=10933909&amp;team=mercury",
         that they use. Each team in this case would be mandated to specify that attribute when looking up
         services.</p>
         
-      </sapia:sect3>
+      </sapia:sect3-->
       
     </sapia:sect2>
   </sapia:sect1>

@@ -26,7 +26,7 @@
       <sapia:vitem name="Event Channel" href="group_communication.html#eventchannel" />
       <sapia:vitem name="Protocol" href="group_communication.html#control_protocol" />    
       <sapia:vitem name="Avis" href="group_communication.html#using_avis" />
-      <sapia:vitem name="TCP Unicast" href="group_communication.html#tcp_unicast" />
+      <sapia:vitem name="UDP Unicast" href="group_communication.html#udp_unicast" />
     </sapia:vsection>      
     
     <sapia:vsection name="Customization" href="customization.html">
@@ -93,7 +93,8 @@
       </p>
       <p>
       	By default, the implementations of the dispacher abstractions that are used by an <sapia:class>EventChannel</sapia:class> are 
-        <sapia:class>UDPBroadcastDispatcher</sapia:class> and <sapia:class>UDPUnicastDispatcher</sapia:class> respectively. The former
+        <sapia:class link="maven/api/org/sapia/ubik/mcast/udp/UDPBroadcastDispatcher.html">UDPBroadcastDispatcher</sapia:class> and 
+        <sapia:class link="maven/api/org/sapia/ubik/mcast/tcp/NioTcpUnicastDispatcher.html">NioTcpUnicastDispatcher</sapia:class> respectively. The former
         uses IP multicast to broadcast <sapia:class>RemoteEvent</sapia:class>s. It is by default configured to listen to multicast address and port
         <sapia:command>231.173.5.7</sapia:command> and <sapia:command>5454</sapia:command>, respectively. This can be configured through the following JVM properties:
         
@@ -102,7 +103,7 @@
           <li><sapia:command>ubik.rmi.naming.mcast.port</sapia:command>: used to specifiy the multicast port.</li>
         </ul>
       </p>
-      <p>This the dispatcher implementations that are used can be configured otherwise - which is explained in sections further below.</p>
+      <p>The default dispatcher implementations can be configured otherwise - see further below for the details.</p>
      
     </sapia:sect2>
     
@@ -113,29 +114,30 @@
       
       <p>The control protocol was designed to be scalable across a large number of nodes, and to minimize chattiness. The
       protocol does not rely on broadcast - since when using IP multicast, multiple domains can use the same 
-      multicast address, resulting in many control messages crossing domains.</p>
+      multicast address, resulting in control messages crossing domains.</p>
       
       <p>Rather then, the protocol is implemented over unicast, but using a cascading scheme where slave nodes are put
-      to contribution: a first set of nodes is determined, where each is ordered to relay the control messages to other 
-      nodes, and so on, until no nodes are left to contact. The size of the batch of nodes to contact, at every stage, 
-      is determined by the <sapia:command>ubik.rmi.naming.mcast.control.batch.size</sapia:command> JVM property - which defaults to 5.</p>
+      to contribution: a first set of nodes is determined, where each is relays the control messages to other 
+      nodes, and so on, until no nodes are left to contact. The number of nodes into which to split, at every stage, 
+      is determined by the <sapia:command>ubik.rmi.naming.mcast.control.split.size</sapia:command> JVM property - which defaults to 5.</p>
       
       <p>
       For example, let's say there are 101 nodes, one of them being the master - it is always the master that initiates a control sequence
-      as part of the protocol. Given a batch size of 5, it means that the 100 nodes are divided in groups of 20. The first node in each set 
-      will in turn split the 19 target node IDs it receives into 5, yielding 4 groups of 4 nodes to contact, and 1 group of 3. Since 4 and 3 cannot be 
-      further divided by 5, this will be the last time such a split occurs. If you do the calculations you'll see that it takes 4 stages 
-      in the cascade to dispatch a message across a cluster of 1000 event channel nodes, given a batch of 5. Of course the 
-      larger the batch size, the less dispatch stages you will incur.
+      as part of the protocol. Given a split size of 5, it means that the 100 nodes are divided in 5 sets of 20 nodes. The master node sends a copy of the
+      control message to the first node in each group - each copy of the message holding the IDs of the 20 nodes of its corresponding set. At the next stage,
+      the node receiving the control message removes its own ID from the set, and splits again. There are thus 20-1 nodes (19) to divide by 5, yielding 4 sets of 
+      4 nodes to contact, and 1 group of 3. Since 4 and 3 cannot be further divided by 5, this will be the last time such a split occurs, meaning that each
+      of these nodes will dispatch the control messages to 4 or 3 other nodes - accordingly. If you do the calculations you'll see that it takes 4 stages in the 
+      cascade to dispatch a message across a cluster of 1000 event channel nodes, given a split size of 5. Of course the larger that split size, the less 
+      dispatch stages you will incur. Let's just try with a split size of 10, with the 101 nodes of our cluster: the first split will yield 10 sets of 10 nodes.
+      When the control message reaches the first node of each set, there are 9 nodes remaining to contact at each level. Therefore, given our split size, not
+      further splits are done, and the each of the nodes at that stage will relay the control message to the 9 remaining nodes it has in its set.
       </p>
       
-      <p>
-      There is one caveat: in large clusters, since UDP is used by default and the packet size is set to 3.072 kb (configurable through the
-      <sapia:command>ubik.rmi.naming.mcast.bufsize</sapia:command> JVM property), you may risk having some messages not going through. Indeed, the payload
-      transported in the control messages is larger - since the IDs of the nodes to contact at the next stages are transported from
-      one stage to the next. You have two choices in this case: increase the UDP packet size with the above-mentioned property, 
-      or <a href="#tcp_unicast">use TCP unicast</a> - which we would recommend for clusters of 25 nodes or more.
-      </p>
+      <p>By default, since the size of control messages may be larger (given their payload in terms of having to carry node IDs around), the <a href="">NioTcpUnicastDispatcher</a>
+      is used: it implements point-to-point communication over TCP, using a NIO-based transport. You can change this to using UDP, although we really do not recommend it. see the 
+      <a href="group_communication.html#udp_unicast">UDP Unicast</a> section for details.</p>
+
     </sapia:sect2>
     
     <sapia:sect2 title="Broadcast using Avis" alias="using_avis">
@@ -177,15 +179,15 @@ EventChannel channel = new EventChannel("myDomain", new Props().addProperties(pr
       </sapia:note>
 
     </sapia:sect2>
-    <sapia:sect2 title="TCP unicast" alias="tcp_unicast">
-   		<p>For the unicast part, you also have a non-UDP option: you can configure the <sapia:class>TCPUnicastDispatcher</sapia:class>
-   		which, as its name implies, uses TCP</p>
-   		
-   		<p>To configure the <sapia:class link="maven/api/org/sapia/ubik/mcast/tcp/TCPUnicastDispatcher.html">TCPUnicastDispatcher</sapia:class>, set the following JVM property as follows:
-   		  <ul>
-   		  	<li><sapia:command>ubik.rmi.naming.unicast.provider</sapia:command> should be set to <sapia:command>ubik.rmi.naming.unicast.tcp</sapia:command>.</li>
-   		  </ul>
-   		</p>
+    <sapia:sect2 title="UDP unicast" alias="ucp_unicast">
+      <p>You can use UDP for unicast group communication, but we do not recommend it. You have to be aware that a default packet size of 3.072 kb is set by
+      default (configurable through the <sapia:command>ubik.rmi.naming.mcast.bufsize</sapia:command> JVM property). That default size may prove unsufficient, depending
+      on the size of messages that are exchanged, and you may risk having some messages not going through.
+      </p>
+    
+   	  <p>To activate the <sapia:class link="maven/api/org/sapia/ubik/mcast/udp/UDPUnicastDispatcher.html">UDPUnicastDispatcher</sapia:class>, you have to set the 
+   	  <sapia:command>ubik.rmi.naming.unicast.provider</sapia:command> to <sapia:command>ubik.rmi.naming.unicast.tcp</sapia:command>
+   	  </p>
    		
    		<p>Programmatically, you would do it as follows:</p>
    		
@@ -194,7 +196,7 @@ import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.util.Props;
 
 Properties properties = new Properties();
-properties.setProperty(Consts.UNICAST_PROVIDER, Consts.UNICAST_PROVIDER_TCP);
+properties.setProperty(Consts.UNICAST_PROVIDER, Consts.UNICAST_PROVIDER_UDP);
 EventChannel channel = new EventChannel("myDomain", new Props().addProperties(properties));</sapia:code>
     </sapia:sect2>    
   </sapia:sect1>

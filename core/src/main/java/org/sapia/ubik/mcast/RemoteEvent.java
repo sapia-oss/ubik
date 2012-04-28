@@ -11,8 +11,8 @@ import org.sapia.ubik.net.ServerAddress;
 
 /**
  * Models a multicast event. An instance of this class strictly encapsulates its
- * data in the form of strings, in order to avoid classloading issues when
- * serializing/deserializing in a networked environment. A multicast is sent to a
+ * data in the form of an array of bytes, in order to avoid classloading issues when
+ * serializing/deserializing in a networked environment across JVMs. A multicast is sent to a
  * domain, or to all domains, according to the domain name information that is
  * kept an the event.
  * <p>

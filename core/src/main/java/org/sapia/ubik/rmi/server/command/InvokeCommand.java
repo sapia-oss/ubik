@@ -10,6 +10,7 @@ import java.lang.reflect.Method;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.Hub;
+import org.sapia.ubik.rmi.server.ServerRuntime;
 import org.sapia.ubik.rmi.server.ShutdownException;
 import org.sapia.ubik.rmi.server.VmId;
 import org.sapia.ubik.rmi.server.invocation.ServerPostInvokeEvent;
@@ -128,6 +129,7 @@ public class InvokeCommand extends RMICommand implements Externalizable {
       throw new ShutdownException();
     }
 
+    ServerRuntime runtime = Hub.getModules().getServerRuntime();
     Object obj = Hub.getModules().getObjectTable().getObjectFor(oid);
 
     if (paramTypes == null) {
@@ -147,8 +149,7 @@ public class InvokeCommand extends RMICommand implements Externalizable {
       if (Log.isDebug()) {
         Log.debug(getClass(), "invoking " + mt.getName() + " on " + oid + "(" + obj + ")");
       }
-
-      Hub.getModules().getServerRuntime().getDispatcher().dispatch(preEvt);
+      runtime.dispatchEvent(preEvt);
 
       mt.setAccessible(true);
       Object toReturn = mt.invoke(preEvt.getTarget(),
@@ -160,7 +161,7 @@ public class InvokeCommand extends RMICommand implements Externalizable {
       
       postEvt.setResultObject(toReturn);
 
-      Hub.getModules().getServerRuntime().getDispatcher().dispatch(postEvt);
+      runtime.dispatchEvent(postEvt);
 
       if (usesMarshalledObjects) {
         toReturn = new MarshalledObject(
@@ -188,7 +189,7 @@ public class InvokeCommand extends RMICommand implements Externalizable {
           e
       );
       
-      Hub.getModules().getServerRuntime().getDispatcher().dispatch(postEvt);      
+      runtime.dispatchEvent(postEvt);      
       throw e;
     }
   }

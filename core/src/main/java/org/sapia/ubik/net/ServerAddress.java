@@ -8,7 +8,7 @@ import java.io.Serializable;
  * the transport-specific details (host, port, etc.).
  * <p>
  * Implementations of this interface should override the <code>equals</code>
- * method.
+ * and <code>hashCode</code> methods.
  *
  * @author Yanick Duchesne
  */

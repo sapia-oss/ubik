@@ -9,8 +9,8 @@ import org.sapia.ubik.util.cli.Cmd;
 
 /**
  * Helper class to start <code>main()</code> classes from the command-line in a generic manner. This class
- * expects a <code>-c</code> switch to be specified, which is expected to provide the fully-qualified
- * name of the class whose <code>main()</code> method is to be invoked.
+ * expects the first argument to be the fully-qualified name of the class whose <code>main()</code> method 
+ * is to be invoked.
  * 
  * @author yduchesne
  *
@@ -21,12 +21,17 @@ public class ServerStarter {
 	  
 		Cmd cmd = Cmd.fromArgs(args);
 		
-		if (!cmd.hasSwitch("c")) {
-			out.println("Missing -c switch");
+		
+		
+		if (cmd.getOpts().isEmpty()) {
+			out.println("Missing class with main() method");
 			help();
+		} else if (cmd.getOpts().get(0).getType().isSwitch()) {
+      out.println("First argument should be the name of the class to start.");
+      help();		  
 		} else {
 			try {
-				Class<?> serverClass = Class.forName(cmd.getOptWithValue("c").getTrimmedValueOrBlank());
+				Class<?> serverClass = Class.forName(cmd.getOptWithValue("C").getTrimmedValueOrBlank());
 				Method method = serverClass.getDeclaredMethod("main", String[].class);
 				if (Modifier.isStatic(method.getModifiers())) {
 				     out.println("Starting server " + serverClass.getName() + " started...");
@@ -44,9 +49,9 @@ public class ServerStarter {
 	
 	private static void help() {
 		out.println();
-		out.println("Command-line options:");
+		out.println("Syntax:");
 		out.println();
-		out.println("-c : The name of the Server class whose main() method should be called.");
+		out.println("./starter.sh <classname> [<arguments>]");
 		out.println();
 	}
 }

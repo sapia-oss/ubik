@@ -48,7 +48,7 @@ public class Defaults {
   public static final long DEFAULT_CONTROL_RESPONSE_TIMEOUT = 60000;  
   
   /**
-   * The size for the batches of control requests/notifications.
+   * The size for the splits of control requests/notifications.
    */
-  public static final int DEFAULT_CONTROL_BATCH_SIZE        = 20;
+  public static final int DEFAULT_CONTROL_SPLIT_SIZE        = 5;
 }
