@@ -22,6 +22,7 @@ import org.sapia.ubik.rmi.server.oid.DefaultOID;
 import org.sapia.ubik.rmi.server.oid.OID;
 import org.sapia.ubik.rmi.server.stats.Hits;
 import org.sapia.ubik.rmi.server.stats.Stats;
+import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
 import org.sapia.ubik.rmi.server.transport.TransportManager;
 import org.sapia.ubik.taskman.Task;
@@ -297,26 +298,28 @@ public class ClientGC implements Module, Task, ClientGCMBean {
     private void doSend(List<OID> toSend, ServerAddress addr) {
       
       log.debug("Sending GC command to %s; cleaning %s objects", addr, toSend.size());
-      
-      RmiConnection conn = null;
+
+      Connections   conns = null;
+      RmiConnection conn  = null;
 
       try {
-        
-        conn = transport.getConnectionsFor(addr).acquire();
+        conns = transport.getConnectionsFor(addr);
+        conn  = conns.acquire();
         gcDerefPerMin.hit(toSend.size());
         gcConnectionsPerMin.hit();
         
         conn.send(new CommandGc(toSend.toArray(new DefaultOID[toSend.size()]), toSend.size()));
         conn.receive();
-        transport.getConnectionsFor(addr).release(conn);
+        conns.release(conn);
       } catch (Throwable e) {
         if (e instanceof RemoteException) {
           log.info("Error sending GC command to server %s - cleaning up corresponding remote objects", e, addr);
           owner.forceRemoveHostReferenceFor(addr);
         }
-        if (conn != null) {
-          conn.close();
-        }
+        if (conns != null && conn != null) {
+          conns.invalidate(conn);
+          conns.clear();
+        }        
       }
     }
   }

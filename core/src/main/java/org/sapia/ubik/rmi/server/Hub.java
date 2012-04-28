@@ -205,20 +205,22 @@ public class Hub {
         conn = pool.acquire();
         conn.send(new CommandConnect(address.getTransportType()));
       }
-
       toReturn = conn.receive();
+      pool.release(conn);
     } catch (ConnectException e){
       throw new RemoteException("No server at address: " + address, e);
+    } catch (RemoteException e) {
+      if (conn != null) {
+        pool.invalidate(conn);
+        pool.clear();
+      }
+      throw e;
     } catch (IOException e) {
       throw new RemoteException("Error connecting to remote server " + address, e);
     } catch (ClassNotFoundException e) {
       throw new RemoteException("Could not find class", e);
-    } finally {
-      if (conn != null) {
-        pool.release(conn);
-      }
     }
-
+    
     if (toReturn instanceof Throwable) {
       if (toReturn instanceof RuntimeException) {
         throw (RuntimeException) toReturn;

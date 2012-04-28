@@ -175,10 +175,9 @@ public class RemoteRefContext implements Externalizable{
         conn.send(cmd);
       } catch (RemoteException e) {
         synchronized (lock) {
+          pool.invalidate(conn);
           pool.clear();
         }
-        
-        conn.close();
         conn = pool.acquire();
         conn.send(cmd);
       }

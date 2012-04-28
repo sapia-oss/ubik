@@ -81,6 +81,7 @@ public class RemoteInvocationStrategy implements InvocationStrategy {
       pool.release(conn);      
     } catch (RemoteException e) {
     	pool.invalidate(conn);
+    	pool.clear();
     	throw e;
     } catch (Exception e) {
     	pool.release(conn);
@@ -122,6 +123,7 @@ public class RemoteInvocationStrategy implements InvocationStrategy {
       pool.release(conn);      
     } catch (RemoteException e) {
     	pool.invalidate(conn);
+    	pool.clear();
     	throw e;
     } catch (Exception e) {
     	pool.release(conn);

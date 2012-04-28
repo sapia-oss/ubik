@@ -34,7 +34,7 @@ class RemoteResponseSender implements ResponseSender {
          conn.send(new CallbackResponseCommand(responses), dest.getVmId(), dest.getServerAddress().getTransportType());
        } catch (Exception e) {
       	  log.error("Error sending command to %s", e, dest.getServerAddress());
-          if (conn != null) {
+          if (pool != null && conn != null) {
             pool.invalidate(conn);
             pool.clear();
           }
