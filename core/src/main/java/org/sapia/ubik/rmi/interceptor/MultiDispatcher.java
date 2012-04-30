@@ -49,7 +49,8 @@ public class MultiDispatcher {
     try {
       m = itClass.getMethod(shortName, new Class[] { event });
     } catch (Exception e) {
-      throw new InvalidInterceptorException(e);
+      throw new InvalidInterceptorException("Method " + shortName + 
+          " with argument of type " + event + " not found on interceptor " + it, e);
     }
 
     List<InterceptorInfo> interceptors = _interceptors.get(event);

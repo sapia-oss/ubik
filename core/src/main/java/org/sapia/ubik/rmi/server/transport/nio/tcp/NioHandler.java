@@ -6,6 +6,7 @@ import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.Request;
 import org.sapia.ubik.net.ServerAddress;
+import org.sapia.ubik.rmi.interceptor.MultiDispatcher;
 import org.sapia.ubik.rmi.server.Config;
 import org.sapia.ubik.rmi.server.command.RMICommand;
 import org.sapia.ubik.rmi.server.transport.CommandHandler;
@@ -23,9 +24,9 @@ public class NioHandler extends IoHandlerAdapter{
   private ServerAddress  addr;
   private CommandHandler handler;
   
-  public NioHandler(ServerAddress addr){
+  public NioHandler(MultiDispatcher dispatcher, ServerAddress addr){
     this.addr = addr;
-    handler = new CommandHandler(getClass());
+    handler = new CommandHandler(dispatcher, getClass());
   }
   
   public void sessionCreated(IoSession sess) throws Exception {

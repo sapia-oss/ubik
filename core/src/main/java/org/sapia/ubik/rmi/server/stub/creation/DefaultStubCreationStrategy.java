@@ -16,6 +16,7 @@ public class DefaultStubCreationStrategy implements StubCreationStrategy {
     return true;
   }
   
+  @Override
   public Object createStubFor(Object exported, StubInvocationHandler handler, java.lang.Class<?>[] stubInterfaces) {
     return Proxy.newProxyInstance(Thread.currentThread().getContextClassLoader(), stubInterfaces, handler);
   };

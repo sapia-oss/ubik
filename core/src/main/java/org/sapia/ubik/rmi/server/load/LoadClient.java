@@ -17,6 +17,8 @@ import org.sapia.ubik.rmi.server.stats.Stats;
 import org.sapia.ubik.rmi.server.stats.Timer;
 import org.sapia.ubik.util.PropertiesUtil;
 import org.sapia.ubik.util.cli.Cmd;
+import org.sapia.ubik.util.cli.Opt;
+import org.sapia.ubik.util.cli.Cmd.OptionFilter;
 
 /**
  * Looks up a {@link LoadService} from the JNDI and calls it non-stop, according to user-provided parameters.
@@ -55,7 +57,12 @@ public class LoadClient {
 
 	public static void main(String[] args) throws Exception {
 		
-		Cmd cmd = Cmd.fromArgs(args);
+    Cmd cmd = Cmd.fromArgs(args).filter(new OptionFilter() {
+      @Override
+      public boolean accepts(Opt option) {
+        return !option.getName().contains(".sh");
+      }
+    });
 		
 		if (cmd.hasSwitch("help")) {
 			System.out.println("-t: The number of concurrent threads that should be spawned. Defaults to 3.");

@@ -7,6 +7,7 @@ import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.Request;
 import org.sapia.ubik.net.Worker;
+import org.sapia.ubik.rmi.interceptor.MultiDispatcher;
 import org.sapia.ubik.rmi.server.Config;
 import org.sapia.ubik.rmi.server.command.RMICommand;
 import org.sapia.ubik.rmi.server.transport.CommandHandler;
@@ -21,8 +22,8 @@ public class SocketRmiServerThread implements Worker<Request> {
   private Category       log      = Log.createCategory(getClass());
   private CommandHandler handler;
 
-  SocketRmiServerThread() {
-    handler = new CommandHandler(getClass());
+  SocketRmiServerThread(MultiDispatcher dispatcher) {
+    handler = new CommandHandler(dispatcher, getClass());
   }
   
   @Override

@@ -106,7 +106,7 @@ public class InvocationDispatcher implements Module {
     clientRuntime.getDispatcher().dispatch(pre);
     
     InvocationStrategy handler = invocationStrategyFactory.getInvocationStrategy(vmId);
-    toReturn = handler.dispatchInvocation(stats, pool, cmd);
+    toReturn = handler.dispatchInvocation(stats, pool, pre.getCommand());
 
     // CLIENT post-invoke event dispatch
     ClientPostInvokeEvent post = new ClientPostInvokeEvent(pre.getCommand(), toReturn);

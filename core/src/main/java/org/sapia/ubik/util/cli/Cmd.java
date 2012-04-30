@@ -17,7 +17,11 @@ import org.sapia.ubik.util.cli.Opt.Type;
  *
  */
 public class Cmd {
-	
+  
+  public interface OptionFilter {
+    public boolean accepts(Opt option);
+  }
+  
 	private List<Opt> 			 opts       = new ArrayList<Opt>();
 	private Map<String, Opt> optsByName = new HashMap<String, Opt>();
 	
@@ -64,15 +68,29 @@ public class Cmd {
 	 * @param type the {@link Type} of option to return.
 	 * @return a new {@link Cmd} instance, with the desired options.
 	 */
-	public Cmd filter(Type type) {
-		List<Opt> filtered = new ArrayList<Opt>();
-		for (Opt o : this.opts) {
-			if(o.getType().equals(type)) {
-				filtered.add(o);
-			}
-		}
-		return new Cmd(filtered);
+	public Cmd filter(final Type type) {
+	  return filter(new OptionFilter() {
+      @Override
+      public boolean accepts(Opt option) {
+        return option.getType() == type;
+      }
+    });
 	}
+
+  /**
+   * Returns a copy of this instance, but only with the options that have been accepted by the given filter.
+   * @param filter an {@link OptionFilter}.
+   * @return a new {@link Cmd} instance, with the desired options.
+   */
+  public Cmd filter(OptionFilter filter) {
+    List<Opt> filtered = new ArrayList<Opt>();
+    for (Opt o : this.opts) {
+      if(filter.accepts(o)) {
+        filtered.add(o);
+      }
+    }
+    return new Cmd(filtered);
+  }	
 	
 	/**
 	 * @param name the name of the switch to check for.

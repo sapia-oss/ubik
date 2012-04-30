@@ -13,6 +13,7 @@ import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.TcpPortSelector;
+import org.sapia.ubik.rmi.server.Hub;
 import org.sapia.ubik.rmi.server.Server;
 
 /**
@@ -69,7 +70,7 @@ class NioServer implements Server{
     }
     log.info("Binding to address: %s", this.inetAddr);      
     addr = new NioAddress(this.inetAddr.getAddress().getHostAddress(), this.inetAddr.getPort());
-    handler = new NioHandler(addr);    
+    handler = new NioHandler(Hub.getModules().getServerRuntime().getDispatcher(), addr);    
   }
   
   /**

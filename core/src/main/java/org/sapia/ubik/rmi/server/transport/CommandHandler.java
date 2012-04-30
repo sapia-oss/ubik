@@ -5,6 +5,7 @@ import java.rmi.RemoteException;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.Connection;
+import org.sapia.ubik.rmi.interceptor.MultiDispatcher;
 import org.sapia.ubik.rmi.server.command.InvokeCommand;
 import org.sapia.ubik.rmi.server.command.RMICommand;
 import org.sapia.ubik.rmi.server.stats.Hits;
@@ -19,16 +20,14 @@ import org.sapia.ubik.rmi.server.stats.Timer;
  */
 public class CommandHandler {
   
-  private Category log;
-  private Timer    remoteCall;
-  private Timer    sendResponse;
-  private Timer    execTime;
-  private Hits     tps;  
+  private Category        log;
+  private MultiDispatcher eventDispatcher;
+  private Timer           remoteCall;
+  private Timer           sendResponse;
+  private Timer           execTime;
+  private Hits            tps;  
 
-  /**
-   * @param baseName the base name used to create this instance's statistics. 
-   */
-  public CommandHandler(Class<?> owner) {
+  public CommandHandler(MultiDispatcher eventDispatcher, Class<?> owner) {
     log          = Log.createCategory(owner);
    
     remoteCall   = Stats.getInstance().createTimer(
@@ -51,6 +50,7 @@ public class CommandHandler {
                      "HitsPerSecond", 
                      "The number of hits per second")
                      .perSecond().build();
+    this.eventDispatcher = eventDispatcher;
   }
   
   public void handleCommand(RMICommand cmd, Connection client) {
@@ -76,7 +76,11 @@ public class CommandHandler {
     
     try {
       
-      if(invokeCommand) remoteCall.start();
+      if(invokeCommand) { 
+        remoteCall.start();
+        eventDispatcher.dispatch(new IncomingCommandEvent(cmd));
+      }
+      
       resp = cmd.execute();
       if(invokeCommand) remoteCall.end();
       

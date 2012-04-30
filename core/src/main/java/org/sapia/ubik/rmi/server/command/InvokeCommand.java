@@ -9,6 +9,7 @@ import java.lang.reflect.Method;
 
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.NoSuchObjectException;
 import org.sapia.ubik.rmi.server.Hub;
 import org.sapia.ubik.rmi.server.ServerRuntime;
 import org.sapia.ubik.rmi.server.ShutdownException;
@@ -130,7 +131,7 @@ public class InvokeCommand extends RMICommand implements Externalizable {
     }
 
     ServerRuntime runtime = Hub.getModules().getServerRuntime();
-    Object obj = Hub.getModules().getObjectTable().getObjectFor(oid);
+    Object obj = doGetObjectFor(oid);
 
     if (paramTypes == null) {
       if(obj.getClass().getClassLoader() == null){
@@ -192,6 +193,10 @@ public class InvokeCommand extends RMICommand implements Externalizable {
       runtime.dispatchEvent(postEvt);      
       throw e;
     }
+  }
+  
+  protected Object doGetObjectFor(OID oid) throws NoSuchObjectException  {
+    return Hub.getModules().getObjectTable().getObjectFor(oid);    
   }
 
   /**

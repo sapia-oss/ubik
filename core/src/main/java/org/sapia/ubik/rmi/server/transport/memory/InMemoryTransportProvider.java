@@ -6,6 +6,7 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.sapia.ubik.net.ServerAddress;
+import org.sapia.ubik.rmi.server.Hub;
 import org.sapia.ubik.rmi.server.Server;
 import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.TransportProvider;
@@ -54,7 +55,7 @@ public class InMemoryTransportProvider implements TransportProvider {
   public synchronized Server newDefaultServer() throws RemoteException {
     InMemoryServer server = servers.get(DEFAULT_SERVER_NAME);
     if(server == null) {
-      server = new InMemoryServer(new InMemoryAddress(DEFAULT_SERVER_NAME));
+      server = new InMemoryServer(Hub.getModules().getServerRuntime().getDispatcher(), new InMemoryAddress(DEFAULT_SERVER_NAME));
       servers.put(DEFAULT_SERVER_NAME, server);
     }
     return server;
@@ -65,7 +66,7 @@ public class InMemoryTransportProvider implements TransportProvider {
     String name = wrapper.getProperty(SERVER_NAME, DEFAULT_SERVER_NAME);
     InMemoryServer server = servers.get(name);
     if(server == null) {
-      server = new InMemoryServer(new InMemoryAddress(name));
+      server = new InMemoryServer(Hub.getModules().getServerRuntime().getDispatcher(), new InMemoryAddress(name));
       servers.put(name, server);
     }
     return server;

@@ -13,6 +13,8 @@ import org.sapia.ubik.rmi.server.transport.socket.MultiplexServerExporter;
 import org.sapia.ubik.rmi.server.transport.socket.SocketServerExporter;
 import org.sapia.ubik.util.PropertiesUtil;
 import org.sapia.ubik.util.cli.Cmd;
+import org.sapia.ubik.util.cli.Cmd.OptionFilter;
+import org.sapia.ubik.util.cli.Opt;
 
 /**
  * Binds a {@link LoadService} instance to the JNDI. Type <code>-help</code> at the command-line for help.
@@ -45,10 +47,15 @@ public class LoadServer {
 
 	public static void main(String[] args) throws Exception {
 		
-		Cmd cmd = Cmd.fromArgs(args);
+		Cmd cmd = Cmd.fromArgs(args).filter(new OptionFilter() {
+      @Override
+      public boolean accepts(Opt option) {
+        return !option.getName().contains(".sh");
+      }
+    });
 		
-		if (cmd.hasSwitch("h")) {
-			System.out.println("-s: The fully qualified name of the LoadService interface implementation");
+		if (cmd.hasSwitch("help")) {
+			System.out.println("-c: The fully qualified name of the LoadService interface implementation");
 			System.out.println("    to bind to the JNDI. Defaults to " + WorkLoadService.class.getName() + ".");
 			System.out.println("-h: The host of the JNDI server to connect to. Defaults to localhost.");
 			System.out.println("-p: The port of the JNDI server to connect to. Defaults to " + JNDIConsts.DEFAULT_PORT);
@@ -62,7 +69,7 @@ public class LoadServer {
 	
 		try {
   		impl = (LoadService) Class.forName(
-  				cmd.hasSwitch("s") ? cmd.getOptWithValue("s").getTrimmedValueOrBlank() : NoopLoadService.class.getName()
+  				cmd.hasSwitch("c") ? cmd.getOptWithValue("c").getTrimmedValueOrBlank() : NoopLoadService.class.getName()
   		).newInstance();
 		} catch (Exception e) {
 			System.out.println("Could not instantiate LoadService implementation, aborting");

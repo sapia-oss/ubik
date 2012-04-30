@@ -5,6 +5,7 @@ import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.Worker;
 import org.sapia.ubik.net.Request;
 import org.sapia.ubik.rmi.server.Config;
+import org.sapia.ubik.rmi.server.Hub;
 import org.sapia.ubik.rmi.server.command.RMICommand;
 import org.sapia.ubik.rmi.server.transport.CommandHandler;
 
@@ -20,7 +21,7 @@ class HttpRmiServerThread implements Worker<Request> {
   private CommandHandler handler;
   
   public HttpRmiServerThread() {
-    handler = new CommandHandler(getClass());
+    handler = new CommandHandler(Hub.getModules().getServerRuntime().getDispatcher(), getClass());
   }
   
   @Override

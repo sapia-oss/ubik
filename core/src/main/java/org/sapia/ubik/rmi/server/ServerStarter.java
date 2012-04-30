@@ -6,6 +6,8 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
 import org.sapia.ubik.util.cli.Cmd;
+import org.sapia.ubik.util.cli.Opt;
+import org.sapia.ubik.util.cli.Cmd.OptionFilter;
 
 /**
  * Helper class to start <code>main()</code> classes from the command-line in a generic manner. This class
@@ -19,10 +21,13 @@ public class ServerStarter {
 
 	public static void main(String[] args) {
 	  
-		Cmd cmd = Cmd.fromArgs(args);
-		
-		
-		
+    Cmd cmd = Cmd.fromArgs(args).filter(new OptionFilter() {
+      @Override
+      public boolean accepts(Opt option) {
+        return !option.getName().contains(".sh");
+      }
+    });
+    
 		if (cmd.getOpts().isEmpty()) {
 			out.println("Missing class with main() method");
 			help();
@@ -31,7 +36,7 @@ public class ServerStarter {
       help();		  
 		} else {
 			try {
-				Class<?> serverClass = Class.forName(cmd.getOptWithValue("C").getTrimmedValueOrBlank());
+				Class<?> serverClass = Class.forName(cmd.getOpts().get(0).getName().trim());
 				Method method = serverClass.getDeclaredMethod("main", String[].class);
 				if (Modifier.isStatic(method.getModifiers())) {
 				     out.println("Starting server " + serverClass.getName() + " started...");

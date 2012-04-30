@@ -6,6 +6,7 @@ import java.util.concurrent.Executors;
 
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.ServerAddress;
+import org.sapia.ubik.rmi.interceptor.MultiDispatcher;
 import org.sapia.ubik.rmi.server.Config;
 import org.sapia.ubik.rmi.server.Server;
 import org.sapia.ubik.rmi.server.command.RMICommand;
@@ -21,9 +22,10 @@ public class InMemoryServer implements Server {
   
   private InMemoryAddress serverAddress;
   private ExecutorService requestProcessor = Executors.newFixedThreadPool(10);
-  private CommandHandler  handler          = new CommandHandler(getClass());
+  private CommandHandler  handler;
   
-  public InMemoryServer(InMemoryAddress serverAddress) {
+  public InMemoryServer(MultiDispatcher dispatcher, InMemoryAddress serverAddress) {
+    handler = new CommandHandler(dispatcher, getClass());
     this.serverAddress  = serverAddress;
   }
   
