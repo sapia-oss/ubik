@@ -1,5 +1,6 @@
 package org.sapia.ubik.mcast.control;
 
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.sapia.ubik.mcast.control.challenge.ChallengeRequest;
@@ -43,6 +44,20 @@ class ControlRequestFactory {
 				context.getChannelCallback().getNodes());
 		return req;
 	}
+	
+  /**
+   * @param context the {@link ControllerContext}.
+   * @return a new {@link ChallengeRequest}.
+   */
+  static ControlRequest createChallengeRequestCopy(ControllerContext context, ControlRequest request, Set<String> targetedNodes) {
+    ControlRequest req = new ChallengeRequest(
+        context.getClock(), 
+        request.getRequestId(), 
+        context.getNode(), 
+        context.getChannelCallback().getAddress(),
+        targetedNodes);
+    return req;
+  }	
 	
 	/**
 	 * @param context the {@link ControllerContext}.

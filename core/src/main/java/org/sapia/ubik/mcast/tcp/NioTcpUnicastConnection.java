@@ -28,8 +28,6 @@ public class NioTcpUnicastConnection implements Connection {
   private int            		 bufsize;
   private ServerAddress  		 address;
   private ByteBuffer		 		 byteBuffer;
-  private ObjectOutputStream oos;
-  private ObjectInputStream  ois;
   
   public NioTcpUnicastConnection(Socket sock, int bufsize) throws IOException {
     this.sock 			= sock;
@@ -47,11 +45,10 @@ public class NioTcpUnicastConnection implements Connection {
   @Override
   public void send(Object o) throws IOException, RemoteException {
     byteBuffer.clear();
-    if(oos == null) {
-    	oos = SerializationStreams.createObjectOutputStream(new ByteBufferOutputStream(byteBuffer));
-    }
+    ObjectOutputStream	oos = SerializationStreams.createObjectOutputStream(new ByteBufferOutputStream(byteBuffer));
     oos.writeObject(o);
     oos.flush();
+    oos.close();
     
     try {
       doSend();
@@ -66,9 +63,7 @@ public class NioTcpUnicastConnection implements Connection {
     try {
     	DataInputStream dis = new DataInputStream(sock.getInputStream());
     	dis.readInt();
-    	if(ois == null) {
-    		ois = SerializationStreams.createObjectInputStream(new BufferedInputStream(sock.getInputStream(), bufsize));
-    	}
+    	ObjectInputStream ois = SerializationStreams.createObjectInputStream(new BufferedInputStream(sock.getInputStream(), bufsize));
       return ois.readObject();
     } catch(EOFException e) {
       throw new RemoteException("Communication with server interrupted; server probably disappeared", e);

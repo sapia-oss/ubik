@@ -11,6 +11,8 @@ import org.sapia.ubik.concurrent.SynchronizedRef;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.EventChannel.Role;
+import org.sapia.ubik.mcast.control.challenge.ChallengeCompletionNotification;
+import org.sapia.ubik.mcast.control.challenge.ChallengeCompletionNotificationHandler;
 import org.sapia.ubik.mcast.control.challenge.ChallengeRequest;
 import org.sapia.ubik.mcast.control.challenge.ChallengeRequestHandler;
 import org.sapia.ubik.mcast.control.heartbeat.DownNotification;
@@ -20,6 +22,7 @@ import org.sapia.ubik.mcast.control.heartbeat.HeartbeatRequestHandler;
 import org.sapia.ubik.mcast.control.heartbeat.PingRequest;
 import org.sapia.ubik.mcast.control.heartbeat.PingRequestHandler;
 import org.sapia.ubik.util.Clock;
+import org.sapia.ubik.util.Collections2;
 
 
 public class EventChannelController {
@@ -70,11 +73,12 @@ public class EventChannelController {
 	
 	public EventChannelController(Clock clock, ControllerConfiguration config, ChannelCallback callback) {
 		this.config  = config;
-		context = new ControllerContext(callback, clock);
-		requestHandlers.put(ChallengeRequest.class.getName(), 		 new ChallengeRequestHandler(context));
-		requestHandlers.put(HeartbeatRequest.class.getName(), 		 new HeartbeatRequestHandler(context));
-		syncRequestHandlers.put(PingRequest.class.getName(), 			 new PingRequestHandler(context));
+		context = new ControllerContext(this, callback, clock);
+		requestHandlers.put(ChallengeRequest.class.getName(), new ChallengeRequestHandler(context));
+		requestHandlers.put(HeartbeatRequest.class.getName(), new HeartbeatRequestHandler(context));
+		syncRequestHandlers.put(PingRequest.class.getName(), new PingRequestHandler(context));
 		notificationHandlers.put(DownNotification.class.getName(), new DownNotificationHandler(context));
+		notificationHandlers.put(ChallengeCompletionNotification.class.getName(), new ChallengeCompletionNotificationHandler(context));
 	}
 	
 	ControllerConfiguration getConfig() {
@@ -196,13 +200,13 @@ public class EventChannelController {
   		// This is the master: it is sending a heartbeat request and creating a matching
   		// response handler.
   		case MASTER:
-  			log.debug("Sending heartbeat request");
   			ControlRequest 			 	 heartbeatRq 			= ControlRequestFactory.createHeartbeatRequest(context);
   			ControlResponseHandler heartbeatHandler = ControlResponseHandlerFactory.createHeartbeatResponseHandler(
   					context, new HashSet<String>(context.getChannelCallback().getNodes())
   			);
   			ref.set(new PendingResponseState(heartbeatHandler, heartbeatRq.getRequestId(), context.getClock().currentTimeMillis()));
   			context.heartbeatRequestSent();
+        log.debug("Sending heartbeat request to %s", heartbeatRq.getTargetedNodes());
   			context.getChannelCallback().sendRequest(heartbeatRq);
   		break;
   		
@@ -217,6 +221,30 @@ public class EventChannelController {
   			}
 		}
 	}
+	
+	void triggerChallenge() {
+	  context.setRole(Role.MASTER_CANDIDATE);
+    log.debug("Node %s triggering challenge", context.getNode());     
+    ControlRequest         challengeRq      = ControlRequestFactory.createChallengeRequest(context);
+    ControlResponseHandler challengeHandler = ControlResponseHandlerFactory.createChallengeResponseHandler(
+        context, context.getChannelCallback().getNodes()
+    );
+    ref.set(new PendingResponseState(challengeHandler, challengeRq.getRequestId(), context.getClock().currentTimeMillis()));
+    context.challengeRequestSent();
+    String masterNode = context.getMasterNode();
+    if (masterNode != null) {
+      challengeRq.getTargetedNodes().remove(context.getMasterNode());
+      ControlRequest challengeRqCopy = ControlRequestFactory.createChallengeRequestCopy(
+          context, 
+          challengeRq, 
+          Collections2.arrayToSet(context.getMasterNode())
+      );
+      context.getChannelCallback().sendRequest(challengeRqCopy);
+      context.getChannelCallback().sendRequest(challengeRq);
+    } else {
+      context.getChannelCallback().sendRequest(challengeRq);
+    }
+  }
 	
 	private void doTriggerChallenge(boolean force) {
 		List<String> nodes = new ArrayList<String>(context.getChannelCallback().getNodes());
@@ -238,14 +266,7 @@ public class EventChannelController {
 		}
 		
 		if(context.getRole() == Role.MASTER_CANDIDATE) {
-			log.debug("Node %s triggering challenge", context.getNode());			
-			ControlRequest 			 	 challengeRq   		= ControlRequestFactory.createChallengeRequest(context);
-			ControlResponseHandler challengeHandler = ControlResponseHandlerFactory.createChallengeResponseHandler(
-					context, context.getChannelCallback().getNodes()
-			);
-			ref.set(new PendingResponseState(challengeHandler, challengeRq.getRequestId(), context.getClock().currentTimeMillis()));
-			context.challengeRequestSent();
-			context.getChannelCallback().sendRequest(challengeRq);
+		  triggerChallenge();
 		} else {
 			log.debug("Node %s is setting itelf to slave", context.getNode());			
 			context.setRole(Role.SLAVE);

@@ -60,6 +60,7 @@ public class NioTcpUnicastResponseEncoder implements ProtocolEncoder {
     ObjectOutputStream oos = SerializationStreams.createObjectOutputStream(new ByteBufferOutputStream(outputBuffer));
     oos.writeObject(toEncode);
     oos.flush();
+    oos.close();
     outputBuffer.putInt(0, outputBuffer.position() - BYTES_PER_INT); // setting length at reserved space
     outputBuffer.flip();
     output.write(outputBuffer);  	

@@ -1,20 +1,25 @@
 package org.sapia.ubik.mcast.control.challenge;
 
 import java.util.HashSet;
+import java.util.Random;
 import java.util.Set;
 
+import org.sapia.ubik.concurrent.NamedThreadFactory;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.EventChannel.Role;
+import org.sapia.ubik.mcast.control.ControlNotificationFactory;
 import org.sapia.ubik.mcast.control.ControlResponse;
 import org.sapia.ubik.mcast.control.ControlResponseHandler;
 import org.sapia.ubik.mcast.control.ControllerContext;
 import org.sapia.ubik.mcast.control.challenge.ChallengeResponse.Code;
 
 public class ChallengeResponseHandler implements ControlResponseHandler {
-	
-	private Category 				log 					 = Log.createCategory(getClass());
-	
+
+  private static final int  MIN_PAUSE    = 200;
+  private static final int  RANDOM_PAUSE = 1800;
+  
+	private Category 				  log 					 = Log.createCategory(getClass());
 	private ControllerContext context;
 	private Set<String> 		  targetedNodes;
 	private Set<String> 		  replyingNodes  = new HashSet<String>();
@@ -43,7 +48,7 @@ public class ChallengeResponseHandler implements ControlResponseHandler {
 						originNode
 				);
 				context.setRole(Role.SLAVE);
-				context.notifyChallengeCompleted();
+				notifyChallengeCompleted();
 				return true;
 			}
 			
@@ -52,7 +57,7 @@ public class ChallengeResponseHandler implements ControlResponseHandler {
 			if(replyingNodes.size() >= targetedNodes.size()) {
 				log.debug("All expected challenge responses received. Upgrading role to MASTER");
 				context.setRole(Role.MASTER);
-				context.notifyChallengeCompleted();
+				notifyChallengeCompleted();
 				return true;
 			}
 			log.debug("Received %s/%s responses thus far...", replyingNodes.size(), targetedNodes.size());
@@ -67,7 +72,43 @@ public class ChallengeResponseHandler implements ControlResponseHandler {
 	public synchronized void onResponseTimeOut() {
 		log.debug("Challenge response timeout detected, assuming role is MASTER");
 		context.setRole(Role.MASTER);
-		context.notifyChallengeCompleted();
+		notifyChallengeCompleted();
+	}
+	
+  private void notifyChallengeCompleted() {
+    context.notifyChallengeCompleted();	
+    if (context.getRole() == Role.MASTER) {
+      notifyOtherNodes();
+    }
+  }
+    
+  private void notifyOtherNodes() {
+  		Thread notifier = NamedThreadFactory.createWith("Ubik.EventChannel.ChallengeConfirmationNotifier").setDaemon(true).newThread(
+  		new Thread() {
+  		  
+  		  public void run() {
+  		   
+  		    try {
+  		      
+  		      Thread.sleep(MIN_PAUSE + new Random().nextInt(RANDOM_PAUSE));
+  		      
+  		      // this shouldn't happen but testing anyway
+  		      if (context.getRole() == Role.SLAVE) {
+  		       log.debug("Role downgraded to SLAVE");
+  		      } else {
+              context.getChannelCallback().sendNotification(ControlNotificationFactory.createChallengeCompletionNotification(
+                  context.getNode(), 
+                  context.getChannelCallback().getNodes())
+              );
+  		      }
+  		    } catch (InterruptedException e) {
+  		      log.debug("Thread interrupted, exiting", log.noArgs());
+  		    }
+  		  }
+  		}
+    );
+		
+		notifier.start();
 	}
 
 }

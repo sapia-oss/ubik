@@ -1,5 +1,6 @@
 package org.sapia.ubik.rmi.server.transport.nio.tcp;
 
+import java.net.ConnectException;
 import java.rmi.RemoteException;
 
 import org.sapia.ubik.net.ConnectionPool;

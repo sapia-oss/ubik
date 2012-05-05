@@ -20,23 +20,28 @@ public class ControllerContext {
 	private List<EventChannelControllerListener> listeners = new CopyOnWriteArrayList<EventChannelControllerListener>();
 	
 	private Role 						role;
+	private EventChannelController controller;
 	private ChannelCallback channelCallback;
 	private Clock						clock; 
 	private AtomicLong 			lastHeartbeatReqRcvTime 	= new AtomicLong();
 	private AtomicLong 			lastHeartbeatReqSentTime 	= new AtomicLong();
 	private AtomicLong 			lastChallengeReqRcvTime 	= new AtomicLong();
 	private AtomicLong 			lastChallengeReqSentTime 	= new AtomicLong();
+	private String          masterNode;
 	
 	/**
 	 * Creates an instance of this class with the given objects.
 	 * 
+	 * @param the {@link EventChannelController} to which this instance corresponds.
 	 * @param callback the {@link ChannelCallback} corresponding to the {@link EventChannel} in the context of which
 	 * this instance is created.
 	 * @param clock the {@link Clock} instance to use.
 	 */
 	ControllerContext(
+	    EventChannelController controller,
 			ChannelCallback callback, 
 			Clock clock) {
+	  this.controller      = controller;
 		this.role 					 = Role.UNDEFINED;
 		this.channelCallback = callback;
 		this.clock           = clock;
@@ -69,6 +74,9 @@ public class ControllerContext {
 	 * @param role the {@link Role} to assign to this instance.
 	 */
 	public synchronized void setRole(Role role) {
+	  if (role == Role.MASTER) {
+	    masterNode = null;
+	  }
 	  this.role = role;
   }
 	
@@ -174,4 +182,25 @@ public class ControllerContext {
 	public void removeControllerListener(EventChannelControllerListener listener) {
 		listeners.remove(listener);
 	}
+	
+	/**
+	 * Forces the challenge to determine the master.
+	 */
+	public void triggerChallenge() {
+	  controller.triggerChallenge();
+	}
+	
+	/**
+	 * @param masterNode the ID of the master node.
+	 */
+	public synchronized void setMasterNode(String masterNode) {
+	  this.masterNode = masterNode;
+	}
+	
+	/**
+	 * @return the ID of the node that is currently the master (will be <code>null</code> if no heartbeat request  
+	 */
+	public synchronized String getMasterNode() {
+    return masterNode;
+  }
 }

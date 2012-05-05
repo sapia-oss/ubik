@@ -28,6 +28,7 @@ import org.sapia.ubik.net.ConnectionPool;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.TCPAddress;
 import org.sapia.ubik.net.ThreadInterruptedException;
+import org.sapia.ubik.util.pool.PooledObjectCreationException;
 
 /**
  * Base implementation for TCP-based {@link UnicastDispatcher}s.
@@ -121,39 +122,39 @@ public abstract class BaseTcpUnicastDispatcher implements UnicastDispatcher {
           try {
             queue.add((Response) doSend(addr, evt, true, type));
           } catch (ClassNotFoundException e) {
-            log.error("Could not deserialize response received from " + addr, e);
+            log.warning("Could not deserialize response received from %s", e, addr);
             try {
               queue.add(new Response(evt.getId(), e));
             } catch (IllegalStateException ise) {
-              log.info("Could not add response to queue", ise, new Object[]{});
+              log.info("Could not add response to queue", ise, log.noArgs());
             }
           } catch (TimeoutException e) {
-            log.error("Response from %s not received in timely manner", addr);
+            log.warning("Response from %s not received in timely manner", addr);
             try {
               queue.add(new Response(evt.getId(), e).setStatusSuspect());
             } catch (IllegalStateException ise) {
-              log.info("Could not add response to queue", ise, new Object[]{});
+              log.info("Could not add response to queue", ise, log.noArgs());
             }             
           } catch (ConnectException e) {
-            log.error("Remote node probably down: %s" + addr, e);
+            log.warning("Remote node probably down: %s", e, addr);
             try {
               queue.add(new Response(evt.getId(), e).setStatusSuspect());
             } catch (IllegalStateException ise) {
-              log.info("Could not add response to queue", ise, new Object[]{});
+              log.info("Could not add response to queue", ise, log.noArgs());
             }             
           } catch (RemoteException e) {
-            log.error("Remote node probably down: %s" + addr, e);
+            log.warning("Remote node probably down: %s", e, addr);
             try {
               queue.add(new Response(evt.getId(), e).setStatusSuspect());
             } catch (IllegalStateException ise) {
-              log.info("Could not add response to queue", ise, new Object[]{});
+              log.info("Could not add response to queue", ise, log.noArgs());
             }             
           } catch (IOException e) {
-            log.error("IO error caught trying to send to %s" + addr, e);
+            log.warning("IO error caught trying to send to %s", e, addr);
             try {
               queue.add(new Response(evt.getId(), e));
             } catch (IllegalStateException ise) {
-              log.info("Could not add response to queue", ise, new Object[]{});
+              log.info("Could not add response to queue", ise, log.noArgs());
             }
           } catch (InterruptedException e) {
             ThreadInterruptedException tie = new ThreadInterruptedException();
@@ -175,19 +176,19 @@ public abstract class BaseTcpUnicastDispatcher implements UnicastDispatcher {
     try {
       return (Response) doSend(addr, evt, true, type);
     } catch (ClassNotFoundException e) {
-      log.error("Could not deserialize response from %s" + addr, e);
+      log.warning("Could not deserialize response from %s", e, addr);
       return new Response(evt.getId(), e);      
     } catch (TimeoutException e) {
-      log.error("Response from %s not received in timely manner", addr);
+      log.warning("Response from %s not received in timely manner", addr);
       return new Response(evt.getId(), e).setStatusSuspect();
     } catch (ConnectException e) {
-      log.error("Remote node probably down: %s" + addr, e);
+      log.warning("Remote node probably down: %s", e, addr);
       return new Response(evt.getId(), e).setStatusSuspect();
     } catch (RemoteException e) {
-      log.error("Remote node probably down: %s" + addr, e);
+      log.warning("Remote node probably down: %s", e, addr);
       return new Response(evt.getId(), e).setStatusSuspect();
     } catch (IOException e) {
-      log.error("IO error caught trying to send to %s" + addr, e);
+      log.warning("IO error caught trying to send to %s", e, addr);
       return new Response(evt.getId(), e); 
     } catch (InterruptedException e) {
       ThreadInterruptedException tie = new ThreadInterruptedException();
@@ -204,32 +205,46 @@ public abstract class BaseTcpUnicastDispatcher implements UnicastDispatcher {
       evt.setUnicastAddress(getAddress());
       log.debug("dispatch() to %s, type: %s, data: %s", addr, type, data);
       doSend(addr, evt , false, type);
+    } catch(RemoteException e) {
+      log.warning("Could not send to %s", e, addr);
     } catch (ClassNotFoundException e) {
-      log.error("Could not deserialize response", e);
+      log.warning("Could not deserialize response", e);
     } catch (TimeoutException e) {
-      log.error("Did not receive ack from peer", e);
+      log.warning("Did not receive ack from peer", e);
     } catch (InterruptedException e) {
       ThreadInterruptedException tie = new ThreadInterruptedException();
       throw tie;
     }
-    
   }
   
   private Object doSend(ServerAddress addr, Serializable toSend, boolean synchro, String type) 
     throws IOException, ClassNotFoundException, TimeoutException, InterruptedException, RemoteException {
     log.debug("doSend() : %s, event type: %s", addr, type);
     ConnectionPool pool   = connections.getPoolFor(addr);
-    Connection connection = pool.acquire();
+    Connection connection = null;
+    try {
+      connection = pool.acquire();
+    } catch (PooledObjectCreationException e) {
+      if (e.getCause() instanceof ConnectException || e.getCause() instanceof RemoteException) {
+        pool.clear();
+        connection = pool.acquire();
+      }
+    }
+      
     try {
       connection.send(toSend);
     } catch (RemoteException re) {
       pool.invalidate(connection);
       pool.clear();
-      connection = pool.acquire();
+
       try {
+        connection = pool.acquire();
         connection.send(toSend);
       } catch (RemoteException re2) {
         pool.invalidate(connection);
+        throw re;
+      } catch (PooledObjectCreationException e) {
+        pool.invalidate(connection);        
         throw re;
       }
     } 

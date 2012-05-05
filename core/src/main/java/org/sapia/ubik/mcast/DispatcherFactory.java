@@ -29,6 +29,7 @@ public final class DispatcherFactory {
   static {
     try {
       Class.forName("org.apache.mina.filter.codec.ProtocolCodecFactory");
+      isNioEnabled = true;
     } catch (Exception e) {
       log.info("Mina not detected in classpath, will use non-NIO TCP unicast", log.noArgs());
       isNioEnabled = false;
@@ -51,7 +52,7 @@ public final class DispatcherFactory {
    * @throws IOException if a problem occurs creating the dispatcher.
    */
   public static UnicastDispatcher createUnicastDispatcher(EventConsumer consumer, Props props) throws IOException {
-    String provider = props.getProperty(Consts.UNICAST_PROVIDER, Consts.UNICAST_PROVIDER_UDP);
+    String provider = props.getProperty(Consts.UNICAST_PROVIDER, Consts.UNICAST_PROVIDER_TCP);
     if(provider.equals(Consts.UNICAST_PROVIDER_MEMORY)) {
       log.info("Creating in-memory unicast provider");
       return new InMemoryUnicastDispatcher(consumer);

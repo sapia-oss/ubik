@@ -147,6 +147,8 @@ public class NioTcpUnicastDispatcher extends BaseTcpUnicastDispatcher {
     Thread.sleep(2000);
     dispatcher.dispatch(dispatcher.getAddress(), "test", "TEST");
     
+    dispatcher.send(dispatcher.getAddress(), "test", "TEST");
+    
     Runtime.getRuntime().addShutdownHook(new Thread() {
       @Override
       public void run() {
