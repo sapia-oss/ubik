@@ -11,13 +11,11 @@ import org.apache.mina.filter.executor.ExecutorFilter;
 import org.apache.mina.transport.socket.nio.SocketAcceptor;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
-import org.sapia.ubik.mcast.Defaults;
 import org.sapia.ubik.mcast.EventConsumer;
 import org.sapia.ubik.net.ConnectionFactory;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.TCPAddress;
 import org.sapia.ubik.net.TcpPortSelector;
-import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.util.Localhost;
 
 /**
@@ -137,27 +135,5 @@ public class NioTcpUnicastDispatcher extends BaseTcpUnicastDispatcher {
   protected ConnectionFactory doGetConnectionFactory(int soTimeout) {
     return new NioTcpUnicastConnectionFactory(marshallingBufferSize);
   }
-  
-  public static void main(String[] args) throws Exception {
-    Log.setDebug();
-    EventConsumer consumer = new EventConsumer("test");
-    final NioTcpUnicastDispatcher dispatcher = new NioTcpUnicastDispatcher(consumer, Defaults.DEFAULT_HANDLER_COUNT, Consts.DEFAULT_MARSHALLING_BUFSIZE);
-    dispatcher.start();
-    
-    Thread.sleep(2000);
-    dispatcher.dispatch(dispatcher.getAddress(), "test", "TEST");
-    
-    dispatcher.send(dispatcher.getAddress(), "test", "TEST");
-    
-    Runtime.getRuntime().addShutdownHook(new Thread() {
-      @Override
-      public void run() {
-        dispatcher.close();
-      }
-    });
-    
-    while (true) {
-      Thread.sleep(100000);
-    }
-  }
+
 }

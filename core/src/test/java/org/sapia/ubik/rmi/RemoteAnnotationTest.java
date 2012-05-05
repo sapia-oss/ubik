@@ -1,11 +1,11 @@
 package org.sapia.ubik.rmi;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.sapia.ubik.log.Log;
 import org.sapia.ubik.rmi.server.Hub;
 
 public class RemoteAnnotationTest {
@@ -14,6 +14,7 @@ public class RemoteAnnotationTest {
   
   @Before
   public void setUp() {
+    Hub.shutdown();
     System.setProperty(Consts.COLOCATED_CALLS_ENABLED, "false");
     this.remote1 = new SelectedInterfacesRemoteObject();
   }
