@@ -447,6 +447,7 @@ public class EventChannel {
             break;
           } catch (Exception e) {
             log.info("Could not send control message to %s", e, address);
+            address = null;
           }
         }
       }
