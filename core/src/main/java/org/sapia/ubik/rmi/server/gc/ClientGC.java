@@ -30,7 +30,6 @@ import org.sapia.ubik.taskman.TaskContext;
 import org.sapia.ubik.taskman.TaskManager;
 import org.sapia.ubik.util.Props;
 
-
 /**
  * This class implements a the client-side distributed garbage collection algorithm.
  *
@@ -312,7 +311,7 @@ public class ClientGC implements Module, Task, ClientGCMBean {
         conn.receive();
         conns.release(conn);
       } catch (Throwable e) {
-        if (e instanceof RemoteException) {
+        if (e instanceof RemoteException || e.getCause() instanceof RemoteException) {
           log.info("Error sending GC command to server %s - cleaning up corresponding remote objects", e, addr);
           owner.forceRemoveHostReferenceFor(addr);
         }

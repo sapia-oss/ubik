@@ -1,7 +1,10 @@
 package org.sapia.ubik.rmi.server.transport.nio.tcp;
 
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.Socket;
+import java.net.SocketException;
+import java.rmi.RemoteException;
 
 import org.sapia.ubik.net.Connection;
 import org.sapia.ubik.net.SocketConnectionFactory;
@@ -22,16 +25,19 @@ public class NioRmiConnectionFactory extends SocketConnectionFactory {
    * @see org.sapia.ubik.net.SocketConnectionFactory#newConnection(Socket)
    */
   public Connection newConnection(Socket sock) throws IOException {
-    NioTcpRmiClientConnection conn = new NioTcpRmiClientConnection(sock, bufsize);
-    return conn;
+    return new NioTcpRmiClientConnection(sock, bufsize);
   }
 
   /**
    * @see org.sapia.ubik.net.SocketConnectionFactory#newConnection(String, int)
    */
   public Connection newConnection(String host, int port) throws IOException {
-    NioTcpRmiClientConnection conn = new NioTcpRmiClientConnection(new Socket(host, port), bufsize);
-
-    return conn;
+    try {
+      return new NioTcpRmiClientConnection(new Socket(host, port), bufsize);
+    } catch (ConnectException e) {
+      throw new RemoteException(String.format("Could not connect to %s:%s", host, port));
+    } catch (SocketException e) {
+      throw new RemoteException(String.format("Could not connect to %s:%s", host, port));
+    }        
   }
 }

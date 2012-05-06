@@ -445,7 +445,7 @@ public class EventChannel {
             }
             Thread.yield();
             break;
-          } catch (IOException e) {
+          } catch (Exception e) {
             log.info("Could not send control message to %s", e, address);
           }
         }

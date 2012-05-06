@@ -1,7 +1,10 @@
 package org.sapia.ubik.rmi.server.transport.socket;
 
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.Socket;
+import java.net.SocketException;
+import java.rmi.RemoteException;
 
 import org.sapia.ubik.net.Connection;
 import org.sapia.ubik.net.SocketConnectionFactory;
@@ -49,7 +52,12 @@ public class SocketRmiConnectionFactory extends SocketConnectionFactory {
    */
   public Connection newConnection(String host, int port)
     throws IOException {
-    SocketRmiConnection conn = new SocketRmiConnection(transportType, new Socket(host, port), loader, bufsize);
-    return conn;
+    try {
+      return new SocketRmiConnection(transportType, new Socket(host, port), loader, bufsize);
+    } catch (ConnectException e) {
+      throw new RemoteException(String.format("Could not connect to %s:%s", host, port));
+    } catch (SocketException e) {
+      throw new RemoteException(String.format("Could not connect to %s:%s", host, port));
+    }        
   }
 }

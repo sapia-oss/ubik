@@ -1,7 +1,10 @@
 package org.sapia.ubik.mcast.tcp;
 
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.Socket;
+import java.net.SocketException;
+import java.rmi.RemoteException;
 
 import org.sapia.ubik.net.Connection;
 import org.sapia.ubik.net.SocketConnectionFactory;
@@ -26,6 +29,12 @@ public class NioTcpUnicastConnectionFactory extends SocketConnectionFactory {
 
   @Override
   public Connection newConnection(String host, int port) throws IOException {
-    return new NioTcpUnicastConnection(new Socket(host, port), bufsize);
+    try {
+      return new NioTcpUnicastConnection(new Socket(host, port), bufsize);
+    } catch (ConnectException e) {
+      throw new RemoteException(String.format("Could not connect to %s:%s", host, port));
+    } catch (SocketException e) {
+      throw new RemoteException(String.format("Could not connect to %s:%s", host, port));
+    }        
   }
 }

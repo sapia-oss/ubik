@@ -227,7 +227,17 @@ public abstract class BaseTcpUnicastDispatcher implements UnicastDispatcher {
     } catch (PooledObjectCreationException e) {
       if (e.getCause() instanceof ConnectException || e.getCause() instanceof RemoteException) {
         pool.clear();
-        connection = pool.acquire();
+        try {
+          connection = pool.acquire();
+        } catch (PooledObjectCreationException e2) {
+          if (e2.getCause() instanceof ConnectException) {
+            throw new RemoteException("Could not connect to " + addr, e.getCause());
+          } else if (e2.getCause() instanceof RemoteException) {
+            throw (RemoteException) e.getCause();
+          } else {
+            throw new RemoteException("Undetermined error caught connecting to " + addr, e.getCause());
+          }
+        }
       }
     }
       
