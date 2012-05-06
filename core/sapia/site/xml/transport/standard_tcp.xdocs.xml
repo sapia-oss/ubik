@@ -19,7 +19,7 @@
     
       <p>You use <sapia:class link="../maven/api/org/sapia/ubik/rmi/server/transport/socket/SocketServerExporter.html">SocketServerExporter</sapia:class> to export a server over this transport, as follows:</p>
 <sapia:code>SocketServerExporter exporter = new SocketServerExporter();
-exporter.setPort(7070);
+exporter.port(7070);
 Hello helloServer = exporter.export(new HelloImpl());</sapia:code>
 
 <p>The above exports the <sapia:class>HelloImpl</sapia:class> instance as a server. The stub that

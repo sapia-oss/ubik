@@ -73,7 +73,7 @@
       <sapia:sect3 title="Using MultiplexServerExporter">
       <p>You can use an instance of <sapia:class link="../maven/api/org/sapia/ubik/rmi/server/transport/socket/MultiplexServerExporter.html">MultiplexServerExporter</sapia:class> to export a server rather than use tedious configuration, as follows:</p>
 <sapia:code>MultiplexSocketServerExporter exporter = new MultiplexServerExporter();
-exporter.setPort(7070);
+exporter.port(7070);
 Hello helloServer = exporter.export(new HelloImpl());</sapia:code>
 
 <p>The above exports the <sapia:class>HelloImpl</sapia:class> instance as a server. The stub that

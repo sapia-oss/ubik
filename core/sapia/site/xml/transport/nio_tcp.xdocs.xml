@@ -21,7 +21,7 @@
     
       <p>Rather than using a more tedious approach, we recommend you use a <sapia:class link="../maven/api/org/sapia/ubik/rmi/server/transport/nio/tcp/NioServerExporter.html">NioServerExporter</sapia:class>, as follows:</p>
 <sapia:code>NioServerExporter exporter = new NioServerExporter();
-exporter.setPort(7070);
+exporter.port(7070);
 Hello helloServer = exporter.export(new HelloImpl());</sapia:code>
 
 <p>The above exports the <sapia:class>HelloImpl</sapia:class> instance as a server, using the Mina-based transport. The stub that
