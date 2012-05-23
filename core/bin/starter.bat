@@ -11,7 +11,11 @@ goto end
 
 :okJavaHome
 
-SET LOCALCLASSPATH=
+SET LOCALCLASSPATH=%CLASSPATH%;
+if "%CLASSPATH%" == "" (
+    SET LOCALCLASSPATH=
+)
+SET LOCALCLASSPATH_DEFINED=
 
 if "%LOCALCLASSPATH_DEFINED%"=="true" goto okLcp
 
@@ -22,10 +26,20 @@ set LOCALCLASSPATH_DEFINED=true
 
 :okLcp
 
-rem echo %LOCALCLASSPATH%
+set JAVACMD=%JAVA_HOME%\bin\java
 
-set APPCLASSPATH=%CLASSPATH%;%LOCALCLASSPATH%;%UBIK_CP%
+SET APPCLASSPATH=%LOCALCLASSPATH%;%UBIK_CP%
+if "%UBIK_CP%" == "" (
+    set APPCLASSPATH=%LOCALCLASSPATH%
+)
 
-"%JAVA_HOME%\bin\java" %UBIK_OPTS% -classpath "%APPCLASSPATH%" org.sapia.ubik.rmi.server.ServerStarter %*
+SET MAIN_CLASS=org.sapia.ubik.rmi.server.ServerStarter
+
+"%JAVACMD%" %UBIK_OPTS% -classpath "%APPCLASSPATH%" %MAIN_CLASS% %*
+
+if errorlevel 1 (
+    echo "%JAVACMD%" %UBIK_OPTS% -classpath "%APPCLASSPATH%" %MAIN_CLASS% %*
+    pause
+)
 
 :end
