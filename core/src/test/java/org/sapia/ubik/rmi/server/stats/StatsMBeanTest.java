@@ -37,7 +37,7 @@ public class StatsMBeanTest {
     Thread.sleep(500);
     timer.end();
     Double duration = (Double)mbean.getAttribute(getClass().getSimpleName()+".Test");
-    assertTrue("Invalid duration: " + duration, duration >= 500);
+    assertTrue("Invalid duration: " + duration, Math.abs(duration - 500) < 50);
   }
   
   @Test

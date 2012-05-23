@@ -26,8 +26,9 @@ public class StatsTest {
 
   @Test
   public void testClear() {
+    int initialSize = Stats.getInstance().getStatistics().size();
     Stats.getInstance().createTimer(getClass(), "Test", "test timer");
-    assertEquals(1, Stats.getInstance().getStatistics().size());
+    assertEquals(1+initialSize, Stats.getInstance().getStatistics().size());
     Stats.getInstance().clear();
     assertEquals(0, Stats.getInstance().getStatistics().size());
 
