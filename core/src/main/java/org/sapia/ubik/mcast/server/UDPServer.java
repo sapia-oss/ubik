@@ -52,13 +52,7 @@ public abstract class UDPServer extends Thread {
   
   
   private static DatagramSocket createSocket(int port) throws UnknownHostException, SocketException{
-    DatagramSocket socket;
-    if(Localhost.isIpPatternDefined()){
-      socket = new DatagramSocket(port, Localhost.getAnyLocalAddress());
-    }
-    else{
-      socket = new DatagramSocket(port);
-    }
+    DatagramSocket socket = new DatagramSocket(port, Localhost.getAnyLocalAddress());
     return socket;
   }
 
