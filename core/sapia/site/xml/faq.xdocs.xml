@@ -33,13 +33,14 @@
     <sapia:vsection name="Customization" href="customization.html">
       <sapia:vitem name="Logging" href="customization.html#logging" />    
       <sapia:vitem name="Stats" href="customization.html#stats" />
-      <sapia:vitem name="JMX" href="customization.html#jmx" />
+      <!--sapia:vitem name="JMX" href="customization.html#jmx" /-->
       <sapia:vitem name="Stubs" href="customization.html#stubs" />
       <sapia:vitem name="Callbacks" href="customization.html#callbacks" />    
     </sapia:vsection>                 
     
     <sapia:vsection name="FAQ" href="faq.html">
       <sapia:vitem name="Licensing" href="faq.html#licensing" />    
+      <sapia:vitem name="Scalability" href="faq.html#perf" />    
       <sapia:vitem name="Networking" href="faq.html#networking" />
     </sapia:vsection>          
     
@@ -86,8 +87,8 @@
       
       <sapia:sect3 title="Is Ubik scalable?">
         <p>Yes. Ubik has features that allow it to scale across the board (from the system and administration standpoints): distributed JNDI tree that guarantees 
-        availabity in case one node fails; smart stubs supporting failover, load balancing and dynamic discovery; a <a href="transport/nio_tcp.html">NIO transport</a>; 
-        and support for <a href="tutorial.html#callbacks">callbacks</a>.</p>       
+        availabity in case one node fails; smart stubs supporting failover, load balancing and dynamic discovery; an extremely performant 
+        <a href="transport/nio_tcp.html">NIO transport</a> that scales to thousands of concurrent connections; and support for <a href="tutorial.html#callbacks">callbacks</a>.</p>       
       </sapia:sect3>      
 
     </sapia:sect2>

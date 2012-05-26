@@ -32,7 +32,7 @@
     <sapia:vsection name="Customization" href="customization.html">
       <sapia:vitem name="Logging" href="customization.html#logging" />    
       <sapia:vitem name="Stats" href="customization.html#stats" />
-      <sapia:vitem name="JMX" href="customization.html#jmx" />
+      <!--sapia:vitem name="JMX" href="customization.html#jmx" /-->
       <sapia:vitem name="Stubs" href="customization.html#stubs" />
       <sapia:vitem name="Callbacks" href="customization.html#callbacks" />    
     </sapia:vsection>                
@@ -46,7 +46,7 @@
     <sapia:vsection name="Download" href="download.html"/>
     <sapia:vsection name="Mailing List" href="list.html"/>
   </sapia:vmenu>
-  <sapia:sect1 title="Ubik">
+  <sapia:sect1 title="Ubik 3">
     <sapia:section>
       <sapia:path name="home" href="../../home.html" />
       <sapia:path name="projects" />
@@ -55,9 +55,14 @@
     <sapia:sect2 title="Overview">
     
       <p>Ubik is a performant, scalable, feature-rich distributed objects framework. 
- 	  It offers a RMI-like framework that allows easily and transparently performing method invocations 
- 	  over the wire, and packs features that guarantee across the board scalability.</p>
-      
+ 	  It offers a RMI-like API that allows easily and transparently performing method invocations 
+ 	  over the wire, and packs features that guarantee scalability across the board.</p>
+ 	  
+ 	  <p>This third version of Ubik sports major improvements: use of the 
+ 	  JBoss Serialization library, a new group communication implementation, a vastly refactored core, 
+ 	  new customizations points (such as the ability to plug in your own stub generation
+ 	  strategy), etc.</p>
+ 	  
     </sapia:sect2>
     
     <sapia:sect2 title="Features">
@@ -69,8 +74,9 @@
         <p>Ubik RMI is similar to the JDK's RMI. Yet it differs from it in many ways. The following
         features illustrate how:</p>
         <ul>
-          <li><a href="transport/nio_tcp.html">NIO-based transport</a>: extremely performant and scalabale;</li>
-          <li>fast serialization based upon the <a href="http://www.jboss.org/serialization/">JBoss Serialization</a> library;</li>                  
+          <li><a href="transport/nio_tcp.html">NIO-based transport</a>: extremely performant and scalabale (potentially up to thousands of
+          concurrent connections);</li>
+          <li>super-fast serialization based upon the <a href="http://www.jboss.org/serialization/">JBoss Serialization</a> library;</li>                  
           <li>automatic fail-over for stubs that are bound into Ubik JNDI - see next section;</li>
           <li><a href="naming.html#smartstubs">sticky stubs</a> and <a href="naming.html#smartstubs">stateless stubs</a> 
           (that perform round-robin over the different servers);</li>

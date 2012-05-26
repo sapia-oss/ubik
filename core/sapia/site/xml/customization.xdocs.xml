@@ -33,13 +33,14 @@
     <sapia:vsection name="Customization" href="customization.html">
       <sapia:vitem name="Logging" href="customization.html#logging" />    
       <sapia:vitem name="Stats" href="customization.html#stats" />
-      <sapia:vitem name="JMX" href="customization.html#jmx" />
+      <!--sapia:vitem name="JMX" href="customization.html#jmx" /-->
       <sapia:vitem name="Stubs" href="customization.html#stubs" />
       <sapia:vitem name="Callbacks" href="customization.html#callbacks" />    
     </sapia:vsection>          
     
     <sapia:vsection name="FAQ" href="faq.html">
-      <sapia:vitem name="Licensing" href="faq.html#licensing" />    
+      <sapia:vitem name="Licensing" href="faq.html#licensing" />
+      <sapia:vitem name="Scalability" href="faq.html#perf" />  
       <sapia:vitem name="Networking" href="faq.html#networking" />
     </sapia:vsection>          
     
@@ -67,7 +68,7 @@
       
       <p>In general, you will not be interested in Ubik's logs: they're mostly meant for diagnostics purposes in the course of Ubik development.</p>
       
-      <p>By default, Ubik's logging level is set to <sapia:command>ERROR</sapia:command>. You can change that by sesapia:commanding the log level that you wish, using the <sapia:command>ubik.rmi.log.level</sapia:command> JVM property.
+      <p>By default, Ubik's logging level is set to <sapia:command>ERROR</sapia:command>. You can change that by setting the log level that you wish, using the <sapia:command>ubik.rmi.log.level</sapia:command> JVM property.
       The available levels are as follows - from lowest to highest priority:
       </p>
       
@@ -105,11 +106,11 @@
     </sapia:sect2>
     
     <sapia:sect2 title="Statistics" alias="stats">
-    	<p>Ubik provides built-in statistics generation, which is disabled by default. You can turn it on by sesapia:commanding the <sapia:command>ubik.rmi.stats.enabled</sapia:command>
+    	<p>Ubik provides built-in statistics generation, which is disabled by default. You can turn it on by setting the <sapia:command>ubik.rmi.stats.enabled</sapia:command>
     	JVM property to <sapia:command>true</sapia:command>.</p>
     	
-    	<p>If statistics generation is enabled, periodic output of these statistics will be performed. At what interval this output implementation occurs
-    	is configurable through the <sapia:command>ubik.rmi.stats.dump.interval</sapia:command> JVM property (whose value is expected to be expressed in seconds). If the interval
+    	<p>If statistics generation is enabled, periodic output of these statistics will be performed. At what interval this output occurs is configurable through 
+    	the <sapia:command>ubik.rmi.stats.dump.interval</sapia:command> JVM property (whose value is expected to be expressed in seconds). If the interval
     	is not supplied (or if it's zero or less), no output will be performed.</p>
     	
     	<p>By default, the output will be done to a file (named <sapia:command>ubik-stats.log</sapia:command>) 
@@ -127,12 +128,12 @@
     	
     </sapia:sect2>
     
-    <sapia:sect2 title="JMX" alias="jmx">
+    <!--sapia:sect2 title="JMX" alias="jmx">
     	<p>
     		Ubik provides MBeans that you can use for introspecting runtime behavior. To activate these MBeans, you have to set the <sapia:command>ubik.rmi.jmx.enabled</sapia:command>
     		JVM property to <sapia:command>true</sapia:command>.
     	</p>
-    </sapia:sect2>
+    </sapia:sect2-->
     
     <sapia:sect2 title="Stubs" alias="stubs">
 		<sapia:sect-desc>How stubs and related objects are created can be customized. Although doing this can be considered a bit low-level, 
@@ -203,13 +204,13 @@
     <sapia:sect2 title="Callbacks" alias="callbacks">
     	<p>The support for <a href="tutorial.html#callbacks">callbacks</a> in Ubik can be further customized with specific JVM properties: </p>
     	<ul>
-    		<li><tt>ubik.rmi.server.callback.max-threads</tt>: indicates how many threads (the default is 5) should be used to process incoming callback 
+    		<li><sapia:command>ubik.rmi.server.callback.max-threads</sapia:command>: indicates how many threads (the default is 5) should be used to process incoming callback 
     		remote method calls, which are processed asynchronously by the threads (the command object corresponding to the method call sits on a queue
     		until it is picked up by one of the threads). If using callbacks, you should benchmark you're application against expected levels of traffic, 
     		and determine the best configuration for you.
     		</li>
     		
-    		<li><tt>ubik.rmi.server.callback.outqueue.threads</tt>: indicates how many threads (default is 2) are used to send responses corresponding to the
+    		<li><sapia:command>ubik.rmi.server.callback.outqueue.threads</sapia:command>: indicates how many threads (default is 2) are used to send responses corresponding to the
     		return value of remote method calls invoked through callbacks. When the thread that processes a callback is finished, it will put the
     		result on an outgoing queue. The threads configured by this property are in turn in charge of relaying these results (in the form of callback 
     		responses) to the appropriate clients. It is important that the number of such threads be configured appropriately. Again, you should test
