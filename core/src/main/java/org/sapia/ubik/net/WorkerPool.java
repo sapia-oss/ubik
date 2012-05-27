@@ -1,6 +1,7 @@
 package org.sapia.ubik.net;
 
 import java.util.concurrent.ExecutorService;
+
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -8,8 +9,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.sapia.ubik.concurrent.NamedThreadFactory;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
-
-import com.sun.corba.se.spi.orbutil.threadpool.Work;
 
 
 /**
