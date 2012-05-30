@@ -12,6 +12,8 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.sapia.ubik.log.Log;
@@ -35,8 +37,10 @@ import org.sapia.ubik.rmi.Consts;
  */
 public final class Localhost {
   
-  private static String LOCALHOST = "0.0.0.0";
-  private static String LOOPBACK  = "127.0";
+  private static String LOCALHOST      = "0.0.0.0";
+  private static String LOCALHOST_IPV6 = "0:0:0:0:0:0:0:1";
+  private static String LOOPBACK       = "127.0";
+  private static Pattern IPV4_PATTERN  = Pattern.compile("\\d+\\.\\d+\\.\\d+\\.\\d+");
   private static Pattern _pattern;
   
   static{
@@ -50,6 +54,14 @@ public final class Localhost {
   }
   
   private Localhost() {
+  }
+  
+  static void setAddressPattern(String pattern) {
+    _pattern = Pattern.compile(pattern);
+  }
+  
+  static void unsetAddressPattern() {
+    _pattern = null;
   }
   
   public static boolean isIpPatternDefined() {
@@ -67,32 +79,81 @@ public final class Localhost {
   }
   
   public static InetAddress getAnyLocalAddress() throws UnknownHostException {
-    if (isIpPatternDefined()) {
-      NetworkInterface iface;
-      try {
-        for (Enumeration<NetworkInterface> ifaces = NetworkInterface.getNetworkInterfaces(); ifaces.hasMoreElements(); ) {
-          iface = ifaces.nextElement();
-          
-          for (Enumeration<InetAddress> ips = iface.getInetAddresses(); ips.hasMoreElements(); ) {
-            InetAddress ia = ips.nextElement();
-            String addr = ia.getHostAddress();
-            if (addr.equals(LOCALHOST) || addr.startsWith(LOOPBACK)) {
-              continue;
-            }
-            
-            if (isLocalAddress(_pattern, addr)) {
-              if (Log.isInfo()) {
-                Log.info(Localhost.class, "Address " + addr + " matches: " + _pattern.toString());
-              }
-              return ia;
-            }
-          }
-        }
-        
-      } catch (SocketException e) {
-      }
-    }
 
+    Set<InetAddress> netAddresses = new HashSet<InetAddress>();
+    try {
+      for (Enumeration<NetworkInterface> ifaces = NetworkInterface.getNetworkInterfaces(); ifaces.hasMoreElements(); ) {
+        NetworkInterface iface = ifaces.nextElement();
+        for (Enumeration<InetAddress> ips = iface.getInetAddresses(); ips.hasMoreElements(); ) {
+          InetAddress ia = ips.nextElement();
+          netAddresses.add(ia);          
+        }
+      }
+    } catch (SocketException e) {
+      return InetAddress.getLocalHost();
+    }
+    
+    return doGetAnyLocalAddress(netAddresses);
+
+  }
+  
+  static InetAddress doGetAnyLocalAddress(Set<InetAddress> netAddresses) throws UnknownHostException {
+    if (isIpPatternDefined()) {
+      return doSelectAddress(netAddresses);
+    } else {
+      Set<InetAddress> nonLocalAddresses = Collections2.filterAsSet(netAddresses, new Condition<InetAddress>() {
+        @Override
+        public boolean apply(InetAddress addr) {
+          return !(addr.getHostAddress().startsWith(LOCALHOST) || 
+              addr.getHostAddress().startsWith(LOOPBACK) || 
+              addr.getHostAddress().startsWith(LOCALHOST_IPV6));
+        }
+      });      
+      
+      if (nonLocalAddresses.size() == 1) {
+        return nonLocalAddresses.iterator().next();
+      } 
+        
+      Set<InetAddress> ipV4Addresses = Collections2.filterAsSet(nonLocalAddresses, new Condition<InetAddress>() {
+        @Override
+        public boolean apply(InetAddress addr) {
+          return IPV4_PATTERN.matcher(addr.getHostAddress()).matches();
+        }
+      });
+      
+      if (ipV4Addresses.size() == 1) {
+        return ipV4Addresses.iterator().next();
+      }
+      
+      return InetAddress.getLocalHost();
+    }    
+  }
+  
+  private static InetAddress doSelectAddress(Set<InetAddress> netAddresses) throws UnknownHostException {
+    
+    Set<InetAddress> nonLocalAddresses = Collections2.filterAsSet(netAddresses, new Condition<InetAddress>() {
+      @Override
+      public boolean apply(InetAddress addr) {
+        return !(addr.getHostAddress().startsWith(LOCALHOST) || 
+            addr.getHostAddress().startsWith(LOOPBACK) || 
+            addr.getHostAddress().startsWith(LOCALHOST_IPV6));
+      }
+    });    
+    
+    Set<InetAddress> matchedAddresses = Collections2.filterAsSet(nonLocalAddresses, new Condition<InetAddress>() {
+      @Override
+      public boolean apply(InetAddress addr) {
+        return isLocalAddress(_pattern, addr.getHostAddress());
+      }
+    });
+    
+    if (!matchedAddresses.isEmpty()) {
+      InetAddress addr = matchedAddresses.iterator().next();
+      if (Log.isInfo()) {
+        Log.info(Localhost.class, "Address " + addr + " matches: " + _pattern.toString());
+      }
+      return addr;
+    }
     return InetAddress.getLocalHost();
   }
   

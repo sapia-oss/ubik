@@ -48,6 +48,22 @@ public final class Collections2 {
   }
   
   /**
+   * @param collection the {@link Iterable} to filter.
+   * @param condition the {@link Condition} to apply: elements for which the condition
+   * returns <code>true</code> will be added to the set that this method returns.
+   * @return the {@link Set} of elements that where kept.
+   */
+  public static <T> Set<T> filterAsSet(Iterable<T> collection, Condition<T> condition) {
+    Set<T> result = new HashSet<T>();
+    for (T element : collection) {
+      if (condition.apply(element)) {
+        result.add(element);
+      }
+    }
+    return result;
+  }
+  
+  /**
    * Converts the given collection, using the given converter to convert
    * that collection's values.
    * <p>

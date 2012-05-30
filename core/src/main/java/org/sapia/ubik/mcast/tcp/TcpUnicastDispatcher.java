@@ -42,11 +42,7 @@ public class TcpUnicastDispatcher extends BaseTcpUnicastDispatcher {
    */
   public TcpUnicastDispatcher(EventConsumer consumer, int maxThreads) throws IOException{
     super(consumer);
-    if(Localhost.isIpPatternDefined()) {
-      this.socketServer = new TCPUnicastSocketServer(Localhost.getAnyLocalAddress().getHostAddress(), consumer, maxThreads);  
-    } else {
-      this.socketServer = new TCPUnicastSocketServer(consumer, maxThreads);
-    }
+    this.socketServer = new TCPUnicastSocketServer(Localhost.getAnyLocalAddress().getHostAddress(), consumer, maxThreads);  
   }
 
   // --------------------------------------------------------------------------

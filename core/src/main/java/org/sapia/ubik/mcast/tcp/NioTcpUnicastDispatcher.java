@@ -16,6 +16,7 @@ import org.sapia.ubik.net.ConnectionFactory;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.TCPAddress;
 import org.sapia.ubik.net.TcpPortSelector;
+import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.util.Localhost;
 
 /**
@@ -90,14 +91,10 @@ public class NioTcpUnicastDispatcher extends BaseTcpUnicastDispatcher {
     }   
     
     int port = 0;
-    if (Localhost.isIpPatternDefined()) {
-      try {
-        socketAddress = new InetSocketAddress(Localhost.getAnyLocalAddress().getHostAddress(), port);
-      } catch (UnknownHostException e) {
-        throw new IllegalStateException("Could not create bind address", e);
-      }
-    } else {
-      socketAddress = new InetSocketAddress(port);
+    try {
+      socketAddress = new InetSocketAddress(Localhost.getAnyLocalAddress().getHostAddress(), port);
+    } catch (UnknownHostException e) {
+      throw new IllegalStateException("Could not create bind address", e);
     }
     
     acceptor.getFilterChain().addLast("protocol", new ProtocolCodecFilter(new NioTcpUnicastCodecFactory()));
@@ -136,4 +133,13 @@ public class NioTcpUnicastDispatcher extends BaseTcpUnicastDispatcher {
     return new NioTcpUnicastConnectionFactory(marshallingBufferSize);
   }
 
+  
+  public static void main(String[] args) throws Exception {
+    Log.setDebug();
+    System.setProperty(Consts.IP_PATTERN_KEY, "192\\.168\\.\\d+\\.\\d+");
+    NioTcpUnicastDispatcher dispatcher = new NioTcpUnicastDispatcher(new EventConsumer("test"), 3, 512);
+    dispatcher.start();
+    Thread.sleep(5000);
+    dispatcher.close();
+  }
 }

@@ -56,11 +56,8 @@ public class TcpPortSelector {
     while(attempts < MAX_ATTEMPS){
       int current = MIN_PORT + rand.nextInt(MAX_PORT - MIN_PORT); 
       try{
-        Socket sock = new Socket(host, current);
-        try{
-          sock.close();
-        }catch(IOException e){}
-        // port taken ... keep going
+        checkAvailable(host, current);
+        // port taken ... keep going        
         attempts++;
       }catch(UnknownHostException e){
         throw new IllegalArgumentException("Unknown host");
@@ -74,7 +71,15 @@ public class TcpPortSelector {
     throw new IOException("No port could be randomly acquired on : " + host);
   }
   
-  private boolean isTaken(String host, int port){
+  protected void checkAvailable(String host, int port) throws UnknownHostException, IOException {
+    Socket sock = new Socket(host, port);
+    try{
+      sock.close();
+    }catch(IOException e){}
+    
+  }
+  
+  protected boolean isTaken(String host, int port){
     try{
       Socket sock = new Socket(host, port);
       try{
