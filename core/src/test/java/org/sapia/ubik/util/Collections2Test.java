@@ -36,6 +36,20 @@ public class Collections2Test {
 		});
 		assertEquals(3, counter.get());
 	}
+	
+	@Test
+	public void testFilterAsTest() {
+	  List<String> toFilter = Collections2.arrayToList("1", "2", "3");
+	  Set<String> filtered = Collections2.filterAsSet(toFilter, new Condition<String>() {
+	    @Override
+	    public boolean apply(String item) {
+	      return item.equals("1");
+	    }
+    });
+	  
+	  assertEquals(1, filtered.size());
+	  assertTrue("Set does not contain expected string", filtered.contains("1"));
+	}
 
 	@Test
 	public void testConvertAsList() {
