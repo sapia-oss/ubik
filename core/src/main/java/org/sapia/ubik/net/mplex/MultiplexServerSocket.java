@@ -351,19 +351,20 @@ public class MultiplexServerSocket extends ServerSocket implements Runnable {
     int    length = aSocket.getPushbackInputStream().read(preview, 0,
         preview.length);
 
-    // Put back the headers in the stream
-    aSocket.getPushbackInputStream().unread(preview, 0, length);
-
-    // Trim the array of bytes
     byte[] header;
-
-    if (length < preview.length) {
-      header = new byte[length];
-      System.arraycopy(preview, 0, header, 0, length);
+    if (length > 0) {
+      // Put back the headers in the stream      
+      aSocket.getPushbackInputStream().unread(preview, 0, length);
+      // Trim the array of bytes
+      if (length < preview.length) {
+        header = new byte[length];
+        System.arraycopy(preview, 0, header, 0, length);
+      } else {
+        header = preview;
+      }
     } else {
-      header = preview;
+      header = new byte[0];
     }
-
     return header;
   }
 

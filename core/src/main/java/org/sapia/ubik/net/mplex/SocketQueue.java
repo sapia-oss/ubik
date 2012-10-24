@@ -108,39 +108,6 @@ public class SocketQueue {
       }
     }
     return (Socket) _theSockets.removeFirst();
-    
-    /*else if (_theSockets.isEmpty()) {
-      if(_soTimeout <= 0) {
-        try {
-          wait();
-        } catch (InterruptedException ie) {
-          throw new ThreadInterruptedException();
-        }
-      } else {
-        long start = System.currentTimeMillis();
-        try {
-          wait(_soTimeout);
-        } catch (InterruptedException ie) {
-          throw new ThreadInterruptedException();
-        }
-        if(System.currentTimeMillis() - start >= _soTimeout &&_theSockets.isEmpty()) {
-          throw new SocketTimeoutException();
-        }
-      }
-    }
-
-    if (_isClosed) {
-      throw new SocketException(
-        "No socket available - the socket queue is closed");
-    } else if (_theLastException != null) {
-      IOException ioe = _theLastException;
-      _theLastException = null;
-      throw ioe;
-    } else if (_theSockets.isEmpty()) {
-      return getSocket();
-    } else {
-      return (Socket) _theSockets.removeFirst();
-    }*/
   }
 
   private void checkState() throws IOException {
