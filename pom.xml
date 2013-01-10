@@ -6,7 +6,7 @@
 
   <groupId>org.sapia</groupId>
   <artifactId>sapia_ubik_parent</artifactId>
-  <version>3.2</version>
+  <version>3.3-SNAPSHOT</version>
 
   <parent>
     <groupId>org.sapia</groupId>
@@ -15,9 +15,9 @@
   </parent>
 
   <scm>
-    <connection>scm:svn:http://sapia.googlecode.com/svn/tags/sapia_ubik_parent-3.2</connection>
-    <developerConnection>scm:svn:https://sapia.googlecode.com/svn/tags/sapia_ubik_parent-3.2</developerConnection>
-    <url>scm:svn:https://sapia.googlecode.com/svn/tags/sapia_ubik_parent-3.2</url>
+    <connection>scm:svn:http://sapia.googlecode.com/svn/tags/sapia_ubik-2.6</connection>
+    <developerConnection>scm:svn:https://sapia.googlecode.com/svn/tags/sapia_ubik-2.6</developerConnection>
+    <url>scm:svn:https://sapia.googlecode.com/svn/tags/sapia_ubik-2.6</url>
   </scm>
 
   <licenses>
