@@ -209,12 +209,12 @@ public class RemoteRefContext implements Externalizable{
   }  
   
   private void createReference() throws RemoteException{
+    ClientRuntime runtime = Hub.getModules().getClientRuntime();
     if(!isFirstHop()) {
-      ClientRuntime runtime = Hub.getModules().getClientRuntime();
       if(Log.isDebug()) Log.debug(getClass(), "Creating remote ref " + oid);
-      runtime.getGc().register(address, oid, this);
       runtime.createReference(address, oid);
     }
+    runtime.getGc().register(address, oid, this);
   }
 
 }

@@ -9,7 +9,10 @@ import java.util.Random;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
+import org.sapia.ubik.concurrent.NamedThreadFactory;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.control.ChannelCallback;
@@ -87,22 +90,32 @@ public class EventChannel {
    */  
   static final String  CONTROL_EVT   	 = "ubik/mcast/control";
   
-  private static final int MIN_STARTUP_DELAY 				= 5000; 
-  private static final int MIN_STARTUP_DELAY_OFFSET = 10000;
+  private static final int MIN_STARTUP_DELAY 				 = 5000; 
+  private static final int MIN_STARTUP_DELAY_OFFSET  = 10000;
   
-  private Category                log              = Log.createCategory(getClass());
-  private Timer                   heartbeatTimer   = new Timer("Ubik.EventChannel.Timer", true);
+  private static final int  DEFAULT_MAX_PUB_ATTEMPTS = 3;
+  private static final long MIN_PUB_INTERVAL         = 2000;
+  private static final int  MIN_PUB_OFFSET           = 5000;
+
+  
+  private Category                log                = Log.createCategory(getClass());
+  private Timer                   heartbeatTimer     = new Timer("Ubik.EventChannel.Timer", true);
   private BroadcastDispatcher     broadcast;
   private UnicastDispatcher       unicast;
   private EventConsumer           consumer;
   private ChannelEventListener    listener;
-  private View                    view             = new View();
+  private View                    view               = new View();
   private EventChannelController  controller;
   private int                     controlBatchSize;
   private ServerAddress           address;
   private SoftReferenceList<DiscoveryListener> 
-  																discoListeners   = new SoftReferenceList<DiscoveryListener>();
-  private volatile State          state            = State.CREATED;
+  																discoListeners     = new SoftReferenceList<DiscoveryListener>();
+  private volatile State          state              = State.CREATED;
+  private int                     maxPublishAttempts = DEFAULT_MAX_PUB_ATTEMPTS;
+  private long                    publishInterval    = MIN_PUB_INTERVAL + new Random().nextInt(MIN_PUB_OFFSET);
+  private ExecutorService         publishExecutor    = Executors.newSingleThreadExecutor(
+                                                         NamedThreadFactory.createWith("Ubik.EventChannel.Publish").setDaemon(true)
+                                                       );
   
   /**
    * Creates an instance of this class that will use IP multicast and UDP unicast.
@@ -210,7 +223,24 @@ public class EventChannel {
       broadcast.start();
       unicast.start();
       address = unicast.getAddress();
-      broadcast.dispatch(address, false, PUBLISH_EVT, address);
+      
+      publishExecutor.execute(new Runnable() {
+        @Override
+        public void run() { 
+          for (int i = 0; i < maxPublishAttempts; i++) {
+            try { 
+              broadcast.dispatch(address, false, PUBLISH_EVT, address);
+            } catch (IOException e) {
+              log.warning("Error publishing presence to cluster", e);
+            }
+            try {
+              Thread.sleep(publishInterval);
+            } catch (InterruptedException e) {
+              break;
+            }
+          }
+        }
+      });
       state = State.STARTED;
     }
   }
@@ -225,6 +255,7 @@ public class EventChannel {
     	} catch (IOException e) {
     		log.info("Could not send shutdown event", e, new Object[]{});
     	}
+    	publishExecutor.shutdownNow();
       heartbeatTimer.cancel();
       broadcast.close();
       unicast.close();
