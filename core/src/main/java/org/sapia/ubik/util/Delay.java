@@ -76,4 +76,10 @@ public class Delay {
 	  return start;
   }
 
+  /**
+   * Resets this instance.
+   */
+  public void reset() {
+    start = clock.currentTimeMillis();
+  }
 }

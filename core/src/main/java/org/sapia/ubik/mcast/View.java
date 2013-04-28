@@ -20,7 +20,7 @@ import org.sapia.ubik.util.SoftReferenceList;
  * instance of this class is encapsulated by an {@link EventChannel}. It
  * provides a "view" of the domain.
  * <p>
- * An instance of this class encapsulates the address of each of the sibling of
+ * An instance of this class encapsulates the address of each of the peers of
  * an {@link EventChannel} node.
  *
  * @author Yanick Duchesne

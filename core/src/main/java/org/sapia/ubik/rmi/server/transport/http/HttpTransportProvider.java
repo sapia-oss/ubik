@@ -1,14 +1,12 @@
 package org.sapia.ubik.rmi.server.transport.http;
 
-import java.io.File;
-import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.rmi.RemoteException;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.sapia.ubik.log.Log;
+import org.sapia.ubik.concurrent.ConfigurableExecutor.ThreadingConfiguration;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.Uri;
 import org.sapia.ubik.net.UriSyntaxException;
@@ -16,6 +14,9 @@ import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.Server;
 import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.TransportProvider;
+import org.sapia.ubik.util.Localhost;
+import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.Time;
 
 
 /**
@@ -36,43 +37,38 @@ public class HttpTransportProvider implements TransportProvider, HttpConsts {
 
   static {
     try {
-      Class.forName("org.apache.commons.httpclient.HttpClient");
+      Class.forName("org.apache.http.client.HttpClient");
       usesJakarta = true;
     } catch (Exception e) {
     }
   }
 
   private String                          transportType;
-  private ServiceMapper                   services = new ServiceMapper();
-  private Map<ServerAddress, Connections> pools = new ConcurrentHashMap<ServerAddress, Connections>();
+  private Router                          handlers = new Router();
+  private Map<ServerAddress, Connections> pools   = new ConcurrentHashMap<ServerAddress, Connections>();
 
+  /**
+   * Creates an instance of this class using the default HTTP transport type identifier.
+   * @see HttpConsts#DEFAULT_HTTP_TRANSPORT_TYPE 
+   */
   public HttpTransportProvider() {
-    this(HttpConsts.DEFAULT_HTTP_TRANSPORT_TYPE,
-      new File(System.getProperty("user.dir")));
+    this(HttpConsts.DEFAULT_HTTP_TRANSPORT_TYPE);
   }
 
   /**
    * @param transportType a "transport type" identifier.
    */
   public HttpTransportProvider(String transportType) {
-    this(transportType, new File(System.getProperty("user.dir")));
-  }
-
-  /**
-   * @param transportType a "transport type" identifier.
-   */
-  public HttpTransportProvider(String transportType, File baseDir) {
     this.transportType = transportType;
   }
   
   /**
-   * @return the {@link ServiceMapper} that holds this instance`s request handlers ("services", in
-   * the Simple API's terms).
+   * @return the {@link Router} that holds the {@link Handler}s that are associated to predefined request paths.
    */
-  public ServiceMapper getServices() {
-    return services;
+  public Router getRouter() {
+    return handlers;
   }
-
+  
   /**
    * @see org.sapia.ubik.rmi.server.transport.TransportProvider#getPoolFor(org.sapia.ubik.net.ServerAddress)
    */
@@ -83,7 +79,9 @@ public class HttpTransportProvider implements TransportProvider, HttpConsts {
     if ((conns = pools.get(address)) == null) {
       try {
         if (usesJakarta) {
-          conns = new HttpClientConnectionPool((HttpAddress) address);
+          int maxConnections = Props.getSystemProperties()
+              .getIntProperty(HTTP_CLIENT_MAX_CONNECTIONS_KEY, DEFAULT_MAX_CLIENT_CONNECTIONS);
+          conns = new HttpClientConnectionPool((HttpAddress) address, maxConnections);
         } else {
           conns = new JdkClientConnectionPool((HttpAddress) address);
         }
@@ -116,20 +114,12 @@ public class HttpTransportProvider implements TransportProvider, HttpConsts {
    * @see org.sapia.ubik.rmi.server.transport.TransportProvider#newServer(java.util.Properties)
    */
   public Server newServer(Properties props) throws RemoteException {
+    Props configProps = new Props().addProperties(props).addSystemProperties();
     Uri    serverUrl;
-    String portStr     = props.getProperty(HTTP_PORT_KEY);
     String contextPath;
-    int    port        = DEFAULT_HTTP_PORT;
+    int    port        = configProps.getIntProperty(HTTP_PORT_KEY, DEFAULT_HTTP_PORT);
 
-    if (portStr == null) {
-      Log.warning(getClass(),
-        "Property '" + HTTP_PORT_KEY + "' not specified; using default: " +
-        port);
-    } else {
-      port = Integer.parseInt(portStr);
-    }
-
-    if (props.getProperty(SERVER_URL_KEY) != null) {
+    if (configProps.getProperty(SERVER_URL_KEY) != null) {
       try {
         serverUrl = Uri.parse(props.getProperty(SERVER_URL_KEY));
 
@@ -142,38 +132,31 @@ public class HttpTransportProvider implements TransportProvider, HttpConsts {
         throw new RemoteException("Could not parse server URL", e);
       }
     } else {
-      contextPath = props.getProperty(PATH_KEY, DEFAULT_CONTEXT_PATH);
+      contextPath = configProps.getProperty(PATH_KEY, DEFAULT_CONTEXT_PATH);
 
       try {
-        serverUrl = Uri.parse("http://" +
-            InetAddress.getLocalHost().getHostAddress() + ":" + port + "/" +
-            contextPath);
+        serverUrl = Uri.parse("http://" + Localhost.getAnyLocalAddress().getHostAddress() + ":" + port + contextPath);
       } catch (UriSyntaxException e) {
         throw new RemoteException("Could not parse server URL", e);
       } catch (UnknownHostException e) {
         throw new RemoteException("Could not acquire local address", e);
       }
     }
+    
+    int coreThreads = configProps.getIntProperty(Consts.SERVER_CORE_THREADS, ThreadingConfiguration.DEFAULT_CORE_POOL_SIZE);   
+    int maxThreads  = configProps.getIntProperty(Consts.SERVER_MAX_THREADS, ThreadingConfiguration.DEFAULT_MAX_POOL_SIZE);  
+    int queueSize   = configProps.getIntProperty(Consts.SERVER_THREADS_QUEUE_SIZE, ThreadingConfiguration.DEFAULT_QUEUE_SIZE); 
+    long keepAlive  = configProps.getLongProperty(Consts.SERVER_THREADS_KEEP_ALIVE, ThreadingConfiguration.DEFAULT_KEEP_ALIVE.getValueInSeconds());
+    
+    ThreadingConfiguration threadConf = ThreadingConfiguration.newInstance()
+        .setCorePoolSize(coreThreads)
+        .setMaxPoolSize(maxThreads)
+        .setQueueSize(queueSize)
+        .setKeepAlive(Time.createSeconds(keepAlive));
 
-    String maxThreads = props.getProperty(Consts.SERVER_MAX_THREADS);
-    int    max = 0;
-
-    if (maxThreads != null) {
-      try {
-        max = Integer.parseInt(maxThreads);
-      } catch (NumberFormatException e) {
-        throw new RemoteException("Invalid value for '" +
-          Consts.SERVER_MAX_THREADS + "' : " + maxThreads);
-      }
-
-      if (max < 0) {
-        max = 0;
-      }
-    }
-
-    HttpRmiServer svr = new HttpRmiServer(services, serverUrl, contextPath, port);
-    svr.setMaxThreads(max);
-
+    UbikHttpHandler handler = new UbikHttpHandler(serverUrl, threadConf);
+    handlers.addHandler(contextPath, handler);
+    HttpRmiServer svr = new HttpRmiServer(handlers, serverUrl, port);
     return svr;
   }
 
@@ -181,17 +164,5 @@ public class HttpTransportProvider implements TransportProvider, HttpConsts {
    * @see org.sapia.ubik.rmi.server.transport.TransportProvider#shutdown()
    */
   public void shutdown() {
-  }
-
-  /**
-   * Returns the service mapper that is held within this instance. Other
-   * services can be added, associated to different context paths. This allows
-   * other types of requests (non-Ubik ones) to be processed by the same HTTP
-   * server.
-   *
-   * @return the {@link ServiceMapper} that this instance holds.
-   */
-  public ServiceMapper getServiceMapper() {
-    return services;
   }
 }

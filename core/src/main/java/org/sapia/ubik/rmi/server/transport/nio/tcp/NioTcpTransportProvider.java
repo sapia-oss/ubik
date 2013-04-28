@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.sapia.ubik.concurrent.ConfigurableExecutor.ThreadingConfiguration;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
@@ -19,6 +20,7 @@ import org.sapia.ubik.taskman.Task;
 import org.sapia.ubik.taskman.TaskContext;
 import org.sapia.ubik.util.Localhost;
 import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.Time;
 
 /**
  * This transport provider is implemented on top of the <a href="http://mina.apache.org">Mina</a> 
@@ -124,10 +126,20 @@ public class NioTcpTransportProvider implements TransportProvider {
     }
     
     int specificBufsize = pu.getIntProperty(Consts.MARSHALLING_BUFSIZE, this.bufsize);
-    int maxThreads = pu.getIntProperty(Consts.SERVER_MAX_THREADS, 0);
+
+    int coreThreads = pu.getIntProperty(Consts.SERVER_CORE_THREADS, ThreadingConfiguration.DEFAULT_CORE_POOL_SIZE);   
+    int maxThreads  = pu.getIntProperty(Consts.SERVER_MAX_THREADS, ThreadingConfiguration.DEFAULT_MAX_POOL_SIZE);  
+    int queueSize   = pu.getIntProperty(Consts.SERVER_THREADS_QUEUE_SIZE, ThreadingConfiguration.DEFAULT_QUEUE_SIZE); 
+    long keepAlive  = pu.getLongProperty(Consts.SERVER_THREADS_KEEP_ALIVE, ThreadingConfiguration.DEFAULT_KEEP_ALIVE.getValueInSeconds());
+    
+    ThreadingConfiguration threadConf = ThreadingConfiguration.newInstance()
+        .setCorePoolSize(coreThreads)
+        .setMaxPoolSize(maxThreads)
+        .setQueueSize(queueSize)
+        .setKeepAlive(Time.createSeconds(keepAlive));
     
     try{
-      NioServer server = new NioServer(addr, specificBufsize, maxThreads);
+      NioServer server = new NioServer(addr, specificBufsize, threadConf);
       return server;
     }catch(IOException e){
       throw new RemoteException("Could not create server", e);

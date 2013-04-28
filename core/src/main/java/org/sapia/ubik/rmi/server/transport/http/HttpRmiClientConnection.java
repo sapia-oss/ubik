@@ -7,8 +7,11 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.rmi.RemoteException;
 
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.util.EntityUtils;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
@@ -30,10 +33,13 @@ import org.sapia.ubik.util.Props;
  * @author Yanick Duchesne
  */
 public class HttpRmiClientConnection implements RmiConnection {
+  
+  private static final int STATUS_OK = 200;
+  
   private HttpAddress      address;
   private HttpClient       client;
-  private PostMethod       post;
-  private boolean          closed;
+  private HttpPost         post;
+  private byte[]           responsePayload;
   private int              bufsz = Props.getSystemProperties().getIntProperty(
 																			Consts.MARSHALLING_BUFSIZE, 
 																			Consts.DEFAULT_MARSHALLING_BUFSIZE
@@ -43,16 +49,17 @@ public class HttpRmiClientConnection implements RmiConnection {
    * Creates an instance of this class with the given HTTP client and
    * uri to connect to.
    */
-  public HttpRmiClientConnection() {
+  public HttpRmiClientConnection(HttpClient client, HttpAddress address) {
+    this.client  = client;
+    this.address = address;
   }
 
   /**
    * @see org.sapia.ubik.rmi.server.transport.RmiConnection#send(java.lang.Object, org.sapia.ubik.rmi.server.VmId, java.lang.String)
    */
-  @SuppressWarnings("deprecation")
   public void send(Object o, VmId associated, String transportType)
     throws IOException, RemoteException {
-    post = new PostMethod(address.toString());
+    post = new HttpPost(address.toString());
 
     ByteArrayOutputStream bos = new ByteArrayOutputStream(bufsz);
     ObjectOutputStream    mos = MarshalStreamFactory.createOutputStream(bos);
@@ -70,20 +77,26 @@ public class HttpRmiClientConnection implements RmiConnection {
     if (data.length > bufsz) {
       bufsz = data.length;
     }
-
-    post.setRequestContentLength(data.length);
-    post.setRequestBody(new ByteArrayInputStream(data));
-    client.executeMethod(post);
+    
+    post.setEntity(new ByteArrayEntity(data));
+    try {
+      HttpResponse response = client.execute(post);
+      if (response.getStatusLine().getStatusCode() != STATUS_OK) {
+        throw new IOException("HTTP response error " 
+            + response.getStatusLine().getStatusCode() 
+            + " caught: " 
+            + response.getStatusLine().getReasonPhrase());
+      }
+      responsePayload = EntityUtils.toByteArray(response.getEntity());
+    } finally {
+      post.releaseConnection();      
+    }
   }
 
   /**
    * @see org.sapia.ubik.net.Connection#close()
    */
   public void close() {
-    if ((post != null) && !closed) {
-      post.releaseConnection();
-      closed = true;
-    }
   }
 
   /**
@@ -98,16 +111,18 @@ public class HttpRmiClientConnection implements RmiConnection {
    */
   public Object receive()
     throws IOException, ClassNotFoundException, RemoteException {
-    if (post == null) {
-      throw new IllegalStateException("Cannot receive; data was not posted");
+    if (responsePayload == null) {
+      throw new IllegalStateException("Cannot receive; response payload not set");
     }
-
-    ObjectInputStream is = MarshalStreamFactory.createInputStream(post.getResponseBodyAsStream());
+    
+    byte[] thePayload    = responsePayload;
+    responsePayload      = null;
+    ObjectInputStream is = MarshalStreamFactory.createInputStream(new ByteArrayInputStream(thePayload));
 
     try {
       return is.readObject();
     } catch (IOException ioe) {
-      Log.error(HttpRmiClientConnection.class, "Could not receive response", ioe);
+      Log.error(HttpRmiClientConnection.class, "Could not read response data", ioe);
       throw ioe;
     } finally {
       is.close();
@@ -119,13 +134,5 @@ public class HttpRmiClientConnection implements RmiConnection {
    */
   public void send(Object o) throws IOException, RemoteException {
     send(o, null, null);
-  }
-
-  HttpRmiClientConnection setUp(HttpClient client, HttpAddress addr) {
-    this.closed    = false;
-    this.client    = client;
-    this.address   = addr;
-
-    return this;
   }
 }

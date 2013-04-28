@@ -21,13 +21,27 @@ public class HttpAddress extends TCPAddress {
   public HttpAddress() {
   }
 
-  public HttpAddress(Uri uri) {
+  /**
+   * @param uri the {@link Uri} for which to create an instance of this class.
+   */
+  public HttpAddress(Uri uri) { 
     this(HttpConsts.DEFAULT_HTTP_TRANSPORT_TYPE, uri);
+  }
+  
+  /**
+   * Returns an address of the form <code>http://host:port/ubik</code>.
+   * 
+   * @param host the HTTP host to connect to
+   * @param port the HTTP port of the host to connect to.
+   * @return a new {@link HttpAddress}.
+   */
+  public static HttpAddress newDefaultInstance(String host, int port) {
+    return new HttpAddress(Uri.parse("http://" + host + ":" + port + HttpConsts.DEFAULT_CONTEXT_PATH));
   }
 
   protected HttpAddress(String transportType, Uri uri) {
     super(transportType, uri.getHost(), uri.getPort());
-    this.uri = uri.toString();
+    this.uri           = uri.toString();
     this.transportType = transportType;
   }
 

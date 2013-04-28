@@ -1,17 +1,17 @@
 package org.sapia.ubik.rmi.server.transport.http;
 
 import java.io.IOException;
-import java.net.ServerSocket;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.rmi.RemoteException;
 
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.Uri;
 import org.sapia.ubik.rmi.server.Server;
-
-import simple.http.connect.Connection;
-import simple.http.connect.ConnectionFactory;
-
+import org.simpleframework.http.core.ContainerServer;
+import org.simpleframework.transport.connect.Connection;
+import org.simpleframework.transport.connect.SocketConnection;
 
 /**
  * Implements a {@link Server} that receives requests from Ubik RMI clients
@@ -25,44 +25,44 @@ import simple.http.connect.ConnectionFactory;
  * @author Yanick Duchesne
  */
 class HttpRmiServer implements Server, HttpConsts {
-  
-  private String        path;
-  private Uri           serverUrl;
-  private ServiceMapper services;
-  private ServerSocket  server;
-  private HttpAddress   address;
-  private int           maxThreads = 0;
-  private int           localPort;
 
+  private int           localPort;  
+  private Router        handlers;
+  private Connection    connection;
+  private HttpAddress   address;
+  
   /**
    * Creates an instance of this class.
    *
-   * @param services a {@link ServiceMapper}.
+   * @param router the {@link Router} that holds the {@link Handler}s used to process incoming requests.
    * @param transportType a "transport type" identifier.
-   * @param path the URL path to which this server will correspond.
    * @param port a port (must be >= 0).
    */
-  HttpRmiServer(ServiceMapper services, Uri serverUrl,
-    String path, int localPort) {
+  HttpRmiServer(
+      Router router,
+      Uri serverUrl,
+      int localPort) {
     if (serverUrl.getPort() <= 0) {
       throw new IllegalStateException("Server does not support dynamic port");
     }
-    this.serverUrl       = serverUrl;
-    this.path            = path;
-    this.services        = services;
-    this.localPort       = localPort;
+    this.address    = new HttpAddress(serverUrl);
+    this.handlers   = router;
+    this.localPort  = localPort;
   }
 
   /**
    * @see org.sapia.ubik.rmi.server.Server#close()
    */
   public void close() {
-    if (this.server != null) {
+    if (this.connection != null) {
       try {
-        this.server.close();
+        this.connection.close();
       } catch (Exception e) {
         // noop
       }
+    }
+    if (handlers != null) {
+      handlers.shutdown();
     }
   }
 
@@ -73,28 +73,16 @@ class HttpRmiServer implements Server, HttpConsts {
     return this.address;
   }
 
-  /**
-   * This method should be called before the <code>start()</code> method.
-   *
-   * @param max the maximum number of threads that this instance will create.
-   */
-  void setMaxThreads(int max) {
-    this.maxThreads = max;
-  }
 
   /**
    * @see org.sapia.ubik.rmi.server.Server#start()
    */
   public void start() throws RemoteException {
     try {
-      this.address = new HttpAddress(serverUrl);
-
-      UbikHttpHandler svc = new UbikHttpHandler(serverUrl, maxThreads);
-      services.addService(path, svc);
-      
-      Connection    conn = ConnectionFactory.getConnection(services);
-      server = new ServerSocket(localPort);
-      conn.connect(server);
+      org.simpleframework.transport.Server server = new ContainerServer(handlers);
+      Connection connection = new SocketConnection(server);
+      SocketAddress address = new InetSocketAddress(localPort);
+      connection.connect(address);
     } catch (UnknownHostException e) {
       throw new RemoteException("Could not acquire local address", e);
     } catch (IOException e) {

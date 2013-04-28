@@ -26,7 +26,9 @@ import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.TransportProvider;
 import org.sapia.ubik.rmi.server.transport.http.HttpAddress;
 import org.sapia.ubik.rmi.server.transport.http.HttpClientConnectionPool;
+import org.sapia.ubik.rmi.server.transport.http.HttpConsts;
 import org.sapia.ubik.rmi.server.transport.http.JdkClientConnectionPool;
+import org.sapia.ubik.util.Props;
 
 
 /**
@@ -87,7 +89,7 @@ import org.sapia.ubik.rmi.server.transport.http.JdkClientConnectionPool;
  * @author Yanick Duchesne
  */
 public class ServletTransportProvider implements TransportProvider,
-  ServletConsts {
+  ServletConsts, HttpConsts {
   
   class Perf {
     
@@ -109,7 +111,7 @@ public class ServletTransportProvider implements TransportProvider,
 
   static {
     try {
-      Class.forName("org.apache.commons.httpclient.HttpClient");
+      Class.forName("org.apache.http.client.HttpClient");
       usesJakarta = true;
     } catch (Exception e) {
     }
@@ -184,7 +186,9 @@ public class ServletTransportProvider implements TransportProvider,
     if ((conns = pools.get(address)) == null) {
       try {
         if (usesJakarta) {
-          conns = new HttpClientConnectionPool((HttpAddress) address);
+          int maxConnections = Props.getSystemProperties()
+              .getIntProperty(HTTP_CLIENT_MAX_CONNECTIONS_KEY, DEFAULT_MAX_CLIENT_CONNECTIONS);
+          conns = new HttpClientConnectionPool((HttpAddress) address, maxConnections);
         } else {
           conns = new JdkClientConnectionPool((HttpAddress) address);
         }

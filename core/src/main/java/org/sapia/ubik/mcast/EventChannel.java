@@ -223,26 +223,29 @@ public class EventChannel {
       broadcast.start();
       unicast.start();
       address = unicast.getAddress();
-      
-      publishExecutor.execute(new Runnable() {
-        @Override
-        public void run() { 
-          for (int i = 0; i < maxPublishAttempts; i++) {
-            try { 
-              broadcast.dispatch(address, false, PUBLISH_EVT, address);
-            } catch (IOException e) {
-              log.warning("Error publishing presence to cluster", e);
-            }
-            try {
-              Thread.sleep(publishInterval);
-            } catch (InterruptedException e) {
-              break;
-            }
-          }
-        }
-      });
+      resync();
       state = State.STARTED;
     }
+  }
+  
+  public synchronized void resync() {
+    publishExecutor.execute(new Runnable() {
+      @Override
+      public void run() { 
+        for (int i = 0; i < maxPublishAttempts; i++) {
+          try { 
+            broadcast.dispatch(address, false, PUBLISH_EVT, address);
+          } catch (IOException e) {
+            log.warning("Error publishing presence to cluster", e);
+          }
+          try {
+            Thread.sleep(publishInterval);
+          } catch (InterruptedException e) {
+            break;
+          }
+        }
+      }
+    });
   }
 
   /**
@@ -506,6 +509,11 @@ public class EventChannel {
   	@Override
   	public void heartbeat(String node, ServerAddress addr) {
   		view.heartbeat(addr, node);
+  	}
+  	
+  	@Override
+  	public void resync() {
+  	  EventChannel.this.resync();
   	}
 
   	@Override

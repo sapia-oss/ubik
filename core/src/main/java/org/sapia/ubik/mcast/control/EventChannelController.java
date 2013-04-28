@@ -10,6 +10,7 @@ import java.util.Map;
 import org.sapia.ubik.concurrent.SynchronizedRef;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
+import org.sapia.ubik.mcast.EventChannel;
 import org.sapia.ubik.mcast.EventChannel.Role;
 import org.sapia.ubik.mcast.control.challenge.ChallengeCompletionNotification;
 import org.sapia.ubik.mcast.control.challenge.ChallengeCompletionNotificationHandler;
@@ -23,8 +24,15 @@ import org.sapia.ubik.mcast.control.heartbeat.PingRequest;
 import org.sapia.ubik.mcast.control.heartbeat.PingRequestHandler;
 import org.sapia.ubik.util.Clock;
 import org.sapia.ubik.util.Collections2;
+import org.sapia.ubik.util.Delay;
 
-
+/**
+ * Controls the state of an {@link EventChannel} and behaves accordingly. It is mainly in charge of 
+ * triggering the challenge process at startup.
+ * 
+ * @author yduchesne
+ *
+ */
 public class EventChannelController {
 	
 	// --------------------------------------------------------------------------
@@ -66,7 +74,8 @@ public class EventChannelController {
 	private	Map<String, ControlRequestHandler> 			      requestHandlers 		 = new HashMap<String, ControlRequestHandler>();
 	private	Map<String, ControlNotificationHandler> 		  notificationHandlers = new HashMap<String, ControlNotificationHandler>();
 	private	Map<String, SynchronousControlRequestHandler> syncRequestHandlers  = new HashMap<String, SynchronousControlRequestHandler>();
-	
+	private Delay                                         autoResyncInterval;
+
 	public EventChannelController(ControllerConfiguration config, ChannelCallback callback) {
 		this(Clock.SystemClock.getInstance(), config, callback);
 	}
@@ -79,6 +88,7 @@ public class EventChannelController {
 		syncRequestHandlers.put(PingRequest.class.getName(), new PingRequestHandler(context));
 		notificationHandlers.put(DownNotification.class.getName(), new DownNotificationHandler(context));
 		notificationHandlers.put(ChallengeCompletionNotification.class.getName(), new ChallengeCompletionNotificationHandler(context));
+		autoResyncInterval = new  Delay(Clock.SystemClock.getInstance(), config.getResyncInterval()); 
 	}
 	
 	ControllerConfiguration getConfig() {
@@ -191,7 +201,7 @@ public class EventChannelController {
 
 			// Challenge is on-going: this node has deemed it's the master, it has sent
   		// a ChallengeRequest and is waiting for the corresponding ChallengeResponses.
-  		// We're not doing anyting until the current response handler completes.
+  		// We're not doing anything until the current response handler completes.
   		case MASTER_CANDIDATE:
   		break;				
   			
@@ -200,14 +210,25 @@ public class EventChannelController {
   		// This is the master: it is sending a heartbeat request and creating a matching
   		// response handler.
   		case MASTER:
-  			ControlRequest 			 	 heartbeatRq 			= ControlRequestFactory.createHeartbeatRequest(context);
-  			ControlResponseHandler heartbeatHandler = ControlResponseHandlerFactory.createHeartbeatResponseHandler(
-  					context, new HashSet<String>(context.getChannelCallback().getNodes())
-  			);
-  			ref.set(new PendingResponseState(heartbeatHandler, heartbeatRq.getRequestId(), context.getClock().currentTimeMillis()));
-  			context.heartbeatRequestSent();
-        log.debug("Sending heartbeat request to %s", heartbeatRq.getTargetedNodes());
-  			context.getChannelCallback().sendRequest(heartbeatRq);
+  		  if (context.getChannelCallback().getNodes().isEmpty() && autoResyncInterval.isOver()) {
+          log.debug("Node appears alone in the cluster, forcing a resync");
+  		    context.getChannelCallback().resync();
+          autoResyncInterval.reset();
+  		  } else {
+  		    if (context.getChannelCallback().getNodes().size() <= config.getResyncNodeCount() && autoResyncInterval.isOver()) {
+            log.debug("Number of peers deemed not enough, forcing a resync");
+            context.getChannelCallback().resync();
+            autoResyncInterval.reset();
+  		    }
+    			ControlRequest 			 	 heartbeatRq 			= ControlRequestFactory.createHeartbeatRequest(context);
+    			ControlResponseHandler heartbeatHandler = ControlResponseHandlerFactory.createHeartbeatResponseHandler(
+    					context, new HashSet<String>(context.getChannelCallback().getNodes())
+    			);
+    			ref.set(new PendingResponseState(heartbeatHandler, heartbeatRq.getRequestId(), context.getClock().currentTimeMillis()));
+    			context.heartbeatRequestSent();
+          log.debug("Sending heartbeat request to %s", heartbeatRq.getTargetedNodes());
+    			context.getChannelCallback().sendRequest(heartbeatRq);
+  		  }
   		break;
   		
   		// ----------------------------------------------------------------------
@@ -215,7 +236,16 @@ public class EventChannelController {
   		// This node is a slave: has it received a heartbeat request "lately" ? If no, 
   		// we're triggering a challenge: the master may be down.
   		default: // SLAVE
-  			if(context.getClock().currentTimeMillis() - context.getLastHeartbeatRequestReceivedTime() >= config.getHeartbeatTimeout()) {
+        if (context.getChannelCallback().getNodes().isEmpty() && autoResyncInterval.isOver()) {
+          log.debug("Node appears alone in the cluster, forcing a resync");
+          context.getChannelCallback().resync();
+          autoResyncInterval.reset();
+  	    } else if (context.getClock().currentTimeMillis() - context.getLastHeartbeatRequestReceivedTime() >= config.getHeartbeatTimeout()) {
+          if (context.getChannelCallback().getNodes().size() <= config.getResyncNodeCount() && autoResyncInterval.isOver()) {
+            log.debug("Number of peers deemed not enough, forcing a resync");
+            context.getChannelCallback().resync();
+            autoResyncInterval.reset();
+          }
   				log.debug("Heartbeat request has not been received in timely manner since last time, triggering challenge");
   				doTriggerChallenge(true);
   			}

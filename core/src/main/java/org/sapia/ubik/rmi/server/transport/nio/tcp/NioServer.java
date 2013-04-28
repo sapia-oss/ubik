@@ -3,12 +3,14 @@ package org.sapia.ubik.rmi.server.transport.nio.tcp;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.rmi.RemoteException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.filter.executor.ExecutorFilter;
 import org.apache.mina.transport.socket.nio.SocketAcceptor;
+import org.sapia.ubik.concurrent.ConfigurableExecutor;
+import org.sapia.ubik.concurrent.ConfigurableExecutor.ThreadingConfiguration;
+import org.sapia.ubik.concurrent.NamedThreadFactory;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.ServerAddress;
@@ -26,11 +28,11 @@ class NioServer implements Server{
 	
 	private Category          log = Log.createCategory(getClass());
 
-  private SocketAcceptor    acceptor;
-  private InetSocketAddress inetAddr;
-  private NioAddress        addr;
-  private NioHandler        handler;
-  private ExecutorService   executor;
+  private SocketAcceptor       acceptor;
+  private InetSocketAddress    inetAddr;
+  private NioAddress           addr;
+  private NioHandler           handler;
+  private ConfigurableExecutor executor;
 
   /**
    * This constructor is called by a {@link NioTcpTransportProvider} instance. The <code>maxThreads</code> 
@@ -41,21 +43,13 @@ class NioServer implements Server{
    * 
    * @param inetAddr the {@link InetSocketAddress} on which the server should listen.
    * @param bufsize the size of buffers created internally to process data. 
-   * @param maxThreads the maximum number of processor threads - if maxThreads <= 0, threads
-   * will be created as needed (no maximum constraint).
+   * @param conf a {@link ThreadingConfiguration}.
    * 
    * @throws IOException if a problem occurs while creating this instance.
    */
-  NioServer(InetSocketAddress inetAddr, int bufsize, int maxThreads) throws IOException {
+  NioServer(InetSocketAddress inetAddr, int bufsize, ThreadingConfiguration conf) throws IOException {
     this.acceptor = new SocketAcceptor(Runtime.getRuntime().availableProcessors() + 1, Executors.newCachedThreadPool());
-    if(maxThreads <= 0){
-      log.info("Using a cached thread pool (no max threads)");
-      this.executor = Executors.newCachedThreadPool();
-    }
-    else{
-      log.info("Using maximum number of threads: ", maxThreads);      
-      this.executor = Executors.newFixedThreadPool(maxThreads);
-    }
+    executor = new ConfigurableExecutor(conf, NamedThreadFactory.createWith("Ubik.NioServer").setDaemon(true));
     acceptor.getFilterChain().addLast("protocol", new ProtocolCodecFilter(new NioCodecFactory()));
     acceptor.getFilterChain().addLast("threads", new ExecutorFilter(executor));    
     

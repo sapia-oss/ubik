@@ -3,6 +3,7 @@ package org.sapia.ubik.mcast;
 import java.io.IOException;
 import java.util.Properties;
 
+import org.sapia.ubik.concurrent.ConfigurableExecutor;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.avis.AvisBroadcastDispatcher;
@@ -53,6 +54,7 @@ public final class DispatcherFactory {
    */
   public static UnicastDispatcher createUnicastDispatcher(EventConsumer consumer, Props props) throws IOException {
     String provider = props.getProperty(Consts.UNICAST_PROVIDER, Consts.UNICAST_PROVIDER_TCP);
+    
     if(provider.equals(Consts.UNICAST_PROVIDER_MEMORY)) {
       log.info("Creating in-memory unicast provider");
       return new InMemoryUnicastDispatcher(consumer);
@@ -76,7 +78,10 @@ public final class DispatcherFactory {
         return dispatcher;
       } else {
         log.info("Creating TCP unicast provider");
-        TcpUnicastDispatcher dispatcher = new TcpUnicastDispatcher(consumer, props.getIntProperty(Consts.MCAST_HANDLER_COUNT, Defaults.DEFAULT_HANDLER_COUNT));
+        ConfigurableExecutor.ThreadingConfiguration threadingConfig = new ConfigurableExecutor.ThreadingConfiguration();
+        threadingConfig.setMaxPoolSize(props.getIntProperty(Consts.MCAST_HANDLER_COUNT, Defaults.DEFAULT_HANDLER_COUNT));
+        threadingConfig.setCorePoolSize(props.getIntProperty(Consts.MCAST_HANDLER_COUNT, Defaults.DEFAULT_HANDLER_COUNT));
+        TcpUnicastDispatcher dispatcher = new TcpUnicastDispatcher(consumer, threadingConfig);
         dispatcher.setSenderCount(props.getIntProperty(Consts.MCAST_SENDER_COUNT, Defaults.DEFAULT_SENDER_COUNT));
         dispatcher.setMaxConnectionsPerHost(props.getIntProperty(TcpUnicastDispatcher.MAX_CONNECTIONS, TcpUnicastDispatcher.DEFAULT_MAX_CONNECTIONS_PER_HOST));
         dispatcher.setResponseTimeout(props.getIntProperty(Consts.MCAST_SYNC_RESPONSE_TIMEOUT, Defaults.DEFAULT_SYNC_RESPONSE_TIMEOUT));

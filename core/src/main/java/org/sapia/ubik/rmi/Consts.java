@@ -129,6 +129,28 @@ public interface Consts {
    * to specify the size of the batches of control notifications and requests (defaults to 5).
    */
   public static final String MCAST_CONTROL_SPLIT_SIZE = "ubik.rmi.naming.mcast.control.split.size";
+  
+  /**
+   * The constant corresponds to the 'ubik.rmi.naming.mcast.resync.interval' property key. It
+   * is used to determine the interval (in millis) at which nodes auto-resync with the cluster (that is:
+   * broadcast their presence to it).
+   * <p>
+   * This is useful in order to prevent network glitches were nodes in a cluster may lose each other for
+   * a while. In such a case, nodes are guaranteed to periodically attempt resyncing in order to recreate
+   * the cluster, despite network failures.
+   * <p>
+   * The default value is 60000 millis. 
+   */
+  public static final String MCAST_RESYNC_INTERVAL = "ubik.rmi.naming.mcast.resync.interval";
+  
+  /**
+   * The constant corresponds to the 'ubik.rmi.naming.mcast.resync.node-count' property key. It
+   * is used to indicate below which number of detected nodes in the cluster a given node will trigger
+   * its resync: the resync will be triggered if the number of detected nodes in the cluster is equal to
+   * or lower than the one given by this property (the default is 0, meaning that resync will be attempted
+   * if a node is alone in a cluster).
+   */
+  public static final String MCAST_RESYNC_NODE_COUNT = "ubik.rmi.naming.mcast.resync.node-count";
 
   /**
    * Identifies the unicast provider to use as part of {@link EventChannel}s.
@@ -219,10 +241,30 @@ public interface Consts {
   public static final String SERVER_GC_TIMEOUT = "ubik.rmi.server.gc.timeout";
 
   /**
+   * Specifies the number of core processing server threads - system property name:
+   * <code>ubik.rmi.server.core-threads</code>. Defaults to 5.
+   */
+  public static final String SERVER_CORE_THREADS = "ubik.rmi.server.core-threads";
+  
+  /**
    * Specifies the maximum number of processing server threads - system property name:
-   * <code>ubik.rmi.server.max-threads</code>. No maximum is defined by default.
+   * <code>ubik.rmi.server.max-threads</code>. Defaults to 25.
    */
   public static final String SERVER_MAX_THREADS = "ubik.rmi.server.max-threads";
+  
+  /**
+   * Specifies the duration of the idle period for server threads (in seconds). System property name:
+   * <code>ubik.rmi.server.threads.keep-alive</code>. Defaults to 30 (seconds).
+   */
+  public static final String SERVER_THREADS_KEEP_ALIVE = "ubik.rmi.server.threads.keep-alive";
+  
+  /**
+   * Specifies the size of task processing queue for worker threads:
+   * <code>ubik.rmi.server.threads.queue-size</code>. Defaults to 50.
+   * @see #CORE_MAX_THREADS
+   * @see #SERVER_MAX_THREADS
+   */
+  public static final String SERVER_THREADS_QUEUE_SIZE = "ubik.rmi.server.threads.queue-size";
 
   /**
    * Specifies the maximum number of threads that process method invocation callbacks

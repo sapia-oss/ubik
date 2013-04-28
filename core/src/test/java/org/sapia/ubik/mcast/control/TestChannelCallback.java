@@ -54,6 +54,10 @@ public class TestChannelCallback implements ChannelCallback {
 	}
 	
 	@Override
+	public void resync() {
+	}
+	
+	@Override
 	public void down(String node) {
 		deadSiblings.put(node, siblings.remove(node));
 	}

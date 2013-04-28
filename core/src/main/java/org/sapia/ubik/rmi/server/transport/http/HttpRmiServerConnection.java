@@ -15,15 +15,13 @@ import org.sapia.ubik.rmi.server.transport.MarshalStreamFactory;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
 import org.sapia.ubik.rmi.server.transport.RmiObjectOutput;
 import org.sapia.ubik.util.Props;
-
-import simple.http.Request;
-import simple.http.Response;
-
+import org.simpleframework.http.Request;
+import org.simpleframework.http.Response;
 
 /**
  * Implements the {@link RmiConnection} interface over HTTP - more precisely,
  * over {@link Request} and {@link Response} instances - from the Simple
- * API - see the <a href="http://simpleweb.sf.net/">Simple website</a> for more info.
+ * API - see the <a href="http://www.simpleframework.org/">Simple website</a> for more info.
  * </p>
  * An instance of this class is used on the server side.
  *
@@ -91,11 +89,6 @@ class HttpRmiServerConnection implements RmiConnection {
    * @see org.sapia.ubik.net.Connection#close()
    */
   public void close() {
-    try {
-      res.commit();
-    } catch (Exception e) {
-      //noop
-    }
   }
 
   /**
@@ -110,13 +103,12 @@ class HttpRmiServerConnection implements RmiConnection {
    */
   public Object receive()
     throws IOException, ClassNotFoundException, RemoteException {
-    try{
+    try {
       ObjectInputStream is = MarshalStreamFactory.createInputStream(req.getInputStream());
       return is.readObject();
-    }catch(SocketException e){
-      throw new RemoteException("communication with server interrupted; server probably disappeared",
-          e);
-    }catch(Exception e){
+    } catch(SocketException e){
+      throw new RemoteException("Error reading request payload", e);
+    } catch(Exception e){
       throw new IOException(e);
     }
   }
@@ -129,10 +121,10 @@ class HttpRmiServerConnection implements RmiConnection {
       ObjectOutputStream os = MarshalStreamFactory.createOutputStream(res.getOutputStream());
       os.writeObject(o);
       os.flush();
+      os.close();
     } catch (java.net.SocketException e) {
-      throw new RemoteException("communication with server interrupted; server probably disappeared",
-        e);
-    }catch(Exception e){
+      throw new RemoteException("Error writing response payload", e);
+    } catch(Exception e){
       throw new IOException(e);
     }
 

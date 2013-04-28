@@ -2,6 +2,7 @@ package org.sapia.ubik.mcast.tcp;
 
 import java.io.IOException;
 
+import org.sapia.ubik.concurrent.ConfigurableExecutor;
 import org.sapia.ubik.concurrent.NamedThreadFactory;
 import org.sapia.ubik.concurrent.ThreadShutdown;
 import org.sapia.ubik.log.Category;
@@ -12,12 +13,12 @@ import org.sapia.ubik.mcast.Response;
 import org.sapia.ubik.mcast.UnicastDispatcher;
 import org.sapia.ubik.net.ConnectionFactory;
 import org.sapia.ubik.net.DefaultUbikServerSocketFactory;
-import org.sapia.ubik.net.Worker;
 import org.sapia.ubik.net.Request;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.SocketConnectionFactory;
 import org.sapia.ubik.net.SocketServer;
 import org.sapia.ubik.net.TCPAddress;
+import org.sapia.ubik.net.Worker;
 import org.sapia.ubik.net.WorkerPool;
 import org.sapia.ubik.util.Localhost;
 
@@ -40,9 +41,9 @@ public class TcpUnicastDispatcher extends BaseTcpUnicastDispatcher {
    * @param consumer
    * @throws IOException
    */
-  public TcpUnicastDispatcher(EventConsumer consumer, int maxThreads) throws IOException{
+  public TcpUnicastDispatcher(EventConsumer consumer, ConfigurableExecutor.ThreadingConfiguration conf) throws IOException{
     super(consumer);
-    this.socketServer = new TCPUnicastSocketServer(Localhost.getAnyLocalAddress().getHostAddress(), consumer, maxThreads);  
+    this.socketServer = new TCPUnicastSocketServer(Localhost.getAnyLocalAddress().getHostAddress(), consumer, conf);  
   }
 
   // --------------------------------------------------------------------------
@@ -101,12 +102,12 @@ public class TcpUnicastDispatcher extends BaseTcpUnicastDispatcher {
   
   class TCPUnicastSocketServer extends SocketServer {
     
-    public TCPUnicastSocketServer(String bindAddress, EventConsumer consumer, int maxThreads) throws IOException{
-      super(doGetTransportType(), bindAddress, 0, new TCPUnicastThreadPool(consumer, maxThreads), new DefaultUbikServerSocketFactory());
+    public TCPUnicastSocketServer(String bindAddress, EventConsumer consumer, ConfigurableExecutor.ThreadingConfiguration conf) throws IOException{
+      super(doGetTransportType(), bindAddress, 0, new TCPUnicastThreadPool(consumer, conf), new DefaultUbikServerSocketFactory());
     }
     
-    public TCPUnicastSocketServer(EventConsumer consumer, int maxThreads) throws IOException{
-      super(doGetTransportType(), 0, new TCPUnicastThreadPool(consumer, maxThreads), new DefaultUbikServerSocketFactory());
+    public TCPUnicastSocketServer(EventConsumer consumer, ConfigurableExecutor.ThreadingConfiguration conf) throws IOException{
+      super(doGetTransportType(), 0, new TCPUnicastThreadPool(consumer, conf), new DefaultUbikServerSocketFactory());
     }    
   }
 
@@ -114,8 +115,8 @@ public class TcpUnicastDispatcher extends BaseTcpUnicastDispatcher {
   
   class TCPUnicastThreadPool extends WorkerPool<Request> {
     
-    TCPUnicastThreadPool(EventConsumer consumer, int maxSize) {
-      super(consumer.getNode() + "Unicast@" + consumer.getDomainName().toString(), true, maxSize);
+    TCPUnicastThreadPool(EventConsumer consumer, ConfigurableExecutor.ThreadingConfiguration config) {
+      super(consumer.getNode() + "Unicast@" + consumer.getDomainName().toString(), true, config);
     }
    
     @Override

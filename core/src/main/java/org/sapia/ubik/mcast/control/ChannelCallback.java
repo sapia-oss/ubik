@@ -33,6 +33,11 @@ public interface ChannelCallback {
 	public Set<String> getNodes();
 	
 	/**
+	 * Triggers a resync with the cluster.
+	 */
+	public void resync();
+	
+	/**
 	 * Sends the given {@link ControlRequest}.
 	 * 
 	 * @param req a {@link ControlRequest} to send.

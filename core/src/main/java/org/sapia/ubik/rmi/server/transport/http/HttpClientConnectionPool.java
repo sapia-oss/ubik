@@ -2,32 +2,39 @@ package org.sapia.ubik.rmi.server.transport.http;
 
 import java.rmi.RemoteException;
 
-import org.apache.commons.httpclient.HttpClient;
+import org.apache.http.client.HttpClient;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.conn.PoolingClientConnectionManager;
 import org.sapia.ubik.net.Uri;
 import org.sapia.ubik.net.UriSyntaxException;
 import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
-import org.sapia.ubik.util.pool.Pool;
 
 
 /**
- * This class implements the <code>Connections</code> interface over Jakarta's
- * HTTP client. It does not do pooling, and leaves connection management to the
- * HTTP client.
+ * This class implements the <code>Connections</code> interface over Apache's
+ * {@link HttpClient}. It does not do pooling, and leaves connection management to the
+ * client.
  *
  * @author Yanick Duchesne
  */
 public class HttpClientConnectionPool implements Connections {
-  private HttpAddress  address;
-  private HttpClient   client = new HttpClient();
-  private InternalPool pool   = new InternalPool();
+  
+  private HttpAddress                    address;
+  private PoolingClientConnectionManager connectionPool;
+  private HttpClient                     client;
 
   /**
    * @param address the address of the target server.
+   * @param maxConnections the maximum number of connections that the
+   * {@link HttpClient} should pool at once. 
    */
-  public HttpClientConnectionPool(HttpAddress address)
+  public HttpClientConnectionPool(HttpAddress address, int maxConnections)
     throws UriSyntaxException {
-    this.address = address;
+    this.address   = address;
+    connectionPool = new PoolingClientConnectionManager();
+    connectionPool.setDefaultMaxPerRoute(maxConnections);
+    client         = new DefaultHttpClient(connectionPool);
   }
 
   /**
@@ -38,20 +45,18 @@ public class HttpClientConnectionPool implements Connections {
   }
 
   @Override
-  public HttpRmiClientConnection acquire() throws RemoteException {
-    try {
-      return ((HttpRmiClientConnection) this.pool.acquire()).setUp(client, address);
-    } catch (Exception e) {
-      if (e instanceof RemoteException) {
-        throw (RemoteException) e;
-      }
-
-      throw new RemoteException("Could acquire connection", e);
-    }
+  public synchronized HttpRmiClientConnection acquire() throws RemoteException {
+    return new HttpRmiClientConnection(client, address);
   }
 
   @Override
-  public void clear() {
+  public synchronized void clear() {
+    // no other choice but to recreate a new HttpClient.
+    // (HttpClient API does not allow clearing pool).
+    connectionPool.shutdown();
+    connectionPool = new PoolingClientConnectionManager();
+    connectionPool.setDefaultMaxPerRoute(connectionPool.getDefaultMaxPerRoute());
+    client         = new DefaultHttpClient(connectionPool);
   }
 
   @Override
@@ -61,22 +66,10 @@ public class HttpClientConnectionPool implements Connections {
   
   @Override
   public void release(RmiConnection conn) {
-    conn.close();
-    pool.release((HttpRmiClientConnection)conn);
   }
   
   @Override
   public void invalidate(RmiConnection conn) {
-  	pool.invalidate((HttpRmiClientConnection) conn);
   }
 
-  ///// INNER CLASS /////////////////////////////////////////////////////////////
-  static class InternalPool extends Pool<HttpRmiClientConnection> {
-    /**
-     * @see org.sapia.ubik.util.pool.Pool#doNewObject()
-     */
-    protected HttpRmiClientConnection doNewObject() throws Exception {
-      return new HttpRmiClientConnection();
-    }
-  }
 }

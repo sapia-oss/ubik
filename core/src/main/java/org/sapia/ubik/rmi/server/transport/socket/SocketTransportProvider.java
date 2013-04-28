@@ -7,13 +7,13 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.sapia.ubik.concurrent.ConfigurableExecutor.ThreadingConfiguration;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.ConnectionFactory;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.TCPAddress;
 import org.sapia.ubik.net.TcpPortSelector;
-import org.sapia.ubik.net.WorkerPool;
 import org.sapia.ubik.net.UbikServerSocketFactory;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.Hub;
@@ -24,6 +24,7 @@ import org.sapia.ubik.taskman.Task;
 import org.sapia.ubik.taskman.TaskContext;
 import org.sapia.ubik.util.Localhost;
 import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.Time;
 
 
 /**
@@ -153,23 +154,33 @@ public class SocketTransportProvider implements TransportProvider {
     Props pu = new Props().addProperties(System.getProperties());
     return doNewServer(pu.getIntProperty(PORT, 0), pu);
   }
-  
+
+  /**
+   * @param port the port on which to start a new server.
+   * @return a new {@link Server}.
+   * @throws RemoteException
+   */
   public Server newServer(int port) throws RemoteException{
     Props pu = new Props().addProperties(System.getProperties());
     return doNewServer(port, pu);
   }
 
   protected Server doNewServer(int port, Props props) throws RemoteException{
+    int coreThreads = props.getIntProperty(Consts.SERVER_CORE_THREADS, ThreadingConfiguration.DEFAULT_CORE_POOL_SIZE);   
+    int maxThreads  = props.getIntProperty(Consts.SERVER_MAX_THREADS, ThreadingConfiguration.DEFAULT_MAX_POOL_SIZE);  
+    int queueSize   = props.getIntProperty(Consts.SERVER_THREADS_QUEUE_SIZE, ThreadingConfiguration.DEFAULT_QUEUE_SIZE); 
+    long keepAlive  = props.getLongProperty(Consts.SERVER_THREADS_KEEP_ALIVE, ThreadingConfiguration.DEFAULT_KEEP_ALIVE.getValueInSeconds());
+
+    ThreadingConfiguration threadConf = ThreadingConfiguration.newInstance()
+        .setCorePoolSize(coreThreads)
+        .setMaxPoolSize(maxThreads)
+        .setQueueSize(queueSize)
+        .setKeepAlive(Time.createSeconds(keepAlive));
+
     SocketRmiServer         server;
-    int                     maxThreads = WorkerPool.NO_MAX;
     long                    resetInterval; 
     String                  bindAddress = null;
     UbikServerSocketFactory serverSocketFactory = null;
-    
-    maxThreads = props.getIntProperty(Consts.SERVER_MAX_THREADS, 0);     
-    if(maxThreads == 0){
-      maxThreads = props.getIntProperty(MAX_THREADS, 0);
-    }
     
     try{
       bindAddress = props.getProperty(BIND_ADDRESS, Localhost.getAnyLocalAddress().getHostAddress());
@@ -205,7 +216,7 @@ public class SocketTransportProvider implements TransportProvider {
     try {
       server = SocketRmiServer.Builder.create(transportType)
         .setBindAddress(bindAddress)
-        .setMaxThreads(maxThreads)
+        .setThreadingConfig(threadConf)
         .setResetInterval(resetInterval)
         .setPort(port)
         .setServerSocketFactory(serverSocketFactory)

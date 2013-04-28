@@ -6,10 +6,10 @@ import java.net.ServerSocket;
 import java.rmi.RemoteException;
 import java.util.Properties;
 
+import org.sapia.ubik.concurrent.ConfigurableExecutor.ThreadingConfiguration;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.TcpPortSelector;
-import org.sapia.ubik.net.WorkerPool;
 import org.sapia.ubik.net.UbikServerSocketFactory;
 import org.sapia.ubik.net.mplex.MultiplexServerSocket;
 import org.sapia.ubik.rmi.Consts;
@@ -17,6 +17,7 @@ import org.sapia.ubik.rmi.server.Server;
 import org.sapia.ubik.rmi.server.transport.TransportProvider;
 import org.sapia.ubik.util.Localhost;
 import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.Time;
 
 
 /**
@@ -83,14 +84,19 @@ public class MultiplexSocketTransportProvider extends SocketTransportProvider {
   }
   
   protected Server doNewServer(int port, Props props) throws RemoteException{
-    int maxThreads;
+    int coreThreads = props.getIntProperty(Consts.SERVER_CORE_THREADS, ThreadingConfiguration.DEFAULT_CORE_POOL_SIZE);   
+    int maxThreads  = props.getIntProperty(Consts.SERVER_MAX_THREADS, ThreadingConfiguration.DEFAULT_MAX_POOL_SIZE);  
+    int queueSize   = props.getIntProperty(Consts.SERVER_THREADS_QUEUE_SIZE, ThreadingConfiguration.DEFAULT_QUEUE_SIZE); 
+    long keepAlive  = props.getLongProperty(Consts.SERVER_THREADS_KEEP_ALIVE, ThreadingConfiguration.DEFAULT_KEEP_ALIVE.getValueInSeconds());
+    
+    ThreadingConfiguration threadConf = new ThreadingConfiguration();
+    threadConf.setCorePoolSize(coreThreads);
+    threadConf.setMaxPoolSize(maxThreads);
+    threadConf.setQueueSize(queueSize);
+    threadConf.setKeepAlive(Time.createSeconds(keepAlive));
+    
     int acceptorCount;
     int selectorCount;
-        
-    maxThreads = props.getIntProperty(Consts.SERVER_MAX_THREADS, WorkerPool.NO_MAX);   
-    if (maxThreads == 0) {
-      maxThreads = props.getIntProperty(MAX_THREADS, WorkerPool.NO_MAX);
-    }
     
     acceptorCount = props.getIntProperty(ACCEPTOR_THREADS, 0);
     
@@ -120,7 +126,7 @@ public class MultiplexSocketTransportProvider extends SocketTransportProvider {
       return SocketRmiServer.Builder.create(MPLEX_TRANSPORT_TYPE)
         .setBindAddress(bindAddress)
         .setPort(port)
-        .setMaxThreads(maxThreads)
+        .setThreadingConfig(threadConf)
         .setConnectionFactory(new MultiplexSocketConnectionFactory())
         .setServerSocketFactory(new MultiPlexServerSocketFactory(acceptorCount, selectorCount))
         .setResetInterval(props.getLongProperty(Consts.SERVER_RESET_INTERVAL, DEFAULT_RESET_INTERVAL))

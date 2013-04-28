@@ -23,6 +23,12 @@ public interface HttpConsts {
    * a given <code>HttpTransportProvider</code> instance.
    */
   public static final String HTTP_PORT_KEY = "ubik.rmi.transport.http.port";
+  
+  /**
+   * Corresponds to the <code>ubik.rmi.transport.http.client.max-connections</code> property, used
+   * to specify the max number of connections that the HTTP client will pool.
+   */
+  public static final String HTTP_CLIENT_MAX_CONNECTIONS_KEY = "ubik.rmi.transport.http.client.max-connections";  
 
   /**
    * The key of the property that corresponds to the server URL that is made available to clients.
@@ -40,4 +46,11 @@ public interface HttpConsts {
    * This constant specifies the default context path.
    */
   public static final String DEFAULT_CONTEXT_PATH = "/ubik";
+  
+  /**
+   * This constant specifies the default number of connections that the HTTP client will pool (set to 25).
+   * 
+   * @see #HTTP_CLIENT_MAX_CONNECTIONS_KEY
+   */
+  public static final int DEFAULT_MAX_CLIENT_CONNECTIONS = 25;  
 }

@@ -23,6 +23,7 @@ public class Defaults {
   
   /**
    * The default number of worker threads for unicast dispatchers.
+   * 
    * (see {@link Consts#MCAST_HANDLER_COUNT}).
    */
   public static final int DEFAULT_HANDLER_COUNT             = 3;
@@ -41,6 +42,20 @@ public class Defaults {
    * The default heartbeat interval (see {@link Consts#MCAST_HEARTBEAT_INTERVAL}).
    */
   public static final int  DEFAULT_HEARTBEAT_INTERVAL       = 60000;
+  
+  /**
+   * The interval at which a node will resync itself with the cluster by rebroadcasting its presence.
+   * @see #DEFAULT_RESYNC_NODE_COUNT
+   * @see Consts#MCAST_RESYNC_INTERVAL
+   */
+  public static final int  DEFAULT_RESYNC_INTERVAL          = 60000;
+  
+  /**
+   * The default minimum number of nodes in the cluster before a given node will trigger auto-resync. 
+   * @see #DEFAULT_RESYNC_INTERVAL
+   * @see Consts#MCAST_RESYNC_NODE_COUNT
+   */
+  public static final int  DEFAULT_RESYNC_NODE_COUNT        = 0;
   
   /**
    * The default timeout for channel control responses. 

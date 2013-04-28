@@ -8,6 +8,7 @@ import org.sapia.ubik.module.Module;
 import org.sapia.ubik.module.ModuleContext;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.server.transport.http.HttpTransportProvider;
 import org.sapia.ubik.rmi.server.transport.memory.InMemoryTransportProvider;
 import org.sapia.ubik.rmi.server.transport.nio.tcp.NioTcpTransportProvider;
 import org.sapia.ubik.rmi.server.transport.socket.MultiplexSocketTransportProvider;
@@ -38,6 +39,7 @@ public class TransportManager implements Module {
     registerProvider(new MultiplexSocketTransportProvider());
     registerProvider(new NioTcpTransportProvider());
     registerProvider(new InMemoryTransportProvider());
+    registerProvider(new HttpTransportProvider());
     
     String[] propNames = (String[]) System.getProperties().keySet().toArray(new String[System.getProperties().size()]);
     String   propName;

@@ -30,6 +30,14 @@ public class DelayTest {
 		clock.increaseCurrentTimeMillis(1000);
 		assertEquals(0, delay.remaining());
 	}
+	
+	 @Test
+	  public void testReset() {
+	    clock.increaseCurrentTimeMillis(1000);
+	    assertEquals(0, delay.remaining());
+	    delay.reset();
+	    assertEquals(1000, delay.remaining());
+	  }
 
 	@Test
 	public void testRemainingNotZero() {

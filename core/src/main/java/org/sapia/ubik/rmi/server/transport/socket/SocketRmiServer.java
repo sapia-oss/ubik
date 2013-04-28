@@ -6,6 +6,7 @@ import java.rmi.RemoteException;
 
 import org.sapia.ubik.concurrent.NamedThreadFactory;
 import org.sapia.ubik.concurrent.ThreadShutdown;
+import org.sapia.ubik.concurrent.ConfigurableExecutor.ThreadingConfiguration;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.DefaultUbikServerSocketFactory;
 import org.sapia.ubik.net.Request;
@@ -38,9 +39,8 @@ public class SocketRmiServer extends SocketServer implements Server, SocketRmiSe
     private String                  bindAddress;
     private int                     port;
     private long                    resetInterval;
-    private SocketConnectionFactory connectionFactory;
-    private WorkerPool<Request>     threadPool;
-    private int                     maxThreads            = WorkerPool.NO_MAX;
+    private ThreadingConfiguration           threadConfiguration = new ThreadingConfiguration();
+    private SocketConnectionFactory connectionFactory;;
     private UbikServerSocketFactory serverSocketFactory;
     
     private Builder(String transportType) {
@@ -67,12 +67,11 @@ public class SocketRmiServer extends SocketServer implements Server, SocketRmiSe
     }
     
     /**
-     * @param maxThreads the maximum number of threads that the {@link WorkerPool} created by this instance
-     * will handle.
+     * @param threadConf the threading {@link ThreadingConfiguration} to use.
      * @return this instance.
      */
-    public Builder setMaxThreads(int maxThreads) {
-      this.maxThreads = maxThreads;
+    public Builder setThreadingConfig(ThreadingConfiguration threadConf) {
+      this.threadConfiguration = threadConf;
       return this;
     }
     
@@ -85,17 +84,6 @@ public class SocketRmiServer extends SocketServer implements Server, SocketRmiSe
      */
     public Builder setResetInterval(long resetInterval) {
       this.resetInterval = resetInterval;
-      return this;
-    }
-    
-    /**
-     * If the thread pool is specified, any value set by {@link #setMaxThreads(int)} will be ignored.
-     * 
-     * @param threadPool the {@link WorkerPool} that the server will be using.
-     * @return this instance.
-     */
-    public Builder setThreadPool(WorkerPool<Request> threadPool) {
-      this.threadPool = threadPool;
       return this;
     }
 
@@ -129,14 +117,7 @@ public class SocketRmiServer extends SocketServer implements Server, SocketRmiSe
     
     public SocketRmiServer build() throws IOException {
       
-      if(maxThreads > 0) {
-        if(threadPool != null) {
-          throw new IllegalStateException("Thread pool should not be assigned if max threads is specified");
-        } 
-        this.threadPool = new SocketRmiServerThreadPool("ubik.rmi.tcp.SocketServerThread", true, maxThreads);
-      } else if (threadPool == null) {
-        this.threadPool = new SocketRmiServerThreadPool("ubik.rmi.tcp.SocketServerThread", true, WorkerPool.NO_MAX);
-      }
+      SocketRmiServerThreadPool threadPool = new SocketRmiServerThreadPool("ubik.rmi.tcp.SocketServerThread", true, threadConfiguration);
       
       if(connectionFactory == null) {
         SocketRmiConnectionFactory rmiConnectionFactory = new SocketRmiConnectionFactory(transportType);
