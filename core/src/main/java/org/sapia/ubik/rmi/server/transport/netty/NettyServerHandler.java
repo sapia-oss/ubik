@@ -1,6 +1,7 @@
 package org.sapia.ubik.rmi.server.transport.netty;
 
 import java.net.InetSocketAddress;
+import java.nio.channels.ClosedChannelException;
 
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
@@ -54,6 +55,8 @@ class NettyServerHandler extends SimpleChannelHandler {
       throws Exception {
     try {
       doMessageReceived(ctx, event);
+    } catch (ClosedChannelException e) {
+      log.info("Channel closed, client probably closed connection", e);      
     } catch (Exception e) {
       log.warning("Could not submit request to worker pool", e);      
     }

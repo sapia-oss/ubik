@@ -26,7 +26,6 @@ public class HeartbeatResponseHandler implements ControlResponseHandler {
 	private ControllerContext context;
 	private Set<String> 		  targetedNodes;
 	private Set<String> 		  replyingNodes  = new HashSet<String>();
-	private long              creationTime;
 	
 	/**
 	 * @param context the {@link ControllerContext}
@@ -38,8 +37,6 @@ public class HeartbeatResponseHandler implements ControlResponseHandler {
 			Set<String> targetedNodes) {
 		this.context       = context;
 		this.targetedNodes = targetedNodes;
-		this.creationTime  = context.getClock().currentTimeMillis();
-		
   }
 
 	/**

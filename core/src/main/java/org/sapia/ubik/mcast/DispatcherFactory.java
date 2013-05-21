@@ -11,7 +11,6 @@ import org.sapia.ubik.mcast.memory.InMemoryBroadcastDispatcher;
 import org.sapia.ubik.mcast.memory.InMemoryUnicastDispatcher;
 import org.sapia.ubik.mcast.tcp.NioTcpUnicastDispatcher;
 import org.sapia.ubik.mcast.tcp.TcpUnicastDispatcher;
-import org.sapia.ubik.mcast.tcp.netty.NettyTcpUnicastDispatcher;
 import org.sapia.ubik.mcast.udp.UDPBroadcastDispatcher;
 import org.sapia.ubik.mcast.udp.UDPUnicastDispatcher;
 import org.sapia.ubik.rmi.Consts;

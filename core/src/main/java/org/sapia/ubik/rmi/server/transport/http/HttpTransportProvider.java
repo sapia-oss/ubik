@@ -49,10 +49,10 @@ public class HttpTransportProvider implements TransportProvider, HttpConsts {
 
   /**
    * Creates an instance of this class using the default HTTP transport type identifier.
-   * @see HttpConsts#DEFAULT_HTTP_TRANSPORT_TYPE 
+   * @see HttpConsts#HTTP_TRANSPORT_TYPE 
    */
   public HttpTransportProvider() {
-    this(HttpConsts.DEFAULT_HTTP_TRANSPORT_TYPE);
+    this(HttpConsts.HTTP_TRANSPORT_TYPE);
   }
 
   /**
@@ -116,31 +116,15 @@ public class HttpTransportProvider implements TransportProvider, HttpConsts {
   public Server newServer(Properties props) throws RemoteException {
     Props configProps = new Props().addProperties(props).addSystemProperties();
     Uri    serverUrl;
-    String contextPath;
     int    port        = configProps.getIntProperty(HTTP_PORT_KEY, DEFAULT_HTTP_PORT);
 
-    if (configProps.getProperty(SERVER_URL_KEY) != null) {
-      try {
-        serverUrl = Uri.parse(props.getProperty(SERVER_URL_KEY));
-
-        if (serverUrl.getPort() == Uri.UNDEFINED_PORT) {
-          serverUrl.setPort(DEFAULT_HTTP_PORT);
-        }
-
-        contextPath = serverUrl.getPath();
-      } catch (UriSyntaxException e) {
-        throw new RemoteException("Could not parse server URL", e);
-      }
-    } else {
-      contextPath = configProps.getProperty(PATH_KEY, DEFAULT_CONTEXT_PATH);
-      try {
-        String bindAddress = configProps.getProperty(HTTP_BIND_ADDRESS_KEY, Localhost.getAnyLocalAddress().getHostAddress());        
-        serverUrl = Uri.parse("http://" + bindAddress + ":" + port + contextPath);
-      } catch (UriSyntaxException e) {
-        throw new RemoteException("Could not parse server URL", e);
-      } catch (UnknownHostException e) {
-        throw new RemoteException("Could not acquire local address", e);
-      }
+    try {
+      String bindAddress = configProps.getProperty(HTTP_BIND_ADDRESS_KEY, Localhost.getAnyLocalAddress().getHostAddress());        
+      serverUrl = Uri.parse("http://" + bindAddress + ":" + port + CONTEXT_PATH);
+    } catch (UriSyntaxException e) {
+      throw new RemoteException("Could not parse server URL", e);
+    } catch (UnknownHostException e) {
+      throw new RemoteException("Could not acquire local address", e);
     }
     
     int coreThreads = configProps.getIntProperty(Consts.SERVER_CORE_THREADS, ThreadingConfiguration.DEFAULT_CORE_POOL_SIZE);   
@@ -155,7 +139,7 @@ public class HttpTransportProvider implements TransportProvider, HttpConsts {
         .setKeepAlive(Time.createSeconds(keepAlive));
 
     UbikHttpHandler handler = new UbikHttpHandler(serverUrl, threadConf);
-    handlers.addHandler(contextPath, handler);
+    handlers.addHandler(CONTEXT_PATH, handler);
     HttpRmiServer svr = new HttpRmiServer(handlers, serverUrl, port);
     return svr;
   }

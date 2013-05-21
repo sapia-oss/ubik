@@ -79,7 +79,7 @@ public class HttpServerExporter {
    * @throws RemoteException if a problem occurred trying to export the object.
    */
   public Object export(Object toExport) throws RemoteException {
-    props.setProperty(Consts.TRANSPORT_TYPE, HttpConsts.DEFAULT_HTTP_TRANSPORT_TYPE);
+    props.setProperty(Consts.TRANSPORT_TYPE, HttpConsts.HTTP_TRANSPORT_TYPE);
     if(port > 0) {
       props.setProperty(HttpTransportProvider.HTTP_PORT_KEY, Integer.toString(port));
     }

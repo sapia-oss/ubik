@@ -15,7 +15,7 @@ public interface HttpConsts {
   /**
    * This constant specifies the default HTTP "transport type" identifier: http.
    */
-  public static final String DEFAULT_HTTP_TRANSPORT_TYPE = "http";
+  public static final String HTTP_TRANSPORT_TYPE = "http";
 
   /**
    * Corresponds to the <code>ubik.rmi.transport.http.port</code> property, used
@@ -38,21 +38,9 @@ public interface HttpConsts {
   public static final String HTTP_CLIENT_MAX_CONNECTIONS_KEY = "ubik.rmi.transport.http.client.max-connections";  
 
   /**
-   * The key of the property that corresponds to the server URL that is made available to clients.
-   * (<code>ubik.rmi.transport.http.url</code>).
-   */
-  public static final String SERVER_URL_KEY = "ubik.rmi.transport.http.url";
-
-  /**
-   * The key of the property that corresponds to the path under which the Ubik request handler is bound.
-   * (<code>ubik.rmi.transport.http.path</code>).
-   */
-  public static final String PATH_KEY = "ubik.rmi.transport.http.path";
-
-  /**
    * This constant specifies the default context path.
    */
-  public static final String DEFAULT_CONTEXT_PATH = "/ubik";
+  public static final String CONTEXT_PATH = "/ubik";
   
   /**
    * This constant specifies the default number of connections that the HTTP client will pool (set to 25).

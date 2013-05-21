@@ -25,7 +25,7 @@ public class HttpAddress extends TCPAddress {
    * @param uri the {@link Uri} for which to create an instance of this class.
    */
   public HttpAddress(Uri uri) { 
-    this(HttpConsts.DEFAULT_HTTP_TRANSPORT_TYPE, uri);
+    this(HttpConsts.HTTP_TRANSPORT_TYPE, uri);
   }
   
   /**
@@ -36,7 +36,7 @@ public class HttpAddress extends TCPAddress {
    * @return a new {@link HttpAddress}.
    */
   public static HttpAddress newDefaultInstance(String host, int port) {
-    return new HttpAddress(Uri.parse("http://" + host + ":" + port + HttpConsts.DEFAULT_CONTEXT_PATH));
+    return new HttpAddress(Uri.parse("http://" + host + ":" + port + HttpConsts.CONTEXT_PATH));
   }
 
   protected HttpAddress(String transportType, Uri uri) {
