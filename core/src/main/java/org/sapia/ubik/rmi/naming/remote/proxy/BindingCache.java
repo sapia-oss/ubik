@@ -69,6 +69,7 @@ public class BindingCache implements Externalizable {
           if(toBind != null){
             JndiBindingInfo info = new JndiBindingInfo(baseUrl, ref.name, ref.domainName, mcastAddress);
             try {
+              log.debug("Enriching stub %s", ref.name);              
               toBind = Hub.getModules().getStubProcessor().enrichForJndiBinding(toBind, info);
              	if (Stubs.isStub(toBind)) {
              		ctx.rebind(ref.name, Stubs.getStubInvocationHandler(toBind).toStubContainer(toBind));

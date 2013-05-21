@@ -20,6 +20,7 @@ import org.sapia.ubik.rmi.server.oid.DefaultOID;
 import org.sapia.ubik.rmi.server.oid.OID;
 import org.sapia.ubik.rmi.server.transport.ClassDescriptor;
 import org.sapia.ubik.rmi.server.transport.MarshalledObject;
+import org.sapia.ubik.util.Strings;
 
 
 /**
@@ -252,5 +253,10 @@ public class InvokeCommand extends RMICommand implements Externalizable {
         params[i] = ((MarshalledObject) params[i]).get(loader);
       }
     }
+  }
+  
+  @Override
+  public String toString() {
+    return Strings.toStringFor(this, "methodName", methodName);
   }
 }

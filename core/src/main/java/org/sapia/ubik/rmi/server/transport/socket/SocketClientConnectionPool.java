@@ -48,7 +48,10 @@ public class SocketClientConnectionPool implements Connections {
     try {
       return (RmiConnection) pool.acquire();
     } catch (PooledObjectCreationException e) {
-      throw new RemoteException("Could not create connection", e);
+      if (e.getCause() instanceof RemoteException) {
+        throw (RemoteException) e.getCause();
+      }
+      throw new IllegalStateException("Could get connection from pool", e);
     } catch (NoObjectAvailableException e) {
       throw new RemoteException("No connection available", e);
     } catch (InterruptedException e) {

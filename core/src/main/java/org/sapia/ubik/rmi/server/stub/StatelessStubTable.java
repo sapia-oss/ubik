@@ -50,7 +50,7 @@ public class StatelessStubTable implements Module {
   /**
    * @param ref a {@link RemoteRefStateless} that will be internally kept.
    */
-  public synchronized void registerStatelessRef(RemoteRefStateless ref, Collection<RemoteRefContext> newContexts){
+  public void registerStatelessRef(RemoteRefStateless ref, Collection<RemoteRefContext> newContexts){
     log.info("Registering stateless stub");
     
     DomainName dn = DomainName.parse(ref.getDomain());
@@ -59,29 +59,34 @@ public class StatelessStubTable implements Module {
     dc.registerStatelessRef(ref, newContexts);
   }
   
-  private DomainContexts getDomainContextsFor(DomainName domainName, MulticastAddress addr) {
+  private synchronized DomainContexts getDomainContextsFor(DomainName domainName, MulticastAddress addr) {
     for(DomainContexts dc : domainContexts) {
       if(dc.domainName.contains(domainName)) {
         return dc;
       }
     }
     
-    DomainContexts dc = new DomainContexts(domainName, addr);
+    DomainContexts dc = new DomainContexts(eventChannelTable, domainName, addr);
     domainContexts.add(dc);
+    dc.registerWithEventChannel();
     return dc;
   }
   
   // --------------------------------------------------------------------------
  
-  class DomainContexts implements AsyncEventListener {
+  static class DomainContexts implements AsyncEventListener {
     
+    private Category            log                  = Log.createCategory(getClass());
     private DomainName          domainName;
     private MulticastAddress    multicastAddress;
+    private EventChannelTable   eventChannelTable; 
+
     private Map<Name, Contexts> contextsByObjectName = new TreeMap<Name, Contexts>();
     
-    DomainContexts(DomainName domainName, MulticastAddress address) {
-      this.domainName       = domainName;
-      this.multicastAddress = address;
+    DomainContexts(EventChannelTable table, DomainName domainName, MulticastAddress address) {
+      this.eventChannelTable = table;
+      this.domainName        = domainName;
+      this.multicastAddress  = address;
     }
     
     synchronized void registerStatelessRef(final RemoteRefStateless ref, Collection<RemoteRefContext> newContexts) {
@@ -131,7 +136,7 @@ public class StatelessStubTable implements Module {
     
     public synchronized void onAsyncEvent(RemoteEvent evt) {
       try {
-        log.info("Remote binding event received: %s", evt.getType());      
+        log.debug("Remote binding event received: %s", evt.getType());      
         SyncPutEvent bEvt = (SyncPutEvent) evt.getData();
         
         // force deserialization

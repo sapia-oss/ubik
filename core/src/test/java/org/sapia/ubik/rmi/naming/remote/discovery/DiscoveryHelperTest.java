@@ -11,9 +11,11 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.sapia.ubik.concurrent.BlockingRef;
+import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.EventChannelTestSupport;
 import org.sapia.ubik.rmi.naming.remote.EmbeddableJNDIServer;
 import org.sapia.ubik.rmi.server.Hub;
+import org.sapia.ubik.util.PropertiesUtil;
 
 public class DiscoveryHelperTest {
 	
@@ -22,14 +24,17 @@ public class DiscoveryHelperTest {
 	
 	@Before
 	public void setUp() throws Exception {
+	  PropertiesUtil.clearUbikSystemProperties();
 		jndi   = new EmbeddableJNDIServer(EventChannelTestSupport.createEventChannel("test"), 1099);
 		helper = new DiscoveryHelper(EventChannelTestSupport.createEventChannel("test"));
 		jndi.start(true);
+		Thread.sleep(3000);
 		
 	}
 	
 	@After
 	public void tearDown() {
+    PropertiesUtil.clearUbikSystemProperties();	  
 		helper.close();
 		jndi.stop();
 	}

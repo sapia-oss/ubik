@@ -6,9 +6,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.sapia.ubik.rmi.server.Hub;
+import org.sapia.ubik.util.PropertiesUtil;
 
 public class CategoryTest {
 	
@@ -17,6 +19,7 @@ public class CategoryTest {
 	
 	@Before
 	public void setUp() {
+    PropertiesUtil.clearUbikSystemProperties();	  
 		// making sure components are shutdown
 		Hub.shutdown();
 		output = mock(LogOutput.class);
@@ -24,7 +27,9 @@ public class CategoryTest {
 		Log.setLogOutput(output);
 	}
 	
+	@After
 	public void tearDown() throws Exception {
+    PropertiesUtil.clearUbikSystemProperties();	  
 		Log.setDefaultLogLevel();
 		Log.setDefaultLogOutput();
 	}

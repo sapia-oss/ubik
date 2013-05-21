@@ -245,7 +245,6 @@ public class RemoteRefStateless implements StubInvocationHandler, Externalizable
       return toReturn;
     } else if (toReturn instanceof Throwable) {
       Throwable err = (Throwable) toReturn;
-      err.fillInStackTrace();
       throw err;
     }
 
@@ -253,7 +252,7 @@ public class RemoteRefStateless implements StubInvocationHandler, Externalizable
   }
   
   private RemoteRefContext acquire() throws RemoteException {
-    log.debug("Attempting failover");
+    log.debug("Proceeding to round-robin");
     return contexts.rotate();
   }
 

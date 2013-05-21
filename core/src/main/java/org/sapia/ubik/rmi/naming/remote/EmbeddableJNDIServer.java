@@ -13,10 +13,12 @@ import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.AsyncEventListener;
 import org.sapia.ubik.mcast.EventChannel;
 import org.sapia.ubik.mcast.RemoteEvent;
-import org.sapia.ubik.net.TCPAddress;
+import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.naming.remote.archie.UbikRemoteContext;
 import org.sapia.ubik.rmi.server.Hub;
-import org.sapia.ubik.rmi.server.transport.socket.MultiplexSocketTransportProvider;
+import org.sapia.ubik.rmi.server.transport.mina.NioAddress;
+import org.sapia.ubik.rmi.server.transport.mina.NioTcpTransportProvider;
+import org.sapia.ubik.util.Assertions;
 import org.sapia.ubik.util.Localhost;
 import org.sapia.ubik.util.Props;
 
@@ -112,9 +114,7 @@ public class EmbeddableJNDIServer implements RemoteContextProvider, AsyncEventLi
    * @return this instance's {@link EventChannel}.
    */
   public EventChannel getEventChannel() {
-    if (channel == null) {
-      throw new IllegalStateException("Multicast event channel not initialized");
-    }
+    Assertions.illegalState(channel == null, "Multicast event channel not initialized");
 
     return channel;
   }
@@ -127,7 +127,7 @@ public class EmbeddableJNDIServer implements RemoteContextProvider, AsyncEventLi
     if(evt.getType().equals(JNDIConsts.JNDI_CLIENT_PUBLISH)){
       try{
         channel.dispatch(JNDIConsts.JNDI_SERVER_DISCO,
-            new TCPAddress(MultiplexSocketTransportProvider.MPLEX_TRANSPORT_TYPE, Localhost.getAnyLocalAddress().getHostAddress(), port));
+            new NioAddress(Localhost.getAnyLocalAddress().getHostAddress(), port));
       }catch(Exception e){
         log.warning("Could not dispatch JNDI server publishing event", e);
       }
@@ -138,9 +138,7 @@ public class EmbeddableJNDIServer implements RemoteContextProvider, AsyncEventLi
    * @return this instance's root JNDI <code>Context</code>.
    */
   public Context getRootContext() {
-    if (root == null) {
-      throw new IllegalStateException("Context not initialized");
-    }
+    Assertions.illegalState(root == null, "Context not initialized");
 
     return root;
   }
@@ -192,14 +190,18 @@ public class EmbeddableJNDIServer implements RemoteContextProvider, AsyncEventLi
       
       channel.registerAsyncListener(JNDIConsts.JNDI_CLIENT_PUBLISH, this);
 
-      channel.dispatch(JNDIConsts.JNDI_SERVER_PUBLISH,
-          new TCPAddress(MultiplexSocketTransportProvider.MPLEX_TRANSPORT_TYPE, Localhost.getAnyLocalAddress().getHostAddress(), port));
-      channel.dispatch(JNDIConsts.JNDI_SERVER_DISCO,
-          new TCPAddress(MultiplexSocketTransportProvider.MPLEX_TRANSPORT_TYPE, Localhost.getAnyLocalAddress().getHostAddress(), port));
+      NioAddress address = new NioAddress(Localhost.getAnyLocalAddress().getHostAddress(), port); 
 
       root = UbikRemoteContext.newInstance(channel);
 
-      Hub.exportObject(this, port);
+      Properties props = new Properties();
+      props.setProperty(Consts.TRANSPORT_TYPE, NioTcpTransportProvider.TRANSPORT_TYPE);
+      props.setProperty(NioTcpTransportProvider.BIND_ADDRESS, address.getHost());
+      props.setProperty(NioTcpTransportProvider.PORT, Integer.toString(address.getPort()));
+      Hub.exportObject(this, props);
+      
+      channel.dispatch(JNDIConsts.JNDI_SERVER_PUBLISH, address);
+      channel.dispatch(JNDIConsts.JNDI_SERVER_DISCO, address);
       
       log.warning("JNDI Server started");
 

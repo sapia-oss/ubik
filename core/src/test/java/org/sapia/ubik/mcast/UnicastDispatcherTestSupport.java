@@ -14,6 +14,7 @@ import org.junit.Test;
 import org.sapia.ubik.concurrent.BlockingCompletionQueue;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.ServerAddress;
+import org.sapia.ubik.rmi.server.Hub;
 
 public abstract class UnicastDispatcherTestSupport {
 
@@ -26,6 +27,7 @@ public abstract class UnicastDispatcherTestSupport {
 
   @Before
   public void setUp() throws Exception {
+    Hub.start();
     source       = createUnicastDispatcher(new EventConsumer("testDomain"));
     source.start();
     destinations = new ArrayList<UnicastDispatcher>(5);
@@ -42,6 +44,7 @@ public abstract class UnicastDispatcherTestSupport {
   
   @After
   public void tearDown() throws Exception {
+    Hub.shutdown();
     source.close();
     for(UnicastDispatcher dispatcher : destinations) {
       dispatcher.close();
@@ -50,6 +53,7 @@ public abstract class UnicastDispatcherTestSupport {
 
   @Test
   public void testDispatch() throws Exception {
+    Thread.sleep(2000);
     queue = new BlockingCompletionQueue<String>(1);
     source.dispatch(randomDestination(), ASYNC_EVENT_TYPE, "test");
     assertEquals(1, queue.await(2000).size());
@@ -63,7 +67,7 @@ public abstract class UnicastDispatcherTestSupport {
     for(int i = 0; i < responses.count(); i++) {
       Response r = responses.get(i);
       assertTrue("Expected data", r.getData() != null);
-    }     
+    }    
   }
 
 

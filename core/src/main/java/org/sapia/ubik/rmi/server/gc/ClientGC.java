@@ -12,6 +12,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import org.javasimon.Counter;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.module.Module;
@@ -20,7 +21,6 @@ import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.oid.DefaultOID;
 import org.sapia.ubik.rmi.server.oid.OID;
-import org.sapia.ubik.rmi.server.stats.Hits;
 import org.sapia.ubik.rmi.server.stats.Stats;
 import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
@@ -55,10 +55,10 @@ public class ClientGC implements Module, Task, ClientGCMBean {
   private int                lastGcCount;
   private long               lastGcTime;  
   
-  private Hits               gcRefPerMin;
-  private Hits               gcDerefPerMin;
-  private Hits               gcConnectionsPerMin;
-  private Hits               forcedGcPerHour;
+  private Counter            gcRef;
+  private Counter            gcDeref;
+  private Counter            gcConnections;
+  private Counter            forcedGc;
   
   
   @Override
@@ -78,29 +78,25 @@ public class ClientGC implements Module, Task, ClientGCMBean {
     taskMan.addTask(new TaskContext("ubik.rmi.client.GC", gcInterval), this);
     transport = context.lookup(TransportManager.class);
     
-    this.gcConnectionsPerMin   = Stats.getInstance().getHitsBuilder(
+    this.gcConnections   = Stats.createCounter(
                                    getClass(), 
                                    "ConnectionsPerMin", 
-                                   "The number of connections per minute create to send GC commands")
-                                   .perMinute().build();
+                                   "The number of connections per minute create to send GC commands");
     
-    this.gcRefPerMin           = Stats.getInstance().getHitsBuilder(
+    this.gcRef           = Stats.createCounter(
                                    getClass(),
                                    "RefPerMin",
-                                   "The number of remote object that are referenced per minute")
-                                   .perMinute().build();
+                                   "The number of remote object that are referenced per minute");
 
-    this.gcDerefPerMin         = Stats.getInstance().getHitsBuilder(
+    this.gcDeref         = Stats.createCounter(
                                    getClass(), 
                                    "DerefPerMin",
-                                   "The number of remote object that are dereferenced per minute")
-                                   .perMinute().build();
+                                   "The number of remote object that are dereferenced per minute");
     
-    this.forcedGcPerHour       = Stats.getInstance().getHitsBuilder(
+    this.forcedGc        = Stats.createCounter(
                                    getClass(),
                                   "ForcedGcPerHour",
-                                  "The number of forced JVM gc per hour")
-                                  .perHour().build();
+                                  "The number of forced JVM gc per hour");
     
     context.registerMbean(this);
   }
@@ -120,7 +116,7 @@ public class ClientGC implements Module, Task, ClientGCMBean {
    */
   public void register(ServerAddress address, OID oid, Object remote) {
     HostReference ref = objByHosts.getHostReferenceFor(address);
-    gcRefPerMin.hit();
+    gcRef.increase();
     int count = ref.add(oid, remote);
     log.debug("Registered remote object: %s from %s - got %s ref count for this OID", oid, address, count);
 
@@ -134,7 +130,7 @@ public class ClientGC implements Module, Task, ClientGCMBean {
     lastGcCount = objByHosts.gc();
     
     if (threshold > 0 && objByHosts.getRemoteObjectCount() >= threshold) {
-      forcedGcPerHour.hit();
+      forcedGc.increase();
       Runtime.getRuntime().gc();
     }      
   }
@@ -171,12 +167,12 @@ public class ClientGC implements Module, Task, ClientGCMBean {
     return cal.getTime();
   }
   
-  public double getGcPerMin() {
-    return gcDerefPerMin.getValue();
+  public double getNumGc() {
+    return gcDeref.getCounter();
   }
   
-  public double getForcedGcPerHour() {
-    return forcedGcPerHour.getValue();
+  public double getForcedGc() {
+    return forcedGc.getCounter();
   }
   
   public int getLastGcCount() {
@@ -304,8 +300,8 @@ public class ClientGC implements Module, Task, ClientGCMBean {
       try {
         conns = transport.getConnectionsFor(addr);
         conn  = conns.acquire();
-        gcDerefPerMin.hit(toSend.size());
-        gcConnectionsPerMin.hit();
+        gcDeref.increase(toSend.size());
+        gcConnections.increase();
         
         conn.send(new CommandGc(toSend.toArray(new DefaultOID[toSend.size()]), toSend.size()));
         conn.receive();

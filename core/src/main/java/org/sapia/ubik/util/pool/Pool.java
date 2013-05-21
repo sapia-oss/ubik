@@ -4,8 +4,9 @@ import java.util.List;
 import java.util.Vector;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.javasimon.Split;
+import org.javasimon.Stopwatch;
 import org.sapia.ubik.rmi.server.stats.Stats;
-import org.sapia.ubik.rmi.server.stats.Timer;
 
 
 /**
@@ -25,10 +26,10 @@ public abstract class Pool<T> {
   protected AtomicInteger createdCount          = new AtomicInteger();
   protected volatile long lastUsageTime         = System.currentTimeMillis();
   protected volatile long defaultAcquireTimeOut = DEFAULT_ACQUIRE_TIME_OUT;
-  private   Timer         acquireTime           = Stats.getInstance().createTimer(
+  private   Stopwatch     acquireTime           = Stats.createStopwatch(
                                                     getClass(), 
                                                     "AcquireTime", 
-                                                    "Avg object acquisition time");
+                                                    "Object acquisition time");
   
   public Pool() {
     this(NO_MAX);
@@ -82,7 +83,7 @@ public abstract class Pool<T> {
     NoObjectAvailableException, 
     PooledObjectCreationException {
     
-    acquireTime.start();
+    Split split = acquireTime.start();
     lastUsageTime = System.currentTimeMillis();
 
     T obj;
@@ -112,7 +113,7 @@ public abstract class Pool<T> {
     } else {
       obj = objects.remove(0);
     }
-    acquireTime.end();
+    split.stop();
     try {
       return onAcquire(obj);
     } catch (Exception e) {

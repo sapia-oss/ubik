@@ -3,12 +3,13 @@ package org.sapia.ubik.rmi.server.command;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.javasimon.Split;
+import org.javasimon.Stopwatch;
 import org.sapia.ubik.concurrent.NamedThreadFactory;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.rmi.server.ShutdownException;
 import org.sapia.ubik.rmi.server.stats.Stats;
-import org.sapia.ubik.rmi.server.stats.Timer;
 
 
 /**
@@ -30,10 +31,10 @@ public class InQueue extends ExecQueue<AsyncCommand> {
   private Category        log             = Log.createCategory(getClass());
   private ExecutorService pool;
   private OutqueueManager outqueues;
-  private Timer           commandExecTime = Stats.getInstance().createTimer(
+  private Stopwatch       commandExecTime = Stats.createStopwatch(
                                               getClass(), 
                                               "AsyncCommandExecTime", 
-                                              "Avg callback command execution time"
+                                              "Async command execution time"
                                             );
 
   /**
@@ -72,9 +73,9 @@ public class InQueue extends ExecQueue<AsyncCommand> {
           async = remove();
 
           try {
-            commandExecTime.start();
+            Split split = commandExecTime.start();
             toReturn = async.execute();
-            commandExecTime.end();
+            split.stop();
           } catch (ShutdownException e) {
             log.warning("Shutting down...");
 

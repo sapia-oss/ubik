@@ -16,6 +16,7 @@ import org.sapia.ubik.rmi.server.VmId;
 import org.sapia.ubik.rmi.server.transport.MarshalStreamFactory;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
 import org.sapia.ubik.rmi.server.transport.RmiObjectOutput;
+import org.sapia.ubik.util.Assertions;
 import org.sapia.ubik.util.Props;
 
 
@@ -96,9 +97,7 @@ public class JdkRmiClientConnection implements RmiConnection {
    */
   public Object receive()
     throws IOException, ClassNotFoundException, RemoteException {
-    if (conn == null) {
-      throw new IllegalStateException("Cannot receive; data was not posted");
-    }
+    Assertions.illegalState(conn == null, "Cannot receive; data was not posted");
 
     ObjectInputStream is = MarshalStreamFactory.createInputStream(conn.getInputStream());
 

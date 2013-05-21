@@ -133,9 +133,9 @@ public class HttpTransportProvider implements TransportProvider, HttpConsts {
       }
     } else {
       contextPath = configProps.getProperty(PATH_KEY, DEFAULT_CONTEXT_PATH);
-
       try {
-        serverUrl = Uri.parse("http://" + Localhost.getAnyLocalAddress().getHostAddress() + ":" + port + contextPath);
+        String bindAddress = configProps.getProperty(HTTP_BIND_ADDRESS_KEY, Localhost.getAnyLocalAddress().getHostAddress());        
+        serverUrl = Uri.parse("http://" + bindAddress + ":" + port + contextPath);
       } catch (UriSyntaxException e) {
         throw new RemoteException("Could not parse server URL", e);
       } catch (UnknownHostException e) {

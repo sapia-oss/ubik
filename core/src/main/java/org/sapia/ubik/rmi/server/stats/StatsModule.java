@@ -1,11 +1,17 @@
 package org.sapia.ubik.rmi.server.stats;
 
-import java.math.BigDecimal;
 import java.text.DateFormat;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.concurrent.TimeUnit;
 
+import org.javasimon.Counter;
+import org.javasimon.Simon;
+import org.javasimon.SimonManager;
+import org.javasimon.Stopwatch;
+import org.sapia.ubik.log.Category;
+import org.sapia.ubik.log.Log;
 import org.sapia.ubik.module.Module;
 import org.sapia.ubik.module.ModuleContext;
 import org.sapia.ubik.rmi.Consts;
@@ -24,23 +30,27 @@ import org.sapia.ubik.util.Props;
  */
 public class StatsModule implements Module {
   
-  private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy/mm/dd hh:mm:ss:SSS");
+  private static final DateFormat     DATE_FORMAT    = new SimpleDateFormat("yyyy/mm/dd hh:mm:ss:SSS");
+  private static final double         NANOS_IN_MILLI = 1000000;
+  private static final DecimalFormat  DECIMAL_FORMAT = new DecimalFormat("########.########"); 
   
+  
+  private Category       log = Log.createCategory(getClass());
   private StatsLogOutput statsLog;
   private long           lastDumpTime = System.currentTimeMillis();
   
   @Override
   public void init(ModuleContext context) {
-    Stats.getInstance().clear();    
   }
   
   @Override
   public void start(ModuleContext context) {
     TaskManager taskManager = context.lookup(TaskManager.class);
-    if(Stats.getInstance().isEnabled()){
+    if(SimonManager.isEnabled()){
       Props props = new Props().addProperties(System.getProperties());
       long dumpInterval = props.getLongProperty(Consts.STATS_DUMP_INTERVAL, 0);
       if(dumpInterval > 0){
+        log.info("Stats dump interval set to %s seconds. Stats will be collected", dumpInterval);        
         statsLog = new StatsLogOutput();
         dumpInterval = TimeUnit.MILLISECONDS.convert(dumpInterval, TimeUnit.SECONDS);
         Task task = new Task(){
@@ -49,42 +59,47 @@ public class StatsModule implements Module {
             String startTime = dateFor(lastDumpTime);
             String endTime   = dateFor(currentTime);
             
-            for(StatCapable stat : Stats.getInstance().getStatistics()){
-              if(stat.isEnabled()){
-                statsLog.log(format(stat, startTime, endTime));
-              }
+            for(Simon stat : Stats.getStats()) {
+              statsLog.log(format(stat, startTime, endTime));
+              Stats.reset(stat);                
             }
+
             lastDumpTime = currentTime;
           }
         };
         taskManager.addTask(new TaskContext("DumpStats", dumpInterval), task);
+      } else {
+        log.info("Stats dump interval set to %s seconds. Stats will NOT be collected", dumpInterval);
       }
     }
 
   }
   
-  private String format(StatCapable stat, String startTime, String endTime) {
-    String statValue =  Double.toString(
-                          BigDecimal
-                            .valueOf(stat.getValue())
-                            .setScale(4, BigDecimal.ROUND_HALF_UP)
-                            .doubleValue()
-                        );
+  private String format(Simon stat, String startTime, String endTime) {
+    String statValue = statValue(stat);
 
     StringBuilder formatted = new StringBuilder();
     formatted.append(field(startTime))
       .append(",")
       .append(field(endTime))
       .append(",")
-      .append(field(stat.getKey().getSource()))
+      .append(field(stat.getName()))
       .append(",")
-      .append(field(stat.getKey().getName()))
-      .append(",")
-      .append(field(stat.getDescription()))
+      .append(field(Stats.getDescription(stat)))
       .append(",")
       .append(field(statValue));
     
     return formatted.toString();
+  }
+  
+  private String statValue(Simon stat) {
+    if (stat instanceof Counter) {
+      return Long.toString(((Counter) stat).getCounter());
+    } else if (stat instanceof Stopwatch){
+      return DECIMAL_FORMAT.format(((Stopwatch) stat).getMean() / NANOS_IN_MILLI);
+    } else {
+      throw new IllegalStateException("Expected Counter or Stopwatch instance, got: " + stat);
+    }
   }
   
   private String field(String content) {
@@ -102,7 +117,6 @@ public class StatsModule implements Module {
   	if(statsLog != null) {
   		statsLog.close();
   	}
-    Stats.getInstance().clear();
   }
 
 }

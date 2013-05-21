@@ -137,7 +137,39 @@ public class Cmd {
 		
 		return new Cmd(opts);
 		
-	} 
+	}
+	
+	/**
+	 * @return this instance's {@link Opt} instances that correspond to JVM properties (of the form <code>-Dprop=value</code>).
+	 */
+	public Properties getJvmOpts() {
+	  Properties props = new Properties();
+	  for (Opt opt : opts) {
+	    if (opt.getName().startsWith("D") && opt.getValue() == null && opt.getName().contains("=")) {
+	      String[] nameAndValue = opt.getName().split("=");
+	      props.setProperty(nameAndValue[0].substring(1), nameAndValue[1]);
+	    }
+	  }
+	  return props;
+	}
+	
+  /**
+   * @return this instance's {@link Opt} instances that correspond to JVM properties (of the form <code>-Dprop=value</code>).
+   */
+  public Properties removeJvmOpts() {
+    Properties props = new Properties();
+    for (int i = 0; i < opts.size(); i++) {
+      Opt opt = opts.get(i);
+      if (opt.getName().startsWith("D") && opt.getValue() == null && opt.getName().contains("=")) {
+        String[] nameAndValue = opt.getName().split("=");
+        props.setProperty(nameAndValue[0].substring(1), nameAndValue[1]);
+        opts.remove(i);
+        i--;        
+        optsByName.remove(opt.getName());
+      }
+    }
+    return props;
+  }	
 	
 	/**
 	 * @param name the name of the option to remove.

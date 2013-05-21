@@ -9,6 +9,7 @@ import org.sapia.ubik.log.Log;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.naming.remote.RemoteInitialContextFactory;
 import org.sapia.ubik.rmi.server.Hub;
+import org.sapia.ubik.util.Localhost;
 
 
 /**
@@ -25,12 +26,12 @@ public class TimeClient {
 
   public TimeClient(boolean isLogging) {
     try {
-      Log.setInfo();
+      Log.setDebug();
       _isLogging = isLogging;
 
       Properties props = new Properties();
 
-      props.setProperty(InitialContext.PROVIDER_URL, "ubik://localhost:1099/");
+      props.setProperty(InitialContext.PROVIDER_URL, "ubik://" + Localhost.getAnyLocalAddress().getHostAddress() + ":1099/");
       props.setProperty(InitialContext.INITIAL_CONTEXT_FACTORY,
         RemoteInitialContextFactory.class.getName());
       props.setProperty(Consts.UBIK_DOMAIN_NAME,

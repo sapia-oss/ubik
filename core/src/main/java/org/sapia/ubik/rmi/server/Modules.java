@@ -28,6 +28,7 @@ public class Modules {
   private StatelessStubTable        statelessStubTable;
   private ObjectTable               objectTable;
   private ServerTable               serverTable;
+  private AsyncCommandSender        asyncSender;
   private StubProcessor             stubProcessor;
   private ClientRuntime             clientRuntime;
   private ServerRuntime             serverRuntime;
@@ -46,6 +47,7 @@ public class Modules {
     bind(statelessStubTable   = new StatelessStubTable());
     bind(objectTable          = new ObjectTable());
     bind(serverTable          = new ServerTable());
+    bind(asyncSender           = new AsyncCommandSender());    
     bind(stubProcessor  		 	= new StubProcessor());
     bind(clientRuntime        = new ClientRuntime());
     bind(serverRuntime        = new ServerRuntime());
@@ -105,6 +107,10 @@ public class Modules {
   
   public ServerTable getServerTable() {
     return serverTable;
+  }
+  
+  public AsyncCommandSender getAsyncSender() {
+    return asyncSender;
   }
   
   public StubProcessor getStubProcessor() {

@@ -22,7 +22,7 @@ import org.sapia.ubik.rmi.naming.remote.RemoteContext;
  */
 @SuppressWarnings(value = "unchecked")
 public class UbikRemoteContext extends JndiContext implements RemoteContext {
-  
+
   private DomainInfo domain;
 
   protected UbikRemoteContext(DomainInfo domain, Node root) {
@@ -49,7 +49,7 @@ public class UbikRemoteContext extends JndiContext implements RemoteContext {
   public void bind(Name name, Object obj) throws NamingException {
     super.rebind(name, obj);
   }
-
+  
   /**
    * @see javax.naming.Context#bind(java.lang.String, java.lang.Object)
    */
@@ -62,7 +62,7 @@ public class UbikRemoteContext extends JndiContext implements RemoteContext {
 
     return new UbikRemoteContext(sync);
   }
-
+  
   @SuppressWarnings("rawtypes")
   protected NamingEnumeration newNamingEnum(Iterator entries,
     Iterator childNodes, int listType) {

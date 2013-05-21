@@ -26,17 +26,41 @@ public class Category {
     this.name = name;
   }
   
+  public void trace(Object msg) {
+    if(Log.isTrace()) {
+      Log.trace(name, msg);
+    }
+  }  
+  
   public void trace(Object msg, Object... args) {
     if(Log.isTrace()) {
       Log.trace(name, String.format(msg.toString(), args));
     }
   }
+  
+  public void debug(Object msg) {
+    if(Log.isDebug()) {
+      Log.debug(name, msg);
+    }
+  }  
 
   public void debug(Object msg, Object... args) {
     if(Log.isDebug()) {
       Log.debug(name, String.format(msg.toString(), args));
     }
   }
+  
+  public void debug(Object msg, Throwable err, Object... args) {
+    if(Log.isDebug()) {
+      Log.debug(name, String.format(msg.toString(), args));
+    }
+  }
+  
+  public void info(Object msg) {
+    if(Log.isInfo()) {
+      Log.info(name, msg);
+    }
+  }  
   
   public void info(Object msg, Object... args) {
     if(Log.isInfo()) {
@@ -49,6 +73,12 @@ public class Category {
       Log.warning(name, String.format(msg.toString(), args), err);
     }
   }
+  
+  public void warning(Object msg) {
+    if(Log.isWarning()) {
+      Log.warning(name, msg);
+    }
+  }  
   
   public void warning(Object msg, Object... args) {
     if(Log.isWarning()) {
@@ -67,6 +97,12 @@ public class Category {
       Log.warning(name, String.format(msg.toString(), args), err);
     }
   }
+  
+  public void error(Object msg) {
+    if(Log.isError()) {
+      Log.error(name, msg);
+    }
+  }  
   
   public void error(Object msg, Object... args) {
     if(Log.isError()) {

@@ -3,6 +3,7 @@ package org.sapia.ubik.rmi.server.invocation;
 import java.io.IOException;
 import java.rmi.RemoteException;
 
+import org.javasimon.Split;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.module.ModuleContext;
@@ -65,19 +66,19 @@ public class RemoteInvocationStrategy implements InvocationStrategy {
   
     Object toReturn;
     
-    perf.acquireCon.start();
+    Split acquireSplit = perf.acquireCon.start();
     RmiConnection conn = pool.acquire();
-    perf.acquireCon.end();
+    acquireSplit.stop();
     
     try {
       
-      perf.invokeSend.start();
+      Split invokeSendSplit = perf.invokeSend.start();
       conn.send(cmd, cmd.getVmId(), conn.getServerAddress().getTransportType());
-      perf.invokeSend.end();
+      invokeSendSplit.stop();
       
-      perf.invokeReceive.start();
+      Split invokeReceiveSplit = perf.invokeReceive.start();
       toReturn = conn.receive();
-      perf.invokeReceive.end();
+      invokeReceiveSplit.stop();
       pool.release(conn);      
     } catch (RemoteException e) {
     	pool.invalidate(conn);
@@ -112,9 +113,9 @@ public class RemoteInvocationStrategy implements InvocationStrategy {
     
     cmd.setUp(lock.getId(), clientRuntime.getCallbackAddress(pool.getTransportType()));
     
-    perf.acquireCon.start();
+    Split acquireConSplit = perf.acquireCon.start();
     RmiConnection conn = pool.acquire();
-    perf.acquireCon.end();
+    acquireConSplit.stop();
     
     try {
       conn.send(cmd, cmd.getVmId(), conn.getServerAddress().getTransportType());

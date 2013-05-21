@@ -10,8 +10,9 @@ public class TestCallBack implements TestCallbackInterface, Remote {
 	int counter;
 
 	@Override
-	public void callMethod() {
+	public int callMethod() {
 		counter++;
+		return counter;
 	}
 	
 	

@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import org.sapia.ubik.util.Assertions;
+
 /**
  * An instance of this class is used to synchronize threads: a consumer thread blocks 
  * until all expected items have been added to this queue by one or more producer threads.
@@ -31,9 +33,7 @@ public class BlockingCompletionQueue<T> {
    */
   public void add(T item) {
     checkCompleted();
-    if(countdown.getCount() == 0) {
-      throw new IllegalStateException("All expected items have been added");
-    }
+    Assertions.illegalState(countdown.getCount() == 0, "All expected items have been added");
     items.add(item);
     countdown.countDown();
   }

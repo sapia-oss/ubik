@@ -13,6 +13,7 @@ import org.sapia.ubik.concurrent.ThreadShutdown;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.Defaults;
+import org.sapia.ubik.util.Assertions;
 import org.sapia.ubik.util.Localhost;
 
 
@@ -103,9 +104,7 @@ public abstract class MulticastServer {
    * @throws IOException if a problem occurs trying to send the given bytes.
    */
   public void send(byte[] toSend) throws IOException {
-    if (sock == null) {
-      throw new IllegalStateException("Server not started");
-    }
+    Assertions.illegalState(sock == null, "Server not started");
 
     DatagramPacket pack = new DatagramPacket(toSend, toSend.length, group, port);
     sock.send(pack);

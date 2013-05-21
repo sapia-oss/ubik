@@ -115,7 +115,7 @@ public class ModuleContainer {
       state = State.INITIALIZING;
       try {
         for(ModuleRef module : moduleList) {
-          log.debug("Initializing module %s", module.module.getClass().getSimpleName());
+          log.info("Initializing module %s", module.module.getClass().getSimpleName());
           module.init(ctx);
         }
       } finally {
@@ -133,7 +133,7 @@ public class ModuleContainer {
       state = State.STARTING;
       try {
         for(ModuleRef module : moduleList) {
-          log.debug("Starting module %s", module.module.getClass().getSimpleName());
+          log.info("Starting module %s", module.module.getClass().getSimpleName());
           if(module.state == State.STOPPED) {
             module.init(ctx); 
           } 
@@ -154,8 +154,9 @@ public class ModuleContainer {
       try {
         for(int i = moduleList.size() - 1; i >= 0; i--) {
           ModuleRef module = moduleList.get(i);
-          log.debug("Stopping module %s", module.module.getClass().getSimpleName());
+          log.info("Stopping module %s", module.module.getClass().getSimpleName());
           module.stop();
+          log.info("Stopped module %s", module.module.getClass().getSimpleName());
         }
       } finally {
         state = State.STOPPED;

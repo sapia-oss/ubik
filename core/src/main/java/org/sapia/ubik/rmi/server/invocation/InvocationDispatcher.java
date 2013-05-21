@@ -2,6 +2,7 @@ package org.sapia.ubik.rmi.server.invocation;
 
 import java.io.IOException;
 
+import org.javasimon.Stopwatch;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.module.Module;
@@ -12,7 +13,6 @@ import org.sapia.ubik.rmi.server.ShutdownException;
 import org.sapia.ubik.rmi.server.VmId;
 import org.sapia.ubik.rmi.server.command.InvokeCommand;
 import org.sapia.ubik.rmi.server.stats.Stats;
-import org.sapia.ubik.rmi.server.stats.Timer;
 import org.sapia.ubik.rmi.server.transport.Connections;
 
 /**
@@ -23,20 +23,20 @@ import org.sapia.ubik.rmi.server.transport.Connections;
 public class InvocationDispatcher implements Module {
   
   public static class InvocationStats {
-    Timer acquireCon    = Stats.getInstance().createTimer(
+    Stopwatch acquireCon    = Stats.createStopwatch(
                             InvocationDispatcher.class, 
                             "AcquireConnection", 
-                            "Avg time to acquire a connection");
+                            "Time to acquire a connection");
     
-    Timer invokeSend    = Stats.getInstance().createTimer(
+    Stopwatch invokeSend    = Stats.createStopwatch(
                             InvocationDispatcher.class, 
                             "InvokeSend",
-                            "Avg time to send a remote invocation command");
+                            "Time to send a remote invocation command");
     
-    Timer invokeReceive = Stats.getInstance().createTimer(
+    Stopwatch invokeReceive = Stats.createStopwatch(
                             InvocationDispatcher.class, 
                             "InvokeReceive", 
-                            "Avg time to receive the result of a remote invocation");
+                            "Time to receive the result of a remote invocation");
   }
   
   // --------------------------------------------------------------------------

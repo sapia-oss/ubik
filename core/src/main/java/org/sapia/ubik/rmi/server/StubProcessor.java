@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import org.javasimon.Split;
+import org.javasimon.Stopwatch;
 import org.sapia.ubik.module.Module;
 import org.sapia.ubik.module.ModuleContext;
 import org.sapia.ubik.rmi.Consts;
@@ -14,7 +16,6 @@ import org.sapia.ubik.rmi.server.oid.DefaultOIDCreationStrategy;
 import org.sapia.ubik.rmi.server.oid.OID;
 import org.sapia.ubik.rmi.server.oid.OIDCreationStrategy;
 import org.sapia.ubik.rmi.server.stats.Stats;
-import org.sapia.ubik.rmi.server.stats.Timer;
 import org.sapia.ubik.rmi.server.stub.RemoteRefContext;
 import org.sapia.ubik.rmi.server.stub.StubInvocationHandler;
 import org.sapia.ubik.rmi.server.stub.StubStrategy;
@@ -71,17 +72,17 @@ import org.sapia.ubik.rmi.server.stub.handler.StubInvocationHandlerCreationStrat
  */
 public class StubProcessor implements Module {
   
-  private Timer                     stubCreation    = Stats.getInstance().createTimer(
+  private Stopwatch                 stubCreation    = Stats.createStopwatch(
       getClass(), 
       "StubCreation", 
       "Avg stub creation time");
 
-  private Timer                     handlerCreation = Stats.getInstance().createTimer(
+  private Stopwatch                 handlerCreation = Stats.createStopwatch(
       getClass(), 
       "InvocationHandlerCreation", 
       "Avg handler creation time");
   
-  private Timer                     enrichment      = Stats.getInstance().createTimer(
+  private Stopwatch                 enrichment      = Stats.createStopwatch(
       getClass(), 
       "StubEnrichment", 
       "Avg stub enrichment time");  
@@ -274,9 +275,9 @@ public class StubProcessor implements Module {
     
     for(StubInvocationHandlerCreationStrategy stra : handlerStrategies) {
       if(stra.apply(toExport)) {
-        handlerCreation.start();
+        Split split = handlerCreation.start();
         StubInvocationHandler handler = stra.createInvocationHandlerFor(toExport, context);
-        handlerCreation.end();
+        split.stop();
         return handler;
       }
     }
@@ -296,9 +297,9 @@ public class StubProcessor implements Module {
   public Object createStubFor(Object exported, StubInvocationHandler handler) {
     for(StubCreationStrategy stra : stubStrategies) {
       if(stra.apply(exported, handler)) {
-        stubCreation.start();
+        Split split = stubCreation.start();
         Object stub = stra.createStubFor(exported, handler, serverTable.getTypeCache().getInterfaceArrayFor(exported.getClass()));
-        stubCreation.end();
+        split.stop();
         return stub;        
       }
     }
@@ -324,9 +325,9 @@ public class StubProcessor implements Module {
     
     for(StubEnrichmentStrategy stra : enrichmentStrategies) {
       if(stra.apply(stub, bindingInfo)) {
-        enrichment.start();
+        Split split = enrichment.start();
         Object enriched = stra.enrich(stub, bindingInfo);
-        enrichment.end();
+        split.stop();
         return enriched;
       }
     }

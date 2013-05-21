@@ -1,27 +1,27 @@
 package org.sapia.ubik.rmi.naming.remote;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.fail;
 
 import java.util.Hashtable;
 
 import javax.naming.InitialContext;
 import javax.naming.NameNotFoundException;
-import javax.naming.spi.InitialContextFactory;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.EventChannel;
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.util.PropertiesUtil;
 import org.sapia.ubik.util.Props;
 
 public class RemoteInitialContextFactoryTest {
 	
 	private EmbeddableJNDIServer server;
-	
+		
 	@Before
 	public void setUp() throws Exception {
+    PropertiesUtil.clearUbikSystemProperties();	  
 		System.setProperty(Consts.UBIK_DOMAIN_NAME, "test");
 		System.setProperty(Consts.BROADCAST_PROVIDER, Consts.BROADCAST_PROVIDER_MEMORY);
 		System.setProperty(Consts.BROADCAST_MEMORY_NODE, "test");
@@ -32,8 +32,7 @@ public class RemoteInitialContextFactoryTest {
 
 	@After
 	public void tearDown() {
-		System.clearProperty(Consts.BROADCAST_PROVIDER);
-		System.clearProperty(Consts.BROADCAST_MEMORY_NODE);
+	  PropertiesUtil.clearUbikSystemProperties();
 		server.stop();
 	}
 

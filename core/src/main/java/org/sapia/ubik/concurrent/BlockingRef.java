@@ -64,4 +64,15 @@ public class BlockingRef<T> {
     notify();
   }
   
+  /**
+   * Sets this instance's value to <code>null</code>.
+   * 
+   * @see #await()
+   * @see #await(long)
+   */
+  public synchronized void setNull() {
+    this.available = true;
+    notify();
+  }
+  
 }

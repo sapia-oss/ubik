@@ -34,6 +34,22 @@ public final class Streams {
         // noop
       }      
     }
+  }
+  
+  /**
+   * This methods closes a stream and catches any thrown {@link IOException} doing so. If
+   * the given stream is <code>null</code>, it is simply ignored.
+   * 
+   * @param os an {@link OutputStream} to close.
+   */
+  public static final void closeSilently(OutputStream os) {
+    if (os != null) {
+      try {
+        os.close();
+      } catch (Exception e) {
+        // noop
+      }      
+    }
   }  
   
   /**

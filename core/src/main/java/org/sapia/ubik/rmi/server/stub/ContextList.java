@@ -120,7 +120,7 @@ class ContextList implements Contexts.UpdateListener {
   }
   
   @Override
-  public String toString() {
+  public synchronized String toString() {
     return Strings.toString("contexts", orderedContexts);
   }
 }

@@ -9,7 +9,7 @@ import org.apache.mina.filter.codec.ProtocolEncoder;
 import org.apache.mina.filter.codec.ProtocolEncoderOutput;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.serialization.SerializationStreams;
-import org.sapia.ubik.util.ByteBufferOutputStream;
+import org.sapia.ubik.util.MinaByteBufferOutputStream;
 import org.sapia.ubik.util.Props;
 
 /**
@@ -57,7 +57,7 @@ public class NioTcpUnicastResponseEncoder implements ProtocolEncoder {
   }
   
   void doEncode(Object toEncode, ByteBuffer outputBuffer, ProtocolEncoderOutput output) throws Exception {
-    ObjectOutputStream oos = SerializationStreams.createObjectOutputStream(new ByteBufferOutputStream(outputBuffer));
+    ObjectOutputStream oos = SerializationStreams.createObjectOutputStream(new MinaByteBufferOutputStream(outputBuffer));
     oos.writeObject(toEncode);
     oos.flush();
     oos.close();

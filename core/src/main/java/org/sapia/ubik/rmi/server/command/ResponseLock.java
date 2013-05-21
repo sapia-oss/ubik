@@ -2,8 +2,6 @@ package org.sapia.ubik.rmi.server.command;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.sapia.ubik.rmi.server.stats.Stats;
-import org.sapia.ubik.rmi.server.stats.Timer;
 import org.sapia.ubik.util.Delay;
 
 
@@ -18,16 +16,10 @@ public class ResponseLock {
 	private static final long MAX_VALUE = Long.MAX_VALUE - 10000;
 	
   private static AtomicLong     count            = new AtomicLong();
-  private static Timer          callBackExecTime = Stats.getInstance().createTimer(
-                                                     ResponseLock.class, 
-                                                     "CallbackExecTime", 
-                                                     "Avg callback execution time"
-                                                   );
   private Object                response;
   private CallbackResponseQueue queue;
   private long                  id;
   private volatile boolean      ready;
-  private long                  creationTime     = System.currentTimeMillis();
   
   /**
    * Constructor for ResponseLock.
@@ -73,14 +65,11 @@ public class ResponseLock {
 
       if (timer.isOver() && !ready) {
         release();
-        callBackExecTime.increase(System.currentTimeMillis() - creationTime);
         throw new ResponseTimeOutException();
       }
     }
 
     release();
-
-    callBackExecTime.increase(System.currentTimeMillis() - creationTime);
     return response;
   }
 

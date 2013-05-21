@@ -10,6 +10,8 @@ import org.sapia.archie.ProcessingException;
 import org.sapia.archie.impl.AttributeNode;
 import org.sapia.archie.impl.Offer;
 import org.sapia.archie.sync.SynchronizedNode;
+import org.sapia.ubik.log.Category;
+import org.sapia.ubik.log.Log;
 import org.sapia.ubik.rmi.server.stub.HealthCheck;
 import org.sapia.ubik.rmi.server.stub.Stub;
 
@@ -24,8 +26,11 @@ public class UbikSyncNode extends SynchronizedNode implements java.rmi.Remote {
   }
 
   static final class UbikReliableNode extends AttributeNode implements Remote {
+    
+    private Category log = Log.createCategory(getClass());
+    
     @SuppressWarnings("rawtypes")
-    public UbikReliableNode(UbikNodeFactory fac) throws ProcessingException {
+    UbikReliableNode(UbikNodeFactory fac) throws ProcessingException {
       super(new ConcurrentHashMap(), new ConcurrentHashMap(), fac);
     }
 
@@ -48,7 +53,9 @@ public class UbikSyncNode extends SynchronizedNode implements java.rmi.Remote {
 
         if (handler instanceof HealthCheck) {
           try {
-            return ((HealthCheck) handler).isValid();
+            log.debug("Performing health check for %s", handler);            
+            boolean valid = ((HealthCheck) handler).isValid();
+            log.debug("Health check for %s, valid = %s", handler, valid);
           } catch (Exception e) {
             return false;
           }
@@ -57,8 +64,9 @@ public class UbikSyncNode extends SynchronizedNode implements java.rmi.Remote {
         return true;
       } else if (stub instanceof HealthCheck) {
         try {
+          log.debug("Performing health check for %s", stub);
           boolean valid = ((HealthCheck) stub).isValid();
-
+          log.debug("Health check for %s, valid = %s", stub, valid);
           return valid;
         } catch (Exception e) {
           return false;

@@ -25,6 +25,13 @@ public interface HttpConsts {
   public static final String HTTP_PORT_KEY = "ubik.rmi.transport.http.port";
   
   /**
+   * Corresponds to the <code>ubik.rmi.transport.http.bind.address</code> property, used
+   * to specify the address on which a HTTP Ubik RMI server should be bound (for
+   * a given <code>HttpTransportProvider</code> instance.
+   */
+  public static final String HTTP_BIND_ADDRESS_KEY = "ubik.rmi.transport.http.bind.address";  
+  
+  /**
    * Corresponds to the <code>ubik.rmi.transport.http.client.max-connections</code> property, used
    * to specify the max number of connections that the HTTP client will pool.
    */

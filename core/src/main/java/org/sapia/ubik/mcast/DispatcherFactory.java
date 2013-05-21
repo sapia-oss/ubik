@@ -11,6 +11,7 @@ import org.sapia.ubik.mcast.memory.InMemoryBroadcastDispatcher;
 import org.sapia.ubik.mcast.memory.InMemoryUnicastDispatcher;
 import org.sapia.ubik.mcast.tcp.NioTcpUnicastDispatcher;
 import org.sapia.ubik.mcast.tcp.TcpUnicastDispatcher;
+import org.sapia.ubik.mcast.tcp.netty.NettyTcpUnicastDispatcher;
 import org.sapia.ubik.mcast.udp.UDPBroadcastDispatcher;
 import org.sapia.ubik.mcast.udp.UDPUnicastDispatcher;
 import org.sapia.ubik.rmi.Consts;
@@ -29,10 +30,10 @@ public final class DispatcherFactory {
   
   static {
     try {
-      Class.forName("org.apache.mina.filter.codec.ProtocolCodecFactory");
+      Class.forName("org.jboss.netty.channel.ChannelHandler");
       isNioEnabled = true;
     } catch (Exception e) {
-      log.info("Mina not detected in classpath, will use non-NIO TCP unicast", log.noArgs());
+      log.info("Netty not detected in classpath, will use non-NIO TCP unicast", log.noArgs());
       isNioEnabled = false;
     }
     
@@ -66,7 +67,7 @@ public final class DispatcherFactory {
       return dispatcher;
     } else {
       if (isNioEnabled) {
-        log.info("Creating NIO-based TCP unicast provider");
+        log.info("Creating NIO TCP unicast provider");
         NioTcpUnicastDispatcher dispatcher = new NioTcpUnicastDispatcher(
             consumer, 
             props.getIntProperty(Consts.MCAST_HANDLER_COUNT, Defaults.DEFAULT_HANDLER_COUNT),

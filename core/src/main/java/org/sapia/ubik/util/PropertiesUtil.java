@@ -4,7 +4,9 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Properties;
+import java.util.Set;
 
 /**
  * Properties-related utility class.
@@ -13,6 +15,42 @@ import java.util.Properties;
  *
  */
 public final class PropertiesUtil {
+  
+  /**
+   * Holds a property name and value.
+   * 
+   * @author yduchesne
+   *
+   */
+  public static class Property {
+    
+    private String name, value;
+    
+    /**
+     * @param name a property name.
+     * @param value a property value.
+     */
+    public Property(String name, String value) {
+      this.name = name;
+      this.value = value;
+    }
+    
+    /**
+     * @return the name of the property to which this instance corresponds.
+     */
+    public String getName() {
+      return name;
+    }
+    
+    /**
+     * @return this instance's value.
+     */
+    public String getValue() {
+      return value;
+    }
+  }
+  
+  // --------------------------------------------------------------------------
 	
 	private PropertiesUtil() {
   }
@@ -51,5 +89,33 @@ public final class PropertiesUtil {
 				to.setProperty(name, value);
 			}
 		}
+	}
+	
+	/**
+	 * @param toClear the {@link Properties} to clear.
+	 * @param condition the {@link Condition} upon which a given property will be cleared, if that
+	 * condition is <code>true</code>.
+	 */
+	public static void clearProperties(Properties toClear, Condition<Property> condition) {
+	  Set<String> toRemove = new HashSet<String>();
+    for (String name : toClear.stringPropertyNames()) {
+      String value = toClear.getProperty(name);
+      Property prop = new Property(name, value);
+      if (condition.apply(prop)) {
+        toRemove.add(name); 
+      }
+    }
+    for (String n : toRemove) {
+      toClear.remove(n);
+    }
+	}
+	
+	public static void clearUbikSystemProperties() {
+	  clearProperties(System.getProperties(), new Condition<PropertiesUtil.Property>() {
+      @Override
+      public boolean apply(Property item) {
+        return item.getName().startsWith("ubik");
+      }
+    });
 	}
 }

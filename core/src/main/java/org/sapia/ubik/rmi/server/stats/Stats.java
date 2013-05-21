@@ -1,242 +1,123 @@
 package org.sapia.ubik.rmi.server.stats;
 
-import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import org.sapia.ubik.jmx.JmxHelper;
+import org.javasimon.Counter;
+import org.javasimon.Simon;
+import org.javasimon.SimonManager;
+import org.javasimon.Stopwatch;
 import org.sapia.ubik.rmi.Consts;
-import org.sapia.ubik.rmi.server.stats.HitsStatistic.Builder;
-import org.sapia.ubik.util.Collections2;
-import org.sapia.ubik.util.Condition;
-import org.sapia.ubik.util.Function;
 import org.sapia.ubik.util.Props;
 
-
 /**
- * This class is used to collect performance data (in fact, average durations) about
- * arbitrary operations - internally kept in the for of {@link Timer}s.
- * <p>
- *   Usage:
- * <pre>
- *   StatsManager stats = ...
- *   Timer timer = stats.createTimer(getClass(), "OperationTime", "Avg operation time");
- *   
- *   public void doSomething(){
- *     t.start();
- *     
- *     // do something
- *     
- *     t.end();
- *   }
- * }
- * </pre>
+ * A factory class to create {@link Stopwatch} and {@link Counter} instances.
  * 
- * @author Yanick Duchesne
+ * @author yduchesne
+ *
  */
-public final class Stats {
-  
-  private volatile boolean                       isEnabled;
-  private Map<StatisticKey, Statistic>           stats      = Collections.synchronizedMap(
-                                                                new HashMap<StatisticKey, Statistic>()
-                                                              );
-  
-  private static Stats       instance  = new Stats();
+public class Stats {
+
+  private static final String DESCRIPTION = "desc";
+  private static final String N_A = "N/A";
+  private static final String UBIK_PREFIX = "Ubik.";
   
   static {
-    instance.isEnabled = new Props().addProperties(System.getProperties()).getBooleanProperty(Consts.STATS_ENABLED, false);
-    JmxHelper.registerMBean(JmxHelper.createObjectName(Stats.class), new StatsMBean()); 
+    if (Props.getSystemProperties().getBooleanProperty(Consts.STATS_ENABLED, false)) {
+      SimonManager.enable();
+    } 
   }
   
   private Stats() {
   }
   
   /**
-   * @return the singleton {@link Stats} instance.
-   */
-  public static Stats getInstance() {
-    return instance;
-  }
-  
-  /**
-   * Removes all statistic from this instance.
-   */
-  public synchronized void clear() {
-    stats.clear();
-  }
-  
-  /**
-   * @return <code>true</code> if average duration calculation is turned on.
-   */
-  public boolean isEnabled() {
-    return isEnabled;
-  }
-
-  /**
-   * Enables average duration calculation.
-   */
-  public synchronized void enable(){
-    isEnabled = true;
-    
-    Condition<Statistic> enable = new Condition<Statistic>() {
-      @Override
-      public boolean apply(Statistic item) {
-        item.setEnabled(true);
-        return true;
-      }
-    };
-    
-    Collections2.forEach(stats.values(), enable);
-  }
-
-  /**
-   * Disables average duration calculation.
+   * @param source the name of the instance owning the {@link Stopwatch}. 
+   * @param name a name.
+   * @param desc a description.
+   * @return a {@link Stopwatch}.
    */  
-  public synchronized void disable(){
-    isEnabled = false;
-    
-    Condition<Statistic> disable = new Condition<Statistic>() {
-      @Override
-      public boolean apply(Statistic item) {
-        item.setEnabled(false);
-        return true;
-      }
-    };
-    
-    Collections2.forEach(stats.values(), disable);
+  public static Stopwatch createStopwatch(String source, String name, String desc) {
+    Stopwatch s = SimonManager.getStopwatch(UBIK_PREFIX + source + "." + name);
+    s.setAttribute(DESCRIPTION, desc);
+    return s;
+  }
+  
+  /**
+   * @param source the {@link Class} of the instance owning the {@link Stopwatch}. 
+   * @param name a name.
+   * @param desc a description.
+   * @return a {@link Stopwatch}.
+   */    
+  public static Stopwatch createStopwatch(Class<?> source, String name, String desc) {
+    return createStopwatch(source.getSimpleName(), name, desc);
+
+  }  
+
+  /**
+   * @param source the name of the instance owing the counter. 
+   * @param name a name.
+   * @param desc a description.
+   * @return a {@link Counter}.
+   */
+  public static Counter createCounter(String source, String name, String desc) {
+    Counter c = SimonManager.getCounter(UBIK_PREFIX + source + "." + name);
+    c.setAttribute(DESCRIPTION, desc);
+    return c;
+  }
+  
+  /**
+   * @param source the {@link Class} of the instance owning the counter. 
+   * @param name a name.
+   * @param desc a description.
+   * @return a {@link Counter}.
+   */
+  public static Counter createCounter(Class<?> source, String name, String desc) {
+    return createCounter(source.getSimpleName(), name, desc);
   }  
   
   /**
-   * @param source a {@link Class} corresponding to the source of the statistic (the short class name will internally be used).
-   * @param name the timer name.
-   * @param description the timer description.
-   * @return a new {@link Timer}. 
+   * @param stat a {@link Simon} instance, corresponding to a statistic whose description should be returned.
+   * @return the given instance's description.
    */
-  public synchronized Timer createTimer(Class<?> source, String name, String description) {
-    return createTimer(source.getSimpleName(), name, description);
-  }
-
-  /**
-   * @param name the name of the timer to return.
-   * @return a new {@link Timer}.
-   */
-  public synchronized Timer createTimer(String source, String name, String description) {
-    TimerStatistic t = new TimerStatistic(source, name, description);
-    t.setEnabled(isEnabled);
-    add(t);
-    return t.getTimer();
-  }
-
-  /**
-   * @param source the statistic source.
-   * @param name the statistic name.
-   * @param description the statistic description.
-   * 
-   * @return a {@link Builder} corresponding to the given parameters.
-   */
-  public synchronized HitsStatistic.Builder getHitsBuilder(Class<?> source, String name, String description) {
-    return new HitsStatistic.Builder(source.getSimpleName(), name, description);
-  }  
-  
-  /**
-   * @param source the statistic source.
-   * @param name the statistic name.
-   * @param description the statistic description.
-   * 
-   * @return a {@link Builder} corresponding to the given parameters.
-   */
-  public synchronized HitsStatistic.Builder getHitsBuilder(String source, String name, String description) {
-    return new HitsStatistic.Builder(source, name, description);
-  }
-  
-  /**
-   * Returns the statistic corresponding to the given source and name.
-   * 
-   * @param source a statistic source.
-   * @param name a statistic name.
-   * @return the {@link Statistic} that corresponds to the given parameters.
-   * @throws IllegalArgumentException if no such statistic could be found.
-   */
-  public Statistic getStatisticFor(String source, String name) {
-    StatisticKey key  = new StatisticKey(source, name);
-    Statistic    stat = stats.get(key);
-    if(stat == null) {
-      throw new IllegalArgumentException("No statistic found for: " + key + ", got: " + stats.keySet());
+  public static String getDescription(Simon stat) {
+    String desc = (String) stat.getAttribute(DESCRIPTION);
+    if (desc == null) {
+      desc = N_A;
     }
-    return stat;
+    return desc;
   }
   
   /**
-   * Returns the statistic that correspond to the given parameters. Uses the given class' simple name
-   * as the source.
-   * 
-   * @param source the source {@link Class}.
-   * @param name the statistic name.
-   * @return the {@link Statistic} that corresponds to the given parameters.
-   * @see #getStatisticFor(String, String)
+   * @param stat a {@link Simon} instance, corresponding to a statistic to reset.
    */
-  public Statistic getStatisticFor(Class<?> source, String name) {
-    return getStatisticFor(source.getSimpleName(), name);
-  }
-  
-  /**
-   * @return the {@link List} of {@link StatCapable}s instance that this instance holds.
-   */
-  public synchronized List<StatCapable> getStatistics() {
-    List<StatCapable> stats = new ArrayList<StatCapable>();
-    
-    Function<StatCapable, Statistic> converter = new Function<StatCapable, Statistic>() {
-      @Override
-      public StatCapable call(Statistic s) {
-        return new ImmutableStat(s.getKey(), s.getDescription(), s.getStat(), s.isEnabled());
-      }
-    };
-    
-    stats.addAll(Collections2.convertAsList(this.stats.values(), converter));
-
-    Collections.sort(stats);
-    return stats;
-  }
-  
-  /**
-   * @param customStat an arbitrary, app-specific {@link Statistic}.
-   */
-  public synchronized Stats add(Statistic stat) {
-    if(!stats.containsKey(stat.getKey())) {
-      stats.put(stat.getKey(), stat);
-      stat.setEnabled(isEnabled);
+  public static void reset(Simon stat) {
+    if (stat.getName().startsWith(UBIK_PREFIX)) {
+      stat.reset();
     }
-    return this;
   }
   
-  public void dumpStats(PrintStream ps){
-    ps.println("================= Ubik Stats Dump at " + new Date() + " =================");
-    Collection<StatCapable> stats = getStatistics();
-    
-    for(StatCapable stat : stats){
-      if(stat.isEnabled()){
-        dumpStat(ps, stat.getKey().getName(), stat.getValue());
+  /**
+   * @return <code>true</code> if statistics are enabled.
+   */
+  public static boolean isEnabled() {
+    return SimonManager.isEnabled();
+  }
+  
+  /**
+   * @return the {@link List} of {@link Simon} instances corresponding to Ubik stats.
+   */
+  public static List<Simon> getStats() {
+    List<Simon> toReturn = new ArrayList<Simon>();
+    for(String name : SimonManager.getSimonNames()) {
+      if (name.startsWith(UBIK_PREFIX)) {
+        Simon stat = SimonManager.getSimon(name);
+        if (stat.isEnabled() && (stat instanceof Stopwatch || stat instanceof Counter)) {
+          toReturn.add(stat);
+        }
       }
     }
-  }
-  
-  public void dumpStat(PrintStream ps, String name, double value){
-    ps.print(name);
-    ps.print(":");
-    printSpace(ps, name);    
-    ps.println(value);    
-  }  
-  
-  private void printSpace(PrintStream ps, String name){
-    int space = 60 - name.length();
-    for(int i = 0; i < space; i++){
-      ps.print(' ');
-    }
+    return toReturn;
   }
   
 }

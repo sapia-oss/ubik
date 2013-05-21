@@ -151,6 +151,12 @@ public class Log {
   public static final void debug(Class<?> caller, Object msg) {
     debug(caller.getName(), msg);
   }
+  
+  public static final void debug(String caller, Object msg, Throwable t) {
+    if (lvl.value <= Level.DEBUG.value) {
+      display(caller, Level.DEBUG, msg, t);
+    }
+  }  
 
   public static final void debug(String caller, Object msg) {
     if (lvl.value <= Level.DEBUG.value) {
@@ -273,7 +279,7 @@ public class Log {
   }
 
   private static void display(String caller, Level level, Object msg) {
-    if(level == Level.ERROR || filter.accepts(caller)) {
+    if(filter.accepts(caller)) {
       if (msg instanceof Throwable) {
         output.log("[" + DATE_FORMAT.format(new java.util.Date()) + "][" + caller +
           "@" + Thread.currentThread().getName() + "] " + ((Throwable) msg).getMessage());
@@ -286,7 +292,9 @@ public class Log {
   }
 
   private static void display(String caller, Level level, Object msg, Throwable t) {
-    if(level == Level.ERROR || filter.accepts(caller)) {
+    if (msg == null) {
+      display(caller, level, t);
+    } else if(filter.accepts(caller)) {
       output.log("[" + DATE_FORMAT.format(new java.util.Date()) + "][" + caller +
           "@" + Thread.currentThread().getName() + "] " + msg + " - " + t.getMessage());
       output.log(t);

@@ -25,6 +25,7 @@ import org.sapia.ubik.mcast.TimeoutException;
 import org.sapia.ubik.mcast.UnicastDispatcher;
 import org.sapia.ubik.mcast.server.UDPServer;
 import org.sapia.ubik.net.ServerAddress;
+import org.sapia.ubik.util.Assertions;
 import org.sapia.ubik.util.Localhost;
 
 
@@ -197,11 +198,7 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
 
   @Override
   public ServerAddress getAddress() throws IllegalStateException {
-    if (addr == null) {
-      throw new IllegalStateException(
-        "The address of this instance is not yet available");
-    }
-
+    Assertions.illegalState(addr == null, "The address of this instance is not yet available");
     return addr;
   }
 

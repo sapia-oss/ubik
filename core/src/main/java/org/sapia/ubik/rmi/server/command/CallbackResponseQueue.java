@@ -4,10 +4,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.javasimon.Counter;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
-import org.sapia.ubik.rmi.server.stats.Hits;
 import org.sapia.ubik.rmi.server.stats.Stats;
+import org.sapia.ubik.util.Assertions;
 import org.sapia.ubik.util.Delay;
 
 
@@ -21,9 +22,7 @@ public class CallbackResponseQueue {
   private Category                  log             = Log.createCategory(getClass());
   private Map<Long, ResponseLock>   responseLocks   = new ConcurrentHashMap<Long, ResponseLock>();
   private volatile boolean          shutdown;
-  private Hits                      callbacksPerSec = Stats.getInstance()
-                                                        .getHitsBuilder(getClass(), "CallbacksPerSec", "Callbacks per second")
-                                                        .perSecond().build();
+  private Counter                   callbackCount    = Stats.createCounter(getClass(), "CallbackCount", "Number of callbacks performed");
 
   /**
    * @param timeout the timeout allowed for the shut down to occur.
@@ -54,11 +53,9 @@ public class CallbackResponseQueue {
   public synchronized ResponseLock createResponseLock() {
     ResponseLock lock = new ResponseLock(this);
 
-    if (responseLocks.containsKey(lock.getId())) {
-      throw new IllegalStateException("Response lock already exists for: " + lock.getId());
-    }
+    Assertions.illegalState(responseLocks.containsKey(lock.getId()), "Response lock already exists for: %s", lock.getId());
      
-    callbacksPerSec.hit();
+    callbackCount.increase();
     log.debug("Creating response lock %s", lock.getId());
     responseLocks.put(lock.getId(), lock);
     return lock;

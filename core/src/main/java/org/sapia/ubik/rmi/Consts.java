@@ -355,7 +355,7 @@ public interface Consts {
    * Determines the interval at which Ubik stats must be dumped - system property: <code>ubik.rmi.stats.dump.interval</code>. Note:
    * this property will only be taken into account if stats are enabled - see {@link #STATS_ENABLED}. 
    * Value is expected to be in seconds. If it is set to 0 or less, or not set, no dump will occur. Otherwise, stats dump will
-   * be done to stdout.
+   * be done to the stats output file.
    */
   public static final String STATS_DUMP_INTERVAL = "ubik.rmi.stats.dump.interval";  
   

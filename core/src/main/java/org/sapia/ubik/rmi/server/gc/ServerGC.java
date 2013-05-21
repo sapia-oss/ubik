@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.javasimon.Counter;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.module.Module;
@@ -14,7 +15,6 @@ import org.sapia.ubik.rmi.server.ObjectTable;
 import org.sapia.ubik.rmi.server.VmId;
 import org.sapia.ubik.rmi.server.oid.DefaultOID;
 import org.sapia.ubik.rmi.server.oid.OID;
-import org.sapia.ubik.rmi.server.stats.Hits;
 import org.sapia.ubik.rmi.server.stats.Stats;
 import org.sapia.ubik.taskman.Task;
 import org.sapia.ubik.taskman.TaskContext;
@@ -42,17 +42,15 @@ public class ServerGC implements Module, Task, ServerGCMBean {
   private long          gcTimeout   = GC_TIMEOUT;
   private long          gcInterval  = GC_INTERVAL;
   
-  private Hits          gcRefPerMin    = Stats.getInstance().getHitsBuilder(
+  private Counter       gcRef       = Stats.createCounter(
                                            getClass(), 
                                            "RefPerMin", 
-                                           "The number of remote references registered per minute")
-                                           .perMinute().build();
+                                           "The number of remote references that were registered");
   
-  private Hits          gcDerefPerMin  = Stats.getInstance().getHitsBuilder(
+  private Counter       gcDeref     = Stats.createCounter(
                                            getClass(), 
                                            "DeRefPerMin", 
-                                           "The number of remote references that are de registered per minute")
-                                           .perMinute().build();
+                                           "The number of remote references that were deregistered");
   
   
   private Map<VmId, ClientInfo> clientTable = new ConcurrentHashMap<VmId, ClientInfo>();
@@ -131,7 +129,7 @@ public class ServerGC implements Module, Task, ServerGCMBean {
   public void reference(VmId id, OID oid) {
     log.debug("Referencing from: %s on object: %s ", id, oid);
     
-    gcRefPerMin.hit();
+    gcRef.increase();
     ClientInfo inf = getClientInfo(id);
     inf.reference(oid);
   }
@@ -150,7 +148,7 @@ public class ServerGC implements Module, Task, ServerGCMBean {
   public void registerRef(VmId id, OID oid, Object o) {
     log.info("Reference created from: %s on object: %s - %s", id, oid, o.getClass().getName());
     
-    gcRefPerMin.hit();
+    gcRef.increase();
     ClientInfo inf = getClientInfo(id);
     inf.registerRef(oid, o);
   }
@@ -163,7 +161,7 @@ public class ServerGC implements Module, Task, ServerGCMBean {
    * @param oid the {@link DefaultOID} to dereference.
    */
   public void dereference(VmId id, OID oid) {
-    gcDerefPerMin.hit();
+    gcDeref.increase();
     ClientInfo inf = getClientInfo(id);
     if(log.isDebug()) {
       Object toDereference = objectTable.getObjectFor(oid);
@@ -187,7 +185,7 @@ public class ServerGC implements Module, Task, ServerGCMBean {
       if (info != null) {
         info.touch();
       } else {
-        log.warning("No client info found for vm id", id);
+        log.info("No client info found for vm id %s", id);
       }
     }
   }

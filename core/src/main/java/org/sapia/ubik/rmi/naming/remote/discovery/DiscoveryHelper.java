@@ -140,7 +140,7 @@ public class DiscoveryHelper implements AsyncEventListener {
       if (evt.getType().equals(JNDIConsts.JNDI_SERVER_PUBLISH)
           || evt.getType().equals(JNDIConsts.JNDI_SERVER_DISCO)) {
         tcp = (TCPAddress) evt.getData();
-
+        
         Context remoteCtx = (Context) resolver.resolve(tcp);
 
         List<JndiDiscoListener> listeners = new ArrayList<JndiDiscoListener>(jndiListeners);

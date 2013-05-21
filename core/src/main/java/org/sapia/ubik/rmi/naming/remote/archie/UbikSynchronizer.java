@@ -108,6 +108,7 @@ public class UbikSynchronizer implements Synchronizer, AsyncEventListener,
    */
   public void onPutValue(Name nodeAbsolutePath, NamePart valueName,
     Object value, boolean overwrite) {
+    log.debug("Dispatching put for %s (%s)", nodeAbsolutePath, value);
     SyncPutEvent evt = new SyncPutEvent(nodeAbsolutePath, valueName, value,
         overwrite);
 

@@ -33,7 +33,9 @@ class UbikHttpHandler implements Handler {
   
   @Override
   public void handle(Request req, Response res) {
-    final HttpRmiServerConnection conn = new HttpRmiServerConnection(addr, req, res);
+    final HttpRmiServerConnection conn = new HttpRmiServerConnection(
+        HttpAddress.newDefaultInstance(req.getClientAddress().getHostString(), req.getClientAddress().getPort()), 
+        req, res);
     try{
       threads.submit(new Runnable() {
         @Override

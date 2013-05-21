@@ -9,6 +9,7 @@ import java.rmi.RemoteException;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.Uri;
 import org.sapia.ubik.rmi.server.Server;
+import org.sapia.ubik.util.Assertions;
 import org.simpleframework.http.core.ContainerServer;
 import org.simpleframework.transport.connect.Connection;
 import org.simpleframework.transport.connect.SocketConnection;
@@ -42,9 +43,8 @@ class HttpRmiServer implements Server, HttpConsts {
       Router router,
       Uri serverUrl,
       int localPort) {
-    if (serverUrl.getPort() <= 0) {
-      throw new IllegalStateException("Server does not support dynamic port");
-    }
+    
+    Assertions.illegalState(serverUrl.getPort() <= 0, "Server does not support dynamic port");
     this.address    = new HttpAddress(serverUrl);
     this.handlers   = router;
     this.localPort  = localPort;

@@ -18,6 +18,7 @@ import org.sapia.ubik.mcast.RemoteEvent;
 import org.sapia.ubik.mcast.server.MulticastServer;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.util.Assertions;
 
 /**
  * Dispatches objects using a multicast channel.
@@ -80,9 +81,7 @@ public class UDPBroadcastDispatcher implements BroadcastDispatcher {
    * Starts this instance.
    */
   public void start() {
-    if(server == null) {
-      throw new IllegalStateException("Instance was closed; cannot be started again");
-    }
+    Assertions.illegalState(server == null, "Instance was closed; cannot be started again");
     server.start();
   }
 

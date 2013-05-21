@@ -1,10 +1,7 @@
 package org.sapia.ubik.rmi.server;
 
-import java.io.IOException;
 import java.rmi.RemoteException;
 
-import org.sapia.ubik.log.Category;
-import org.sapia.ubik.log.Log;
 import org.sapia.ubik.module.Module;
 import org.sapia.ubik.module.ModuleContext;
 import org.sapia.ubik.net.ServerAddress;
@@ -16,8 +13,6 @@ import org.sapia.ubik.rmi.interceptor.MultiDispatcher;
 import org.sapia.ubik.rmi.server.gc.ClientGC;
 import org.sapia.ubik.rmi.server.gc.CommandRefer;
 import org.sapia.ubik.rmi.server.oid.OID;
-import org.sapia.ubik.rmi.server.transport.Connections;
-import org.sapia.ubik.rmi.server.transport.RmiConnection;
 
 
 /**
@@ -25,9 +20,7 @@ import org.sapia.ubik.rmi.server.transport.RmiConnection;
  *
  * @author Yanick Duchesne
  */
-public class ClientRuntime implements Module{
-  
-  private Category log = Log.createCategory(getClass());
+public class ClientRuntime implements Module {
   
   /**
    * The dispatcher of events destined to be intercepted by {@link Interceptor} instances.
@@ -46,9 +39,15 @@ public class ClientRuntime implements Module{
   /** The client-side part of the distributed garbage-collection mechanism */
   private ClientGC gc;
   
+  /**
+   * The {@link AsyncCommandSender} used to send {@link CommandRefer} instances.
+   */
+  private AsyncCommandSender sender;
+  
   @Override
   public void init(ModuleContext context) {
     serverTable = context.lookup(ServerTable.class);
+    sender      = context.lookup(AsyncCommandSender.class);
   }
   
   @Override
@@ -142,49 +141,8 @@ public class ClientRuntime implements Module{
    * @param oid the {@link OID} for which to create a reference.
    * @throws RemoteException
    */
-  public void createReference(ServerAddress address, OID oid)
-  throws RemoteException {
-    Connections conns = Hub.getModules().getTransportManager().getConnectionsFor(address);
-  
-    try {
-      doSend(conns, oid);
-    } catch (ClassNotFoundException e) {
-      throw new RemoteException("could not refer to object: " + oid + "@" +
-        address, e);
-    } catch (RemoteException e) {
-      conns.clear();
-  
-      try {
-        doSend(conns, oid);
-      } catch (RemoteException e2) {
-        log.warning("Could not refer to object: " + oid + "@" + 
-            address + "; server probably down");
-      } catch (Exception e2) {
-        throw new RemoteException("Could not refer to object: " + oid + "@" +
-          address, e2);
-      }
-    } catch (IOException e) {
-      throw new RemoteException("Could not refer to object: " + oid + "@" +
-        address, e);
-    }
+  public void createReference(ServerAddress address, OID oid) {
+    CommandRefer refer = new CommandRefer(oid);
+    this.sender.send(refer, address);
   }
-
-  private static void doSend(Connections conns, OID oid)
-  throws RemoteException, IOException, ClassNotFoundException {
-    RmiConnection conn = null;
-  
-    try {
-      conn = conns.acquire();
-      conn.send(new CommandRefer(oid));
-      conn.receive();
-    } catch (Exception e) {
-    	if (conn != null) {
-    		conns.invalidate(conn);
-    	}
-    } finally {
-      if (conn != null) {
-        conns.release(conn);
-      }
-    }
-  }  
 }

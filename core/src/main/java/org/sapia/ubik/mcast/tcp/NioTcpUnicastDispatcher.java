@@ -16,7 +16,7 @@ import org.sapia.ubik.net.ConnectionFactory;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.TCPAddress;
 import org.sapia.ubik.net.TcpPortSelector;
-import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.util.Assertions;
 import org.sapia.ubik.util.Localhost;
 
 /**
@@ -64,9 +64,7 @@ public class NioTcpUnicastDispatcher extends BaseTcpUnicastDispatcher {
   
   @Override
   public ServerAddress getAddress() throws IllegalStateException {
-    if (address == null) {
-      throw new IllegalStateException("ServerAddress not set");
-    }
+    Assertions.illegalState(address == null, "ServerAddress not set");
     return address;
   }
 
@@ -77,6 +75,17 @@ public class NioTcpUnicastDispatcher extends BaseTcpUnicastDispatcher {
   protected String doGetTransportType() {
     return TRANSPORT_TYPE;
   }
+
+  @Override
+  protected void doClose() {
+    acceptor.unbind(socketAddress);    
+    executor.shutdown();
+  }
+  
+  @Override
+  protected ConnectionFactory doGetConnectionFactory(int soTimeout) {
+    return new NioTcpUnicastConnectionFactory(marshallingBufferSize);
+  }  
   
   @Override
   protected void doStart() {
@@ -121,25 +130,5 @@ public class NioTcpUnicastDispatcher extends BaseTcpUnicastDispatcher {
       throw new IllegalStateException("Could not bind server to address " + socketAddress, e);
     }
   }
-  
-  @Override
-  protected void doClose() {
-    acceptor.unbind(socketAddress);    
-    executor.shutdown();
-  }
-  
-  @Override
-  protected ConnectionFactory doGetConnectionFactory(int soTimeout) {
-    return new NioTcpUnicastConnectionFactory(marshallingBufferSize);
-  }
 
-  
-  public static void main(String[] args) throws Exception {
-    Log.setDebug();
-    System.setProperty(Consts.IP_PATTERN_KEY, "192\\.168\\.\\d+\\.\\d+");
-    NioTcpUnicastDispatcher dispatcher = new NioTcpUnicastDispatcher(new EventConsumer("test"), 3, 512);
-    dispatcher.start();
-    Thread.sleep(5000);
-    dispatcher.close();
-  }
 }

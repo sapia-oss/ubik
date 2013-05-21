@@ -10,7 +10,6 @@ import org.junit.Test;
 import org.sapia.ubik.module.TestModuleContext;
 import org.sapia.ubik.rmi.NoSuchObjectException;
 import org.sapia.ubik.rmi.server.oid.DefaultOID;
-import org.sapia.ubik.rmi.server.stats.Stats;
 
 public class ObjectTableTest {
   
@@ -18,7 +17,6 @@ public class ObjectTableTest {
   
   @Before
   public void setUp() throws Exception {
-    Stats.getInstance().clear();
     objectTable = new ObjectTable();
     TestModuleContext context = new TestModuleContext();
     objectTable.init(context);

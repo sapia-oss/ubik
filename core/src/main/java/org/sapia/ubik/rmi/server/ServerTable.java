@@ -5,6 +5,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.javasimon.Split;
+import org.javasimon.Stopwatch;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.module.Module;
@@ -16,11 +18,11 @@ import org.sapia.ubik.rmi.server.gc.ServerGC;
 import org.sapia.ubik.rmi.server.oid.DefaultOID;
 import org.sapia.ubik.rmi.server.oid.OID;
 import org.sapia.ubik.rmi.server.stats.Stats;
-import org.sapia.ubik.rmi.server.stats.Timer;
 import org.sapia.ubik.rmi.server.stub.RemoteRefContext;
 import org.sapia.ubik.rmi.server.stub.Stub;
 import org.sapia.ubik.rmi.server.stub.StubInvocationHandler;
 import org.sapia.ubik.rmi.server.transport.TransportManager;
+import org.sapia.ubik.util.Assertions;
 import org.sapia.ubik.util.Props;
 import org.sapia.ubik.util.TypeCache;
 
@@ -45,10 +47,10 @@ public class ServerTable implements Module {
   private boolean                   callbackEnabled;
   private Object                    serverCreationLock = new Object();
   
-  private Timer                     remoteObjectCreation = Stats.getInstance().createTimer(
+  private Stopwatch                 remoteObjectCreation = Stats.createStopwatch(
                                                               getClass(), 
                                                               "RemoteObjectCreation", 
-                                                              "Avg remote object creation time");
+                                                              "Remote object creation time");
   
   @Override
   public void init(ModuleContext context) {
@@ -239,7 +241,7 @@ public class ServerTable implements Module {
   
   private Object doCreateRemoteObjectAndServer(Object toExport, VmId caller, String transportType) 
     throws RemoteException {
-    remoteObjectCreation.start();
+    Split split = remoteObjectCreation.start();
     log.info("Creating server and remote object (transport %s) : %s", transportType, toExport);
     OID       oid                 = stubProcessor.createOID(toExport);
     Server    server              = transport.getProviderFor(transportType).newDefaultServer();
@@ -253,13 +255,13 @@ public class ServerTable implements Module {
     server.start();
     serversByType.put(transportType, serverRef);
     gc.registerRef(caller, oid, toExport);
-    remoteObjectCreation.end();  
+    split.stop();  
     return stub;
   }
   
   private Object doCreateRemoteObject(Object toExport, VmId caller, String transportType, ServerAddress address) 
     throws RemoteException {
-    remoteObjectCreation.start();
+    Split split = remoteObjectCreation.start();
     log.debug("Creating remote object (transport %s): %s", transportType, toExport);
     OID              oid          = stubProcessor.createOID(toExport);
     RemoteRefContext refContext   = new RemoteRefContext(oid, address);
@@ -269,15 +271,13 @@ public class ServerTable implements Module {
     StubInvocationHandler handler = stubProcessor.createInvocationHandlerFor(toExport, refContext);
     Stub                  stub    = (Stub) stubProcessor.createStubFor(toExport, handler);
     gc.registerRef(caller, oid, toExport);
-    remoteObjectCreation.end();  
+    split.stop();  
     return stub;
   }
  
   ServerRef getServerRef(String transportType) throws IllegalArgumentException {
     ServerRef ref = (ServerRef) serversByType.get(transportType);
-    if (ref == null) {
-      throw new IllegalStateException("No server for type: " + transportType);
-    }
+    Assertions.illegalState(ref == null, "No server for type: %s", transportType);
     return ref;
   }
 

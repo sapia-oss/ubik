@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.javasimon.Counter;
 import org.sapia.ubik.rmi.server.ShutdownException;
-import org.sapia.ubik.rmi.server.stats.Hits;
 import org.sapia.ubik.rmi.server.stats.Stats;
 import org.sapia.ubik.util.Delay;
 
@@ -19,17 +19,15 @@ public class ExecQueue<T extends Executable> {
   
   private LinkedList<T>    queue    = new LinkedList<T>();
   private volatile boolean shutdown;
-  private Hits             insertionsBerSecond = Stats.getInstance().getHitsBuilder(
+  private Counter          insertionCount = Stats.createCounter(
                                                    getClass(), 
-                                                   "InsertionsPerSec", 
-                                                   "Number of queue insertions per second")
-                                                   .perSecond().build();
+                                                   "ExecQueueInsertionCount", 
+                                                   "Number of queue insertions");
   
-  private Hits             removalsBerSecond   = Stats.getInstance().getHitsBuilder(
+  private Counter          removalCount   = Stats.createCounter(
                                                    getClass(), 
-                                                   "RemovalsPerSec", 
-                                                   "Number of queue removals per second")
-                                                   .perSecond().build();  
+                                                   "ExecQueueRemovalCount", 
+                                                   "Number of queue removals");
   
   public ExecQueue() {
     super();
@@ -44,7 +42,7 @@ public class ExecQueue<T extends Executable> {
     if (shutdown) {
       throw new ShutdownException();
     }
-    insertionsBerSecond.hit();
+    insertionCount.increase();
     queue.add(toExecute);
     notify();
   }
@@ -67,7 +65,7 @@ public class ExecQueue<T extends Executable> {
     }
 
     List<T> toReturn = new ArrayList<T>(queue);
-    removalsBerSecond.hit(toReturn.size());
+    removalCount.increase(toReturn.size());
     queue.clear();
 
     return toReturn;
@@ -81,7 +79,7 @@ public class ExecQueue<T extends Executable> {
    */
   public synchronized List<T> getAll() {
     List<T> toReturn = new ArrayList<T>(queue);
-    removalsBerSecond.hit(toReturn.size());
+    removalCount.increase(toReturn.size());
     queue.clear();
 
     return toReturn;
@@ -127,7 +125,7 @@ public class ExecQueue<T extends Executable> {
       wait();
     }
 
-    removalsBerSecond.hit();
+    removalCount.increase();
     return queue.remove(0);
   }
   

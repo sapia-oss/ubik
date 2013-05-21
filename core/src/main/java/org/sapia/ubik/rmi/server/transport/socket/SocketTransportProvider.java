@@ -214,6 +214,11 @@ public class SocketTransportProvider implements TransportProvider {
     resetInterval = props.getLongProperty(Consts.SERVER_RESET_INTERVAL, DEFAULT_RESET_INTERVAL);
     
     try {
+      
+      log.info("Bind address: %s", bindAddress);
+      log.info("Port: %s", port);      
+      log.info("Threading conf: %s", threadConf);      
+      
       server = SocketRmiServer.Builder.create(transportType)
         .setBindAddress(bindAddress)
         .setThreadingConfig(threadConf)

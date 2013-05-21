@@ -17,7 +17,7 @@ import org.apache.mina.common.ByteBuffer;
 import org.sapia.ubik.net.Connection;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.serialization.SerializationStreams;
-import org.sapia.ubik.util.ByteBufferOutputStream;
+import org.sapia.ubik.util.MinaByteBufferOutputStream;
 
 /**
  * A client-connection used to connect to a {@link NioTcpUnicastDispatcher}.
@@ -45,7 +45,7 @@ public class NioTcpUnicastConnection implements Connection {
   @Override
   public void send(Object o) throws IOException, RemoteException {
     byteBuffer.clear();
-    ObjectOutputStream	oos = SerializationStreams.createObjectOutputStream(new ByteBufferOutputStream(byteBuffer));
+    ObjectOutputStream	oos = SerializationStreams.createObjectOutputStream(new MinaByteBufferOutputStream(byteBuffer));
     oos.writeObject(o);
     oos.flush();
     oos.close();

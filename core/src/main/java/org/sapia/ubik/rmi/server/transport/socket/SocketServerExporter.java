@@ -90,7 +90,7 @@ public class SocketServerExporter {
 		}
 		props.setProperty(Consts.TRANSPORT_TYPE, SocketTransportProvider.SOCKET_TRANSPORT_TYPE);
 		addProperties(props);
-		return Hub.exportObject(toExport);
+		return Hub.exportObject(toExport, props);
 	}
 	
 	/**

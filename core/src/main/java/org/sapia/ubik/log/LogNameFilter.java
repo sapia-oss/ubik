@@ -43,6 +43,13 @@ public class LogNameFilter implements LogFilter {
 		}
 	}
 	
+	/**
+	 * @return a new {@link LogNameFilter}.
+	 */
+	public static LogNameFilter newInstance() {
+	  return new LogNameFilter();
+	}
+	
 	private static boolean contains(String toCheck, Set<String> patterns) {
 		for(String pattern : patterns) {
 			if(pattern.equals(ANY) || toCheck.contains(pattern)) {

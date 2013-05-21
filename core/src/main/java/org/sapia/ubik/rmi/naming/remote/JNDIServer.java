@@ -58,6 +58,7 @@ public class JNDIServer {
    * </ul>
    */
   public static void main(String[] args) throws Exception {
+    
   	
   	// disabling log4j output at startup
   	Logger.getRootLogger().setLevel(Level.OFF);

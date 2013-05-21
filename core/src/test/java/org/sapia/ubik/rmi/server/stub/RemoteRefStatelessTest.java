@@ -13,7 +13,7 @@ import java.util.List;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.sapia.ubik.log.Log;
+import org.sapia.ubik.rmi.server.Hub;
 import org.sapia.ubik.rmi.server.TestSocketServerTransportSetup;
 import org.sapia.ubik.rmi.server.TestStatelessRemoteInterface;
 
@@ -24,6 +24,7 @@ public class RemoteRefStatelessTest {
   
   @Before
   public void setUp() throws Exception {
+    Hub.shutdown();
     transport = new TestSocketServerTransportSetup();
     transport.setUp();
   }  
@@ -31,13 +32,14 @@ public class RemoteRefStatelessTest {
   @After
   public void tearDown() {
     transport.tearDown();
+    Hub.shutdown();
   }
   
   @Test
   public void testIsStatelessStub() throws Exception {    
     TestStatelessRemoteInterface remoteObject = mock(TestStatelessRemoteInterface.class);
-    transport.bind("test", remoteObject);
-    remoteObject = (TestStatelessRemoteInterface) transport.lookup("test");
+    transport.bind("test-stateless", remoteObject);
+    remoteObject = (TestStatelessRemoteInterface) transport.lookup("test-stateless");
     assertTrue(
         "Stub was not enriched for reliability", 
         Proxy.getInvocationHandler(remoteObject) instanceof RemoteRefStateless);
@@ -50,11 +52,11 @@ public class RemoteRefStatelessTest {
     for(int i = 0; i < 3; i++) {
       TestStatelessCounter counter = new TestStatelessCounter();
       counters.add(counter);
-      transport.bind("test", counter);
+      transport.bind("test-roundrobin", counter);
       Thread.sleep(1000);
     }
     
-    TestStatelessRemoteInterface remoteProxy = (TestStatelessRemoteInterface) transport.lookup("test");
+    TestStatelessRemoteInterface remoteProxy = (TestStatelessRemoteInterface) transport.lookup("test-roundrobin");
     
     for(int i = 0; i < counters.size(); i++) {
       remoteProxy.perform();
@@ -72,11 +74,11 @@ public class RemoteRefStatelessTest {
     for(int i = 0; i < 3; i++) {
       TestFailingStatelessCounter counter = new TestFailingStatelessCounter();
       counters.add(counter);
-      transport.bind("test", counter);
+      transport.bind("test-no-failover", counter);
       Thread.sleep(1000);
     }
     
-    TestStatelessRemoteInterface remoteProxy = (TestStatelessRemoteInterface) transport.lookup("test");
+    TestStatelessRemoteInterface remoteProxy = (TestStatelessRemoteInterface) transport.lookup("test-no-failover");
     
     for(int i = 0; i < counters.size(); i++) {
       remoteProxy.perform();
@@ -90,7 +92,7 @@ public class RemoteRefStatelessTest {
     }
   }
   
-  public static class TestStatelessCounter implements TestStatelessRemoteInterface{
+  public static class TestStatelessCounter implements TestStatelessRemoteInterface {
     int count;
     @Override
     public void perform() throws RemoteException {

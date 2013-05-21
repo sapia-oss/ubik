@@ -85,18 +85,18 @@ public class TCPAddress implements java.io.Externalizable, ServerAddress {
    */
   public void readExternal(ObjectInput in)
     throws IOException, ClassNotFoundException {
-    host            = in.readUTF();
+    host            = (String) in.readObject();
     port            = in.readInt();
-    transportType   = in.readUTF();
+    transportType   = (String) in.readObject();
   }
 
   /**
    * @see java.io.Externalizable#writeExternal(ObjectOutput)
    */
   public void writeExternal(ObjectOutput out) throws IOException {
-    out.writeUTF(host);
+    out.writeObject(host);
     out.writeInt(port);
-    out.writeUTF(transportType);
+    out.writeObject(transportType);
   }
 
   /**

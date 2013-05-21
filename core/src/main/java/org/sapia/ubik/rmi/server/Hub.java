@@ -1,6 +1,7 @@
 package org.sapia.ubik.rmi.server;
 
 import java.io.IOException;
+
 import java.net.ConnectException;
 import java.rmi.RemoteException;
 import java.util.Properties;
@@ -9,14 +10,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.ServerAddress;
-import org.sapia.ubik.net.TCPAddress;
+import org.sapia.ubik.net.netty.NettyAddress;
 import org.sapia.ubik.rmi.Consts;
-import org.sapia.ubik.rmi.server.stats.Statistic;
-import org.sapia.ubik.rmi.server.stats.Stats;
 import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
 import org.sapia.ubik.rmi.server.transport.TransportManager;
-import org.sapia.ubik.rmi.server.transport.socket.MultiplexSocketTransportProvider;
+import org.sapia.ubik.rmi.server.transport.mina.NioTcpTransportProvider;
 
 /**
  * This class is the single-entry point into Ubik RMI's API.
@@ -25,41 +24,14 @@ import org.sapia.ubik.rmi.server.transport.socket.MultiplexSocketTransportProvid
  */
 public class Hub {
   
-  public static final String DEFAULT_TRANSPORT_TYPE = MultiplexSocketTransportProvider.MPLEX_TRANSPORT_TYPE;
+  public static final String DEFAULT_TRANSPORT_TYPE = NioTcpTransportProvider.TRANSPORT_TYPE;
   
   private static final long DEFAULT_SHUTDOWN_TIMEOUT = 5000;
   
-  static class FreeMemStatistic extends Statistic{
-    public FreeMemStatistic(){
-      super("JVM", "FreeMemory", "Indicates the JVM free memory");
-    }
-    public double getStat() {
-      return ((double)Runtime.getRuntime().freeMemory())/(1024*1024);
-    }
-  }
-  static class MaxMemStatistic extends Statistic{
-    public MaxMemStatistic(){
-      super("JVM", "MaxMemory", "Indicates the JVM max memory");
-    }
-    public double getStat() {
-      return ((double)Runtime.getRuntime().maxMemory())/(1024*1024);
-    }
-  }  
-  static class TotalMemStatistic extends Statistic{
-    public TotalMemStatistic(){
-      super("JVM", "TotalMemory", "Indicates the JVM total memory");
-    }
-    public double getStat() {
-      return ((double)Runtime.getRuntime().totalMemory())/(1024*1024);
-    }
-  }  
 
   private static final Category  log           = Log.createCategory(Hub.class);
   private static final Modules   container     = new Modules();
   private static AtomicBoolean   shutdown      = new AtomicBoolean();
-  private static Statistic       freeMemory    = new FreeMemStatistic();
-  private static Statistic       maxMemory     = new MaxMemStatistic();
-  private static Statistic       totalMemory   = new TotalMemStatistic();  
   
   /**
    * "Exports" the passed in object as a remote RMI server: this method
@@ -90,7 +62,7 @@ public class Hub {
     checkStarted();    
     Properties props = new Properties();
     props.setProperty(Consts.TRANSPORT_TYPE, DEFAULT_TRANSPORT_TYPE);
-    props.setProperty(MultiplexSocketTransportProvider.PORT, Integer.toString(port));
+    props.setProperty(NioTcpTransportProvider.PORT, Integer.toString(port));
     return container.getServerTable().exportObject(o, props);
   }
 
@@ -176,7 +148,7 @@ public class Hub {
    */
   public static Object connect(String host, int port) throws RemoteException {
     checkStarted();    
-    return connect(new TCPAddress(DEFAULT_TRANSPORT_TYPE, host, port));
+    return connect(new NettyAddress(host, port));
   }
 
   /**
@@ -305,22 +277,23 @@ public class Hub {
     return container;
   }
   
+  /**
+   * Explicitely starts the Hub's modules.
+   */
+  public static void start() {
+    checkStarted();
+  }
+  
   // this method is not synchronized, since the container's start() method is itself
   // synchronized
   private static void checkStarted() {
-  	if(container == null) {
-  		System.out.println("2. **************************************************************");
-  	}
     if(!container.isStarted()) {
+      
+      log.info("Performing initialization (VMID = %s)", VmId.getInstance());
       
       container.init();
       container.start();
       
-      Stats.getInstance()
-        .add(freeMemory)
-        .add(maxMemory)
-        .add(totalMemory);
-    
       shutdown.set(false);
     }
   }

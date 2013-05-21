@@ -41,13 +41,13 @@ public interface ClientGCMBean {
   public int getLastGcCount();
 
   /**
-   * @return the number of remote objects that are cleaned up by the Client GC, per hour.
+   * @return the number of remote objects that were cleaned up by the Client GC.
    */
-  public double getGcPerMin();
+  public double getNumGc();
   
   /**
-   * @return the number times explicity JVM GC is triggered, per hour (according to threshold).
+   * @return the number times explicit GC has been triggered.
    * @see #getThreshold()
    */
-  public double getForcedGcPerHour();  
+  public double getForcedGc();  
 }

@@ -102,6 +102,7 @@ public abstract class BaseTcpUnicastDispatcher implements UnicastDispatcher {
     } finally {
       senders.shutdown();
     }
+    connections.shutdown();
     log.debug("Closed");
   }
   

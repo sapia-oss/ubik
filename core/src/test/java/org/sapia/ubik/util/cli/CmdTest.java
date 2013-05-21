@@ -121,4 +121,22 @@ public class CmdTest {
 		assertEquals("val2", props.getProperty("sw3"));
 	}
 
+	@Test
+	public void testGetJvmOpts() {
+	  String args[] = new String[]{ "-Dprop1=value1", "-Dprop2=value2", "-sw1", "val1"};
+	  Cmd cmd = Cmd.fromArgs(args);
+	  Properties props = cmd.getJvmOpts();
+	  assertEquals(props.getProperty("prop1"), "value1");
+	  assertEquals(props.getProperty("prop2"), "value2");
+	}
+	
+  @Test
+  public void testRemoveJvmOpts() {
+    String args[] = new String[]{ "-Dprop1=value1", "-Dprop2=value2", "-sw1", "val1"};
+    Cmd cmd = Cmd.fromArgs(args);
+    Properties props = cmd.removeJvmOpts();
+    assertEquals(props.getProperty("prop1"), "value1");
+    assertEquals(props.getProperty("prop2"), "value2");
+    assertEquals("sw1", cmd.getOpts().get(0).getName());
+  }	
 }

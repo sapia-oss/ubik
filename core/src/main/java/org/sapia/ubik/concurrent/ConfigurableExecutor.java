@@ -5,6 +5,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import org.sapia.ubik.util.Strings;
 import org.sapia.ubik.util.Time;
 
 /**
@@ -20,7 +21,7 @@ public class ConfigurableExecutor extends ThreadPoolExecutor {
    */
   public static class ThreadingConfiguration {
     
-    public static final int  DEFAULT_CORE_POOL_SIZE = 5;
+    public static final int  DEFAULT_CORE_POOL_SIZE = 10;
     public static final int  DEFAULT_MAX_POOL_SIZE  = 25;
     public static final int  DEFAULT_QUEUE_SIZE     = 50;
     public static final Time DEFAULT_KEEP_ALIVE     = new Time(30, TimeUnit.SECONDS);
@@ -71,6 +72,15 @@ public class ConfigurableExecutor extends ThreadPoolExecutor {
      */
     public static ThreadingConfiguration newInstance() {
       return new ThreadingConfiguration();
+    }
+    
+    @Override
+    public String toString() {
+      return Strings.toStringFor(this, 
+          "coreThreads", corePoolSize, 
+          "maxThreads", maxPoolSize, 
+          "queueSize", queueSize, 
+          "keepAlive", keepAlive);
     }
   }
   

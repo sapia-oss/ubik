@@ -10,9 +10,6 @@ import org.sapia.ubik.mcast.control.ControlResponse;
 import org.sapia.ubik.mcast.control.ControlResponseHandler;
 import org.sapia.ubik.mcast.control.ControllerContext;
 import org.sapia.ubik.mcast.control.SynchronousControlResponse;
-import org.sapia.ubik.rmi.server.stats.Hits;
-import org.sapia.ubik.rmi.server.stats.Stats;
-import org.sapia.ubik.rmi.server.stats.Timer;
 import org.sapia.ubik.util.Collections2;
 
 /**
@@ -25,11 +22,6 @@ import org.sapia.ubik.util.Collections2;
 public class HeartbeatResponseHandler implements ControlResponseHandler {
 	
 	private Category log = Log.createCategory(getClass());
-	
-	private Hits  downNodesPerHour;
-	private Timer heartbeatResponseHandlingDuration;
-	private Timer synchronousPingTime;
-	private Timer downNotificationSendTime;
 	
 	private ControllerContext context;
 	private Set<String> 		  targetedNodes;
@@ -48,27 +40,6 @@ public class HeartbeatResponseHandler implements ControlResponseHandler {
 		this.targetedNodes = targetedNodes;
 		this.creationTime  = context.getClock().currentTimeMillis();
 		
-		this.downNodesPerHour =  Stats.getInstance().getHitsBuilder(
-        getClass(), 
-        "DownNodesPerHour", 
-        "The number of nodes detected as down per hour")
-        .perHour().build();
-		
-		this.heartbeatResponseHandlingDuration = Stats.getInstance().createTimer(
-				getClass(), 
-				"HeartbeatResponseHandlingDuration", "The time taken to receive/handle heartbeat responses from slave nodes");
-		
-		this.synchronousPingTime = Stats.getInstance().createTimer(
-				getClass(), 
-				"PingSendTime", 
-				"The time take to send/receive a ping request/response"
-		);
-		
-		this.downNotificationSendTime = Stats.getInstance().createTimer(
-				getClass(), 
-				"DownNotificationSendTime", 
-				"The time take to send/receive a down notification"
-		);		
   }
 
 	/**
@@ -95,7 +66,6 @@ public class HeartbeatResponseHandler implements ControlResponseHandler {
 				log.debug("All expected heartbeats received");
 				
 				context.notifyHeartbeatCompleted(targetedNodes.size(), replyingNodes.size());
-				this.heartbeatResponseHandlingDuration.increase(context.getClock().currentTimeMillis() - creationTime);
 				return true;
 			}
 			log.debug("Received %s/%s responses thus far...", replyingNodes.size(), targetedNodes.size());
@@ -110,7 +80,6 @@ public class HeartbeatResponseHandler implements ControlResponseHandler {
 	public synchronized void onResponseTimeOut() {
 		if (replyingNodes.size() >= targetedNodes.size()) {
 			log.debug("Received %s/%s responses. All expected responses received", replyingNodes.size(), targetedNodes.size());
-			this.heartbeatResponseHandlingDuration.increase(context.getClock().currentTimeMillis() - creationTime);
 		} else {
 			log.debug("Received %s/%s responses (dead nodes detected)", replyingNodes.size(), targetedNodes.size());
 			
@@ -125,11 +94,8 @@ public class HeartbeatResponseHandler implements ControlResponseHandler {
 			log.debug("Sending synchronous ping requests");
 
 			try {
-				synchronousPingTime.start();
 				responses = context.getChannelCallback().sendSynchronousRequest(targetedNodes, new PingRequest());
-				synchronousPingTime.end();				
 			} catch (Exception e) {
-				synchronousPingTime.end();				
 				throw new IllegalStateException("Could not send request", e);
 			}
 				
@@ -157,15 +123,11 @@ public class HeartbeatResponseHandler implements ControlResponseHandler {
 				log.debug("All nodes responded, no down nodes detected");
 			}
 			
-			downNotificationSendTime.start();
 			context.getChannelCallback().sendNotification(
 					ControlNotificationFactory.createDownNotification(replyingNodes, targetedNodes)
 			);
-			downNotificationSendTime.end();
-			downNodesPerHour.hit(targetedNodes.size());
 			
 			context.notifyHeartbeatCompleted(expectedCount, replyingNodes.size());
-			this.heartbeatResponseHandlingDuration.increase(context.getClock().currentTimeMillis() - creationTime);
 		}
 	}
 }

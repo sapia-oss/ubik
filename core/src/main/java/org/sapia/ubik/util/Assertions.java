@@ -102,4 +102,16 @@ public final class Assertions {
         throw new IllegalArgumentException(String.format(msg, args));
     }
   }  
+  
+  public static void illegalState(boolean condition, String msg, Object...args) {
+    if (condition) {
+      throw new IllegalStateException(String.format(msg, args));
+    }
+  }
+  
+  public static void illegalState(boolean condition, String msg) {
+    if (condition) {
+      throw new IllegalStateException(msg);
+    }
+  }  
 }

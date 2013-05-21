@@ -10,9 +10,11 @@ import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.transport.http.HttpTransportProvider;
 import org.sapia.ubik.rmi.server.transport.memory.InMemoryTransportProvider;
-import org.sapia.ubik.rmi.server.transport.nio.tcp.NioTcpTransportProvider;
+import org.sapia.ubik.rmi.server.transport.netty.NettyTransportProvider;
+import org.sapia.ubik.rmi.server.transport.mina.NioTcpTransportProvider;
 import org.sapia.ubik.rmi.server.transport.socket.MultiplexSocketTransportProvider;
 import org.sapia.ubik.rmi.server.transport.socket.SocketTransportProvider;
+import org.sapia.ubik.util.Assertions;
 
 
 /**
@@ -36,7 +38,7 @@ public class TransportManager implements Module {
   @Override
   public void init(ModuleContext context) {
   	registerProvider(new SocketTransportProvider());
-    registerProvider(new MultiplexSocketTransportProvider());
+    registerProvider(new NettyTransportProvider());
     registerProvider(new NioTcpTransportProvider());
     registerProvider(new InMemoryTransportProvider());
     registerProvider(new HttpTransportProvider());
@@ -51,18 +53,14 @@ public class TransportManager implements Module {
       if (propName.startsWith(Consts.TRANSPORT_PROVIDER)) {
         className = System.getProperty(propName);
 
-        if (className == null) {
-          throw new IllegalStateException(
-            "No class name defined for transport provider: " + propName);
-        }
+        Assertions.illegalState(className == null, "No class name defined for transport provider %s", propName);
 
         try {
           TransportProvider provider = (TransportProvider) Class.forName(className).newInstance();
           registerProvider(provider);
         } catch (Throwable e) {
-          e.printStackTrace();
           throw new IllegalStateException(
-            "Could not instantiate transport provider: " + className);
+            "Could not instantiate transport provider: " + className, e);
         }
       }
     }
@@ -139,7 +137,7 @@ public class TransportManager implements Module {
    * @return the {@link SocketTransportProvider}.
    */
   public SocketTransportProvider getDefaultProvider() {
-    return (SocketTransportProvider) providers.get(MultiplexSocketTransportProvider.MPLEX_TRANSPORT_TYPE);
+    return (SocketTransportProvider) providers.get(NioTcpTransportProvider.TRANSPORT_TYPE);
   }
 
   /**

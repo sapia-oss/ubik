@@ -13,7 +13,7 @@ import org.sapia.ubik.rmi.server.Hub;
  */
 public class CliTimeClient {
   public static void main(String[] args) {
-    Log.setInfo();
+    Log.setDebug();
 
     try {
       BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));      

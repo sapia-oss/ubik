@@ -4,9 +4,9 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.rmi.RemoteException;
 
+import org.sapia.ubik.concurrent.ConfigurableExecutor.ThreadingConfiguration;
 import org.sapia.ubik.concurrent.NamedThreadFactory;
 import org.sapia.ubik.concurrent.ThreadShutdown;
-import org.sapia.ubik.concurrent.ConfigurableExecutor.ThreadingConfiguration;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.DefaultUbikServerSocketFactory;
 import org.sapia.ubik.net.Request;
@@ -14,12 +14,10 @@ import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.SocketConnectionFactory;
 import org.sapia.ubik.net.SocketServer;
 import org.sapia.ubik.net.TCPAddress;
-import org.sapia.ubik.net.WorkerPool;
 import org.sapia.ubik.net.UbikServerSocketFactory;
+import org.sapia.ubik.net.WorkerPool;
 import org.sapia.ubik.rmi.server.Server;
 import org.sapia.ubik.rmi.server.command.RMICommand;
-import org.sapia.ubik.rmi.server.stats.Statistic;
-import org.sapia.ubik.rmi.server.stats.Stats;
 import org.sapia.ubik.util.Localhost;
 
 /**
@@ -39,7 +37,7 @@ public class SocketRmiServer extends SocketServer implements Server, SocketRmiSe
     private String                  bindAddress;
     private int                     port;
     private long                    resetInterval;
-    private ThreadingConfiguration           threadConfiguration = new ThreadingConfiguration();
+    private ThreadingConfiguration  threadConfiguration = new ThreadingConfiguration();
     private SocketConnectionFactory connectionFactory;;
     private UbikServerSocketFactory serverSocketFactory;
     
@@ -141,7 +139,6 @@ public class SocketRmiServer extends SocketServer implements Server, SocketRmiSe
 
   // --------------------------------------------------------------------------
   
-  private Statistic     threadCountStatistic;
   private ServerAddress addr;
   private Thread        serverThread;
   
@@ -198,14 +195,6 @@ public class SocketRmiServer extends SocketServer implements Server, SocketRmiSe
       RemoteException re = new RemoteException("Error while starting up", e);
       throw re;
     }
-    
-    threadCountStatistic = new Statistic(getClass().getSimpleName(), "ThreadCount", "Number of currently active threads") {
-      public double getStat() {
-        return SocketRmiServer.this.getThreadCount();
-      }
-    };
-    
-    Stats.getInstance().add(threadCountStatistic);
   }
   
   @Override

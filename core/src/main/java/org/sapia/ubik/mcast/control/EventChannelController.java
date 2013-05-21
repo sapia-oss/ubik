@@ -88,7 +88,7 @@ public class EventChannelController {
 		syncRequestHandlers.put(PingRequest.class.getName(), new PingRequestHandler(context));
 		notificationHandlers.put(DownNotification.class.getName(), new DownNotificationHandler(context));
 		notificationHandlers.put(ChallengeCompletionNotification.class.getName(), new ChallengeCompletionNotificationHandler(context));
-		autoResyncInterval = new  Delay(Clock.SystemClock.getInstance(), config.getResyncInterval()); 
+		autoResyncInterval = new Delay(clock, config.getResyncInterval()); 
 	}
 	
 	ControllerConfiguration getConfig() {

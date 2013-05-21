@@ -5,6 +5,8 @@ import java.util.Properties;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
+import org.sapia.ubik.log.Log;
+import org.sapia.ubik.log.LogFilter;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.util.Localhost;
 
@@ -20,6 +22,13 @@ public class StatelessTimeServer {
 
   public static void main(String[] args) {
     try {
+      Log.setLogFilter(new LogFilter() {
+        @Override
+        public boolean accepts(String source) {
+          return source.startsWith("org.sapia.ubik.rmi.server.stub");
+        }
+      });      
+      Log.setTrace();
       // Parse the input arguments
       String aJndiUrlProvider    = "ubik://" + Localhost.getAnyLocalAddress().getHostAddress() + ":1099/";
       String aJndiInitialContext = "org.sapia.ubik.rmi.naming.remote.RemoteInitialContextFactory";

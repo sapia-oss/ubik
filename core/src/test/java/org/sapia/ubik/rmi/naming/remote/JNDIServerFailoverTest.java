@@ -19,6 +19,8 @@ import org.mockito.stubbing.Answer;
 import org.sapia.ubik.mcast.EventChannel;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.Hub;
+import org.sapia.ubik.util.Localhost;
+import org.sapia.ubik.util.PropertiesUtil;
 import org.sapia.ubik.util.Props;
 
 public class JNDIServerFailoverTest {
@@ -28,6 +30,7 @@ public class JNDIServerFailoverTest {
 	
 	@Before
 	public void setUp() throws Exception {
+	  PropertiesUtil.clearUbikSystemProperties();
 		System.setProperty(Consts.UBIK_DOMAIN_NAME, "ubik.test");
 		System.setProperty(Consts.COLOCATED_CALLS_ENABLED, "false");
 		System.setProperty(Consts.BROADCAST_PROVIDER, Consts.BROADCAST_PROVIDER_MEMORY);
@@ -38,11 +41,9 @@ public class JNDIServerFailoverTest {
 
 	@After
 	public void tearDown() throws Exception {
-		System.clearProperty(Consts.BROADCAST_PROVIDER);
-		System.clearProperty(Consts.BROADCAST_MEMORY_NODE);
-		System.clearProperty(Consts.COLOCATED_CALLS_ENABLED);
+    PropertiesUtil.clearUbikSystemProperties();
 		server.stop();
-		Hub.shutdown(3000);
+		Hub.shutdown();
 	}	
 	
 	@Test
@@ -50,7 +51,7 @@ public class JNDIServerFailoverTest {
 
 
 		Hashtable props = new Hashtable();
-		props.put(InitialContext.PROVIDER_URL, "ubik://localhost:1099/");
+		props.put(InitialContext.PROVIDER_URL, "ubik://" + Localhost.getAnyLocalAddress().getHostAddress() +":1099/");
 		props.put(InitialContext.INITIAL_CONTEXT_FACTORY, RemoteInitialContextFactory.class.getName());
 		InitialContext context = new InitialContext(props);  
 	

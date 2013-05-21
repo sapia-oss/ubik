@@ -19,6 +19,7 @@ import org.sapia.ubik.rmi.server.VmId;
 import org.sapia.ubik.rmi.server.transport.MarshalStreamFactory;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
 import org.sapia.ubik.rmi.server.transport.RmiObjectOutput;
+import org.sapia.ubik.util.Assertions;
 import org.sapia.ubik.util.Props;
 
 
@@ -111,9 +112,7 @@ public class HttpRmiClientConnection implements RmiConnection {
    */
   public Object receive()
     throws IOException, ClassNotFoundException, RemoteException {
-    if (responsePayload == null) {
-      throw new IllegalStateException("Cannot receive; response payload not set");
-    }
+    Assertions.illegalState(responsePayload == null, "Cannot receive; response payload not set");
     
     byte[] thePayload    = responsePayload;
     responsePayload      = null;

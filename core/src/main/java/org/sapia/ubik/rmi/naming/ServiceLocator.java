@@ -10,6 +10,7 @@ import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.Uri;
 import org.sapia.ubik.net.UriSyntaxException;
 import org.sapia.ubik.rmi.naming.remote.proxy.JNDIHandler;
+import org.sapia.ubik.util.Assertions;
 
 
 /**
@@ -98,18 +99,14 @@ public class ServiceLocator {
 
         className = System.getProperty(propName);
 
-        if (className == null) {
-          throw new IllegalStateException(
-            "no class name defined for transport provider: " + propName);
-        }
+        Assertions.illegalState(className == null, "No class name defined for transport provider %s", propName);
 
         try {
           handler = (ServiceHandler) Class.forName(className).newInstance();
           registerHandler(scheme, handler);
         } catch (Throwable e) {
-          e.printStackTrace();
           throw new IllegalStateException(
-            "could not instantiate transport provider: " + className);
+            "Could not instantiate transport provider: " + className, e);
         }
       }
     }
@@ -170,13 +167,8 @@ public class ServiceLocator {
    * @param handler a {@link ServiceHandler}.
    * @throws IllegalStateException if a handler is already registered with the given scheme.
    */
-  public static void registerHandler(String scheme, ServiceHandler handler)
-    throws IllegalStateException {
-    if (handlers.get(scheme) != null) {
-      throw new IllegalStateException(
-        "service handler already registered for :" + scheme);
-    }
-
+  public static void registerHandler(String scheme, ServiceHandler handler) throws IllegalStateException {
+    Assertions.illegalState(handlers.get(scheme) != null, "Service handler already registered for: %s", scheme);
     handlers.put(scheme, handler);
   }
   

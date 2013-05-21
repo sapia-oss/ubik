@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.javasimon.Counter;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.module.Module;
@@ -13,8 +14,6 @@ import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.NoSuchObjectException;
 import org.sapia.ubik.rmi.server.oid.DefaultOID;
 import org.sapia.ubik.rmi.server.oid.OID;
-import org.sapia.ubik.rmi.server.stats.Hits;
-import org.sapia.ubik.rmi.server.stats.Statistic;
 import org.sapia.ubik.rmi.server.stats.Stats;
 import org.sapia.ubik.util.Props;
 
@@ -26,44 +25,27 @@ import org.sapia.ubik.util.Props;
  */
 public class ObjectTable implements ObjectTableMBean, Module {
   
-  class RefCountStat extends Statistic{
-    
-    public RefCountStat() {
-      super("ObjectTable", "ReferenceCount", "Number of object references");
-    }
-    public double getStat() {
-      if(refs == null) return 0;
-      return refs.size();
-    }
-    
-  }
-  
   private static final float DEFAULT_LOAD_FACTOR   = 0.75f;
   private static final int   DEFAULT_INIT_CAPACITY = 2000;
   
   private Category      log = Log.createCategory(getClass());
   private Map<OID, Ref> refs;
   
-  private Hits          refPerMin        = Stats.getInstance().getHitsBuilder(
-                                                "ObjectTable", 
-                                                "RefPerMin", 
-                                                "Number of object references created per minute")
-                                                .perMinute().build();
+  private Counter numRef          = Stats.createCounter(
+                                                getClass(), 
+                                                "NumRef", 
+                                                "Number of object references created");
   
-  private Hits          derefPerMin      = Stats.getInstance().getHitsBuilder(
-                                                "ObjectTable", 
-                                                "DerefPerMin", 
-                                                "Number of objects dereferenced per minute")
-                                                .perMinute().build();
+  private Counter numDeref        = Stats.createCounter(
+                                                getClass(), 
+                                                "NumDeref", 
+                                                "Number of objects dereferenced");
   
-  private Hits          objectReadPerSec = Stats.getInstance().getHitsBuilder(
-                                                "ObjectTable", 
+  private Counter objectReadPerSec = Stats.createCounter(
+                                                getClass(), 
                                                 "ReadPerSec", 
-                                                "Number of object references that are read per second")
-                                                .perSecond().build();
+                                                "Number of object references that are read");
                                                  
-  private Statistic     refCount         = new RefCountStat();
-  
   
   public ObjectTable(){
   }
@@ -74,7 +56,6 @@ public class ObjectTable implements ObjectTableMBean, Module {
     float loadFactor = pu.getFloatProperty(Consts.OBJECT_TABLE_LOAD_FACTOR, DEFAULT_LOAD_FACTOR);
     int initCapacity = pu.getIntProperty(Consts.OBJECT_TABLE_INITCAPACITY, DEFAULT_INIT_CAPACITY);
     refs             = new ConcurrentHashMap<OID, Ref>(initCapacity, loadFactor);
-    Stats.getInstance().add(refCount);
     context.registerMbean(this);
   }
   
@@ -99,7 +80,7 @@ public class ObjectTable implements ObjectTableMBean, Module {
       ref = new Ref(oid, o);
       refs.put(oid, ref);
     }
-    refPerMin.hit();
+    numRef.increase();
     ref.inc(); 
     log.debug("Created reference to %s (%s). Got %s", ref.oid, ref.obj, ref.count.get());
   }
@@ -117,7 +98,7 @@ public class ObjectTable implements ObjectTableMBean, Module {
       log.debug("Could not create reference to: %s (no such OID)", oid);
       throw new NoSuchObjectException("No object reference for: " + oid);
     }
-    refPerMin.hit();
+    numRef.increase();
     ref.inc();
     log.debug("Referred to %s (%s). Got %s", ref.oid, ref.obj, ref.count.get());
 
@@ -137,7 +118,7 @@ public class ObjectTable implements ObjectTableMBean, Module {
       ref.dec(decrement);
       if (ref.count() <= 0) {
         log.debug("%s (%s) available for GC", oid, ref.obj);
-        derefPerMin.hit(decrement);
+        numDeref.increase(decrement);
         refs.remove(oid);
 
         if (ref.obj instanceof Unreferenced) {
@@ -157,7 +138,7 @@ public class ObjectTable implements ObjectTableMBean, Module {
    * @throws NoSuchObjectException if no object exists for the given identifier
    */
   public Object getObjectFor(OID oid) throws NoSuchObjectException {
-    objectReadPerSec.hit();
+    objectReadPerSec.increase();
     return getRefFor(oid).getObject();
   }
   

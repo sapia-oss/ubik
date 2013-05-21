@@ -5,8 +5,7 @@ import java.util.Properties;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.examples.UbikFoo;
 import org.sapia.ubik.rmi.server.Hub;
-import org.sapia.ubik.rmi.server.transport.nio.tcp.NioAddress;
-import org.sapia.ubik.rmi.server.transport.nio.tcp.NioTcpTransportProvider;
+import org.sapia.ubik.rmi.server.transport.mina.NioTcpTransportProvider;
 
 public class NioFoo {
 

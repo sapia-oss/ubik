@@ -30,11 +30,11 @@ public class CallbackTest {
 	public void testCallbackInvocation() throws Exception {
 		TestCallbackInterface remote = (TestCallbackInterface)Hub.exportObject(this.callback, 7070);
 		
-		for(int i = 0; i < 50; i++) {
-			remote.callMethod();
+		for(int i = 0; i < 5; i++) {
+			System.out.println(remote.callMethod());
 		}
 		
-		assertEquals(50, callback.counter);
+		assertEquals(5, callback.counter);
 		
 	}
 	

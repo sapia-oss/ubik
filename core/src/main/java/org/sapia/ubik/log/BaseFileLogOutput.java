@@ -8,7 +8,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.sapia.ubik.util.Assertions;
 import org.sapia.ubik.util.Exceptions;
+import org.sapia.ubik.util.Strings;
 
 /**
  * A {@link LogOutput} implementation that outputs logging statements to a file.
@@ -52,6 +54,7 @@ public class BaseFileLogOutput implements LogOutput {
   private static final int ONE_MEG            = 1024 * 1024;
   private static final int LOG_CHECK_INTERVAL = 100;  
   
+  private Category         log               = Log.createCategory(getClass());
   private Config           conf;
   private int              logCheckInterval  = LOG_CHECK_INTERVAL;
   private File             currentLogFile;    
@@ -63,6 +66,7 @@ public class BaseFileLogOutput implements LogOutput {
   
   protected BaseFileLogOutput(Config config) {
     this.conf = config;
+    log.info("Will perform stats logging using: %s", config);
   }
   
   public void addFileArchivingListener(FileArchivingListener listener) {
@@ -207,9 +211,7 @@ public class BaseFileLogOutput implements LogOutput {
     }
     
     public String getLogFileName() {
-      if(logFileName == null) {
-        throw new IllegalStateException("Log file name not set");
-      }
+      Assertions.illegalState(logFileName == null, "Log file name not set");
       return logFileName;
     }
     public Config setLogFileName(String logFileName) {
@@ -230,6 +232,15 @@ public class BaseFileLogOutput implements LogOutput {
     public Config setMaxFileSize(int maxFileSize) {
       this.maxFileSize = maxFileSize;
       return this;
+    }
+    
+    @Override
+    public String toString() {
+      return Strings.toStringFor(this, 
+          "directory", logDirectory, 
+          "fileName", logFileName, 
+          "archive", archive, 
+          "maxFileSize", maxFileSize);
     }
 
   }
