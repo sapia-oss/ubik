@@ -26,11 +26,11 @@ import org.sapia.ubik.util.Time;
  * This transport provider is implemented on top of the <a href="http://mina.apache.org">Mina</a> 
  * framework.  
  * <p>
- * It internally creates {@link NioServer} instances. Various configuration 
+ * It internally creates {@link MinaServer} instances. Various configuration 
  * properties are "understood" by this provider (see the doc for the corresponding 
  * constants further below). In addition, this provider interprets the 
  * <code>ubik.rmi.server.max-threads</code> property as indicating the number of 
- * processor threads that should be created by a {@link NioServer} instance.
+ * processor threads that should be created by a {@link MinaServer} instance.
  * 
  * @see Consts#SERVER_CORE_THREADS
  * @see Consts#SERVER_MAX_THREADS
@@ -40,7 +40,7 @@ import org.sapia.ubik.util.Time;
  * @author Yanick Duchesne
  * 
  */
-public class NioTcpTransportProvider implements TransportProvider {
+public class MinaTransportProvider implements TransportProvider {
 
   /**
    * Constant corresponding to this provider class' transport type.
@@ -49,15 +49,15 @@ public class NioTcpTransportProvider implements TransportProvider {
 
   /**
    * This constant corresponds to the
-   * <code>ubik.rmi.transport.nio-tcp.bind-address</code> system property.
+   * <code>ubik.rmi.transport.nio.mina.bind-address</code> system property.
    */
-  public static final String BIND_ADDRESS   = "ubik.rmi.transport.nio.tcp.bind-address";
+  public static final String BIND_ADDRESS   = "ubik.rmi.transport.nio.mina.bind-address";
 
   /**
    * This constant corresponds to the
-   * <code>ubik.rmi.transport.nio-tcp.port</code> system property.
+   * <code>ubik.rmi.transport.nio.mina.port</code> system property.
    */
-  public static final String PORT           = "ubik.rmi.transport.nio.tcp.port";
+  public static final String PORT           = "ubik.rmi.transport.nio.mina.port";
   
   private int bufsize = Props.getSystemProperties().getIntProperty(
   												Consts.MARSHALLING_BUFSIZE, 
@@ -66,17 +66,17 @@ public class NioTcpTransportProvider implements TransportProvider {
   
   private volatile boolean started;
   
-  private Map<ServerAddress, NioTcpClientConnectionPool> pools = new ConcurrentHashMap<ServerAddress, NioTcpClientConnectionPool>();
+  private Map<ServerAddress, MinaRmiClientConnectionPool> pools = new ConcurrentHashMap<ServerAddress, MinaRmiClientConnectionPool>();
 
   /**
    * @see org.sapia.ubik.rmi.server.transport.TransportProvider#getPoolFor(org.sapia.ubik.net.ServerAddress)
    */
   public synchronized Connections getPoolFor(ServerAddress address) throws RemoteException {
-    NioTcpClientConnectionPool pool = (NioTcpClientConnectionPool) pools.get(address);
+    MinaRmiClientConnectionPool pool = (MinaRmiClientConnectionPool) pools.get(address);
 
     if(pool == null) {
-      pool = new NioTcpClientConnectionPool(((NioAddress) address).getHost(),
-          ((NioAddress) address).getPort(), bufsize);
+      pool = new MinaRmiClientConnectionPool(((MinaAddress) address).getHost(),
+          ((MinaAddress) address).getPort(), bufsize);
       pools.put(address, pool);
     }
 
@@ -140,7 +140,7 @@ public class NioTcpTransportProvider implements TransportProvider {
         .setKeepAlive(Time.createSeconds(keepAlive));
     
     try{
-      NioServer server = new NioServer(addr, specificBufsize, threadConf);
+      MinaServer server = new MinaServer(addr, specificBufsize, threadConf);
       return server;
     }catch(IOException e){
       throw new RemoteException("Could not create server", e);
@@ -150,7 +150,7 @@ public class NioTcpTransportProvider implements TransportProvider {
           if(!started) {
             started = true;
             Hub.getModules().getTaskManager().addTask(
-                new TaskContext(NioTcpClientConnectionPool.class.getName(), PoolCleaner.INTERVAL),
+                new TaskContext(MinaRmiClientConnectionPool.class.getName(), PoolCleaner.INTERVAL),
                 new PoolCleaner(pools)
             );
           }
@@ -163,7 +163,7 @@ public class NioTcpTransportProvider implements TransportProvider {
    * @see org.sapia.ubik.rmi.server.transport.TransportProvider#shutdown()
    */
   public synchronized void shutdown() {
-    for(NioTcpClientConnectionPool pool : pools.values()) {
+    for(MinaRmiClientConnectionPool pool : pools.values()) {
       pool.internalPool().shrinkTo(0);
     }
   }
@@ -174,16 +174,16 @@ public class NioTcpTransportProvider implements TransportProvider {
     
     static final long INTERVAL = 5000;
     
-    Map<ServerAddress, NioTcpClientConnectionPool> pools;
+    Map<ServerAddress, MinaRmiClientConnectionPool> pools;
 
-    PoolCleaner(Map<ServerAddress, NioTcpClientConnectionPool> pools) {
+    PoolCleaner(Map<ServerAddress, MinaRmiClientConnectionPool> pools) {
       this.pools = pools;
     }
 
     public void exec(TaskContext context) {
-      NioTcpClientConnectionPool[] toClean;
+      MinaRmiClientConnectionPool[] toClean;
 
-      toClean = (NioTcpClientConnectionPool[]) pools.values().toArray(new NioTcpClientConnectionPool[pools.size()]);
+      toClean = (MinaRmiClientConnectionPool[]) pools.values().toArray(new MinaRmiClientConnectionPool[pools.size()]);
 
       for(int i = 0; i < toClean.length; i++) {
         if((System.currentTimeMillis() - toClean[i].internalPool()

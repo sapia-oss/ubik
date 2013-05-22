@@ -10,11 +10,11 @@ import org.sapia.ubik.net.TCPAddress;
  * @author Yanick Duchesne
  * 
  */
-public class NioAddress extends TCPAddress {
+public class MinaAddress extends TCPAddress {
 
   static final long          serialVersionUID = 1L;
 
-  public NioAddress() {
+  public MinaAddress() {
     super();
   }
 
@@ -24,14 +24,14 @@ public class NioAddress extends TCPAddress {
    * @param port
    *          a port
    */
-  public NioAddress(String host, int port) {
-    super(NioTcpTransportProvider.TRANSPORT_TYPE, host, port);
+  public MinaAddress(String host, int port) {
+    super(MinaTransportProvider.TRANSPORT_TYPE, host, port);
   }
 
   /**
    * @see org.sapia.ubik.net.TCPAddress#getTransportType()
    */
   public String getTransportType() {
-    return NioTcpTransportProvider.TRANSPORT_TYPE;
+    return MinaTransportProvider.TRANSPORT_TYPE;
   }
 }

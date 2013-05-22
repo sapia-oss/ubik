@@ -17,7 +17,7 @@ public class JBossMarshalOutputStream extends JBossObjectOutputStream implements
 
   private static Stopwatch stubOutput = Stats
       .createStopwatch(JBossMarshalOutputStream.class, "StubOutput",
-          "Avg time to create a stub");
+          "Time to create a stub");
 
   private VmId id;
   private String transportType;

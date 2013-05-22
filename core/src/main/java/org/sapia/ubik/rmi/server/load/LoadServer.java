@@ -10,7 +10,7 @@ import org.sapia.ubik.rmi.naming.remote.JNDIContextBuilder;
 import org.sapia.ubik.rmi.server.Hub;
 import org.sapia.ubik.rmi.server.transport.http.HttpServerExporter;
 import org.sapia.ubik.rmi.server.transport.netty.NettyServerExporter;
-import org.sapia.ubik.rmi.server.transport.mina.NioServerExporter;
+import org.sapia.ubik.rmi.server.transport.mina.MinaServerExporter;
 import org.sapia.ubik.rmi.server.transport.socket.SocketServerExporter;
 import org.sapia.ubik.util.PropertiesUtil;
 import org.sapia.ubik.util.cli.Cmd;
@@ -96,7 +96,7 @@ public class LoadServer {
       NettyServerExporter exporter = new NettyServerExporter();
       context.bind(LoadService.JNDI_NAME, exporter.export(impl));
     } else if (transport.equals("nio")) {
-		  NioServerExporter exporter = new NioServerExporter();
+		  MinaServerExporter exporter = new MinaServerExporter();
   		context.bind(LoadService.JNDI_NAME, exporter.export(impl));
 		} else if (transport.equals("standard")){
 		  SocketServerExporter exporter = new SocketServerExporter();

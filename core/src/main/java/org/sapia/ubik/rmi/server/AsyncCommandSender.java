@@ -3,6 +3,8 @@ package org.sapia.ubik.rmi.server;
 import java.io.IOException;
 import java.rmi.RemoteException;
 
+import org.javasimon.Split;
+import org.javasimon.Stopwatch;
 import org.sapia.ubik.concurrent.ConfigurableExecutor;
 import org.sapia.ubik.concurrent.ConfigurableExecutor.ThreadingConfiguration;
 import org.sapia.ubik.concurrent.NamedThreadFactory;
@@ -12,6 +14,7 @@ import org.sapia.ubik.module.Module;
 import org.sapia.ubik.module.ModuleContext;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.server.command.RMICommand;
+import org.sapia.ubik.rmi.server.stats.Stats;
 import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
 import org.sapia.ubik.rmi.server.transport.TransportProvider;
@@ -26,6 +29,8 @@ import org.sapia.ubik.util.Time;
  *
  */
 public class AsyncCommandSender implements Module {
+  
+  private static Stopwatch sendTime = Stats.createStopwatch(AsyncCommandSender.class, "SendDuration", "Time required to send command");
   
   private static final int DEFAULT_CORE_POOL_SIZE = 5;
   private static final int DEFAULT_MAX_POOL_SIZE  = 5;
@@ -107,9 +112,11 @@ public class AsyncCommandSender implements Module {
     RmiConnection conn = null;
   
     try {
+      Split split = sendTime.start();
       conn = conns.acquire();
       conn.send(command);
       conn.receive();
+      split.stop();
     } catch (Exception e) {
       if (conn != null) {
         conns.invalidate(conn);

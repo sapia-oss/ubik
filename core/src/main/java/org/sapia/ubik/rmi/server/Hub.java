@@ -15,7 +15,7 @@ import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
 import org.sapia.ubik.rmi.server.transport.TransportManager;
-import org.sapia.ubik.rmi.server.transport.mina.NioTcpTransportProvider;
+import org.sapia.ubik.rmi.server.transport.mina.MinaTransportProvider;
 
 /**
  * This class is the single-entry point into Ubik RMI's API.
@@ -24,7 +24,7 @@ import org.sapia.ubik.rmi.server.transport.mina.NioTcpTransportProvider;
  */
 public class Hub {
   
-  public static final String DEFAULT_TRANSPORT_TYPE = NioTcpTransportProvider.TRANSPORT_TYPE;
+  public static final String DEFAULT_TRANSPORT_TYPE = MinaTransportProvider.TRANSPORT_TYPE;
   
   private static final long DEFAULT_SHUTDOWN_TIMEOUT = 5000;
   
@@ -62,7 +62,7 @@ public class Hub {
     checkStarted();    
     Properties props = new Properties();
     props.setProperty(Consts.TRANSPORT_TYPE, DEFAULT_TRANSPORT_TYPE);
-    props.setProperty(NioTcpTransportProvider.PORT, Integer.toString(port));
+    props.setProperty(MinaTransportProvider.PORT, Integer.toString(port));
     return container.getServerTable().exportObject(o, props);
   }
 

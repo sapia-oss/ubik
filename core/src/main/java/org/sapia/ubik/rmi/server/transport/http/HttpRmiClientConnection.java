@@ -12,10 +12,13 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.util.EntityUtils;
+import org.javasimon.Split;
+import org.javasimon.Stopwatch;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.VmId;
+import org.sapia.ubik.rmi.server.stats.Stats;
 import org.sapia.ubik.rmi.server.transport.MarshalStreamFactory;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
 import org.sapia.ubik.rmi.server.transport.RmiObjectOutput;
@@ -34,6 +37,13 @@ import org.sapia.ubik.util.Props;
  * @author Yanick Duchesne
  */
 public class HttpRmiClientConnection implements RmiConnection {
+  
+  private static Stopwatch serializationTime   = Stats.createStopwatch(HttpRmiClientConnection.class, 
+      "SerializationDuration", "Time required to serialize an object");
+
+  private static Stopwatch sendTime = Stats.createStopwatch(HttpRmiClientConnection.class, 
+      "SendDuration", "Time required to send an object over the network");
+
   
   private static final int STATUS_OK = 200;
   
@@ -63,16 +73,18 @@ public class HttpRmiClientConnection implements RmiConnection {
     post = new HttpPost(address.toString());
 
     ByteArrayOutputStream bos = new ByteArrayOutputStream(bufsz);
+    
+    Split split = serializationTime.start();
     ObjectOutputStream    mos = MarshalStreamFactory.createOutputStream(bos);
-
     if ((associated != null) && (transportType != null)) {
       ((RmiObjectOutput)mos).setUp(associated, transportType);
     }
-
     mos.writeObject(o);
     mos.flush();
     mos.close();
+    split.stop();
 
+    split = sendTime.start();
     byte[] data = bos.toByteArray();
 
     if (data.length > bufsz) {
@@ -92,6 +104,7 @@ public class HttpRmiClientConnection implements RmiConnection {
     } finally {
       post.releaseConnection();      
     }
+    split.stop();
   }
 
   /**

@@ -31,11 +31,11 @@ public class CommandHandler {
   public CommandHandler(MultiDispatcher eventDispatcher, Class<?> owner) {
     log          = Log.createCategory(owner);
    
-    remoteCall   = Stats.createStopwatch(owner,"RemoteCall", "Avg time for processing a remote call");
+    remoteCall   = Stats.createStopwatch(owner,"RemoteCall", "Time for processing a remote call");
     
-    sendResponse = Stats.createStopwatch(owner, "SendResponse", "Avg time for sending the return value of a remote call");
+    sendResponse = Stats.createStopwatch(owner, "SendResponse", "Time for sending the return value of a remote call");
     
-    execTime     = Stats.createStopwatch(owner, "ExecutionTime", "Total avg time for processing a remote call and sending its return value");    
+    execTime     = Stats.createStopwatch(owner, "ExecutionTime", "Total time for processing a remote call and sending its return value");    
     
     tps          = Stats.createCounter(owner, "Hits", "The number of hits");
     

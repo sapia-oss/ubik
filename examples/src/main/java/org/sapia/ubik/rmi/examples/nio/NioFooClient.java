@@ -3,7 +3,7 @@ package org.sapia.ubik.rmi.examples.nio;
 import org.sapia.ubik.rmi.examples.Bar;
 import org.sapia.ubik.rmi.examples.Foo;
 import org.sapia.ubik.rmi.server.Hub;
-import org.sapia.ubik.rmi.server.transport.mina.NioAddress;
+import org.sapia.ubik.rmi.server.transport.mina.MinaAddress;
 import org.sapia.ubik.util.Localhost;
 
 public class NioFooClient {
@@ -12,7 +12,7 @@ public class NioFooClient {
     try {
       
       Foo foo = (Foo) Hub.connect(
-        new NioAddress(Localhost.getAnyLocalAddress().getHostAddress(), 6060)
+        new MinaAddress(Localhost.getAnyLocalAddress().getHostAddress(), 6060)
       );
       
       long start = System.currentTimeMillis();

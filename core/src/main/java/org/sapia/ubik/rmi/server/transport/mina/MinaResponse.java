@@ -10,12 +10,12 @@ import org.sapia.ubik.rmi.server.VmId;
 /**
  * Encapsulates data necessary for marshalling the response properly.
  * 
- * @see NioResponseEncoder
+ * @see MinaResponseEncoder
  * 
  * @author yduchesne
  * 
  */
-public class NioResponse implements Externalizable {
+public class MinaResponse implements Externalizable {
   
   private VmId   associatedVmId;
   private Object object;

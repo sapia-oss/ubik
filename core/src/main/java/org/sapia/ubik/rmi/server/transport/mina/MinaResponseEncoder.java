@@ -19,7 +19,7 @@ import org.sapia.ubik.util.Props;
  * @author yduchesne
  *
  */
-public class NioResponseEncoder implements ProtocolEncoder {
+public class MinaResponseEncoder implements ProtocolEncoder {
 	
   private static final int BUFSIZE = Props.getSystemProperties().getIntProperty(
                                   			Consts.MARSHALLING_BUFSIZE, 
@@ -61,12 +61,12 @@ public class NioResponseEncoder implements ProtocolEncoder {
       sess.setAttribute(ENCODER_STATE, es);
     }
     es.outgoing.clear();
-    NioResponse resp = (NioResponse)toEncode;
+    MinaResponse resp = (MinaResponse)toEncode;
     es.outgoing.putInt(0); // reserve space for length header
     doEncode(resp, es.outgoing, es.getObjectOutputStream(), output);
   }
   
-  void doEncode(NioResponse toEncode, ByteBuffer outputBuffer, ObjectOutputStream outputStream, ProtocolEncoderOutput output) throws Exception {
+  void doEncode(MinaResponse toEncode, ByteBuffer outputBuffer, ObjectOutputStream outputStream, ProtocolEncoderOutput output) throws Exception {
     ((RmiObjectOutput)outputStream).setUp(toEncode.getAssociatedVmId(), toEncode.getTransportType());
     outputStream.writeObject(toEncode.getObject());
     outputStream.flush();

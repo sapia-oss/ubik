@@ -75,17 +75,17 @@ public class StubProcessor implements Module {
   private Stopwatch                 stubCreation    = Stats.createStopwatch(
       getClass(), 
       "StubCreation", 
-      "Avg stub creation time");
+      "Stub creation time");
 
   private Stopwatch                 handlerCreation = Stats.createStopwatch(
       getClass(), 
       "InvocationHandlerCreation", 
-      "Avg handler creation time");
+      "Handler creation time");
   
   private Stopwatch                 enrichment      = Stats.createStopwatch(
       getClass(), 
       "StubEnrichment", 
-      "Avg stub enrichment time");  
+      "Stub enrichment time");  
   
   private ServerTable   serverTable;
   

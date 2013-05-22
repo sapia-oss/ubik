@@ -2,6 +2,7 @@ package org.sapia.ubik.net.netty;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.nio.channels.ClosedChannelException;
 
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBufferOutputStream;

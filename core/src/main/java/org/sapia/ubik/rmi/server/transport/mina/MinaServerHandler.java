@@ -20,13 +20,13 @@ import org.sapia.ubik.rmi.server.transport.CommandHandler;
  * @author yduchesne
  *
  */
-public class NioHandler extends IoHandlerAdapter{
+public class MinaServerHandler extends IoHandlerAdapter{
   
   private Category       log      = Log.createCategory(getClass());
   private ServerAddress  addr;
   private CommandHandler handler;
   
-  public NioHandler(MultiDispatcher dispatcher, ServerAddress addr){
+  public MinaServerHandler(MultiDispatcher dispatcher, ServerAddress addr){
     this.addr = addr;
     handler = new CommandHandler(dispatcher, getClass());
   }
@@ -43,7 +43,7 @@ public class NioHandler extends IoHandlerAdapter{
   public void messageReceived(IoSession sess, Object msg) throws Exception {
     InetSocketAddress remoteAddr = (InetSocketAddress) sess.getRemoteAddress();
     log.debug(getClass(), "Handling request from %s:%s", remoteAddr.getHostString(), remoteAddr.getPort());
-    NioTcpRmiServerConnection conn = new NioTcpRmiServerConnection(new NioAddress(remoteAddr.getHostString(), remoteAddr.getPort()), sess, msg);
+    MinaRmiServerConnection conn = new MinaRmiServerConnection(new MinaAddress(remoteAddr.getHostString(), remoteAddr.getPort()), sess, msg);
     Request                   req  = new Request(conn, addr);
 
     RMICommand cmd;

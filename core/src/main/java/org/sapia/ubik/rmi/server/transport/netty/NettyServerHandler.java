@@ -99,7 +99,7 @@ class NettyServerHandler extends SimpleChannelHandler {
           @Override
           public void operationComplete(ChannelFuture future) throws Exception {
             if (!future.isSuccess()) {
-              log.error("Could not write back response %s", future.getCause(), conn.getResponse());
+              log.info("Could not write back response %s", future.getCause(), conn.getResponse());
             }
           }
         });

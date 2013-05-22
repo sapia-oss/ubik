@@ -11,13 +11,13 @@ import org.sapia.ubik.rmi.server.transport.RmiConnection;
 /**
  * @author Yanick Duchesne
  */
-public class NioTcpRmiServerConnection implements RmiConnection {
+public class MinaRmiServerConnection implements RmiConnection {
 
   private IoSession     session;
   private ServerAddress addr;
   private Object        received;
 
-  NioTcpRmiServerConnection(ServerAddress addr, IoSession session, Object received) {
+  MinaRmiServerConnection(ServerAddress addr, IoSession session, Object received) {
     this.addr     = addr;
     this.session  = session;
     this.received = received; 
@@ -59,7 +59,7 @@ public class NioTcpRmiServerConnection implements RmiConnection {
   public void send(Object o, VmId associated, String transportType)
       throws IOException, RemoteException {
     
-    NioResponse resp = new NioResponse();
+    MinaResponse resp = new MinaResponse();
     resp.setObject(o);
     if(associated != null && transportType != null) {
       resp.setAssociatedVmId(associated);

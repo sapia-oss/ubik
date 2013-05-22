@@ -9,12 +9,12 @@ import org.sapia.ubik.util.Strings;
 
 /**
  * A convenience class that can be used to export remote objects through the NIO TCP transport
- * (see {@link NioTcpTransportProvider}).
+ * (see {@link MinaTransportProvider}).
  * 
  * @author yduchesne
  *
  */
-public class NioServerExporter {
+public class MinaServerExporter {
   
   private int        port;
   private String     bindAddress;
@@ -33,7 +33,7 @@ public class NioServerExporter {
    * @param bufferSize a buffer size.
    * @return this instance.
    */
-  public NioServerExporter bufferSize(int bufferSize) {
+  public MinaServerExporter bufferSize(int bufferSize) {
     this.bufferSize = bufferSize;
     return this;
   }
@@ -50,7 +50,7 @@ public class NioServerExporter {
    * @return this instance.
    * @see #getPort()
    */
-  public NioServerExporter port(int port) {
+  public MinaServerExporter port(int port) {
     this.port = port;
     return this;
   }
@@ -67,7 +67,7 @@ public class NioServerExporter {
    * @return this instance.
    * @see #getBindAddress()
    */
-  public NioServerExporter bindAddress(String bindAddress) {
+  public MinaServerExporter bindAddress(String bindAddress) {
     this.bindAddress = bindAddress;
     return this;
   }
@@ -85,7 +85,7 @@ public class NioServerExporter {
    * @return this instance
    * @see #getMaxThreads()
    */
-  public NioServerExporter maxThreads(int maxThreads) {
+  public MinaServerExporter maxThreads(int maxThreads) {
     this.maxThreads = maxThreads;
     return this;
   }
@@ -97,7 +97,7 @@ public class NioServerExporter {
    * @param value the property value.
    * @return this instance.
    */
-  public NioServerExporter property(String name, String value) {
+  public MinaServerExporter property(String name, String value) {
     props.setProperty(name, value);
     return this;
   }
@@ -114,12 +114,12 @@ public class NioServerExporter {
    * @throws RemoteException if a problem occurred trying to export the object.
    */
   public Object export(Object toExport) throws RemoteException {
-    props.setProperty(Consts.TRANSPORT_TYPE, NioTcpTransportProvider.TRANSPORT_TYPE);
+    props.setProperty(Consts.TRANSPORT_TYPE, MinaTransportProvider.TRANSPORT_TYPE);
     if(port > 0) {
-      props.setProperty(NioTcpTransportProvider.PORT, Integer.toString(port));
+      props.setProperty(MinaTransportProvider.PORT, Integer.toString(port));
     }
     if(bindAddress != null) {
-      props.setProperty(NioTcpTransportProvider.BIND_ADDRESS, bindAddress);
+      props.setProperty(MinaTransportProvider.BIND_ADDRESS, bindAddress);
     }
     if(bufferSize > 0) {
       props.setProperty(Consts.MARSHALLING_BUFSIZE, Integer.toString(bufferSize));

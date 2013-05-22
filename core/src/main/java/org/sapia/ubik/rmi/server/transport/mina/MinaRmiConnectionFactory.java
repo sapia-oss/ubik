@@ -10,14 +10,14 @@ import org.sapia.ubik.net.Connection;
 import org.sapia.ubik.net.SocketConnectionFactory;
 
 /**
- * Implements a factory of {@link NioTcpRmiClientConnection} instances.
+ * Implements a factory of {@link MinaRmiClientConnection} instances.
  */
-public class NioRmiConnectionFactory extends SocketConnectionFactory {
+public class MinaRmiConnectionFactory extends SocketConnectionFactory {
   
   private int bufsize;
   
-  public NioRmiConnectionFactory(int bufsize) {
-  	super(NioTcpTransportProvider.TRANSPORT_TYPE);
+  public MinaRmiConnectionFactory(int bufsize) {
+  	super(MinaTransportProvider.TRANSPORT_TYPE);
     this.bufsize = bufsize;
   }
 
@@ -25,7 +25,7 @@ public class NioRmiConnectionFactory extends SocketConnectionFactory {
    * @see org.sapia.ubik.net.SocketConnectionFactory#newConnection(Socket)
    */
   public Connection newConnection(Socket sock) throws IOException {
-    return new NioTcpRmiClientConnection(sock, bufsize);
+    return new MinaRmiClientConnection(sock, bufsize);
   }
 
   /**
@@ -33,7 +33,7 @@ public class NioRmiConnectionFactory extends SocketConnectionFactory {
    */
   public Connection newConnection(String host, int port) throws IOException {
     try {
-      return new NioTcpRmiClientConnection(new Socket(host, port), bufsize);
+      return new MinaRmiClientConnection(new Socket(host, port), bufsize);
     } catch (ConnectException e) {
       throw new RemoteException(String.format("Could not connect to %s:%s", host, port));
     } catch (SocketException e) {

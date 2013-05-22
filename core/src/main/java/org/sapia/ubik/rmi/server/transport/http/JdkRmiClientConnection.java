@@ -10,9 +10,12 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.rmi.RemoteException;
 
+import org.javasimon.Split;
+import org.javasimon.Stopwatch;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.VmId;
+import org.sapia.ubik.rmi.server.stats.Stats;
 import org.sapia.ubik.rmi.server.transport.MarshalStreamFactory;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
 import org.sapia.ubik.rmi.server.transport.RmiObjectOutput;
@@ -26,6 +29,13 @@ import org.sapia.ubik.util.Props;
  * @author Yanick Duchesne
  */
 public class JdkRmiClientConnection implements RmiConnection {
+  
+  private static Stopwatch serializationTime   = Stats.createStopwatch(JdkRmiClientConnection.class, 
+      "SerializationDuration", "Time required to serialize an object");
+
+  private static Stopwatch sendTime = Stats.createStopwatch(JdkRmiClientConnection.class, 
+      "SendDuration", "Time required to send an object over the network");
+  
   private static final String POST_METHOD           = "POST";
   private static final String CONTENT_LENGTH_HEADER = "Content-Length";
   private HttpAddress         address;
@@ -57,10 +67,13 @@ public class JdkRmiClientConnection implements RmiConnection {
       ((RmiObjectOutput)mos).setUp(associated, transportType);
     }
 
+    Split split = serializationTime.start();
     mos.writeObject(o);
     mos.flush();
     mos.close();
+    split.stop();
 
+    split = sendTime.start();
     byte[] data = bos.toByteArray();
 
     if (data.length > bufsz) {
@@ -73,6 +86,7 @@ public class JdkRmiClientConnection implements RmiConnection {
     os.write(data);
     os.flush();
     os.close();
+    split.stop();
   }
 
   /**

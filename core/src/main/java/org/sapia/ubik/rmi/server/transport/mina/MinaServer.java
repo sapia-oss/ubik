@@ -24,18 +24,18 @@ import org.sapia.ubik.rmi.server.Server;
  * @author Yanick Duchesne
  * 
  */
-class NioServer implements Server{
+class MinaServer implements Server{
 	
 	private Category          log = Log.createCategory(getClass());
 
   private SocketAcceptor       acceptor;
   private InetSocketAddress    inetAddr;
-  private NioAddress           addr;
-  private NioHandler           handler;
+  private MinaAddress           addr;
+  private MinaServerHandler           handler;
   private ConfigurableExecutor executor;
 
   /**
-   * This constructor is called by a {@link NioTcpTransportProvider} instance. The <code>maxThreads</code> 
+   * This constructor is called by a {@link MinaTransportProvider} instance. The <code>maxThreads</code> 
    * argument allows specifying the maximum number of IO processor threads that will be used by this instance.
    * <p>
    * See the <a href="http://mina.apache.org/configuring-thread-model.html">threading model</a> page on Mina's site
@@ -47,10 +47,10 @@ class NioServer implements Server{
    * 
    * @throws IOException if a problem occurs while creating this instance.
    */
-  NioServer(InetSocketAddress inetAddr, int bufsize, ThreadingConfiguration conf) throws IOException {
+  MinaServer(InetSocketAddress inetAddr, int bufsize, ThreadingConfiguration conf) throws IOException {
     this.acceptor = new SocketAcceptor(Runtime.getRuntime().availableProcessors() + 1, Executors.newCachedThreadPool());
     executor = new ConfigurableExecutor(conf, NamedThreadFactory.createWith("Ubik.NioServer").setDaemon(true));
-    acceptor.getFilterChain().addLast("protocol", new ProtocolCodecFilter(new NioCodecFactory()));
+    acceptor.getFilterChain().addLast("protocol", new ProtocolCodecFilter(new MinaCodecFactory()));
     acceptor.getFilterChain().addLast("threads", new ExecutorFilter(executor));    
     
     if(inetAddr.getPort() != 0){
@@ -63,8 +63,8 @@ class NioServer implements Server{
       this.inetAddr = new InetSocketAddress(inetAddr.getAddress().getHostAddress(), randomPort);
     }
     log.info("Binding to address: %s", this.inetAddr);      
-    addr = new NioAddress(this.inetAddr.getAddress().getHostAddress(), this.inetAddr.getPort());
-    handler = new NioHandler(Hub.getModules().getServerRuntime().getDispatcher(), addr);    
+    addr = new MinaAddress(this.inetAddr.getAddress().getHostAddress(), this.inetAddr.getPort());
+    handler = new MinaServerHandler(Hub.getModules().getServerRuntime().getDispatcher(), addr);    
   }
   
   /**

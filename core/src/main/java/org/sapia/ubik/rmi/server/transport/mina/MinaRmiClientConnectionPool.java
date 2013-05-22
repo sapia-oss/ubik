@@ -10,12 +10,12 @@ import org.sapia.ubik.util.pool.NoObjectAvailableException;
 import org.sapia.ubik.util.pool.PooledObjectCreationException;
 
 /**
- * Implements a pool of client-side {@link NioTcpRmiClientConnection} instances.
+ * Implements a pool of client-side {@link MinaRmiClientConnection} instances.
  * It multiplexes the pooled connections among multiple callers.
  * 
  * @author Yanick Duchesne
  */
-public class NioTcpClientConnectionPool implements Connections {
+public class MinaRmiClientConnectionPool implements Connections {
   
   private ConnectionPool pool;
 
@@ -27,11 +27,11 @@ public class NioTcpClientConnectionPool implements Connections {
    * @param bufsize 
    * 					the size of connection buffers.
    */
-  NioTcpClientConnectionPool(String host, int port, int bufsize) {
+  MinaRmiClientConnectionPool(String host, int port, int bufsize) {
     pool = new ConnectionPool.Builder()
       .host(host)
       .port(port)
-      .connectionFactory(new NioRmiConnectionFactory(bufsize))
+      .connectionFactory(new MinaRmiConnectionFactory(bufsize))
       .build();
   }
 
@@ -67,7 +67,7 @@ public class NioTcpClientConnectionPool implements Connections {
 
   @Override
   public String getTransportType() {
-    return NioTcpTransportProvider.TRANSPORT_TYPE;
+    return MinaTransportProvider.TRANSPORT_TYPE;
   }
 
   ConnectionPool internalPool() {

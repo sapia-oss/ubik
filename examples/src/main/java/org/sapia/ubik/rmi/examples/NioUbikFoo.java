@@ -9,8 +9,8 @@ import org.sapia.ubik.log.Log;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.naming.remote.RemoteInitialContextFactory;
 import org.sapia.ubik.rmi.server.Hub;
-import org.sapia.ubik.rmi.server.transport.mina.NioAddress;
-import org.sapia.ubik.rmi.server.transport.mina.NioTcpTransportProvider;
+import org.sapia.ubik.rmi.server.transport.mina.MinaAddress;
+import org.sapia.ubik.rmi.server.transport.mina.MinaTransportProvider;
 
 
 /**
@@ -43,8 +43,8 @@ public class NioUbikFoo implements Foo {
       
       props = new Properties();
       props.setProperty(Consts.TRANSPORT_TYPE,
-        NioTcpTransportProvider.TRANSPORT_TYPE);
-      props.setProperty(NioTcpTransportProvider.PORT, "6060");
+        MinaTransportProvider.TRANSPORT_TYPE);
+      props.setProperty(MinaTransportProvider.PORT, "6060");
       props.setProperty(Consts.SERVER_MAX_THREADS, "10");
       
       foo = (Foo)Hub.exportObject(foo, props);

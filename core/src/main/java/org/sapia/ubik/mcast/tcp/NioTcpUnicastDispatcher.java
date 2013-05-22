@@ -2,7 +2,6 @@ package org.sapia.ubik.mcast.tcp;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -16,7 +15,6 @@ import org.sapia.ubik.net.ConnectionFactory;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.TCPAddress;
 import org.sapia.ubik.net.TcpPortSelector;
-import org.sapia.ubik.util.Assertions;
 import org.sapia.ubik.util.Localhost;
 
 /**
@@ -52,11 +50,13 @@ public class NioTcpUnicastDispatcher extends BaseTcpUnicastDispatcher {
   private int               maxThreads;
   private int               marshallingBufferSize;
   
-  public NioTcpUnicastDispatcher(EventConsumer consumer, int maxThreads, int marshallingBufferSize) {
+  public NioTcpUnicastDispatcher(EventConsumer consumer, int maxThreads, int marshallingBufferSize) throws IOException {
     super(consumer);
     this.handler    = new NioTcpUnicastHandler(consumer);
     this.maxThreads = maxThreads;
     this.marshallingBufferSize = marshallingBufferSize;
+    String host = Localhost.getAnyLocalAddress().getHostAddress();
+    socketAddress = new InetSocketAddress(host, new TcpPortSelector().select(host));
   }
   
   // --------------------------------------------------------------------------
@@ -64,7 +64,6 @@ public class NioTcpUnicastDispatcher extends BaseTcpUnicastDispatcher {
   
   @Override
   public ServerAddress getAddress() throws IllegalStateException {
-    Assertions.illegalState(address == null, "ServerAddress not set");
     return address;
   }
 
@@ -99,28 +98,8 @@ public class NioTcpUnicastDispatcher extends BaseTcpUnicastDispatcher {
       this.executor = Executors.newFixedThreadPool(maxThreads);
     }   
     
-    int port = 0;
-    try {
-      socketAddress = new InetSocketAddress(Localhost.getAnyLocalAddress().getHostAddress(), port);
-    } catch (UnknownHostException e) {
-      throw new IllegalStateException("Could not create bind address", e);
-    }
-    
     acceptor.getFilterChain().addLast("protocol", new ProtocolCodecFilter(new NioTcpUnicastCodecFactory()));
     acceptor.getFilterChain().addLast("threads", new ExecutorFilter(executor));    
-    
-    if(socketAddress.getPort() != 0){
-      log.info("Using port %s", socketAddress.getPort());
-    }
-    else{
-      try {
-        int randomPort = new TcpPortSelector().select(socketAddress.getAddress().getHostAddress());
-        log.info("Using random port %s", randomPort);      
-        socketAddress = new InetSocketAddress(socketAddress.getAddress().getHostAddress(), randomPort);
-      } catch (IOException e) {
-        throw new IllegalStateException("Could not determine random port", e);
-      }
-    }
     
     log.info("Binding to address: %s", socketAddress);      
     this.address = new NioTcpUnicastAddress(socketAddress.getAddress().getHostAddress(), socketAddress.getPort());

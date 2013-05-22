@@ -16,8 +16,8 @@ import org.sapia.ubik.mcast.RemoteEvent;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.naming.remote.archie.UbikRemoteContext;
 import org.sapia.ubik.rmi.server.Hub;
-import org.sapia.ubik.rmi.server.transport.mina.NioAddress;
-import org.sapia.ubik.rmi.server.transport.mina.NioTcpTransportProvider;
+import org.sapia.ubik.rmi.server.transport.mina.MinaAddress;
+import org.sapia.ubik.rmi.server.transport.mina.MinaTransportProvider;
 import org.sapia.ubik.util.Assertions;
 import org.sapia.ubik.util.Localhost;
 import org.sapia.ubik.util.Props;
@@ -127,7 +127,7 @@ public class EmbeddableJNDIServer implements RemoteContextProvider, AsyncEventLi
     if(evt.getType().equals(JNDIConsts.JNDI_CLIENT_PUBLISH)){
       try{
         channel.dispatch(JNDIConsts.JNDI_SERVER_DISCO,
-            new NioAddress(Localhost.getAnyLocalAddress().getHostAddress(), port));
+            new MinaAddress(Localhost.getAnyLocalAddress().getHostAddress(), port));
       }catch(Exception e){
         log.warning("Could not dispatch JNDI server publishing event", e);
       }
@@ -190,14 +190,14 @@ public class EmbeddableJNDIServer implements RemoteContextProvider, AsyncEventLi
       
       channel.registerAsyncListener(JNDIConsts.JNDI_CLIENT_PUBLISH, this);
 
-      NioAddress address = new NioAddress(Localhost.getAnyLocalAddress().getHostAddress(), port); 
+      MinaAddress address = new MinaAddress(Localhost.getAnyLocalAddress().getHostAddress(), port); 
 
       root = UbikRemoteContext.newInstance(channel);
 
       Properties props = new Properties();
-      props.setProperty(Consts.TRANSPORT_TYPE, NioTcpTransportProvider.TRANSPORT_TYPE);
-      props.setProperty(NioTcpTransportProvider.BIND_ADDRESS, address.getHost());
-      props.setProperty(NioTcpTransportProvider.PORT, Integer.toString(address.getPort()));
+      props.setProperty(Consts.TRANSPORT_TYPE, MinaTransportProvider.TRANSPORT_TYPE);
+      props.setProperty(MinaTransportProvider.BIND_ADDRESS, address.getHost());
+      props.setProperty(MinaTransportProvider.PORT, Integer.toString(address.getPort()));
       Hub.exportObject(this, props);
       
       channel.dispatch(JNDIConsts.JNDI_SERVER_PUBLISH, address);

@@ -14,8 +14,11 @@ import java.net.SocketException;
 import java.rmi.RemoteException;
 
 import org.apache.mina.common.ByteBuffer;
+import org.javasimon.Split;
+import org.javasimon.Stopwatch;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.server.VmId;
+import org.sapia.ubik.rmi.server.stats.Stats;
 import org.sapia.ubik.rmi.server.transport.MarshalOutputStream;
 import org.sapia.ubik.rmi.server.transport.MarshalStreamFactory;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
@@ -25,7 +28,13 @@ import org.sapia.ubik.util.MinaByteBufferOutputStream;
 /**
  * A connection over a Socket the connection uses the {@link MarshalOutputStream} class to serialize outgoing objects.
  */
-public class NioTcpRmiClientConnection implements RmiConnection {
+public class MinaRmiClientConnection implements RmiConnection {
+  
+  private static Stopwatch serializationTime   = Stats.createStopwatch(MinaRmiClientConnection.class, 
+      "SerializationDuration", "Time required to serialize an object");
+
+  private static Stopwatch sendTime = Stats.createStopwatch(MinaRmiClientConnection.class, 
+      "SendDuration", "Time required to send an object over the network");
 	
   private Socket         		 sock;
   private int            		 bufsize;
@@ -34,9 +43,9 @@ public class NioTcpRmiClientConnection implements RmiConnection {
   private ObjectOutputStream oos;
   private ObjectInputStream  ois;
   
-  public NioTcpRmiClientConnection(Socket sock, int bufsize) throws IOException {
+  public MinaRmiClientConnection(Socket sock, int bufsize) throws IOException {
     this.sock 			= sock;
-    this.address 		= new NioAddress(sock.getInetAddress().getHostAddress(), sock.getPort());
+    this.address 		= new MinaAddress(sock.getInetAddress().getHostAddress(), sock.getPort());
     this.bufsize 		= bufsize;
     this.byteBuffer = ByteBuffer.allocate(bufsize);
     byteBuffer.setAutoExpand(true);
@@ -60,8 +69,11 @@ public class NioTcpRmiClientConnection implements RmiConnection {
     	oos = MarshalStreamFactory.createOutputStream(new MinaByteBufferOutputStream(byteBuffer));
     }
     ((RmiObjectOutput)oos).setUp(vmId, transportType);
+    
+    Split split = serializationTime.start();
     oos.writeObject(o);
     oos.flush();
+    split.stop();
 
     try {
       doSend();
@@ -78,8 +90,11 @@ public class NioTcpRmiClientConnection implements RmiConnection {
     if(oos == null) {
     	oos = MarshalStreamFactory.createOutputStream(new MinaByteBufferOutputStream(byteBuffer));
     }
+    
+    Split split = serializationTime.start();
     oos.writeObject(o);
     oos.flush();
+    split.stop();
     
     try {
       doSend();
@@ -119,7 +134,8 @@ public class NioTcpRmiClientConnection implements RmiConnection {
     byteBuffer.release();
   }
   
-  private void doSend() throws IOException{
+  private void doSend() throws IOException {
+    Split split = sendTime.start();
     OutputStream sos     = new BufferedOutputStream(sock.getOutputStream(), bufsize);
     DataOutputStream dos = new DataOutputStream(sos);
     byte[] toWrite 			 = new byte[byteBuffer.position()];
@@ -128,5 +144,6 @@ public class NioTcpRmiClientConnection implements RmiConnection {
     byteBuffer.get(toWrite);
     dos.write(toWrite);
     dos.flush();
+    split.stop();
   }
 }
