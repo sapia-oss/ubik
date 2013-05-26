@@ -10,27 +10,61 @@
     </sapia:section>  
   
     <sapia:sect-desc>
-      <p>The NIO/TCP transport provider would probably be more aptly named the Mina provider, since it is based on 
-      <a href="http://mina.apache.org/">Apache Mina</a> (1.1.7). This transport is extremely performant and scalable,
-      and is the recommended one for sustaining heavy load.</p>
+      <p>The NIO-based transport provider is based on 
+      <a href="http://mina.apache.org/">Apache Mina</a> (1.1.7). This transport is extremely performant and scalable. It is Ubik's
+      default transport provider.</p>
       
     </sapia:sect-desc>
-    
-    <sapia:sect2 title="Exporting a Server">
-    
-    
-      <p>Rather than using a more tedious approach, we recommend you use a <sapia:class link="../maven/api/org/sapia/ubik/rmi/server/transport/nio/tcp/NioServerExporter.html">NioServerExporter</sapia:class>, as follows:</p>
-<sapia:code>NioServerExporter exporter = new NioServerExporter();
-exporter.port(7070);
-Hello helloServer = exporter.export(new HelloImpl());</sapia:code>
 
-<p>The above exports the <sapia:class>HelloImpl</sapia:class> instance as a server, using the Mina-based transport. The stub that
-is returned by the <sapia:command>export()</sapia:command> method can then be bound to Ubik's JNDI, as such:</p>
+    <sapia:sect2 title="Usage">
 
-<sapia:code>Context context = JNDIContextBuilder.newInstance().domain("myDomain").build();
-context.bind("hello", helloServer);</sapia:code>
+    <sapia:sect-desc>
+      <p>You can export an object in two manners: using the on of the <sapia:class link="../maven/api/org/sapia/ubik/rmi/server/Hub.html">Hub</sapia:class> class <sapia:command>export(...)</sapia:command> methods, or using an instance of the <sapia:class link="../maven/api/org/sapia/ubik/rmi/server/transport/mina/MinaServerExporter.html">MinaServerExporter</sapia:class> class.</p>
+      
+    </sapia:sect-desc>
+
+      <sapia:sect3 title="Configuration">
+        <p>The Mina transport provider accepts multiple configuration properties. You may want to configure threading based on your server's use cases:</p>
+        <ul>
+	  <li><tt>ubik.rmi.server.core-threads</tt>: the minimum number threads for the worker thread pool (defaults to 5).</li>
+	  <li><tt>ubik.rmi.server.max-threads</tt>: the maximum number of threads for the worker thread pool (defaults to 25).</li>
+	  <li><tt>ubik.rmi.server.threads.queue-size</tt>: the size of the request queue assigned to the worker thread pool (defaults to 50).</li>
+	  <li><tt>ubik.rmi.server.threads.keep-alive</tt>: the maximum time (in seconds) to keep idle worker threads (defaults to 30 seconds) </li>	  
+	</ul>
+	<p>If you export an object using the hub's <sapia:command>export(Object o, Properties props)</sapia:command> and you target this provider,
+	you can specify the above-mentioned configuration properties as part of the given <sapia:class>Properties</sapia:class> argument; and you 
+	<b>must</b> specify the "type" identifier of this provider, with the following property (also in the properties passed in):</p>
+	<ul>
+	  <li><tt>ubik.rmi.transport.mplex.acceptor-threads</tt> (the property's value must be: <tt>nio/tcp/mina</tt>).</li>
+	</ul>
+	<sapia:note>
+	  When you bind an object to Ubik's JNDI implementation, and that object is not a stub corresponding to an already exported object, the
+	  JNDI implementation will export that object automatically, using this transport provider (since it is the default).
+	</sapia:note>
+      </sapia:sect3>
+
+    
+      <sapia:sect3 title="Exporting an Object">
+        <p>When you use the <sapia:class link="../maven/api/org/sapia/ubik/rmi/server/Hub.html">Hub</sapia:class>'s <sapia:command>export(Object o)</sapia:command>
+        or <sapia:command>export(Object o, int port)</sapia:command> methods, Ubik uses the Mina provider to start a server on a dynamic port, or on the user-specified
+        port. From then on, the object that you export can potentially receive remote method calls</p>
+      </sapia:sect3>
+    
+        <sapia:sect3 title="Using the Exporter">
+
+
+          <p>Rather than using a more tedious approach, we recommend you use a <sapia:class link="../maven/api/org/sapia/ubik/rmi/server/transport/mina/MinaServerExporter.html">MinaServerExporter</sapia:class>, as follows:</p>
+    <sapia:code>MinaServerExporter exporter = new NioServerExporter();
+    exporter.port(7070);
+    Hello helloServer = exporter.export(new HelloImpl());</sapia:code>
+
+    <p>The above exports the <sapia:class>HelloImpl</sapia:class> instance as a server, using the Mina-based transport. The stub that
+    is returned by the <sapia:command>export()</sapia:command> method can then be bound to Ubik's JNDI, as such:</p>
+
+    <sapia:code>Context context = JNDIContextBuilder.newInstance().domain("myDomain").build();
+    context.bind("hello", helloServer);</sapia:code>
+        </sapia:sect3>
     </sapia:sect2>
-    
   </sapia:sect1>
 
 </sapia:page>

@@ -10,9 +10,8 @@ import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.transport.http.HttpTransportProvider;
 import org.sapia.ubik.rmi.server.transport.memory.InMemoryTransportProvider;
-import org.sapia.ubik.rmi.server.transport.netty.NettyTransportProvider;
 import org.sapia.ubik.rmi.server.transport.mina.MinaTransportProvider;
-import org.sapia.ubik.rmi.server.transport.socket.MultiplexSocketTransportProvider;
+import org.sapia.ubik.rmi.server.transport.netty.NettyTransportProvider;
 import org.sapia.ubik.rmi.server.transport.socket.SocketTransportProvider;
 import org.sapia.ubik.util.Assertions;
 
@@ -24,9 +23,11 @@ import org.sapia.ubik.util.Assertions;
  * This class registers the following transport providers automatically:
  * 
  * <ul>
- *  <li> {@link MultiplexSocketTransportProvider}.
+ *  <li> {@link SocketTransportProvider}.
  *  <li> {@link MinaTransportProvider}.
+ *  <li> {@link NettyTransportProvider}.
  *  <li> {@link InMemoryTransportProvider}.
+ *  <li> {@link HttpTransportProvider}.  
  * </ul>
  *
  * @author Yanick Duchesne

@@ -1,7 +1,6 @@
 package org.sapia.ubik.rmi.server;
 
 import java.io.IOException;
-
 import java.net.ConnectException;
 import java.rmi.RemoteException;
 import java.util.Properties;
@@ -10,11 +9,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.ServerAddress;
-import org.sapia.ubik.net.netty.NettyAddress;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
 import org.sapia.ubik.rmi.server.transport.TransportManager;
+import org.sapia.ubik.rmi.server.transport.mina.MinaAddress;
 import org.sapia.ubik.rmi.server.transport.mina.MinaTransportProvider;
 
 /**
@@ -148,7 +147,7 @@ public class Hub {
    */
   public static Object connect(String host, int port) throws RemoteException {
     checkStarted();    
-    return connect(new NettyAddress(host, port));
+    return connect(new MinaAddress(host, port));
   }
 
   /**

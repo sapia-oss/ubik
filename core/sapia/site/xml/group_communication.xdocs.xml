@@ -95,7 +95,7 @@
       <p>
       	By default, the implementations of the dispacher abstractions that are used by an <sapia:class>EventChannel</sapia:class> are 
         <sapia:class link="maven/api/org/sapia/ubik/mcast/udp/UDPBroadcastDispatcher.html">UDPBroadcastDispatcher</sapia:class> and 
-        <sapia:class link="maven/api/org/sapia/ubik/mcast/tcp/NioTcpUnicastDispatcher.html">NioTcpUnicastDispatcher</sapia:class> respectively. The former
+        <sapia:class link="maven/api/org/sapia/ubik/mcast/tcp/mina/MinaTcpUnicastDispatcher.html">MinaTcpUnicastDispatcher</sapia:class> respectively. The former
         uses IP multicast to broadcast <sapia:class>RemoteEvent</sapia:class>s. It is by default configured to listen to multicast address and port
         <sapia:command>231.173.5.7</sapia:command> and <sapia:command>5454</sapia:command>, respectively. This can be configured through the following JVM properties:
         
@@ -135,7 +135,7 @@
       further splits are done, and the each of the nodes at that stage will relay the control message to the 9 remaining nodes it has in its set.
       </p>
       
-      <p>By default, since the size of control messages may be larger (given their payload in terms of having to carry node IDs around), the <a href="">NioTcpUnicastDispatcher</a>
+      <p>By default, since the size of control messages may be larger (given their payload in terms of having to carry node IDs around), the <a href="">MinaTcpUnicastDispatcher</a>
       is used: it implements point-to-point communication over TCP, using a NIO-based transport. You can change this to using UDP, although we really do not recommend it. see the 
       <a href="group_communication.html#udp_unicast">UDP Unicast</a> section for details.</p>
 

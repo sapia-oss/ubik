@@ -16,10 +16,9 @@
     </sapia:vsection>
     
     <sapia:vsection name="Transports">
-      <sapia:vitem name="HTTP" href="transport/http.html" />
-      <sapia:vitem name="Mplex" href="transport/mplex.html" />
-	  <sapia:vitem name="Standard/TCP" href="transport/standard_tcp.html" />
       <sapia:vitem name="NIO/TCP" href="transport/nio_tcp.html" />
+      <sapia:vitem name="HTTP" href="transport/http.html" />
+	  <sapia:vitem name="Standard/TCP" href="transport/standard_tcp.html" />
     </sapia:vsection>  
     
     <sapia:vsection name="Group Comm" href="group_communication.html">
