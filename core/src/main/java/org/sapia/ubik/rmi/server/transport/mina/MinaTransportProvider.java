@@ -12,12 +12,9 @@ import org.sapia.ubik.concurrent.ConfigurableExecutor.ThreadingConfiguration;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
-import org.sapia.ubik.rmi.server.Hub;
 import org.sapia.ubik.rmi.server.Server;
 import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.TransportProvider;
-import org.sapia.ubik.taskman.Task;
-import org.sapia.ubik.taskman.TaskContext;
 import org.sapia.ubik.util.Localhost;
 import org.sapia.ubik.util.Props;
 import org.sapia.ubik.util.Time;
@@ -63,8 +60,6 @@ public class MinaTransportProvider implements TransportProvider {
   												Consts.MARSHALLING_BUFSIZE, 
   												Consts.DEFAULT_MARSHALLING_BUFSIZE
   											);
-  
-  private volatile boolean started;
   
   private Map<ServerAddress, MinaRmiClientConnectionPool> pools = new ConcurrentHashMap<ServerAddress, MinaRmiClientConnectionPool>();
 
@@ -139,24 +134,12 @@ public class MinaTransportProvider implements TransportProvider {
         .setQueueSize(queueSize)
         .setKeepAlive(Time.createSeconds(keepAlive));
     
-    try{
+    try {
       MinaServer server = new MinaServer(addr, specificBufsize, threadConf);
       return server;
-    }catch(IOException e){
+    } catch(IOException e){
       throw new RemoteException("Could not create server", e);
-    } finally {
-      if(!started) {
-      	synchronized(this) {
-          if(!started) {
-            started = true;
-            Hub.getModules().getTaskManager().addTask(
-                new TaskContext(MinaRmiClientConnectionPool.class.getName(), PoolCleaner.INTERVAL),
-                new PoolCleaner(pools)
-            );
-          }
-      	}
-      }
-    }
+    } 
   }
 
   /**
@@ -167,31 +150,5 @@ public class MinaTransportProvider implements TransportProvider {
       pool.internalPool().shrinkTo(0);
     }
   }
-  
-  // --------------------------------------------------------------------------
-  
-  static final class PoolCleaner implements Task {
-    
-    static final long INTERVAL = 5000;
-    
-    Map<ServerAddress, MinaRmiClientConnectionPool> pools;
 
-    PoolCleaner(Map<ServerAddress, MinaRmiClientConnectionPool> pools) {
-      this.pools = pools;
-    }
-
-    public void exec(TaskContext context) {
-      MinaRmiClientConnectionPool[] toClean;
-
-      toClean = (MinaRmiClientConnectionPool[]) pools.values().toArray(new MinaRmiClientConnectionPool[pools.size()]);
-
-      for(int i = 0; i < toClean.length; i++) {
-        if((System.currentTimeMillis() - toClean[i].internalPool()
-            .getLastUsageTime()) > INTERVAL) {
-          Log.debug(getClass(), "Shrinking nio socket client connection pool...");
-          toClean[i].internalPool().shrinkTo(0);
-        }
-      }
-    }
-  }
 }

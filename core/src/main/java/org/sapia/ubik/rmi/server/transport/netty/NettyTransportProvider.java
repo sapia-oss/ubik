@@ -19,8 +19,6 @@ import org.sapia.ubik.rmi.server.Hub;
 import org.sapia.ubik.rmi.server.Server;
 import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.TransportProvider;
-import org.sapia.ubik.taskman.Task;
-import org.sapia.ubik.taskman.TaskContext;
 import org.sapia.ubik.util.Localhost;
 import org.sapia.ubik.util.Props;
 import org.sapia.ubik.util.Time;
@@ -138,33 +136,6 @@ public class NettyTransportProvider implements TransportProvider, NettyConsts {
   public synchronized void shutdown() {
     for(NettyClientConnectionPool pool : pools.values()) {
       pool.internalPool().shrinkTo(0);
-    }
-  }
-  
-  // --------------------------------------------------------------------------
-  
-  static final class PoolCleaner implements Task {
-    
-    static final long INTERVAL = 5000;
-    
-    Map<ServerAddress, NettyClientConnectionPool> pools;
-
-    PoolCleaner(Map<ServerAddress, NettyClientConnectionPool> pools) {
-      this.pools = pools;
-    }
-
-    public void exec(TaskContext context) {
-      NettyClientConnectionPool[] toClean;
-
-      toClean = (NettyClientConnectionPool[]) pools.values().toArray(new NettyClientConnectionPool[pools.size()]);
-
-      for(int i = 0; i < toClean.length; i++) {
-        if((System.currentTimeMillis() - toClean[i].internalPool()
-            .getLastUsageTime()) > INTERVAL) {
-          Log.debug(getClass(), "Shrinking nio socket client connection pool...");
-          toClean[i].internalPool().shrinkTo(0);
-        }
-      }
     }
   }
 
