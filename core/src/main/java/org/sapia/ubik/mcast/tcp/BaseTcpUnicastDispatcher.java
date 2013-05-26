@@ -11,6 +11,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.javasimon.Split;
+import org.javasimon.Stopwatch;
 import org.sapia.ubik.concurrent.BlockingCompletionQueue;
 import org.sapia.ubik.concurrent.NamedThreadFactory;
 import org.sapia.ubik.log.Category;
@@ -28,6 +30,8 @@ import org.sapia.ubik.net.ConnectionPool;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.TCPAddress;
 import org.sapia.ubik.net.ThreadInterruptedException;
+import org.sapia.ubik.rmi.server.stats.Stats;
+import org.sapia.ubik.util.Assertions;
 import org.sapia.ubik.util.pool.PooledObjectCreationException;
 
 /**
@@ -37,17 +41,16 @@ import org.sapia.ubik.util.pool.PooledObjectCreationException;
  *
  */
 public abstract class BaseTcpUnicastDispatcher implements UnicastDispatcher {
-
-  public static final String MAX_CONNECTIONS = "ubik.rmi.naming.unicast.tcp.max-connections";
-
-  public static final int DEFAULT_MAX_CONNECTIONS_PER_HOST = 3;
   
+  private Stopwatch syncSend      = Stats.createStopwatch(getClass(), "SyncSendTime", "Time required to send synchronously");
+  private Stopwatch asyncDispatch = Stats.createStopwatch(getClass(), "AsyncDispatchTime", "Time required to dispatch asynchronously");
+
   protected Category              log                   = Log.createCategory(getClass());
   protected EventConsumer         consumer;
   protected ConnectionPools       connections           = new ConnectionPools();
   private int                     responseTimeout       = Defaults.DEFAULT_SYNC_RESPONSE_TIMEOUT;
   private int                     senderCount           = Defaults.DEFAULT_SENDER_COUNT;
-  private int                     maxConnectionsPerHost = DEFAULT_MAX_CONNECTIONS_PER_HOST;
+  private int                     maxConnectionsPerHost = Defaults.DEFAULT_MAX_CONNECTIONS_PER_HOST;
   private ExecutorService         senders;
   
   /**
@@ -62,6 +65,7 @@ public abstract class BaseTcpUnicastDispatcher implements UnicastDispatcher {
    * @param responseTimeout the number of millis to wait for synchronous responses.
    */
   public void setResponseTimeout(int responseTimeout) {
+    Assertions.isTrue(responseTimeout > 0, "Response timeout must be greater than 0");
     this.responseTimeout = responseTimeout;
   }
   
@@ -73,6 +77,7 @@ public abstract class BaseTcpUnicastDispatcher implements UnicastDispatcher {
    * @see #send(List, String, Object)
    */
   public void setSenderCount(int senderCount) {
+    Assertions.isTrue(senderCount > 0, "Sender count must be greater than 0");
     this.senderCount = senderCount;
   }
   
@@ -80,6 +85,7 @@ public abstract class BaseTcpUnicastDispatcher implements UnicastDispatcher {
    * @param maxConnectionsPerHost the maximum number of connections to pool, by host.
    */
   public void setMaxConnectionsPerHost(int maxConnectionsPerHost) {
+    Assertions.isTrue(maxConnectionsPerHost > 0, "Max connections per host must be greater than 0");
     this.maxConnectionsPerHost = maxConnectionsPerHost;
   }
   
@@ -120,6 +126,7 @@ public abstract class BaseTcpUnicastDispatcher implements UnicastDispatcher {
       senders.execute(new Runnable() {
         
         public void run() {
+          Split split = syncSend.start();
           try {
             queue.add((Response) doSend(addr, evt, true, type));
           } catch (ClassNotFoundException e) {
@@ -160,8 +167,10 @@ public abstract class BaseTcpUnicastDispatcher implements UnicastDispatcher {
           } catch (InterruptedException e) {
             ThreadInterruptedException tie = new ThreadInterruptedException();
             throw tie;
+          } finally {
+            split.stop();
           }
-        }
+        } 
       });
     }
     
@@ -174,6 +183,9 @@ public abstract class BaseTcpUnicastDispatcher implements UnicastDispatcher {
 
     RemoteEvent evt = new RemoteEvent(null, type, data).setNode(consumer.getNode()).setSync();
     evt.setUnicastAddress(addr);
+    
+    Split split = syncSend.start();
+    
     try {
       return (Response) doSend(addr, evt, true, type);
     } catch (ClassNotFoundException e) {
@@ -194,12 +206,16 @@ public abstract class BaseTcpUnicastDispatcher implements UnicastDispatcher {
     } catch (InterruptedException e) {
       ThreadInterruptedException tie = new ThreadInterruptedException();
       throw tie;
+    } finally {
+      split.stop();
     }
   }
   
   @Override
   public void dispatch(ServerAddress addr, String type, Object data)
       throws IOException {
+    
+    Split split = asyncDispatch.start();
     
     try {
       RemoteEvent evt  = new RemoteEvent(null, type, data).setNode(consumer.getNode());
@@ -215,6 +231,8 @@ public abstract class BaseTcpUnicastDispatcher implements UnicastDispatcher {
     } catch (InterruptedException e) {
       ThreadInterruptedException tie = new ThreadInterruptedException();
       throw tie;
+    } finally {
+      split.stop();
     }
   }
   

@@ -52,6 +52,7 @@ public class Defaults {
   
   /**
    * The default minimum number of nodes in the cluster before a given node will trigger auto-resync. 
+   * 
    * @see #DEFAULT_RESYNC_INTERVAL
    * @see Consts#MCAST_RESYNC_NODE_COUNT
    */
@@ -66,4 +67,12 @@ public class Defaults {
    * The size for the splits of control requests/notifications.
    */
   public static final int DEFAULT_CONTROL_SPLIT_SIZE        = 5;
+  
+  /**
+   * The default number of maximum client connections for each remote peers.
+   * 
+   * @see Consts#MCAST_MAX_CLIENT_CONNECTIONS
+   */
+  public static final int DEFAULT_MAX_CONNECTIONS_PER_HOST = 3;
+
 }

@@ -1,4 +1,4 @@
-package org.sapia.ubik.mcast.tcp;
+package org.sapia.ubik.mcast.tcp.mina;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -11,48 +11,40 @@ import org.apache.mina.transport.socket.nio.SocketAcceptor;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.EventConsumer;
+import org.sapia.ubik.mcast.RemoteEvent;
+import org.sapia.ubik.mcast.tcp.BaseTcpUnicastDispatcher;
 import org.sapia.ubik.net.ConnectionFactory;
 import org.sapia.ubik.net.ServerAddress;
-import org.sapia.ubik.net.TCPAddress;
 import org.sapia.ubik.net.TcpPortSelector;
 import org.sapia.ubik.util.Localhost;
 
 /**
- * A TCP unicast dispatcher based on NIO.
+ * A TCP unicast dispatcher based on Mina.
  * 
  * @author yduchesne
  *
  */
-public class NioTcpUnicastDispatcher extends BaseTcpUnicastDispatcher {
+public class MinaTcpUnicastDispatcher extends BaseTcpUnicastDispatcher {
   
-  public static final class NioTcpUnicastAddress extends TCPAddress {
-
-    /** Meant for serialization only */
-    public NioTcpUnicastAddress() {
-    }
-    
-    public NioTcpUnicastAddress(String host, int port) {
-      super(TRANSPORT_TYPE, host, port);
-    }
-  }
-  
-  // ==========================================================================
-
-  public static final String TRANSPORT_TYPE  = "tcp-nio/unicast";
-
   private Category          log         = Log.createCategory(getClass());
 
-  private NioTcpUnicastHandler handler;
+  private MinaTcpUnicastHandler handler;
   private SocketAcceptor    acceptor;
   private ExecutorService   executor; 
   private ServerAddress     address;
   private InetSocketAddress socketAddress;
   private int               maxThreads;
   private int               marshallingBufferSize;
-  
-  public NioTcpUnicastDispatcher(EventConsumer consumer, int maxThreads, int marshallingBufferSize) throws IOException {
+
+  /**
+   * @param consumer the {@link EventConsumer} to notify of incoming {@link RemoteEvent}s.
+   * @param maxThreads the maximum number of worker threads.
+   * @param marshallingBufferSize the size of the buzzer used for serializing/deserializing.
+   * @throws IOException if a problem occurs attempting to acquire a network address.
+   */
+  public MinaTcpUnicastDispatcher(EventConsumer consumer, int maxThreads, int marshallingBufferSize) throws IOException {
     super(consumer);
-    this.handler    = new NioTcpUnicastHandler(consumer);
+    this.handler    = new MinaTcpUnicastHandler(consumer);
     this.maxThreads = maxThreads;
     this.marshallingBufferSize = marshallingBufferSize;
     String host = Localhost.getAnyLocalAddress().getHostAddress();
@@ -72,7 +64,7 @@ public class NioTcpUnicastDispatcher extends BaseTcpUnicastDispatcher {
   
   @Override
   protected String doGetTransportType() {
-    return TRANSPORT_TYPE;
+    return MinaTcpUnicastAddress.TRANSPORT_TYPE;
   }
 
   @Override
@@ -83,7 +75,7 @@ public class NioTcpUnicastDispatcher extends BaseTcpUnicastDispatcher {
   
   @Override
   protected ConnectionFactory doGetConnectionFactory(int soTimeout) {
-    return new NioTcpUnicastConnectionFactory(marshallingBufferSize);
+    return new MinaTcpUnicastConnectionFactory(marshallingBufferSize);
   }  
   
   @Override
@@ -98,11 +90,11 @@ public class NioTcpUnicastDispatcher extends BaseTcpUnicastDispatcher {
       this.executor = Executors.newFixedThreadPool(maxThreads);
     }   
     
-    acceptor.getFilterChain().addLast("protocol", new ProtocolCodecFilter(new NioTcpUnicastCodecFactory()));
+    acceptor.getFilterChain().addLast("protocol", new ProtocolCodecFilter(new MinaTcpUnicastCodecFactory()));
     acceptor.getFilterChain().addLast("threads", new ExecutorFilter(executor));    
     
     log.info("Binding to address: %s", socketAddress);      
-    this.address = new NioTcpUnicastAddress(socketAddress.getAddress().getHostAddress(), socketAddress.getPort());
+    this.address = new MinaTcpUnicastAddress(socketAddress.getAddress().getHostAddress(), socketAddress.getPort());
     try {
       acceptor.bind(socketAddress, handler);
     } catch (IOException e) {

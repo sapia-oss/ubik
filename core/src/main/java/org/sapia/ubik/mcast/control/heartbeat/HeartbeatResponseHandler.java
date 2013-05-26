@@ -21,7 +21,7 @@ import org.sapia.ubik.util.Collections2;
  */
 public class HeartbeatResponseHandler implements ControlResponseHandler {
 	
-	private Category log = Log.createCategory(getClass());
+	private Category   log = Log.createCategory(getClass());
 	
 	private ControllerContext context;
 	private Set<String> 		  targetedNodes;

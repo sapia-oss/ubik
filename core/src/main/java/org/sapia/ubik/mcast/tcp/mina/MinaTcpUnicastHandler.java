@@ -1,4 +1,4 @@
-package org.sapia.ubik.mcast.tcp;
+package org.sapia.ubik.mcast.tcp.mina;
 
 import org.apache.mina.common.IoHandlerAdapter;
 import org.apache.mina.common.IoSession;
@@ -15,13 +15,13 @@ import org.sapia.ubik.mcast.Response;
  * @author yduchesne
  *
  */
-public class NioTcpUnicastHandler extends IoHandlerAdapter{
+public class MinaTcpUnicastHandler extends IoHandlerAdapter{
   
   private Category       log      = Log.createCategory(getClass());
   private EventConsumer  consumer;
 
   
-  public NioTcpUnicastHandler(EventConsumer consumer){
+  public MinaTcpUnicastHandler(EventConsumer consumer){
     this.consumer = consumer;
   }
   

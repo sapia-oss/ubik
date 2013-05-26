@@ -9,8 +9,8 @@ import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.avis.AvisBroadcastDispatcher;
 import org.sapia.ubik.mcast.memory.InMemoryBroadcastDispatcher;
 import org.sapia.ubik.mcast.memory.InMemoryUnicastDispatcher;
-import org.sapia.ubik.mcast.tcp.NioTcpUnicastDispatcher;
 import org.sapia.ubik.mcast.tcp.TcpUnicastDispatcher;
+import org.sapia.ubik.mcast.tcp.mina.MinaTcpUnicastDispatcher;
 import org.sapia.ubik.mcast.udp.UDPBroadcastDispatcher;
 import org.sapia.ubik.mcast.udp.UDPUnicastDispatcher;
 import org.sapia.ubik.rmi.Consts;
@@ -67,13 +67,13 @@ public final class DispatcherFactory {
     } else {
       if (isNioEnabled) {
         log.info("Creating NIO TCP unicast provider");
-        NioTcpUnicastDispatcher dispatcher = new NioTcpUnicastDispatcher(
+        MinaTcpUnicastDispatcher dispatcher = new MinaTcpUnicastDispatcher(
             consumer, 
             props.getIntProperty(Consts.MCAST_HANDLER_COUNT, Defaults.DEFAULT_HANDLER_COUNT),
             props.getIntProperty(Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE)
         );
         dispatcher.setSenderCount(props.getIntProperty(Consts.MCAST_SENDER_COUNT, Defaults.DEFAULT_SENDER_COUNT));
-        dispatcher.setMaxConnectionsPerHost(props.getIntProperty(TcpUnicastDispatcher.MAX_CONNECTIONS, TcpUnicastDispatcher.DEFAULT_MAX_CONNECTIONS_PER_HOST));
+        dispatcher.setMaxConnectionsPerHost(props.getIntProperty(Consts.MCAST_MAX_CLIENT_CONNECTIONS, Defaults.DEFAULT_MAX_CONNECTIONS_PER_HOST));
         dispatcher.setResponseTimeout(props.getIntProperty(Consts.MCAST_SYNC_RESPONSE_TIMEOUT, Defaults.DEFAULT_SYNC_RESPONSE_TIMEOUT));
         return dispatcher;
       } else {
@@ -83,7 +83,7 @@ public final class DispatcherFactory {
         threadingConfig.setCorePoolSize(props.getIntProperty(Consts.MCAST_HANDLER_COUNT, Defaults.DEFAULT_HANDLER_COUNT));
         TcpUnicastDispatcher dispatcher = new TcpUnicastDispatcher(consumer, threadingConfig);
         dispatcher.setSenderCount(props.getIntProperty(Consts.MCAST_SENDER_COUNT, Defaults.DEFAULT_SENDER_COUNT));
-        dispatcher.setMaxConnectionsPerHost(props.getIntProperty(TcpUnicastDispatcher.MAX_CONNECTIONS, TcpUnicastDispatcher.DEFAULT_MAX_CONNECTIONS_PER_HOST));
+        dispatcher.setMaxConnectionsPerHost(props.getIntProperty(Consts.MCAST_MAX_CLIENT_CONNECTIONS, Defaults.DEFAULT_MAX_CONNECTIONS_PER_HOST));
         dispatcher.setResponseTimeout(props.getIntProperty(Consts.MCAST_SYNC_RESPONSE_TIMEOUT, Defaults.DEFAULT_SYNC_RESPONSE_TIMEOUT));
         return dispatcher;
       }

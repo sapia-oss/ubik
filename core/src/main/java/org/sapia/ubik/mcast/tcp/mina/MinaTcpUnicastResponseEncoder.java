@@ -1,4 +1,4 @@
-package org.sapia.ubik.mcast.tcp;
+package org.sapia.ubik.mcast.tcp.mina;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
@@ -18,7 +18,7 @@ import org.sapia.ubik.util.Props;
  * @author yduchesne
  *
  */
-public class NioTcpUnicastResponseEncoder implements ProtocolEncoder {
+public class MinaTcpUnicastResponseEncoder implements ProtocolEncoder {
 	
   private static final int BUFSIZE = Props.getSystemProperties().getIntProperty(
                                   			Consts.MARSHALLING_BUFSIZE, 

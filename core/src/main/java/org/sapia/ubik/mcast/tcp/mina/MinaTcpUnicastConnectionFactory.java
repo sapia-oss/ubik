@@ -1,4 +1,4 @@
-package org.sapia.ubik.mcast.tcp;
+package org.sapia.ubik.mcast.tcp.mina;
 
 import java.io.IOException;
 import java.net.ConnectException;
@@ -10,27 +10,27 @@ import org.sapia.ubik.net.Connection;
 import org.sapia.ubik.net.SocketConnectionFactory;
 
 /**
- * Implements a factory of {@link NioTcpUnicastConnection} instances.
+ * Implements a factory of {@link MinaTcpUnicastConnection} instances.
  */
-public class NioTcpUnicastConnectionFactory extends SocketConnectionFactory {
+public class MinaTcpUnicastConnectionFactory extends SocketConnectionFactory {
   
   private int bufsize;
   
-  public NioTcpUnicastConnectionFactory(int bufsize) {
-  	super(NioTcpUnicastDispatcher.TRANSPORT_TYPE);
+  public MinaTcpUnicastConnectionFactory(int bufsize) {
+  	super(MinaTcpUnicastAddress.TRANSPORT_TYPE);
     this.bufsize = bufsize;
   }
 
   @Override
   public Connection newConnection(Socket sock) throws IOException {
-    NioTcpUnicastConnection conn = new NioTcpUnicastConnection(sock, bufsize);
+    MinaTcpUnicastConnection conn = new MinaTcpUnicastConnection(sock, bufsize);
     return conn;
   }
 
   @Override
   public Connection newConnection(String host, int port) throws IOException {
     try {
-      return new NioTcpUnicastConnection(new Socket(host, port), bufsize);
+      return new MinaTcpUnicastConnection(new Socket(host, port), bufsize);
     } catch (ConnectException e) {
       throw new RemoteException(String.format("Could not connect to %s:%s", host, port));
     } catch (SocketException e) {

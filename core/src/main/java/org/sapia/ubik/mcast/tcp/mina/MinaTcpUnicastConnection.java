@@ -1,4 +1,4 @@
-package org.sapia.ubik.mcast.tcp;
+package org.sapia.ubik.mcast.tcp.mina;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -20,18 +20,18 @@ import org.sapia.ubik.serialization.SerializationStreams;
 import org.sapia.ubik.util.MinaByteBufferOutputStream;
 
 /**
- * A client-connection used to connect to a {@link NioTcpUnicastDispatcher}.
+ * A client-connection used to connect to a {@link MinaTcpUnicastDispatcher}.
  */
-public class NioTcpUnicastConnection implements Connection {
+public class MinaTcpUnicastConnection implements Connection {
 	
   private Socket         		 sock;
   private int            		 bufsize;
   private ServerAddress  		 address;
   private ByteBuffer		 		 byteBuffer;
   
-  public NioTcpUnicastConnection(Socket sock, int bufsize) throws IOException {
+  public MinaTcpUnicastConnection(Socket sock, int bufsize) throws IOException {
     this.sock 			= sock;
-    this.address 		= new NioTcpUnicastDispatcher.NioTcpUnicastAddress(sock.getInetAddress().getHostAddress(), sock.getPort());
+    this.address 		= new MinaTcpUnicastAddress(sock.getInetAddress().getHostAddress(), sock.getPort());
     this.bufsize 		= bufsize;
     this.byteBuffer = ByteBuffer.allocate(bufsize);
     byteBuffer.setAutoExpand(true);

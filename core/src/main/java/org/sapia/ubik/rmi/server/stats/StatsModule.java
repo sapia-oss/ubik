@@ -32,7 +32,7 @@ public class StatsModule implements Module {
   
   private static final DateFormat     DATE_FORMAT    = new SimpleDateFormat("yyyy/mm/dd hh:mm:ss:SSS");
   private static final double         NANOS_IN_MILLI = 1000000;
-  private static final DecimalFormat  DECIMAL_FORMAT = new DecimalFormat("########.########"); 
+  private static final DecimalFormat  DECIMAL_FORMAT = new DecimalFormat("############.############"); 
   
   
   private Category       log = Log.createCategory(getClass());

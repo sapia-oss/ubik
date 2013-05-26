@@ -9,7 +9,7 @@ package org.sapia.ubik.rmi;
  * @author yduchesne
  *
  */
-public class NoSuchObjectException extends RuntimeException{
+public class NoSuchObjectException extends RuntimeException {
   
   static final long serialVersionUID = 1L;
   

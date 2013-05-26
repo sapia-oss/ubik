@@ -151,6 +151,13 @@ public interface Consts {
    * if a node is alone in a cluster).
    */
   public static final String MCAST_RESYNC_NODE_COUNT = "ubik.rmi.naming.mcast.resync.node-count";
+  
+  /**
+   * Corresponds to the <code>ubik.rmi.naming.mcast.tcp.client.max-connections</code> property key. The value
+   * of this property specifies the number of connections that should be pooled on the client side for
+   * each remote peer (defaults to 3).
+   */
+  public static final String MCAST_MAX_CLIENT_CONNECTIONS = "ubik.rmi.naming.mcast.tcp.client.max-connections";
 
   /**
    * Identifies the unicast provider to use as part of {@link EventChannel}s.

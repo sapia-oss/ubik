@@ -34,10 +34,6 @@ public class NettyMessageDecoderTest {
   }
 
   @Test
-  public void testExceptionCaught() {
-  }
-
-  @Test
   public void testDecode() throws Exception {
     
     NettyResponse toEncode = new NettyResponse("test");
@@ -50,7 +46,6 @@ public class NettyMessageDecoderTest {
     byte[] bytes = bos.toByteArray();
     bos = new ByteArrayOutputStream();
     DataOutputStream dos = new DataOutputStream(bos);
-    dos.writeInt(1); // exchangeId
     dos.writeInt(bytes.length);
     dos.write(bytes);
     dos.flush();

@@ -1,4 +1,4 @@
-package org.sapia.ubik.mcast.tcp;
+package org.sapia.ubik.mcast.tcp.mina;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -18,7 +18,7 @@ import org.sapia.ubik.util.Props;
  * @author yduchesne
  *
  */
-public class NioTcpUnicastRequestDecoder extends CumulativeProtocolDecoder{
+public class MinaTcpUnicastRequestDecoder extends CumulativeProtocolDecoder{
 	
 	
   // ==========================================================================
@@ -79,7 +79,7 @@ public class NioTcpUnicastRequestDecoder extends CumulativeProtocolDecoder{
   
   protected boolean doDecode(IoSession sess, ByteBuffer buf, ProtocolDecoderOutput output) throws Exception {
     
-    if(buf.prefixedDataAvailable(NioTcpUnicastCodecFactory.PREFIX_LEN)){
+    if(buf.prefixedDataAvailable(MinaTcpUnicastCodecFactory.PREFIX_LEN)){
       DecoderState ds = (DecoderState) sess.getAttribute(DECODER_STATE);
       if(ds == null){
         ds = new DecoderState();

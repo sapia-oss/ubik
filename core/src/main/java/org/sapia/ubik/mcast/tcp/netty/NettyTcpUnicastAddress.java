@@ -13,7 +13,7 @@ public class NettyTcpUnicastAddress extends NettyAddress {
   /**
    *  The transport type identifier.
    */
-  public static final String TRANSPORT_TYPE = "netty/tcp/unicast";
+  public static final String TRANSPORT_TYPE = "tcp/unicast/netty";
 
   /**
    * Do not use: meant for externalization only.
