@@ -81,6 +81,12 @@ public class EventChannel {
   static final String  PUBLISH_EVT     = "ubik/mcast/publish";
   
   /**
+   * Sent when a node (or set of nodes) are detected as down, and a last attempt is being made
+   * to rediscover them - nodes that receive this event should try to resync themselves.
+   */  
+  static final String  FORCE_RESYNC_EVT = "ubik/mcast/forceResync";
+  
+  /**
    * Sent by a node to notify other nodes that it is shutting down.
    */
   static final String  SHUTDOWN_EVT    = "ubik/mcast/shutdown";
@@ -228,6 +234,9 @@ public class EventChannel {
     }
   }
   
+  /**
+   * Forces a resync of this instance with the cluster.
+   */
   public synchronized void resync() {
     publishExecutor.execute(new Runnable() {
       @Override
@@ -247,6 +256,23 @@ public class EventChannel {
       }
     });
   }
+  
+  /**
+   * @param targetedNodes sends a "force resync" event to the targeted nodes,
+   * in order for them to attempting resyncing with the cluster.
+   */
+  public synchronized void forceResyncOf(final Set<String> targetedNodes) {
+    publishExecutor.execute(new Runnable() {
+      @Override
+      public void run() { 
+        try { 
+          broadcast.dispatch(address, false, FORCE_RESYNC_EVT, targetedNodes);
+        } catch (IOException e) {
+          log.warning("Error sending force resync event to cluster", e);
+        }
+      }
+    });
+  }  
 
   /**
    * Closes this instance.
@@ -568,6 +594,11 @@ public class EventChannel {
 				log.error("Could not send control response", e);
 			}
   	}
+  	
+  	@Override
+  	public void forceResyncOf(Set<String> targetedNodes) {
+  	  EventChannel.this.forceResyncOf(targetedNodes);
+  	}
 
   }
   
@@ -593,7 +624,8 @@ public class EventChannel {
   	  return null;
   	}
   	
-  	@Override
+  	@SuppressWarnings("unchecked")
+    @Override
     public void onAsyncEvent(RemoteEvent evt) {
       
     	log.debug("Received remote event %s from %s", evt.getType(), evt.getNode());
@@ -616,6 +648,26 @@ public class EventChannel {
         }
         
       // ----------------------------------------------------------------------
+
+      } else if (evt.getType().equals(FORCE_RESYNC_EVT)) {
+        try {
+          Set<String> targetedNodes = (Set<String>) evt.getData();
+          if(targetedNodes == null){
+            return;
+          }          
+          
+          if (targetedNodes.contains(EventChannel.this.broadcast.getNode())) {
+            log.debug("Received force resync event: proceeding to resync");            
+            resync();
+          } else {
+            log.debug("Ignoring force resync event: node %s is not in targeted set: %s", broadcast.getNode(), targetedNodes);
+          }
+
+        } catch (IOException e) {
+          log.error("Error caught while trying to process event " + evt.getType(), e);
+        }        
+        
+      // ----------------------------------------------------------------------
         
       } else if (evt.getType().equals(DISCOVER_EVT)) {
         try {
@@ -627,7 +679,7 @@ public class EventChannel {
             notifyDiscoListeners(addr, evt);
           }
         } catch (IOException e) {
-          log.error("Error caught while trying to process discovery event", e);
+          log.error("Error caught while trying to process event" + evt.getType(), e);
         }
         
       // ----------------------------------------------------------------------
@@ -663,10 +715,11 @@ public class EventChannel {
   
   private void init(Props props){
     listener = new ChannelEventListener();
-    consumer.registerAsyncListener(PUBLISH_EVT,   listener);
-    consumer.registerAsyncListener(DISCOVER_EVT,  listener);
-    consumer.registerAsyncListener(SHUTDOWN_EVT,  listener);
-    consumer.registerAsyncListener(CONTROL_EVT,   listener);
+    consumer.registerAsyncListener(PUBLISH_EVT,      listener);
+    consumer.registerAsyncListener(FORCE_RESYNC_EVT, listener);
+    consumer.registerAsyncListener(DISCOVER_EVT,     listener);
+    consumer.registerAsyncListener(SHUTDOWN_EVT,     listener);
+    consumer.registerAsyncListener(CONTROL_EVT,      listener);
     try {
     	consumer.registerSyncListener(CONTROL_EVT, 	listener);
     } catch (ListenerAlreadyRegisteredException e) {

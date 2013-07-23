@@ -28,6 +28,7 @@ public class TestChannelCallback implements ChannelCallback {
 	private Map<String, NodeRegistration> siblings 		 = new ConcurrentHashMap<String, NodeRegistration>();
 	private Map<String, NodeRegistration> deadSiblings = new ConcurrentHashMap<String, NodeRegistration>();
   private volatile boolean              down;
+  private volatile Set<String>          forceResync;
 	
 	public TestChannelCallback(String node, Clock clock, ControllerConfiguration config) {
 		this.node = node;
@@ -51,6 +52,14 @@ public class TestChannelCallback implements ChannelCallback {
 	
 	public void flagUp() {
 		down = false;
+	}
+	
+	public boolean isForceResyncCalled() {
+	  return forceResync != null;
+	}
+	
+	public Set<String> getTargetedForceResyncNodes() {
+	  return forceResync;
 	}
 	
 	@Override
@@ -142,6 +151,11 @@ public class TestChannelCallback implements ChannelCallback {
 	public EventChannelController getController() {
 	  return controller;
   }
+	
+	@Override
+	public void forceResyncOf(Set<String> targetedNodes) {
+	  forceResync = targetedNodes;
+	}
 	
 	private TestChannelCallback getCallback(String node) {
 		NodeRegistration reg = siblings.get(node);

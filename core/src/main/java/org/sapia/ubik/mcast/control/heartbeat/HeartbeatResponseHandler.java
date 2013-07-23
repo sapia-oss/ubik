@@ -125,6 +125,7 @@ public class HeartbeatResponseHandler implements ControlResponseHandler {
 			);
 			
 			context.notifyHeartbeatCompleted(expectedCount, replyingNodes.size());
+      context.getChannelCallback().forceResyncOf(targetedNodes);			
 		}
 	}
 }

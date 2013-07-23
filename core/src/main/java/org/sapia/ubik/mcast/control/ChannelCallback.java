@@ -88,4 +88,8 @@ public interface ChannelCallback {
 	 */
 	public void down(String node);
 		
+	/**
+	 * @param targetedNodes a {@link Set} of nodes that are targeted for a forced resync.
+	 */
+	public void forceResyncOf(Set<String> targetedNodes);
 }

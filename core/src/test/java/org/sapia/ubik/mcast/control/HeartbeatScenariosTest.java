@@ -1,7 +1,9 @@
 package org.sapia.ubik.mcast.control;
 
 import static org.junit.Assert.assertEquals;
+
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -48,6 +50,10 @@ public class HeartbeatScenariosTest extends EventChannelControllerTestSupport {
 		assertFalse(
 				"Down node not removed from master", 
 				master.containsSibling(slave2.getNode()));
+		
+		assertTrue("forceRecync() was not called", master.isForceResyncCalled());
+		
+		assertTrue(master.getTargetedForceResyncNodes().contains(slave2.getNode()));
 	}
 	
 }
