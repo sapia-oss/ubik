@@ -5,12 +5,15 @@ import java.util.Set;
 
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
+import org.sapia.ubik.mcast.Defaults;
 import org.sapia.ubik.mcast.control.ControlNotificationFactory;
 import org.sapia.ubik.mcast.control.ControlResponse;
 import org.sapia.ubik.mcast.control.ControlResponseHandler;
 import org.sapia.ubik.mcast.control.ControllerContext;
 import org.sapia.ubik.mcast.control.SynchronousControlResponse;
+import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.util.Collections2;
+import org.sapia.ubik.util.Props;
 
 /**
  * This class holds logic for handling {@link HeartbeatResponse}s.
@@ -21,11 +24,20 @@ import org.sapia.ubik.util.Collections2;
  */
 public class HeartbeatResponseHandler implements ControlResponseHandler {
 	
+  /**
+   * Property used in development to test handling of unresponding nodes. Do not use otherwise.
+   */
+  private static final String HEARTBEAT_PING_DISABLED = "ubik.rmi.naming.mcast.heartbeat.ping.disabled";
+  
 	private Category   log = Log.createCategory(getClass());
 	
+	private int               maxPingAttempts;
+	private long              pingInterval;
 	private ControllerContext context;
 	private Set<String> 		  targetedNodes;
 	private Set<String> 		  replyingNodes  = new HashSet<String>();
+	private boolean           pingDisabled   = false;
+	private boolean           forceResync    = true;
 	
 	/**
 	 * @param context the {@link ControllerContext}
@@ -37,6 +49,11 @@ public class HeartbeatResponseHandler implements ControlResponseHandler {
 			Set<String> targetedNodes) {
 		this.context       = context;
 		this.targetedNodes = targetedNodes;
+	  Props sysProps     = Props.getSystemProperties();
+	  maxPingAttempts    = sysProps.getIntProperty(Consts.MCAST_MAX_PING_ATTEMPTS, Defaults.DEFAULT_PING_ATTEMPTS);
+	  pingInterval       = sysProps.getLongProperty(Consts.MCAST_PING_INTERVAL, Defaults.DEFAULT_PING_INTERVAL);
+	  pingDisabled       = sysProps.getBooleanProperty(HEARTBEAT_PING_DISABLED, false);
+	  forceResync        = sysProps.getBooleanProperty(Consts.MCAST_HEARTBEAT_FORCE_RESYNC, true);
   }
 
 	/**
@@ -86,28 +103,12 @@ public class HeartbeatResponseHandler implements ControlResponseHandler {
 			int expectedCount = targetedNodes.size();
 			targetedNodes.removeAll(replyingNodes);
 			
-			Set<SynchronousControlResponse> responses;
-
 			log.debug("Sending synchronous ping requests");
-
-			try {
-				responses = context.getChannelCallback().sendSynchronousRequest(targetedNodes, new PingRequest());
-			} catch (Exception e) {
-				throw new IllegalStateException("Could not send request", e);
-			}
-				
-			Set<String> responding = Collections2.convertAsSet(
-			  responses, 
-			  new org.sapia.ubik.util.Function<String, SynchronousControlResponse>() {
-  				public String call(SynchronousControlResponse res) {
-  					return res.getOriginNode();
-  				}
-			  }
-			);
+			Set<String> responding = doSendPing();
 			
 			log.warning("Got %s/%s nodes that responded to the last resort ping", responding.size(), targetedNodes.size());
 			log.warning("Missing nodes will be removed");
-				
+			
 			targetedNodes.removeAll(responding);
 			replyingNodes.addAll(responding);
 			
@@ -125,7 +126,47 @@ public class HeartbeatResponseHandler implements ControlResponseHandler {
 			);
 			
 			context.notifyHeartbeatCompleted(expectedCount, replyingNodes.size());
-      context.getChannelCallback().forceResyncOf(targetedNodes);			
+			if (forceResync) {
+			  context.getChannelCallback().forceResyncOf(targetedNodes);
+			}
 		}
+	}
+	
+	private Set<String> doSendPing() { 
+	  Set<String> responding = new HashSet<String>();
+	  Set<String> remainingTargets = new HashSet<String>(targetedNodes);
+	  
+    if (!pingDisabled) {
+      log.debug("Sending ping to %s", remainingTargets);
+      for (int i = 0; i < maxPingAttempts && !remainingTargets.isEmpty(); i++) {
+        try {
+          Set<SynchronousControlResponse> responses = new HashSet<SynchronousControlResponse>();
+  
+          responses.addAll(context.getChannelCallback().sendSynchronousRequest(remainingTargets, new PingRequest()));
+          
+          Set<String> tmp = Collections2.convertAsSet(
+              responses, 
+              new org.sapia.ubik.util.Function<String, SynchronousControlResponse>() {
+                public String call(SynchronousControlResponse res) {
+                  return res.getOriginNode();
+                }
+              }
+            );        
+          remainingTargets.removeAll(tmp);
+          responding.addAll(tmp);
+  
+        } catch (Exception e) {
+          throw new IllegalStateException("Could not send request", e);
+        }
+        try {
+          Thread.sleep(pingInterval);
+        } catch (InterruptedException e) {
+          log.warning("Thread interrupted, exiting");
+          break;
+        }
+      }
+    }
+    
+    return responding;
 	}
 }

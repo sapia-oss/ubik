@@ -110,6 +110,32 @@ public final class PropertiesUtil {
     }
 	}
 	
+  
+  /**
+   * @param name a property name.
+   * @return <code>true</code> if the value of the system property with the given name
+   * is <code>true</code>.
+   */
+  public static boolean isSystemPropertyTrue(String name) {
+    String value = System.getProperty(name);
+    if (value != null) {
+      return value.equalsIgnoreCase("true");
+    }
+    return false;
+  }
+  
+  /**
+   * @param name a property name.
+   * @return <code>false</code> if the value of the system property with the given name
+   * is <code>false</code>.
+   */
+  public static boolean isSystemPropertyFalse(String name) {
+    return !isSystemPropertyTrue(name);
+  }
+	
+	/**
+	 * Clears Ubik-specific properties from the system properties.
+	 */
 	public static void clearUbikSystemProperties() {
 	  clearProperties(System.getProperties(), new Condition<PropertiesUtil.Property>() {
       @Override

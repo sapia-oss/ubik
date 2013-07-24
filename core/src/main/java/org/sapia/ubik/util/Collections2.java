@@ -226,7 +226,7 @@ public final class Collections2 {
    * @return a {@link List} of batches (each batch itself being represented as a {@link List}).
    */
   public static <T> List<List<T>> divideAsLists(Collection<T> toDivide, int divisor) {
-    return splitAsLists(toDivide, divisor <= 0 ? 0 : toDivide.size() / divisor);
+    return splitAsLists(toDivide, divisor <= 0 ? 0 : (int) Math.round((double) toDivide.size() / divisor));
   }
   
   /**
@@ -268,7 +268,11 @@ public final class Collections2 {
    * @return a {@link List} of batches (each batch itself being represented as a {@link Set}).
    */
   public static <T> List<Set<T>> divideAsSets(Collection<T> toDivide, int divisor) {
-    return splitAsSets(toDivide, divisor <= 0 ? 0 : toDivide.size() / divisor);
+    if (divisor == 0) {
+      splitAsSets(toDivide, 0);
+    } else {
+    }
+    return splitAsSets(toDivide, divisor <= 0 ? 0 : (int) Math.round((double) toDivide.size() / divisor));
   } 
 }
   

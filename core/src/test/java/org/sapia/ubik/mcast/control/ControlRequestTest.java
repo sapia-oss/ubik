@@ -37,7 +37,7 @@ public class ControlRequestTest {
   public void testBatchSizeLargerSplit() {
     Set<String> targetedNodes = Collections2.arrayToSet("1", "2");
     TestControlRequest req = new TestControlRequest(targetedNodes);
-    assertEquals(1, req.split(3).size());
+    assertEquals(2, req.split(3).size());
   }
   
 

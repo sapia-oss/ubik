@@ -30,11 +30,25 @@ public class ControlNotificationTest {
   }
   
   @Test
-  public void testBatchSizeLargerSplit() {
+  public void testBatchSizeLargerDividor() {
     Set<String> targetedNodes = Collections2.arrayToSet("1", "2");
     TestControlNotification notif = new TestControlNotification(targetedNodes);
-    assertEquals(1, notif.split(3).size());
+    assertEquals(2, notif.split(3).size());
   }
+
+  @Test
+  public void testBatchSizeSmallerAndEvenDivisor() {
+    Set<String> targetedNodes = Collections2.arrayToSet("1", "2", "3", "4");
+    TestControlNotification notif = new TestControlNotification(targetedNodes);
+    assertEquals(2, notif.split(2).size());
+  }
+  
+  @Test
+  public void testBatchSizeOddLargerSplitOddDivisor() {
+    Set<String> targetedNodes = Collections2.arrayToSet("1", "2", "3", "4", "5");
+    TestControlNotification notif = new TestControlNotification(targetedNodes);
+    assertEquals(3, notif.split(3).size());
+  }  
   
   public static class TestControlNotification extends ControlNotification {
     

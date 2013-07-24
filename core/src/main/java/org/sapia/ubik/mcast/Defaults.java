@@ -75,4 +75,17 @@ public class Defaults {
    */
   public static final int DEFAULT_MAX_CONNECTIONS_PER_HOST = 3;
 
+  /**
+   * The default max number of ping attempts.
+   * 
+   * @see Consts#MCAST_MAX_PING_ATTEMPTS
+   */
+  public static final int DEFAULT_PING_ATTEMPTS = 3;
+  
+  /**
+   * The default ping interval.
+   * 
+   * @see Consts#MCAST_PING_INTERVAL
+   */
+  public static final long DEFAULT_PING_INTERVAL = 2000L;
 }
