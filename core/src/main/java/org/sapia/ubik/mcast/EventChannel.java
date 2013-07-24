@@ -259,7 +259,7 @@ public class EventChannel {
   
   /**
    * @param targetedNodes sends a "force resync" event to the targeted nodes,
-   * in order for them to attempting resyncing with the cluster.
+   * in order for them to attempt resyncing with the cluster.
    */
   public synchronized void forceResyncOf(final Set<String> targetedNodes) {
     publishExecutor.execute(new Runnable() {
@@ -272,6 +272,14 @@ public class EventChannel {
         }
       }
     });
+  }
+  
+  /**
+   * @param targetedNodes sends a "force resync" event to all nodes,
+   * in order for them to attempt resyncing with the cluster.
+   */
+  public synchronized void forceResync() {
+    forceResyncOf(null);
   }  
 
   /**
@@ -652,11 +660,7 @@ public class EventChannel {
       } else if (evt.getType().equals(FORCE_RESYNC_EVT)) {
         try {
           Set<String> targetedNodes = (Set<String>) evt.getData();
-          if(targetedNodes == null){
-            return;
-          }          
-          
-          if (targetedNodes.contains(EventChannel.this.broadcast.getNode())) {
+          if (targetedNodes == null || targetedNodes.contains(EventChannel.this.broadcast.getNode())) {
             log.debug("Received force resync event: proceeding to resync");            
             resync();
           } else {
