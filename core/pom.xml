@@ -6,12 +6,12 @@
 
   <groupId>org.sapia</groupId>
   <artifactId>sapia_ubik</artifactId>
-  <version>3.4-SNAPSHOT</version>
+  <version>3.4</version>
 
   <parent>
     <groupId>org.sapia</groupId>
     <artifactId>sapia_ubik_parent</artifactId>
-    <version>3.4-SNAPSHOT</version>
+    <version>3.4</version>
     <relativePath>../</relativePath>
   </parent>
 
