@@ -73,6 +73,12 @@ public interface Consts {
   public static final String MCAST_ADDR_KEY = "ubik.rmi.naming.mcast.address";
   
   /**
+   * This constant corresponds to the <code>ubik.rmi.naming.mcast.ttl</code> property key. It
+   * is used to specify the time-to-live of UDP multicast packets.
+   */
+  public static final String MCAST_TTL = "ubik.rmi.naming.mcast.ttl";
+  
+  /**
    * This constant corresponds to the <code>ubik.rmi.naming.mcast.bufsize</code> property key. It
    * is used to set the size of buffers that handle UDP datagrams. A too small value
    * may result in multicast events not being sent/received. Defaults to 3072 bytes.
@@ -85,7 +91,6 @@ public interface Consts {
    * implementations.
    */
   public static final String MCAST_SENDER_COUNT = "ubik.rmi.naming.mcast.sender.count";
-  
   
   /**
    * This constant corresponds to the <code>ubik.rmi.naming.mcast.handler.count</code> property key. It
@@ -108,13 +113,6 @@ public interface Consts {
   public static final String MCAST_HEARTBEAT_TIMEOUT = "ubik.rmi.naming.mcast.heartbeat.timeout";
   
   /**
-   * This constant corresponds to the <code>ubik.rmi.naming.mcast.heartbeat.force.resync</code> property key. It
-   * is used indicate if an event forcing the resync of down slave nodes should be broadcast throughout the cluster
-   * upon nodes being considered down (default to <code>true</code>).
-   */
-  public static final String MCAST_HEARTBEAT_FORCE_RESYNC = "ubik.rmi.naming.mcast.heartbeat.force.resync";  
-
-  /**
    * This constant corresponds to the <code>ubik.rmi.naming.mcast.heartbeat.interval</code> property key. It
    * is used to determine the interval (in millis) at which nodes send their heartbeat to the other nodes
    * (defaults to 60000).
@@ -123,6 +121,41 @@ public interface Consts {
    * should not be more.
    */
   public static final String MCAST_HEARTBEAT_INTERVAL = "ubik.rmi.naming.mcast.heartbeat.interval";      
+  
+  /**
+   * This constant corresponds to the <code>ubik.rmi.naming.mcast.heartbeat.force.resync</code> property key. It
+   * is used indicate if an event forcing the resync of down slave nodes should be broadcast throughout the cluster
+   * upon nodes being considered down (default to <code>true</code>).
+   */
+  public static final String MCAST_HEARTBEAT_FORCE_RESYNC = "ubik.rmi.naming.mcast.heartbeat.force.resync";  
+
+  /**
+   * This constant corresponds to the <code>ubik.rmi.naming.mcast.heartbeat.force.resync.batch-size</code> property key. It
+   * is used indicate how many "down node" IDs should be packed per "force-resync" event - defaults to 3.
+   */
+  public static final String MCAST_HEARTBEAT_FORCE_RESYNC_BATCH_SIZE = "ubik.rmi.naming.mcast.heartbeat.force.resync.batch-size";  
+  
+  /**
+   * This constant corresponds to the <code>ubik.rmi.naming.mcast.heartbeat.force.resync.attempts</code> property key. The maximum
+   * number of times to send "force-resync" events for "down nodes" - on a per-down node basis.
+   */
+  public static final String MCAST_HEARTBEAT_FORCE_RESYNC_ATTEMPTS = "ubik.rmi.naming.mcast.heartbeat.force.resync.attempts";
+  
+  /**
+   * This constant corresponds to the <code>ubik.rmi.naming.mcast.master.broadcast.enabled</code> property key. It
+   * is used to determine if the master node should broadcast its presence periocially.
+   * 
+   * @see #MCAST_MASTER_BROADCAST_INTERVAL
+   */  
+  public static final String MCAST_MASTER_BROADCAST_ENABLED = "ubik.rmi.naming.mcast.master.broadcast.enabled";
+  
+  /**
+   * This constant corresponds to the <code>ubik.rmi.naming.mcast.master.broadcast.interval</code> property key. It
+   * is used to determine the interval (in millis) at which the master node will broadcast its presence (defaults to 120000).
+   * 
+   * @see #MCAST_MASTER_BROADCAST_ENABLED
+   */
+  public static final String MCAST_MASTER_BROADCAST_INTERVAL = "ubik.rmi.naming.mcast.master.broadcast.interval";
   
   /**
    * This constant corresponds to the <code>ubik.rmi.naming.mcast.control.response.timeout</code> property key. It

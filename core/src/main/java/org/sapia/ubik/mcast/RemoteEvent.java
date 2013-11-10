@@ -2,8 +2,11 @@ package org.sapia.ubik.mcast;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.Externalizable;
 import java.io.IOException;
+import java.io.ObjectInput;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 
 import org.sapia.ubik.net.ServerAddress;
@@ -25,7 +28,7 @@ import org.sapia.ubik.net.ServerAddress;
  *
  * @author Yanick Duchesne
  */
-public class RemoteEvent implements java.io.Serializable {
+public class RemoteEvent implements Externalizable {
   
   static final long serialVersionUID = 1L;
   
@@ -43,7 +46,13 @@ public class RemoteEvent implements java.io.Serializable {
   private boolean       wasBytes;
   private boolean       sync;
   private ServerAddress unicastAddress;
-
+  
+  /**
+   * Meant for externalization only.
+   */
+  public RemoteEvent() {
+  }
+  
   /**
    * Creates an instance of this class.
    *
@@ -202,6 +211,31 @@ public class RemoteEvent implements java.io.Serializable {
     this.node = node;
 
     return this;
+  }
+  
+  @Override
+  public void readExternal(ObjectInput in) throws IOException,
+      ClassNotFoundException {
+    domain   = (String) in.readObject();
+    type     = (String) in.readObject();
+    id       = in.readLong();
+    node     = (String) in.readObject();
+    data     = (byte[]) in.readObject();
+    wasBytes = in.readBoolean();
+    sync     = in.readBoolean();
+    unicastAddress = (ServerAddress) in.readObject();
+  }
+  
+  @Override
+  public void writeExternal(ObjectOutput out) throws IOException {
+    out.writeObject(domain);
+    out.writeObject(type);
+    out.writeLong(id);
+    out.writeObject(node);
+    out.writeObject(data);
+    out.writeBoolean(wasBytes);
+    out.writeBoolean(sync);
+    out.writeObject(unicastAddress);
   }
 
   private static synchronized long generateId() {

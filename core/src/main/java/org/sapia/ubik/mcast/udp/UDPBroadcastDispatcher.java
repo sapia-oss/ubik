@@ -35,25 +35,15 @@ public class UDPBroadcastDispatcher implements BroadcastDispatcher {
   private UDPMulticastAddress address;
 
   public UDPBroadcastDispatcher(EventConsumer cons, String mcastHost,
-    int mcastPort) throws IOException {
-    server = new BroadcastServer(cons, mcastHost, mcastPort);
+    int mcastPort, int ttl) throws IOException {
+    server = new BroadcastServer(cons, mcastHost, mcastPort, ttl);
     server.setBufsize(bufsz);
     node       = cons.getNode();
     domain     = cons.getDomainName().toString();
     address    = new UDPMulticastAddress(mcastHost, mcastPort);
   }
 
-  public UDPBroadcastDispatcher(String node, String domain, String mcastHost,
-    int mcastPort, int ttl) throws IOException {
-    this(new EventConsumer(node, domain), mcastHost, mcastPort);
-  }
-
-  public UDPBroadcastDispatcher(String domain, String mcastHost, int mcastPort)
-    throws IOException {
-    this(new EventConsumer(domain), mcastHost, mcastPort);
-  }
-
-  /**
+   /**
    * Sets this instance buffer size. This size is used to create
    * the byte arrays that store the data of incoming UDP datagrams.
    * <p>
@@ -191,8 +181,9 @@ public class UDPBroadcastDispatcher implements BroadcastDispatcher {
     private BroadcastServer(
       EventConsumer consumer, 
       String mcastAddress, 
-      int mcastPort) throws IOException {
-      super("mcast.BroadcastServer", mcastAddress, mcastPort);
+      int mcastPort, 
+      int ttl) throws IOException {
+      super("mcast.BroadcastServer", mcastAddress, mcastPort, ttl);
       this.consumer = consumer;
     }
 

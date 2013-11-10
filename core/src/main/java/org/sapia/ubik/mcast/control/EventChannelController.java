@@ -6,12 +6,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.sapia.ubik.concurrent.SynchronizedRef;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.EventChannel;
 import org.sapia.ubik.mcast.EventChannel.Role;
+import org.sapia.ubik.mcast.control.Purgatory.DownNode;
 import org.sapia.ubik.mcast.control.challenge.ChallengeCompletionNotification;
 import org.sapia.ubik.mcast.control.challenge.ChallengeCompletionNotificationHandler;
 import org.sapia.ubik.mcast.control.challenge.ChallengeRequest;
@@ -25,6 +27,7 @@ import org.sapia.ubik.mcast.control.heartbeat.PingRequestHandler;
 import org.sapia.ubik.util.Clock;
 import org.sapia.ubik.util.Collections2;
 import org.sapia.ubik.util.Delay;
+import org.sapia.ubik.util.Function;
 
 /**
  * Controls the state of an {@link EventChannel} and behaves accordingly. It is mainly in charge of 
@@ -74,7 +77,7 @@ public class EventChannelController {
 	private	Map<String, ControlRequestHandler> 			      requestHandlers 		 = new HashMap<String, ControlRequestHandler>();
 	private	Map<String, ControlNotificationHandler> 		  notificationHandlers = new HashMap<String, ControlNotificationHandler>();
 	private	Map<String, SynchronousControlRequestHandler> syncRequestHandlers  = new HashMap<String, SynchronousControlRequestHandler>();
-	private Delay                                         autoResyncInterval;
+	private Delay                                         autoResyncInterval, masterBroadcastInterval;
 
 	public EventChannelController(ControllerConfiguration config, ChannelCallback callback) {
 		this(Clock.SystemClock.getInstance(), config, callback);
@@ -88,7 +91,9 @@ public class EventChannelController {
 		syncRequestHandlers.put(PingRequest.class.getName(), new PingRequestHandler(context));
 		notificationHandlers.put(DownNotification.class.getName(), new DownNotificationHandler(context));
 		notificationHandlers.put(ChallengeCompletionNotification.class.getName(), new ChallengeCompletionNotificationHandler(context));
+		
 		autoResyncInterval = new Delay(clock, config.getResyncInterval()); 
+		masterBroadcastInterval = new Delay(clock, config.getMasterBroadcastInterval());
 	}
 	
 	ControllerConfiguration getConfig() {
@@ -189,7 +194,7 @@ public class EventChannelController {
 	}
 	
 	private void performControl() { 
-		log.debug("Current role is %s", context.getRole());		
+		log.debug("*********** Current role is %s ***********", context.getRole());		
 		switch(context.getRole()) {
 		
 			// Role is currently undefined, proceeding to challenge
@@ -210,20 +215,50 @@ public class EventChannelController {
   		// This is the master: it is sending a heartbeat request and creating a matching
   		// response handler.
   		case MASTER:
+  		  
+  		  // forcing resync of this node if need be
   		  if (context.getChannelCallback().getNodes().isEmpty() && autoResyncInterval.isOver()) {
           log.debug("Node appears alone in the cluster, forcing a resync");
   		    context.getChannelCallback().resync();
           autoResyncInterval.reset();
   		  } else {
+  		    
+  		    // either resynching or sending master broadcast
   		    if (context.getChannelCallback().getNodes().size() <= config.getResyncNodeCount() && autoResyncInterval.isOver()) {
             log.debug("Number of peers deemed not enough, forcing a resync");
             context.getChannelCallback().resync();
             autoResyncInterval.reset();
+  		    } else if (masterBroadcastInterval.isOver() &&  config.isMasterBroadcastEnabled()) {
+  		      context.getChannelCallback().triggerMasterBroadcast();
+  		    } 
+
+  		    // broadcast "force resync" events to all nodes in the purgatory
+  		    if (context.getPurgatory().size() > 0) {
+  		      log.debug("Got %s nodes in purgatory", context.getPurgatory().size());
+  		      List<Set<DownNode>> batches = Collections2.splitAsSets(context.getPurgatory().getDownNodes(), config.getForceResyncBatchSize());
+  		      for (Set<DownNode> batch : batches) {
+  		        context.getChannelCallback().forceResyncOf(Collections2.convertAsSet(batch, new Function<String, DownNode>() {
+  		          @Override
+  		          public String call(DownNode arg) {
+  		            log.debug("Forcing resync for node in purgatory: %s", arg.getNode());  		            
+  		            arg.attempt();
+  		            return arg.getNode();
+  		          }
+              }));
+  		      }
+  		      Set<String> purged = context.getPurgatory().clear(config.getForceResyncAttempts());
+  		      if (!purged.isEmpty() && log.isDebug()) {
+  		        log.debug("Purged nodes from purgatory (those are definitely lost):");
+  		        for (String p : purged) {
+  		          log.debug(p);
+  		        }
+  		      }
   		    }
     			ControlRequest 			 	 heartbeatRq 			= ControlRequestFactory.createHeartbeatRequest(context);
     			ControlResponseHandler heartbeatHandler = ControlResponseHandlerFactory.createHeartbeatResponseHandler(
     					context, new HashSet<String>(context.getChannelCallback().getNodes())
     			);
+    			
     			ref.set(new PendingResponseState(heartbeatHandler, heartbeatRq.getRequestId(), context.getClock().currentTimeMillis()));
     			context.heartbeatRequestSent();
           log.debug("Sending heartbeat request to %s", heartbeatRq.getTargetedNodes());

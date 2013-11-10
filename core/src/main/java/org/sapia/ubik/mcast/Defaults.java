@@ -17,6 +17,11 @@ public class Defaults {
   public static final int DEFAULT_UDP_PACKET_SIZE           = 3072;
   
   /**
+   * The default TTL for UDP multicast packets (see {@link Consts#MCAST_TTL}).
+   */
+  public static final int DEFAULT_TTL                       = 32;
+  
+  /**
    * The default sender count (see {@link Consts#MCAST_SENDER_COUNT}).
    */
   public static final int DEFAULT_SENDER_COUNT              = 3;
@@ -59,6 +64,20 @@ public class Defaults {
   public static final int  DEFAULT_RESYNC_NODE_COUNT        = 0;
   
   /**
+   * The default number of nodes to send per force-resync event.
+   * 
+   * @see Consts#MCAST_HEARTBEAT_FORCE_RESYNC_BATCH_SIZE
+   */
+  public static final int DEFAULT_FORCE_RESYNC_BATCH_SIZE   = 3;
+  
+  /**
+   * The default number of force-resync attempts.
+   * 
+   * @see Consts#MCAST_HEARTBEAT_FORCE_RESYNC_ATTEMPTS
+   */
+  public static final int DEFAULT_FORCE_RESYNC_ATTEMPTS     = 3;
+  
+  /**
    * The default timeout for channel control responses. 
    */
   public static final long DEFAULT_CONTROL_RESPONSE_TIMEOUT = 60000;  
@@ -88,4 +107,14 @@ public class Defaults {
    * @see Consts#MCAST_PING_INTERVAL
    */
   public static final long DEFAULT_PING_INTERVAL = 2000L;
+  
+  /**
+   * The default master broadcast interval.
+   * 
+   * @see Consts#MCAST_MASTER_BROADCAST_INTERVAL
+   */
+  public static final long DEFAULT_MASTER_BROADCAST_INTERVAL = 120000L;
+  
+  private Defaults() {
+  }
 }

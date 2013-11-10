@@ -69,6 +69,8 @@ public class EventChannel {
   }
   
   // ==========================================================================
+  
+  private static final String DEFAULT_DOMAIN_NAME = "default";
 	
 	/**
 	 * Sent by a node when it receives a publish event. Allows discovery by the node that just published itself.
@@ -90,6 +92,16 @@ public class EventChannel {
    * Sent by a node to notify other nodes that it is shutting down.
    */
   static final String  SHUTDOWN_EVT    = "ubik/mcast/shutdown";
+  
+  /**
+   * Sent by a master node periodically.
+   */
+  static final String  MASTER_BROADCAST      = "ubik/mcast/master/broadcast";
+  
+  /**
+   * Sent back as ack to master broadcast.
+   */
+  static final String  MASTER_BROADCAST_ACK  = "ubik/mcast/master/broadcast/ack";  
   
   /**
    * Corresponds to all types of control events.
@@ -136,9 +148,9 @@ public class EventChannel {
    */
   public EventChannel(String domain, String mcastHost, int mcastPort)
     throws IOException {
-    consumer    = new EventConsumer(domain);
-    broadcast   = new UDPBroadcastDispatcher(consumer, mcastHost, mcastPort);
     Props props = new Props().addSystemProperties(); 
+    consumer    = new EventConsumer(domain);
+    broadcast   = new UDPBroadcastDispatcher(consumer, mcastHost, mcastPort, props.getIntProperty(Consts.MCAST_TTL, Defaults.DEFAULT_TTL));
     unicast     = new UDPUnicastDispatcher(consumer, props.getIntProperty(Consts.MCAST_HANDLER_COUNT, Defaults.DEFAULT_HANDLER_COUNT));
     init(props);
   }
@@ -522,6 +534,37 @@ public class EventChannel {
     }
   }
   
+  /**
+   * This method starts an instance of this class blocks the current thread until the JVM is terminated.
+   * 
+   * @param args this class' arguments (the only argument taken is the domain name).
+   * @throws Exception if an error occurs starting this instance.
+   */
+  public static void main(String[] args) throws Exception {
+    
+    String domain = DEFAULT_DOMAIN_NAME;
+    if (args.length > 0) {
+      domain = args[0];
+    }
+    System.out.println("Starting event channel on domain: " + domain + ". Type CTRL-C to terminate.");
+    
+    final EventChannel channel = new EventChannel(domain, Props.getSystemProperties());
+    channel.start();
+    
+    Runtime.getRuntime().addShutdownHook(new Thread() {
+      @Override
+      public void run() {
+        channel.close();
+      }
+    });
+    
+    try  {
+      Thread.sleep(Long.MAX_VALUE);
+    } catch (InterruptedException e) {
+      channel.close();
+    }
+  }
+  
   // ==========================================================================
   
   private class ChannelCallbackImpl implements ChannelCallback {
@@ -604,6 +647,27 @@ public class EventChannel {
   	}
   	
   	@Override
+  	public void triggerMasterBroadcast() {
+      publishExecutor.execute(new Runnable() {
+        @Override
+        public void run() { 
+          for (int i = 0; i < maxPublishAttempts; i++) {
+            try { 
+              broadcast.dispatch(address, false, MASTER_BROADCAST, address);
+            } catch (IOException e) {
+              log.warning("Error performing master broadcast presence to cluster", e);
+            }
+            try {
+              Thread.sleep(publishInterval);
+            } catch (InterruptedException e) {
+              break;
+            }
+          }
+        }
+      });  	  
+  	}
+  	
+  	@Override
   	public void forceResyncOf(Set<String> targetedNodes) {
   	  EventChannel.this.forceResyncOf(targetedNodes);
   	}
@@ -646,13 +710,55 @@ public class EventChannel {
           if(addr == null){
             return;
           }          
-  
+
           view.addHost(addr, evt.getNode());
           unicast.dispatch(addr, DISCOVER_EVT, address);
           notifyDiscoListeners(addr, evt);
-
+          if(controller.getContext().getPurgatory().remove(evt.getNode())) {
+            log.debug("Removed node from purgatory: %s", evt.getNode());
+          }
         } catch (IOException e) {
           log.error("Error caught while trying to process event " + evt.getType(), e);
+        }
+        
+      // ----------------------------------------------------------------------
+
+      } else if (evt.getType().equals(MASTER_BROADCAST)) {
+        try {
+          ServerAddress addr = (ServerAddress) evt.getData();
+          if(addr == null){
+            return;
+          }
+          
+          String thisMaster = controller.getContext().getMasterNode();
+          
+          // if the broadcast comes from a node that's not in this instance's view, or if the this node's
+          // current master (if it exists) does not corresponds to the node that sent the broadcast,
+          // we're acking that broadcast.
+          if (controller.getContext().getRole() == Role.MASTER 
+              || view.addHost(addr, evt.getNode()) 
+              || (thisMaster != null && !thisMaster.equals(evt.getNode()))) {
+            
+            // if this node is itself a master, trigger a challenge
+            if (controller.getContext().getRole() == Role.MASTER) {
+              controller.getContext().triggerChallenge();
+            }
+            log.debug("Acking master broadcast from %s", evt.getNode());            
+            unicast.dispatch(addr, MASTER_BROADCAST_ACK, address);
+          }
+        } catch (IOException e) {
+          log.error("Error caught while trying to process event " + evt.getType(), e);
+        }
+
+      // ----------------------------------------------------------------------
+
+      } else if (evt.getType().equals(MASTER_BROADCAST_ACK)) {
+        
+        // if a ack is received, its from a node that doesn't have this node in its view (or as a master). 
+        // In such a case, we're forcing a resync of that node by adding it to the purgatory.
+        if (!view.containsNode(evt.getNode())) {
+          log.debug("Received master broadcast ack from %s - adding it to purgatory to force resync", evt.getNode());
+          controller.getContext().getPurgatory().add(evt.getNode());
         }
         
       // ----------------------------------------------------------------------
@@ -666,7 +772,6 @@ public class EventChannel {
           } else {
             log.debug("Ignoring force resync event: node %s is not in targeted set: %s", broadcast.getNode(), targetedNodes);
           }
-
         } catch (IOException e) {
           log.error("Error caught while trying to process event " + evt.getType(), e);
         }        
@@ -682,6 +787,9 @@ public class EventChannel {
           if(view.addHost(addr, evt.getNode())) {
             notifyDiscoListeners(addr, evt);
           }
+          if(controller.getContext().getPurgatory().remove(evt.getNode())) {
+            log.debug("Removed node from purgatory: %s", evt.getNode());
+          }          
         } catch (IOException e) {
           log.error("Error caught while trying to process event" + evt.getType(), e);
         }
@@ -719,11 +827,13 @@ public class EventChannel {
   
   private void init(Props props){
     listener = new ChannelEventListener();
-    consumer.registerAsyncListener(PUBLISH_EVT,      listener);
-    consumer.registerAsyncListener(FORCE_RESYNC_EVT, listener);
-    consumer.registerAsyncListener(DISCOVER_EVT,     listener);
-    consumer.registerAsyncListener(SHUTDOWN_EVT,     listener);
-    consumer.registerAsyncListener(CONTROL_EVT,      listener);
+    consumer.registerAsyncListener(PUBLISH_EVT,          listener);
+    consumer.registerAsyncListener(FORCE_RESYNC_EVT,     listener);
+    consumer.registerAsyncListener(DISCOVER_EVT,         listener);
+    consumer.registerAsyncListener(SHUTDOWN_EVT,         listener);
+    consumer.registerAsyncListener(MASTER_BROADCAST,     listener);    
+    consumer.registerAsyncListener(MASTER_BROADCAST_ACK, listener);
+    consumer.registerAsyncListener(CONTROL_EVT,          listener);
     try {
     	consumer.registerSyncListener(CONTROL_EVT, 	listener);
     } catch (ListenerAlreadyRegisteredException e) {
@@ -735,16 +845,29 @@ public class EventChannel {
     		Consts.MCAST_CONTROL_RESPONSE_TIMEOUT, 
     		Defaults.DEFAULT_CONTROL_RESPONSE_TIMEOUT
     );
+    int forceResyncAttempts  = props.getIntProperty(Consts.MCAST_HEARTBEAT_FORCE_RESYNC_ATTEMPTS, Defaults.DEFAULT_FORCE_RESYNC_ATTEMPTS);
+    int forceResyncBatchSize = props.getIntProperty(Consts.MCAST_HEARTBEAT_FORCE_RESYNC_BATCH_SIZE, Defaults.DEFAULT_FORCE_RESYNC_BATCH_SIZE);
+    long masterBroadcastInterval = props.getLongProperty(Consts.MCAST_MASTER_BROADCAST_INTERVAL, Defaults.DEFAULT_MASTER_BROADCAST_INTERVAL);
+    boolean masterBroadcastEnabled = props.getBooleanProperty(Consts.MCAST_MASTER_BROADCAST_ENABLED, true);
+    
     this.controlBatchSize = props.getIntProperty(Consts.MCAST_CONTROL_SPLIT_SIZE, Defaults.DEFAULT_CONTROL_SPLIT_SIZE);
     
     log.debug("Heartbeat timeout set to %s", heartbeatTimeout);
     log.debug("Heartbeat interval set to %s", heartbeatInterval);
     log.debug("Control response timeout set to %s", controlResponseTimeout);
+    log.debug("Forced resync attempts set to %s", forceResyncAttempts);
+    log.debug("Forced resync batch size set to %s", forceResyncBatchSize);
+    log.debug("Master broadcast enabled: %s", masterBroadcastEnabled);
+    log.debug("Master broadcast interval set to %s", masterBroadcastInterval);
 
     ControllerConfiguration config = new ControllerConfiguration();
     config.setHeartbeatInterval(heartbeatInterval);
     config.setHeartbeatTimeout(heartbeatTimeout);
     config.setResponseTimeout(controlResponseTimeout);
+    config.setForceResyncAttempts(forceResyncAttempts);
+    config.setForceResyncBatchSize(forceResyncBatchSize);
+    config.setMasterBroadcastEnabled(masterBroadcastEnabled);
+    config.setMasterBroadcastInterval(masterBroadcastInterval);
     controller = new EventChannelController(createClock(), config, new ChannelCallbackImpl());
     startTimer(heartbeatInterval);
   }
@@ -768,4 +891,5 @@ public class EventChannel {
   protected Clock createClock() {
   	return Clock.SystemClock.getInstance();
   }
+ 
 }

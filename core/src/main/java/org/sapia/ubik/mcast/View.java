@@ -139,6 +139,10 @@ public class View {
     }
   }
   
+  boolean containsNode(String node) {
+    return nodeToNodeInfo.containsKey(node);
+  }
+  
   private void notifyListeners(EventChannelEvent event, boolean added){
     synchronized(listeners){
       for (EventChannelStateListener listener : listeners) {
@@ -151,32 +155,6 @@ public class View {
           listener.onDown(event);
         }
       }
-    }
-  }
-
-  // --------------------------------------------------------------------------
-  
-  private static class NodeInfo {
-    
-    private ServerAddress addr;
-    private String        node;
-
-    private NodeInfo(ServerAddress addr, String node) {
-      this.addr   = addr;
-      this.node   = node;
-    }
-    
-    public boolean equals(Object obj) {
-      if (obj instanceof NodeInfo) {
-        NodeInfo inf = (NodeInfo) obj;
-  
-        return inf.addr.equals(addr) && inf.node.equals(node);
-      }
-      return false;
-    }
-
-    public int hashCode() {
-      return addr.hashCode() * 31 + node.hashCode() * 31;
     }
   }
   

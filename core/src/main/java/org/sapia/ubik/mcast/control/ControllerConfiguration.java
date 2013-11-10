@@ -11,12 +11,16 @@ import org.sapia.ubik.rmi.Consts;
  */
 public class ControllerConfiguration {
 	
-	private long responseTimeout   = Defaults.DEFAULT_CONTROL_RESPONSE_TIMEOUT;
-	private long heartbeatInterval = Defaults.DEFAULT_HEARTBEAT_INTERVAL;
-	private long heartbeatTimeout  = Defaults.DEFAULT_HEARTBEAT_TIMEOUT;
-	private long resyncInterval    = Defaults.DEFAULT_RESYNC_INTERVAL;
-	private long resyncNodeCount   = Defaults.DEFAULT_RESYNC_NODE_COUNT;
-
+	private long responseTimeout      = Defaults.DEFAULT_CONTROL_RESPONSE_TIMEOUT;
+	private long heartbeatInterval    = Defaults.DEFAULT_HEARTBEAT_INTERVAL;
+	private long heartbeatTimeout     = Defaults.DEFAULT_HEARTBEAT_TIMEOUT;
+	private long resyncInterval       = Defaults.DEFAULT_RESYNC_INTERVAL;
+	private long resyncNodeCount      = Defaults.DEFAULT_RESYNC_NODE_COUNT;
+	private int  forceResyncBatchSize = Defaults.DEFAULT_FORCE_RESYNC_BATCH_SIZE; 
+	private int  forceResyncAttempts  = Defaults.DEFAULT_FORCE_RESYNC_ATTEMPTS;
+	private boolean masterBroadcastEnabled = true;
+	private long masterBroadcastInterval = Defaults.DEFAULT_MASTER_BROADCAST_INTERVAL;
+	
   /**
    * Sets the heartbeat interval.
    * 
@@ -44,7 +48,6 @@ public class ControllerConfiguration {
     this.heartbeatTimeout = heartbeatTimeout;
   }
   
-	
 	/**
 	 * @return the amount of time (in millis) after which a node should be deemed "down".
 	 */
@@ -98,7 +101,63 @@ public class ControllerConfiguration {
 	public long getResyncNodeCount() {
     return resyncNodeCount;
   }
+
+	 /**
+   * @param forceResyncBatchSize a batch size.
+   * 
+   * @see Consts#MCAST_HEARTBEAT_FORCE_RESYNC_BATCH_SIZE
+   */
+	public void setForceResyncBatchSize(int forceResyncBatchSize) {
+    this.forceResyncBatchSize = forceResyncBatchSize;
+  }
 	
+	/**
+	 * @return the force-resync batch size.
+	 */
+	public int getForceResyncBatchSize() {
+    return forceResyncBatchSize;
+  }
 
-
+	/**
+   * @param attempts the maximum number of force-resync attempts.
+   * 
+   * @see Consts#MCAST_HEARTBEAT_FORCE_RESYNC_ATTEMPTS
+   */
+	public void setForceResyncAttempts(int attempts) {
+	  this.forceResyncAttempts = attempts;
+	}
+	
+	/**
+	 * @return the maximum number of force-resync attempts.
+	 */
+	public int getForceResyncAttempts() {
+	  return this.forceResyncAttempts;
+	}
+	
+	 /**
+   * @param masterBroadcastEnabled indicates if master broadcast should be enabled or not.
+   * 
+   * @see Consts#MCAST_MASTER_BROADCAST_ENABLED
+   */
+	public void setMasterBroadcastEnabled(boolean masterBroadcastEnabled) {
+    this.masterBroadcastEnabled = masterBroadcastEnabled;
+  }
+	
+	public boolean isMasterBroadcastEnabled() {
+    return masterBroadcastEnabled;
+  }
+		
+	/**
+	 * @param masterBroadcastInterval the master broadcast interval.
+	 * 
+	 * @see Consts#MCAST_MASTER_BROADCAST_INTERVAL
+	 */
+	public void setMasterBroadcastInterval(long masterBroadcastInterval) {
+    this.masterBroadcastInterval = masterBroadcastInterval;
+  }
+	
+	public long getMasterBroadcastInterval() {
+    return masterBroadcastInterval;
+  }
+	
 }

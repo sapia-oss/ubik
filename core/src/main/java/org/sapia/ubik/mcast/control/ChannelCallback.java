@@ -92,4 +92,9 @@ public interface ChannelCallback {
 	 * @param targetedNodes a {@link Set} of nodes that are targeted for a forced resync.
 	 */
 	public void forceResyncOf(Set<String> targetedNodes);
+	
+	/**
+	 * Triggers a "master broadcast".
+	 */
+	public void triggerMasterBroadcast();
 }

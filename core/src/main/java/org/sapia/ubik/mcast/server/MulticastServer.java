@@ -136,9 +136,9 @@ public abstract class MulticastServer {
 
   private void doRun() {
     DatagramPacket pack = null;
-
+    byte[] bytes = new byte[bufSize];
     while (true) {
-      byte[] bytes = new byte[bufSize];
+
       try {
         pack = new DatagramPacket(bytes, bytes.length);
         sock.receive(pack);
@@ -155,6 +155,8 @@ public abstract class MulticastServer {
         }
       } catch (Exception e) {
         log.error("Unexpected exception caught while waiting for incoming packets", e);
+      } finally {
+        pack.setLength(bytes.length);
       }
     }
   }

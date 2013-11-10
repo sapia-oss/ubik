@@ -20,6 +20,7 @@ public class ControllerContext {
 	private List<EventChannelControllerListener> listeners = new CopyOnWriteArrayList<EventChannelControllerListener>();
 	
 	private Role 						role;
+	private Purgatory       purgatory                 = new Purgatory();
 	private EventChannelController controller;
 	private ChannelCallback channelCallback;
 	private Clock						clock; 
@@ -61,6 +62,13 @@ public class ControllerContext {
 	 */
 	public ChannelCallback getChannelCallback() {
 	  return channelCallback;
+  }
+	
+	/**
+	 * @return the {@link Purgatory}.
+	 */
+	public Purgatory getPurgatory() {
+    return purgatory;
   }
 	
 	/**
@@ -198,7 +206,8 @@ public class ControllerContext {
 	}
 	
 	/**
-	 * @return the ID of the node that is currently the master (will be <code>null</code> if no heartbeat request  
+	 * @return the ID of the node that is currently the master 
+	 * (will be <code>null</code> if no heartbeat request has yet been received).
 	 */
 	public synchronized String getMasterNode() {
     return masterNode;

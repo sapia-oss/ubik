@@ -115,7 +115,8 @@ public final class DispatcherFactory {
       UDPBroadcastDispatcher dispatcher = new UDPBroadcastDispatcher(
           consumer, 
           props.getProperty(Consts.MCAST_ADDR_KEY, Consts.DEFAULT_MCAST_ADDR),
-          props.getIntProperty(Consts.MCAST_PORT_KEY, Consts.DEFAULT_MCAST_PORT)
+          props.getIntProperty(Consts.MCAST_PORT_KEY, Consts.DEFAULT_MCAST_PORT),
+          props.getIntProperty(Consts.MCAST_TTL, Defaults.DEFAULT_TTL)
       );
       dispatcher.setBufsize(props.getIntProperty(Consts.MCAST_BUFSIZE_KEY, Defaults.DEFAULT_UDP_PACKET_SIZE));
       return dispatcher;

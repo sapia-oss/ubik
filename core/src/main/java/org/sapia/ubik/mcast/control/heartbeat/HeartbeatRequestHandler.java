@@ -41,12 +41,14 @@ public class HeartbeatRequestHandler implements ControlRequestHandler {
 	 */
 	@Override
 	public void handle(String originNode, ControlRequest request) {
-		context.heartbeatRequestReceived();
-		context.getChannelCallback().heartbeat(originNode, request.getMasterAddress());
-		
     if (ignoreHeartbeatRequest) {
-      context.setMasterNode(request.getMasterNode());
+      if (context.getRole() == Role.MASTER) {
+        log.debug("Received heartbeat request from other master node %s, triggering challenge", originNode);
+        context.triggerChallenge();
+      }      
     } else {
+      context.heartbeatRequestReceived();
+      context.getChannelCallback().heartbeat(originNode, request.getMasterAddress());
       context.getChannelCallback().sendResponse(
           request.getMasterNode(), 
           ControlResponseFactory.createHeartbeatResponse(request, context.getChannelCallback().getAddress())
