@@ -1,60 +1,62 @@
 package org.sapia.ubik.net;
 
-
 /**
  * This class models a URI.
  * <p>
  * Usage:
- *
+ * 
  * <pre>
- *  Uri httpURI = Uri.parse("http://www.sapia-oss.org:80/index.html");
- *
- *  // will print: http
- *  System.out.println(httpURI.getScheme());
- *
- *  // will print: www.sapia-oss.org
- *  System.out.println(httpURI.getHost());
- *
- *  // will print: 80
- *  System.out.println(httpURI.getPort());
- *
- *  // will print: /index.html
- *  System.out.println(httpURI.getPath());
- *
- *  Uri fileURI = Uri.parse("file:/some/directory/foo.txt");
- *
- *  // will print: file
- *  System.out.println(fileURI.getScheme());
- *
- *  // these calls don't make sense:
- *  System.out.println(fileURI.getHost());
- *  System.out.println(fileURI.getHost());
- *
- *  // will print: /some/directory/foo.txt
- *  System.out.println(fileURI.getPath());
- *
+ * Uri httpURI = Uri.parse(&quot;http://www.sapia-oss.org:80/index.html&quot;);
+ * 
+ * // will print: http
+ * System.out.println(httpURI.getScheme());
+ * 
+ * // will print: www.sapia-oss.org
+ * System.out.println(httpURI.getHost());
+ * 
+ * // will print: 80
+ * System.out.println(httpURI.getPort());
+ * 
+ * // will print: /index.html
+ * System.out.println(httpURI.getPath());
+ * 
+ * Uri fileURI = Uri.parse(&quot;file:/some/directory/foo.txt&quot;);
+ * 
+ * // will print: file
+ * System.out.println(fileURI.getScheme());
+ * 
+ * // these calls don't make sense:
+ * System.out.println(fileURI.getHost());
+ * System.out.println(fileURI.getHost());
+ * 
+ * // will print: /some/directory/foo.txt
+ * System.out.println(fileURI.getPath());
+ * 
  * </pre>
- *
- *
- *
+ * 
+ * 
+ * 
  * @author Yanick Duchesne
- * <dl>
- * <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All Rights Reserved.</dd></dt>
- * <dt><b>License:</b><dd>Read the license.txt file of the jar or visit the
- *        <a href="http://www.sapia-oss.org/license.html">license page</a> at the Sapia OSS web site</dd></dt>
- * </dl>
+ *         <dl>
+ *         <dt><b>Copyright:</b><dd>Copyright &#169; 2002-2003 <a
+ *         href="http://www.sapia-oss.org">Sapia Open Source Software</a>. All
+ *         Rights Reserved.</dd></dt> <dt><b>License:</b><dd>Read the
+ *         license.txt file of the jar or visit the <a
+ *         href="http://www.sapia-oss.org/license.html">license page</a> at the
+ *         Sapia OSS web site</dd></dt>
+ *         </dl>
  */
 public class Uri {
-  public static final int                UNDEFINED_PORT = -1;
-  public static final String             UNDEFINED_HOST = "";
-  private static final QueryStringParser PARSER         = new QueryStringParser();
-  private static final String            PROTO          = "://";
-  private static final char              COLON          = ':';
-  private static final char              SLASH          = '/';
-  private String                         _scheme;
-  private String                         _host;
-  private QueryString                    _query;
-  private int                            _port          = UNDEFINED_PORT;
+  public static final int UNDEFINED_PORT = -1;
+  public static final String UNDEFINED_HOST = "";
+  private static final QueryStringParser PARSER = new QueryStringParser();
+  private static final String PROTO = "://";
+  private static final char COLON = ':';
+  private static final char SLASH = '/';
+  private String _scheme;
+  private String _host;
+  private QueryString _query;
+  private int _port = UNDEFINED_PORT;
 
   /**
    * Constructor for UrlParser.
@@ -63,15 +65,15 @@ public class Uri {
   }
 
   public Uri(String scheme, String host, int port, String path) {
-    _scheme   = scheme;
-    _host     = host;
-    _port     = port;
-    _query    = new QueryString("");
+    _scheme = scheme;
+    _host = host;
+    _port = port;
+    _query = new QueryString("");
   }
 
   /**
    * Returns the path of this URI.
-   *
+   * 
    * @return a path.
    */
   public String getPath() {
@@ -80,7 +82,7 @@ public class Uri {
 
   /**
    * Returns the scheme of this URI.
-   *
+   * 
    * @return a scheme.
    */
   public String getScheme() {
@@ -89,9 +91,9 @@ public class Uri {
 
   /**
    * Returns the host of this URI.
-   *
-   * @return a host - if no host was specified, the returned value
-   * corresponds to the UNDEFINED_HOST constant of this class.
+   * 
+   * @return a host - if no host was specified, the returned value corresponds
+   *         to the UNDEFINED_HOST constant of this class.
    */
   public String getHost() {
     return _host;
@@ -99,9 +101,9 @@ public class Uri {
 
   /**
    * Returns the port of this URI.
-   *
-   * @return a port - if no port was specified, the returned value
-   * corresponds to the UNDEFINED_PORT constant of this class.
+   * 
+   * @return a port - if no port was specified, the returned value corresponds
+   *         to the UNDEFINED_PORT constant of this class.
    */
   public int getPort() {
     return _port;
@@ -109,8 +111,9 @@ public class Uri {
 
   /**
    * Sets this instance's scheme.
-   *
-   * @param scheme a scheme.
+   * 
+   * @param scheme
+   *          a scheme.
    */
   public void setScheme(String scheme) {
     _scheme = scheme;
@@ -118,8 +121,9 @@ public class Uri {
 
   /**
    * Sets this instance's host.
-   *
-   * @param host a host identifier.
+   * 
+   * @param host
+   *          a host identifier.
    */
   public void setHost(String host) {
     _host = host;
@@ -127,8 +131,9 @@ public class Uri {
 
   /**
    * Sets this instance's port.
-   *
-   * @param port a port.
+   * 
+   * @param port
+   *          a port.
    */
   public void setPort(int port) {
     _port = port;
@@ -136,9 +141,9 @@ public class Uri {
 
   /**
    * Returns this instance's query string.
-   *
-   * @return a <code>QueryString</code>, or <code>null</code>
-   * if this instance has no query string.
+   * 
+   * @return a <code>QueryString</code>, or <code>null</code> if this instance
+   *         has no query string.
    */
   public QueryString getQueryString() {
     return _query;
@@ -146,7 +151,7 @@ public class Uri {
 
   /**
    * Returns this instance's string format.
-   *
+   * 
    * @return a <code>String</code>.
    */
   public String toString() {
@@ -168,9 +173,8 @@ public class Uri {
   }
 
   /**
-   * Parses the given URI string and returns its object
-   * representation.
-   *
+   * Parses the given URI string and returns its object representation.
+   * 
    * @return a <code>Uri</code>.
    */
   public static Uri parse(String uriStr) throws UriSyntaxException {
@@ -222,7 +226,7 @@ public class Uri {
       if (host.length() == 0) {
         url.setHost(UNDEFINED_HOST);
 
-        //throw new UriSyntaxException("Host empty in URI: " + str);
+        // throw new UriSyntaxException("Host empty in URI: " + str);
       } else {
         url.setHost(host);
         parsePort(url, str.substring(idx + 1));
@@ -233,9 +237,10 @@ public class Uri {
       String host;
 
       if (idx < 0) {
-        host = str; //str.substring(0);      
+        host = str; // str.substring(0);
 
-        //        throw new UriSyntaxException("Expected '/' after host in URI " + str);
+        // throw new UriSyntaxException("Expected '/' after host in URI " +
+        // str);
       } else {
         host = str.substring(0, idx);
       }
@@ -243,7 +248,7 @@ public class Uri {
       if (host.length() == 0) {
         url.setHost(UNDEFINED_HOST);
 
-        //throw new UriSyntaxException("Host empty in URI: " + str);
+        // throw new UriSyntaxException("Host empty in URI: " + str);
       } else {
         url.setHost(host);
       }
@@ -258,7 +263,7 @@ public class Uri {
   }
 
   private static void parsePort(Uri url, String str) throws UriSyntaxException {
-    int    idx = str.indexOf(SLASH);
+    int idx = str.indexOf(SLASH);
 
     String port;
 
@@ -269,8 +274,7 @@ public class Uri {
     }
 
     if (port.length() == 0) {
-      throw new UriSyntaxException("Port expected but not specified in URI: " +
-        str);
+      throw new UriSyntaxException("Port expected but not specified in URI: " + str);
     }
 
     try {

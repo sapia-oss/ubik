@@ -16,28 +16,30 @@ import org.sapia.ubik.mcast.Defaults;
 import org.sapia.ubik.util.Assertions;
 import org.sapia.ubik.util.Localhost;
 
-
 /**
- * Implements a basic multicast server. One only needs inheriting from this class
- * and override the {@link #handle(DatagramPacket, MulticastSocket)} method.
+ * Implements a basic multicast server. One only needs inheriting from this
+ * class and override the {@link #handle(DatagramPacket, MulticastSocket)}
+ * method.
  * 
  * @author Yanick Duchesne
  */
 public abstract class MulticastServer {
-  
-  static final int          DEFAULT_TTL   = 7;
-  
-  protected Category        log           = Log.createCategory(getClass());
+
+  static final int DEFAULT_TTL = 7;
+
+  protected Category log = Log.createCategory(getClass());
   protected MulticastSocket sock;
-  private InetAddress       group;
-  private String            groupStr;
-  private int               port;
-  private Thread            serverThread;
-  private int               bufSize       = Defaults.DEFAULT_UDP_PACKET_SIZE;
-  
+  private InetAddress group;
+  private String groupStr;
+  private int port;
+  private Thread serverThread;
+  private int bufSize = Defaults.DEFAULT_UDP_PACKET_SIZE;
+
   private class Acceptor implements Runnable {
-    
-    private Acceptor() {}
+
+    private Acceptor() {
+    }
+
     @Override
     public void run() {
       doRun();
@@ -45,19 +47,25 @@ public abstract class MulticastServer {
   }
 
   /**
-   * @param name the name to use for this instance's server thread.
-   * @param mcastAddress the address of the multicast group on which this instance should listen.
-   * @param mcastPort the multicast port to which this instance should bind.
-   * @param ttl the time-to-live of datagram packets that this instance will send.
-   * @throws IOException if a problem occurs while calling this constructor.
+   * @param name
+   *          the name to use for this instance's server thread.
+   * @param mcastAddress
+   *          the address of the multicast group on which this instance should
+   *          listen.
+   * @param mcastPort
+   *          the multicast port to which this instance should bind.
+   * @param ttl
+   *          the time-to-live of datagram packets that this instance will send.
+   * @throws IOException
+   *           if a problem occurs while calling this constructor.
    */
   protected MulticastServer(String name, String mcastAddress, int mcastPort, int ttl) throws IOException {
     serverThread = NamedThreadFactory.createWith(name).setDaemon(true).newThread(new Acceptor());
-    group      = InetAddress.getByName(mcastAddress);
-    groupStr   = mcastAddress;
-    sock       = new MulticastSocket(mcastPort);
+    group = InetAddress.getByName(mcastAddress);
+    groupStr = mcastAddress;
+    sock = new MulticastSocket(mcastPort);
     if (Localhost.isIpPatternDefined()) {
-        sock.setNetworkInterface(NetworkInterface.getByInetAddress(Localhost.getAnyLocalAddress()));
+      sock.setNetworkInterface(NetworkInterface.getByInetAddress(Localhost.getAnyLocalAddress()));
     }
     sock.setTimeToLive(ttl);
     sock.joinGroup(group);
@@ -65,11 +73,18 @@ public abstract class MulticastServer {
   }
 
   /**
-   * Constructs an instance of this class with the default time-to-live (see {@value #DEFAULT_TTL}).
-   * @param name the name to use for this instance's server thread.
-   * @param mcastAddress the address of the multicast group on which this instance should listen.
-   * @param mcastPort the multicast port to which this instance should bind.
-   * @throws IOException if a problem occurs while calling this constructor.
+   * Constructs an instance of this class with the default time-to-live (see
+   * {@value #DEFAULT_TTL}).
+   * 
+   * @param name
+   *          the name to use for this instance's server thread.
+   * @param mcastAddress
+   *          the address of the multicast group on which this instance should
+   *          listen.
+   * @param mcastPort
+   *          the multicast port to which this instance should bind.
+   * @throws IOException
+   *           if a problem occurs while calling this constructor.
    */
   protected MulticastServer(String name, String mcastAddress, int mcastPort) throws IOException {
     this(name, mcastAddress, mcastPort, DEFAULT_TTL);
@@ -77,7 +92,9 @@ public abstract class MulticastServer {
 
   /**
    * Sets this instance buffer size.
-   * @param size a buffer size.
+   * 
+   * @param size
+   *          a buffer size.
    */
   public void setBufsize(int size) {
     this.bufSize = size;
@@ -100,8 +117,10 @@ public abstract class MulticastServer {
   /**
    * Sends the given bytes to this instance's multicast group.s
    * 
-   * @param toSend the bytes to send.
-   * @throws IOException if a problem occurs trying to send the given bytes.
+   * @param toSend
+   *          the bytes to send.
+   * @throws IOException
+   *           if a problem occurs trying to send the given bytes.
    */
   public void send(byte[] toSend) throws IOException {
     Assertions.illegalState(sock == null, "Server not started");
@@ -109,12 +128,12 @@ public abstract class MulticastServer {
     DatagramPacket pack = new DatagramPacket(toSend, toSend.length, group, port);
     sock.send(pack);
   }
-  
+
   /**
    * Starts this instance.
    */
   public synchronized void start() {
-    if(!serverThread.isAlive()) {
+    if (!serverThread.isAlive()) {
       serverThread.start();
     }
   }
@@ -123,7 +142,7 @@ public abstract class MulticastServer {
    * Closes this instance.
    */
   public synchronized void close() {
-    if(sock != null) {
+    if (sock != null) {
       try {
         sock.leaveGroup(group);
       } catch (IOException e) {
@@ -162,17 +181,22 @@ public abstract class MulticastServer {
   }
 
   /**
-   * @return the size (in bytes) of the buffers that are used to read incoming datagrams.
+   * @return the size (in bytes) of the buffers that are used to read incoming
+   *         datagrams.
    */
   protected int bufSize() {
     return bufSize;
   }
 
   /**
-   * This template method is called internally by this instance whenever a new incoming datagram is read.
+   * This template method is called internally by this instance whenever a new
+   * incoming datagram is read.
    * 
-   * @param pack an incoming {@link DatagramPacket}.
-   * @param sock the {@link MulticastSocket} that was used to read the incoming datagram.
+   * @param pack
+   *          an incoming {@link DatagramPacket}.
+   * @param sock
+   *          the {@link MulticastSocket} that was used to read the incoming
+   *          datagram.
    */
   protected abstract void handle(DatagramPacket pack, MulticastSocket sock);
 }

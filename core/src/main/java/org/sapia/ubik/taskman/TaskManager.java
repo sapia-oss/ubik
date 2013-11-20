@@ -12,5 +12,5 @@ public interface TaskManager {
    *          the {@link Task} to execute.
    */
   public void addTask(TaskContext ctx, Task task);
-  
+
 }

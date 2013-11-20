@@ -6,42 +6,45 @@ import org.sapia.ubik.util.Clock.SystemClock;
  * Models a delay.
  * 
  * @author yduchesne
- *
+ * 
  */
 public class Delay {
-  
-	private Clock clock     = SystemClock.getInstance();
+
+  private Clock clock = SystemClock.getInstance();
   private long start;
   private long duration;
-  
+
   /**
-   * @param clock the {@link Clock} to use.
-   * @param duration the duration of this delay, in millis.
+   * @param clock
+   *          the {@link Clock} to use.
+   * @param duration
+   *          the duration of this delay, in millis.
    */
   public Delay(Clock clock, long duration) {
-  	this.clock    = clock;
-  	this.duration = duration;
-  	this.start    = clock.currentTimeMillis();
+    this.clock = clock;
+    this.duration = duration;
+    this.start = clock.currentTimeMillis();
   }
-  
+
   /**
-   * @param duration the duration of this delay, in millis.
+   * @param duration
+   *          the duration of this delay, in millis.
    */
   public Delay(long duration) {
     this.duration = duration;
-  	this.start    = clock.currentTimeMillis();    
+    this.start = clock.currentTimeMillis();
   }
-  
+
   /**
    * @return <code>true</code> if this delay is over.
    */
   public boolean isOver() {
     return clock.currentTimeMillis() - start >= duration;
   }
-  
+
   /**
-   * This method returns the number of millis that remain in this delay. This method
-   * will return at least 0 (which indicates that the delay is over).
+   * This method returns the number of millis that remain in this delay. This
+   * method will return at least 0 (which indicates that the delay is over).
    * 
    * @return the number of remaining milliseconds in this delay.
    */
@@ -49,11 +52,11 @@ public class Delay {
     long remaining = duration - (clock.currentTimeMillis() - start);
     return remaining < 0 ? 0 : remaining;
   }
-  
+
   /**
-   * This method returns the number of millis that remain in this delay. This method
-   * will return at least 1: this is to allow passing the returned value to the {@link Object#wait(long)}
-   * method without incurring a "forever" wait.
+   * This method returns the number of millis that remain in this delay. This
+   * method will return at least 1: this is to allow passing the returned value
+   * to the {@link Object#wait(long)} method without incurring a "forever" wait.
    * 
    * @return the number of remaining milliseconds in this delay.
    */
@@ -61,19 +64,20 @@ public class Delay {
     long remaining = remaining();
     return remaining == 0 ? 1 : remaining;
   }
-  
+
   /**
-   * @return the duration (in millis) that was originally assigned to this instance.
+   * @return the duration (in millis) that was originally assigned to this
+   *         instance.
    */
   public long getDuration() {
     return duration;
   }
-  
+
   /**
    * @return the time (in millis) at which this instance was created.
    */
   public long getStart() {
-	  return start;
+    return start;
   }
 
   /**

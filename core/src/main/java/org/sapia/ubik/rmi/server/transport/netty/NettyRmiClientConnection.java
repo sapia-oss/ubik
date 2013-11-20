@@ -30,28 +30,29 @@ import org.sapia.ubik.rmi.server.transport.RmiConnection;
 import org.sapia.ubik.rmi.server.transport.RmiObjectOutput;
 
 /**
- * A connection over a Socket the connection uses the {@link MarshalOutputStream} class to serialize outgoing objects.
+ * A connection over a Socket the connection uses the
+ * {@link MarshalOutputStream} class to serialize outgoing objects.
  */
 public class NettyRmiClientConnection implements RmiConnection {
-  
-  private static Stopwatch serializationTime   = Stats.createStopwatch(NettyRmiClientConnection.class, 
-      "SerializationDuration", "Time required to serialize an object");
 
-  private static Stopwatch sendTime = Stats.createStopwatch(NettyRmiClientConnection.class, 
-      "SendDuration", "Time required to send an object over the network");
-  
-  private Socket         		 sock;
-  private int            		 bufsize;
-  private ServerAddress  		 address;
-  private ChannelBuffer      byteBuffer;
+  private static Stopwatch serializationTime = Stats.createStopwatch(NettyRmiClientConnection.class, "SerializationDuration",
+      "Time required to serialize an object");
+
+  private static Stopwatch sendTime = Stats.createStopwatch(NettyRmiClientConnection.class, "SendDuration",
+      "Time required to send an object over the network");
+
+  private Socket sock;
+  private int bufsize;
+  private ServerAddress address;
+  private ChannelBuffer byteBuffer;
   private ObjectOutputStream oos;
-  private ObjectInputStream  ois;
-  private Category           log = Log.createCategory(getClass());
-   
+  private ObjectInputStream ois;
+  private Category log = Log.createCategory(getClass());
+
   public NettyRmiClientConnection(Socket sock, int bufsize) throws IOException {
-    this.sock 			= sock;
-    this.address 		= new NettyAddress(sock.getInetAddress().getHostAddress(), sock.getPort());
-    this.bufsize 		= bufsize;
+    this.sock = sock;
+    this.address = new NettyAddress(sock.getInetAddress().getHostAddress(), sock.getPort());
+    this.bufsize = bufsize;
     this.byteBuffer = ChannelBuffers.dynamicBuffer(bufsize);
   }
 
@@ -66,13 +67,12 @@ public class NettyRmiClientConnection implements RmiConnection {
    * @see org.sapia.ubik.rmi.server.transport.RmiConnection#send(Object, VmId,
    *      String)
    */
-  public void send(Object o, VmId vmId, String transportType)
-      throws IOException, RemoteException {
+  public void send(Object o, VmId vmId, String transportType) throws IOException, RemoteException {
     byteBuffer.clear();
-    if(oos == null) {
-    	oos = MarshalStreamFactory.createOutputStream(new ChannelBufferOutputStream(byteBuffer));
+    if (oos == null) {
+      oos = MarshalStreamFactory.createOutputStream(new ChannelBufferOutputStream(byteBuffer));
     }
-    ((RmiObjectOutput)oos).setUp(vmId, transportType);
+    ((RmiObjectOutput) oos).setUp(vmId, transportType);
     Split split = serializationTime.start();
     oos.writeObject(o);
     oos.flush();
@@ -80,7 +80,7 @@ public class NettyRmiClientConnection implements RmiConnection {
 
     try {
       doSend();
-    } catch(java.net.SocketException e) {
+    } catch (java.net.SocketException e) {
       throw new RemoteException("Communication with server interrupted; server probably disappeared", e);
     }
   }
@@ -90,36 +90,35 @@ public class NettyRmiClientConnection implements RmiConnection {
    */
   public void send(Object o) throws IOException, RemoteException {
     byteBuffer.clear();
-    if(oos == null) {
-    	oos = MarshalStreamFactory.createOutputStream(new ChannelBufferOutputStream(byteBuffer));
+    if (oos == null) {
+      oos = MarshalStreamFactory.createOutputStream(new ChannelBufferOutputStream(byteBuffer));
     }
     Split split = serializationTime.start();
     oos.writeObject(o);
     oos.flush();
     split.stop();
-    
+
     try {
       doSend();
-    } catch(java.net.SocketException e) {
+    } catch (java.net.SocketException e) {
       throw new RemoteException("Communication with server interrupted; server probably disappeared", e);
     }
   }
-  
+
   /**
    * @see org.sapia.ubik.net.Connection#receive()
    */
-  public Object receive() throws IOException, ClassNotFoundException,
-      RemoteException {
+  public Object receive() throws IOException, ClassNotFoundException, RemoteException {
     try {
-    	DataInputStream dis = new DataInputStream(sock.getInputStream());
-    	log.debug("Receiving response of %s bytes", dis.readInt());
-    	if(ois == null) {
-    		ois = MarshalStreamFactory.createInputStream(new BufferedInputStream(sock.getInputStream(), bufsize));
-    	}
+      DataInputStream dis = new DataInputStream(sock.getInputStream());
+      log.debug("Receiving response of %s bytes", dis.readInt());
+      if (ois == null) {
+        ois = MarshalStreamFactory.createInputStream(new BufferedInputStream(sock.getInputStream(), bufsize));
+      }
       return ois.readObject();
-    } catch(EOFException e) {
+    } catch (EOFException e) {
       throw new RemoteException("Communication with server interrupted; server probably disappeared", e);
-    } catch(SocketException e) {
+    } catch (SocketException e) {
       throw new RemoteException("Connection could not be opened; server is probably down", e);
     }
   }
@@ -130,16 +129,16 @@ public class NettyRmiClientConnection implements RmiConnection {
   public void close() {
     try {
       sock.close();
-    } catch(Throwable t) {
-      //noop
+    } catch (Throwable t) {
+      // noop
     }
   }
-  
-  private void doSend() throws IOException{
+
+  private void doSend() throws IOException {
     Split split = sendTime.start();
-    OutputStream sos     = new BufferedOutputStream(sock.getOutputStream(), bufsize);
+    OutputStream sos = new BufferedOutputStream(sock.getOutputStream(), bufsize);
     DataOutputStream dos = new DataOutputStream(sos);
-    byte[] toWrite 			 = new byte[byteBuffer.writerIndex()];
+    byte[] toWrite = new byte[byteBuffer.writerIndex()];
     dos.writeInt(toWrite.length);
     byteBuffer.readBytes(toWrite);
     dos.write(toWrite);

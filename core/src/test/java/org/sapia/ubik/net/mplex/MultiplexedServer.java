@@ -7,7 +7,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 
-
 /**
  * @author <a href="mailto:jc@sapia-oss.org">Jean-Cedric Desrochers</a>
  */
@@ -20,26 +19,22 @@ public class MultiplexedServer {
    */
   public MultiplexedServer() throws IOException {
     int backlog = 100;
-//    _server = new MultiplexServerSocket(7777, backlog, Localhost.getLocalAddressForConfig());
+    // _server = new MultiplexServerSocket(7777, backlog,
+    // Localhost.getLocalAddressForConfig());
     _server = new MultiplexServerSocket(7777, backlog);
     log("Started multiplex server on port 7777");
     log("Setting backlog queue to " + backlog);
-    log("Setting " + _server.getAcceptorDaemonThread() +
-      " acceptor daemon threads");
-    log("Setting " + _server.getSelectorDaemonThread() +
-      " selector daemon threads");
+    log("Setting " + _server.getAcceptorDaemonThread() + " acceptor daemon threads");
+    log("Setting " + _server.getSelectorDaemonThread() + " selector daemon threads");
 
-    MultiplexSocketConnector httpSocket = _server.createSocketConnector(new HttpStreamSelector(
-          null, null));
-    HttpHandler              httpHandler = new HttpHandler(httpSocket);
-    Thread                   httpThread  = new Thread(httpHandler,
-        "HTTP-Processor");
+    MultiplexSocketConnector httpSocket = _server.createSocketConnector(new HttpStreamSelector(null, null));
+    HttpHandler httpHandler = new HttpHandler(httpSocket);
+    Thread httpThread = new Thread(httpHandler, "HTTP-Processor");
     httpThread.start();
 
     MultiplexSocketConnector objectSocket = _server.createSocketConnector(new ObjectStreamSelector());
-    ObjectHandler            objectHandler = new ObjectHandler(objectSocket);
-    Thread                   objectThread  = new Thread(objectHandler,
-        "Object-Processor");
+    ObjectHandler objectHandler = new ObjectHandler(objectSocket);
+    Thread objectThread = new Thread(objectHandler, "Object-Processor");
     objectThread.start();
   }
 
@@ -53,8 +48,7 @@ public class MultiplexedServer {
 
   public static synchronized void log(String log) {
     StringBuffer aBuffer = new StringBuffer();
-    aBuffer.append(System.currentTimeMillis() - START_TIME).append(" [")
-           .append(Thread.currentThread().getName()).append("] ").append(log);
+    aBuffer.append(System.currentTimeMillis() - START_TIME).append(" [").append(Thread.currentThread().getName()).append("] ").append(log);
     System.out.println(aBuffer.toString());
   }
 
@@ -81,7 +75,7 @@ public class MultiplexedServer {
   }
 
   /**
-   *
+   * 
    * @
    */
   public static class HttpHandler implements Runnable {
@@ -115,7 +109,7 @@ public class MultiplexedServer {
   }
 
   /**
-   *
+   * 
    * @
    */
   public static class HttpServer implements Runnable {
@@ -130,10 +124,10 @@ public class MultiplexedServer {
 
       try {
         // Get the request
-        InputStream           is      = _client.getInputStream();
+        InputStream is = _client.getInputStream();
         ByteArrayOutputStream request = new ByteArrayOutputStream();
-        boolean               isDone  = false;
-        byte[]                data    = new byte[1024];
+        boolean isDone = false;
+        byte[] data = new byte[1024];
 
         while (!isDone) {
           int length = is.read(data);
@@ -147,7 +141,7 @@ public class MultiplexedServer {
 
         // Printing out the request
         StringBuffer aBuffer = new StringBuffer("===> Got an HTTP request\n");
-        String       aPost = request.toString("UTF-8");
+        String aPost = request.toString("UTF-8");
         aBuffer.append(aPost.substring(aPost.lastIndexOf("\r\n\r\n") + 4));
         log(aBuffer.toString());
 
@@ -167,7 +161,7 @@ public class MultiplexedServer {
   }
 
   /**
-   *
+   * 
    * @
    */
   public static class ObjectHandler implements Runnable {
@@ -201,7 +195,7 @@ public class MultiplexedServer {
   }
 
   /**
-   *
+   * 
    * @
    */
   public static class ObjectServer implements Runnable {
@@ -217,7 +211,7 @@ public class MultiplexedServer {
       int count = 0;
 
       try {
-        ObjectInputStream  request  = null;
+        ObjectInputStream request = null;
         ObjectOutputStream response = null;
 
         while (true) {
@@ -226,8 +220,7 @@ public class MultiplexedServer {
             request = new ObjectInputStream(_client.getInputStream());
           }
 
-          StringBuffer aBuffer = new StringBuffer(
-              "===> Got an Java Object request [" + (++count) + "]\n");
+          StringBuffer aBuffer = new StringBuffer("===> Got an Java Object request [" + (++count) + "]\n");
           aBuffer.append(request.readObject());
           log(aBuffer.toString());
 
@@ -252,7 +245,7 @@ public class MultiplexedServer {
   }
 
   /**
-   *
+   * 
    * @
    */
   public static class DefaultServer implements Runnable {
@@ -270,10 +263,10 @@ public class MultiplexedServer {
       try {
         while (true) {
           // Get the request
-          InputStream           is      = _client.getInputStream();
+          InputStream is = _client.getInputStream();
           ByteArrayOutputStream request = new ByteArrayOutputStream();
-          boolean               isDone  = false;
-          byte[]                data    = new byte[1024];
+          boolean isDone = false;
+          byte[] data = new byte[1024];
 
           while (!isDone) {
             int length = is.read(data);
@@ -285,8 +278,7 @@ public class MultiplexedServer {
             isDone = is.available() == 0;
           }
 
-          StringBuffer aBuffer = new StringBuffer(
-              "===> Got a default request [" + (++count) + "]\n");
+          StringBuffer aBuffer = new StringBuffer("===> Got a default request [" + (++count) + "]\n");
           aBuffer.append(request);
           log(aBuffer.toString());
 

@@ -15,55 +15,47 @@ import org.sapia.ubik.rmi.server.invocation.InvocationDispatcher.InvocationStats
 import org.sapia.ubik.rmi.server.transport.Connections;
 
 public class ColocatedInvocationStrategy implements InvocationStrategy {
-  
-  private Category      log             = Log.createCategory(getClass());
+
+  private Category log = Log.createCategory(getClass());
   private ServerRuntime serverRuntime;
-  private ObjectTable   objectTable;
-  
+  private ObjectTable objectTable;
+
   @Override
   public void init(ModuleContext modules) {
     this.serverRuntime = modules.lookup(ServerRuntime.class);
-    this.objectTable   = modules.lookup(ObjectTable.class);
-  }  
-  
+    this.objectTable = modules.lookup(ObjectTable.class);
+  }
+
   @Override
-  public Object dispatchInvocation(InvocationStats stats, Connections pool, InvokeCommand cmd) 
-    throws IOException, ClassNotFoundException, Throwable {
-  
+  public Object dispatchInvocation(InvocationStats stats, Connections pool, InvokeCommand cmd) throws IOException, ClassNotFoundException, Throwable {
+
     Object toReturn;
     Object target = objectTable.getObjectFor(cmd.getOID());
     Method toCall = target.getClass().getMethod(cmd.getMethodName(), cmd.getParameterTypes());
 
-    log.info("Performing colocated call ==> invoking %s on %s (%s)",  toCall.getName(),  cmd.getOID(), target);
-    
+    log.info("Performing colocated call ==> invoking %s on %s (%s)", toCall.getName(), cmd.getOID(), target);
+
     // SERVER pre invoke event dispatch
     ServerPreInvokeEvent serverPreEvent = new ServerPreInvokeEvent(cmd, target);
     serverRuntime.getDispatcher().dispatch(serverPreEvent);
-    
+
     try {
-    	toCall.setAccessible(true);
+      toCall.setAccessible(true);
       toReturn = toCall.invoke(serverPreEvent.getTarget(), serverPreEvent.getInvokeCommand().getParams());
 
       // SERVER post invoke event dispatch
-      ServerPostInvokeEvent serverPostEvent = new ServerPostInvokeEvent(
-          serverPreEvent.getTarget(),
-          serverPreEvent.getInvokeCommand(), 
-          System.currentTimeMillis() - serverPreEvent.getInvokeTime()
-      );
+      ServerPostInvokeEvent serverPostEvent = new ServerPostInvokeEvent(serverPreEvent.getTarget(), serverPreEvent.getInvokeCommand(),
+          System.currentTimeMillis() - serverPreEvent.getInvokeTime());
       serverPostEvent.setResultObject(toReturn);
       serverRuntime.getDispatcher().dispatch(serverPostEvent);
-      
+
     } catch (Throwable e) {
-      if(e instanceof InvocationTargetException){
-        e = ((InvocationTargetException)e).getTargetException();
+      if (e instanceof InvocationTargetException) {
+        e = ((InvocationTargetException) e).getTargetException();
       }
-      ServerPostInvokeEvent postEvt = new ServerPostInvokeEvent(
-          serverPreEvent.getTarget(),
-          serverPreEvent.getInvokeCommand(), 
-          System.currentTimeMillis() - serverPreEvent.getInvokeTime(), 
-          e
-      );
-      serverRuntime.getDispatcher().dispatch(postEvt);      
+      ServerPostInvokeEvent postEvt = new ServerPostInvokeEvent(serverPreEvent.getTarget(), serverPreEvent.getInvokeCommand(),
+          System.currentTimeMillis() - serverPreEvent.getInvokeTime(), e);
+      serverRuntime.getDispatcher().dispatch(postEvt);
       e.fillInStackTrace();
       toReturn = e;
     }

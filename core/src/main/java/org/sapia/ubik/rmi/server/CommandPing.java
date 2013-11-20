@@ -2,7 +2,6 @@ package org.sapia.ubik.rmi.server;
 
 import org.sapia.ubik.rmi.server.command.RMICommand;
 
-
 /**
  * An instance of this class is sent to ping a Ubik RMI server.
  * 

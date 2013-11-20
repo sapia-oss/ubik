@@ -4,7 +4,6 @@ import java.io.UnsupportedEncodingException;
 
 import junit.framework.TestCase;
 
-
 /**
  * @author <a href="mailto:jc@sapia-oss.org">Jean-Cedric Desrochers</a>
  */
@@ -31,23 +30,17 @@ public class SimpleStreamSelectorTest extends TestCase {
   }
 
   public void testNonSelectedStream() throws Exception {
-    assertTrue(!new SimpleStreamSelector("HTTP",
-        SimpleStreamSelector.TYPE_CONTAINS).selectStream(header));
-    assertTrue(!new SimpleStreamSelector("HTTP",
-        SimpleStreamSelector.TYPE_STARTS_WITH).selectStream(header));
+    assertTrue(!new SimpleStreamSelector("HTTP", SimpleStreamSelector.TYPE_CONTAINS).selectStream(header));
+    assertTrue(!new SimpleStreamSelector("HTTP", SimpleStreamSelector.TYPE_STARTS_WITH).selectStream(header));
   }
 
   public void testSelectedInitialStream() throws Exception {
-    assertTrue(new SimpleStreamSelector("UBIK",
-        SimpleStreamSelector.TYPE_CONTAINS).selectStream(header));
-    assertTrue(new SimpleStreamSelector("UBIK",
-        SimpleStreamSelector.TYPE_STARTS_WITH).selectStream(header));
+    assertTrue(new SimpleStreamSelector("UBIK", SimpleStreamSelector.TYPE_CONTAINS).selectStream(header));
+    assertTrue(new SimpleStreamSelector("UBIK", SimpleStreamSelector.TYPE_STARTS_WITH).selectStream(header));
   }
 
   public void testSelectedContentStream() throws Exception {
-    assertTrue(new SimpleStreamSelector("abcdef",
-        SimpleStreamSelector.TYPE_CONTAINS).selectStream(header));
-    assertTrue(!new SimpleStreamSelector("abcdef",
-        SimpleStreamSelector.TYPE_STARTS_WITH).selectStream(header));
+    assertTrue(new SimpleStreamSelector("abcdef", SimpleStreamSelector.TYPE_CONTAINS).selectStream(header));
+    assertTrue(!new SimpleStreamSelector("abcdef", SimpleStreamSelector.TYPE_STARTS_WITH).selectStream(header));
   }
 }

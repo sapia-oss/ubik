@@ -9,29 +9,31 @@ import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
 import org.sapia.ubik.util.pool.Pool;
 
-
 /**
  * This class implements the <code>Connections</code> interface over the JDK's
- * HTTP support classes ({@link URL}, {@link HttpURLConnection}). It is
- * a sub-optimal implementation used only if the Jakarta HTTP client classes are not
- * in the classpath.
- *
+ * HTTP support classes ({@link URL}, {@link HttpURLConnection}). It is a
+ * sub-optimal implementation used only if the Jakarta HTTP client classes are
+ * not in the classpath.
+ * 
  * @author Yanick Duchesne
  */
 public class JdkClientConnectionPool implements Connections {
-  private HttpAddress  address;
+  private HttpAddress address;
   private InternalPool pool = new InternalPool();
 
   /**
-   * @param address the address of the target server.
+   * @param address
+   *          the address of the target server.
    */
   public JdkClientConnectionPool(HttpAddress address) {
     this.address = address;
   }
 
   /**
-   * @param transportType the "transport type" identifier.
-   * @param serverUri the address of the target server.
+   * @param transportType
+   *          the "transport type" identifier.
+   * @param serverUri
+   *          the address of the target server.
    */
   public JdkClientConnectionPool(String transportType, Uri serverUri) {
     this(new HttpAddress(serverUri));
@@ -58,19 +60,20 @@ public class JdkClientConnectionPool implements Connections {
   public String getTransportType() {
     return address.getTransportType();
   }
-  
+
   @Override
   public void release(RmiConnection conn) {
-    pool.release((JdkRmiClientConnection)conn);
-  }
-  
-  @Override
-  public void invalidate(RmiConnection conn) {
-  	pool.invalidate((JdkRmiClientConnection)conn);
+    pool.release((JdkRmiClientConnection) conn);
   }
 
-  ///// INNER CLASS /////////////////////////////////////////////////////////////
-  
+  @Override
+  public void invalidate(RmiConnection conn) {
+    pool.invalidate((JdkRmiClientConnection) conn);
+  }
+
+  // /// INNER CLASS
+  // /////////////////////////////////////////////////////////////
+
   static class InternalPool extends Pool<JdkRmiClientConnection> {
     /**
      * @see org.sapia.ubik.util.pool.Pool#doNewObject()

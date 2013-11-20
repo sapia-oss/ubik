@@ -8,12 +8,10 @@ import java.rmi.RemoteException;
 
 import org.junit.Test;
 
-
 public class ConnectionPoolTest {
-	
-	
-	private static final String TRANSPORT_TYPE = "test";
-  
+
+  private static final String TRANSPORT_TYPE = "test";
+
   @Test
   public void testAcquireNoMaxSize() throws Exception {
     ConnectionPool pool = new ConnectionPool("localhost", 9999, new TestConnectionFactory(), -1);
@@ -21,7 +19,7 @@ public class ConnectionPoolTest {
     for (int i = 0; i < 100; i++) {
       pool.acquire();
     }
-    
+
     assertEquals("100 connections should have been created", 100, pool.getCreatedCount());
   }
 
@@ -47,7 +45,7 @@ public class ConnectionPoolTest {
   public void testRelease() throws Exception {
     ConnectionPool pool = new ConnectionPool("localhost", 9999, new TestConnectionFactory(), 3);
 
-    Connection     conn;
+    Connection conn;
     pool.acquire(100);
     pool.acquire(100);
     conn = pool.acquire(100);
@@ -56,19 +54,19 @@ public class ConnectionPoolTest {
     pool.release(conn);
     assertEquals("Borrowed count should be 2", 2, pool.getBorrowedCount());
 
-    pool.acquire(100);    
+    pool.acquire(100);
     assertEquals("Created count should be 3", 3, pool.getCreatedCount());
   }
-  
+
   @Test
   public void testInvalidate() throws Exception {
     ConnectionPool pool = new ConnectionPool("localhost", 9999, new TestConnectionFactory(), 3);
-    Connection     conn = pool.acquire();
+    Connection conn = pool.acquire();
     assertEquals("Created count should be 1", 1, pool.getCreatedCount());
     pool.invalidate(conn);
     assertEquals("Created count should be 0; should have been decremented", 0, pool.getCreatedCount());
   }
-  
+
   static class TestConnection implements Connection {
     TCPAddress address = new TCPAddress(ConnectionPoolTest.TRANSPORT_TYPE, "test", 8888);
 
@@ -79,8 +77,7 @@ public class ConnectionPoolTest {
       return address;
     }
 
-    public Object receive()
-      throws IOException, ClassNotFoundException, RemoteException {
+    public Object receive() throws IOException, ClassNotFoundException, RemoteException {
       return "ACK";
     }
 
@@ -89,16 +86,14 @@ public class ConnectionPoolTest {
   }
 
   static class TestConnectionFactory implements ConnectionFactory {
-    public Connection newConnection(Socket sock)
-      throws IOException, UnsupportedOperationException {
+    public Connection newConnection(Socket sock) throws IOException, UnsupportedOperationException {
       return new TestConnection();
     }
 
-    public Connection newConnection(String host, int port)
-      throws IOException {
+    public Connection newConnection(String host, int port) throws IOException {
       return new TestConnection();
     }
-    
+
     @Override
     public String getTransportType() {
       return null;

@@ -22,72 +22,64 @@ import org.sapia.ubik.util.Assertions;
 import org.sapia.ubik.util.Localhost;
 import org.sapia.ubik.util.Props;
 
-
 /**
  * This class implements an embeddable JNDI server.
  * <p>
  * Usage:
+ * 
  * <pre>
  * EmbeddableJNDIServer jndi = new EmbeddableJNDIServer();
  * jndi.start(true);
  * // use it...
  * jndi.stop();
  * </pre>
- *
+ * 
  * @author Yanick Duchesne
- *
+ * 
  */
-public class EmbeddableJNDIServer implements RemoteContextProvider, AsyncEventListener{
-  
-  private Category       log          = Log.createCategory(getClass());
-  private String         domain;
-  private int            port;
-  private Thread         serverThread;
-  private EventChannel   channel;
-  private Context        root;
-  private ThreadStartup  startBarrier = new ThreadStartup();
-  
+public class EmbeddableJNDIServer implements RemoteContextProvider, AsyncEventListener {
+
+  private Category log = Log.createCategory(getClass());
+  private String domain;
+  private int port;
+  private Thread serverThread;
+  private EventChannel channel;
+  private Context root;
+  private ThreadStartup startBarrier = new ThreadStartup();
+
   /**
-   * Creates an instance of this class that will listen on the default (1099) port,
-   * on the "default" domain. Also internally binds its multicast event channel to the
-   * default multicast address and port.
-   *
+   * Creates an instance of this class that will listen on the default (1099)
+   * port, on the "default" domain. Also internally binds its multicast event
+   * channel to the default multicast address and port.
+   * 
    * @see JNDIConsts#DEFAULT_MCAST_ADDR
    * @see JNDIConsts#DEFAULT_MCAST_PORT
    */
   public EmbeddableJNDIServer() {
-    this(JNDIConsts.DEFAULT_DOMAIN, JNDIConsts.DEFAULT_PORT,
-      org.sapia.ubik.rmi.Consts.DEFAULT_MCAST_ADDR,
-      org.sapia.ubik.rmi.Consts.DEFAULT_MCAST_PORT);
+    this(JNDIConsts.DEFAULT_DOMAIN, JNDIConsts.DEFAULT_PORT, org.sapia.ubik.rmi.Consts.DEFAULT_MCAST_ADDR,
+        org.sapia.ubik.rmi.Consts.DEFAULT_MCAST_PORT);
   }
 
   /**
-   * Creates an instance of this class that will listen on the given port and domain.
-   * Also internally binds its multicast event channel to the default multicast address and port.
-   *
+   * Creates an instance of this class that will listen on the given port and
+   * domain. Also internally binds its multicast event channel to the default
+   * multicast address and port.
+   * 
    * @see JNDIConsts#DEFAULT_MCAST_ADDR
    * @see JNDIConsts#DEFAULT_MCAST_PORT
    */
   public EmbeddableJNDIServer(String domain, int port) {
-    this(
-        domain, 
-        port, 
-        org.sapia.ubik.rmi.Consts.DEFAULT_MCAST_ADDR,
-        org.sapia.ubik.rmi.Consts.DEFAULT_MCAST_PORT
-    );
+    this(domain, port, org.sapia.ubik.rmi.Consts.DEFAULT_MCAST_ADDR, org.sapia.ubik.rmi.Consts.DEFAULT_MCAST_PORT);
   }
 
   /**
-   * Creates an instance of this class that will listen on the given port and domain.
-   * Also internally binds its multicast event channel to the given multicast address and port.
+   * Creates an instance of this class that will listen on the given port and
+   * domain. Also internally binds its multicast event channel to the given
+   * multicast address and port.
    */
-  public EmbeddableJNDIServer(
-      String domain, 
-      int port, 
-      String mcastAddress,
-      int mcastPort) {
-    this.domain      = domain;
-    this.port        = port;
+  public EmbeddableJNDIServer(String domain, int port, String mcastAddress, int mcastPort) {
+    this.domain = domain;
+    this.port = port;
     Properties props = new Properties();
     props.setProperty(JNDIConsts.MCAST_ADDR_KEY, mcastAddress);
     props.setProperty(JNDIConsts.MCAST_PORT_KEY, Integer.toString(mcastPort));
@@ -97,20 +89,21 @@ public class EmbeddableJNDIServer implements RemoteContextProvider, AsyncEventLi
       throw new IllegalStateException("Could not build event channel", e);
     }
   }
-  
+
   /**
-   * @param ec the {@link EventChannel} that this instance should wrap.
+   * @param ec
+   *          the {@link EventChannel} that this instance should wrap.
    */
   public EmbeddableJNDIServer(EventChannel ec, int port) {
     this.channel = ec;
-    this.domain  = ec.getDomainName().toString();
-    this.port    = port;
+    this.domain = ec.getDomainName().toString();
+    this.port = port;
   }
-  
+
   /**
-   * Returns the event channel that this instance uses to broacast events
-   * and subscribe to notifications.
-   *
+   * Returns the event channel that this instance uses to broacast events and
+   * subscribe to notifications.
+   * 
    * @return this instance's {@link EventChannel}.
    */
   public EventChannel getEventChannel() {
@@ -120,15 +113,14 @@ public class EmbeddableJNDIServer implements RemoteContextProvider, AsyncEventLi
   }
 
   /**
-   * Handles {@link JNDIConsts#JNDI_CLIENT_PUBLISH} remote events. Dispatches {@link JNDIConsts#JNDI_SERVER_DISCO}
-   * remote events in response.
+   * Handles {@link JNDIConsts#JNDI_CLIENT_PUBLISH} remote events. Dispatches
+   * {@link JNDIConsts#JNDI_SERVER_DISCO} remote events in response.
    */
   public void onAsyncEvent(RemoteEvent evt) {
-    if(evt.getType().equals(JNDIConsts.JNDI_CLIENT_PUBLISH)){
-      try{
-        channel.dispatch(JNDIConsts.JNDI_SERVER_DISCO,
-            new MinaAddress(Localhost.getAnyLocalAddress().getHostAddress(), port));
-      }catch(Exception e){
+    if (evt.getType().equals(JNDIConsts.JNDI_CLIENT_PUBLISH)) {
+      try {
+        channel.dispatch(JNDIConsts.JNDI_SERVER_DISCO, new MinaAddress(Localhost.getAnyLocalAddress().getHostAddress(), port));
+      } catch (Exception e) {
         log.warning("Could not dispatch JNDI server publishing event", e);
       }
     }
@@ -142,11 +134,11 @@ public class EmbeddableJNDIServer implements RemoteContextProvider, AsyncEventLi
 
     return root;
   }
-  
+
   /**
    * @return this instance's {@link RemoteContext}.
    */
-  public RemoteContext getRemoteContext(){
+  public RemoteContext getRemoteContext() {
     return (RemoteContext) root;
   }
 
@@ -163,34 +155,32 @@ public class EmbeddableJNDIServer implements RemoteContextProvider, AsyncEventLi
 
   /**
    * Starts this instance.
-   *
-   * @param daemon if <code>true</code>, this instance will be started
-   * as a daemon thread.
+   * 
+   * @param daemon
+   *          if <code>true</code>, this instance will be started as a daemon
+   *          thread.
    */
   public void start(boolean daemon) throws Exception {
-    serverThread = NamedThreadFactory
-      .createWith("ubik.jndi.server@"+domain)
-      .setDaemon(true)
-      .newThread(new Runnable() {
-        @Override
-        public void run() {
-          doRun();
-        }
-      });
+    serverThread = NamedThreadFactory.createWith("ubik.jndi.server@" + domain).setDaemon(true).newThread(new Runnable() {
+      @Override
+      public void run() {
+        doRun();
+      }
+    });
     serverThread.start();
     startBarrier.await();
   }
 
   private final void doRun() {
     try {
-    	log.warning("Starting JNDI server on port %s, domain %s", port, domain);
-    	if (!channel.isStarted()) {
-    		channel.start();
-    	}
-      
+      log.warning("Starting JNDI server on port %s, domain %s", port, domain);
+      if (!channel.isStarted()) {
+        channel.start();
+      }
+
       channel.registerAsyncListener(JNDIConsts.JNDI_CLIENT_PUBLISH, this);
 
-      MinaAddress address = new MinaAddress(Localhost.getAnyLocalAddress().getHostAddress(), port); 
+      MinaAddress address = new MinaAddress(Localhost.getAnyLocalAddress().getHostAddress(), port);
 
       root = UbikRemoteContext.newInstance(channel);
 
@@ -199,10 +189,10 @@ public class EmbeddableJNDIServer implements RemoteContextProvider, AsyncEventLi
       props.setProperty(MinaTransportProvider.BIND_ADDRESS, address.getHost());
       props.setProperty(MinaTransportProvider.PORT, Integer.toString(address.getPort()));
       Hub.exportObject(this, props);
-      
+
       channel.dispatch(JNDIConsts.JNDI_SERVER_PUBLISH, address);
       channel.dispatch(JNDIConsts.JNDI_SERVER_DISCO, address);
-      
+
       log.warning("JNDI Server started");
 
       startBarrier.started();
@@ -213,7 +203,8 @@ public class EmbeddableJNDIServer implements RemoteContextProvider, AsyncEventLi
     } catch (InterruptedException e) {
       log.warning("Thread interrupted - shutting down JNDI server: " + port + ", " + domain);
       startBarrier.failed(e);
-    } catch (Exception e) {      ;
+    } catch (Exception e) {
+      ;
       log.error("Could not start JNDI server", e);
       startBarrier.failed(e);
     }

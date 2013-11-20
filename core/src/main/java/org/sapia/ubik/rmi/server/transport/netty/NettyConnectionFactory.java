@@ -13,9 +13,9 @@ import org.sapia.ubik.net.SocketConnectionFactory;
  * Implements a factory of {@link NettyRmiClientConnection} instances.
  */
 public class NettyConnectionFactory extends SocketConnectionFactory {
-  
+
   private int bufsize;
-  
+
   public NettyConnectionFactory(int bufsize) {
     super(NettyTransportProvider.TRANSPORT_TYPE);
     this.bufsize = bufsize;
@@ -38,6 +38,6 @@ public class NettyConnectionFactory extends SocketConnectionFactory {
       throw new RemoteException(String.format("Could not connect to %s:%s", host, port));
     } catch (SocketException e) {
       throw new RemoteException(String.format("Could not connect to %s:%s", host, port));
-    }        
-  }  
+    }
+  }
 }

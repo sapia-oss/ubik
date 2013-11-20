@@ -8,9 +8,9 @@ import org.sapia.ubik.mcast.control.Purgatory.DownNode;
 import org.sapia.ubik.util.Collections2;
 
 public class PurgatoryTest {
-  
+
   private Purgatory purgatory;
-  
+
   @Before
   public void setUp() {
     purgatory = new Purgatory();
@@ -20,14 +20,14 @@ public class PurgatoryTest {
   public void testRemove() {
     purgatory.add("test");
     purgatory.remove("test");
-    
+
     assertFalse("Node should have been removed", purgatory.contains("test"));
   }
 
   @Test
   public void testAdd() {
     purgatory.add("test");
-    
+
     assertTrue("Node should have been added", purgatory.contains("test"));
   }
 
@@ -54,7 +54,7 @@ public class PurgatoryTest {
     purgatory.clear(1);
     assertEquals(0, purgatory.size());
   }
-  
+
   @Test
   public void testClearMaxAttemptsNotReached() {
     purgatory.add("test");

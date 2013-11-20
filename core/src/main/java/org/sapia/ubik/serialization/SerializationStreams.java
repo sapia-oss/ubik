@@ -10,30 +10,31 @@ import org.jboss.serial.io.JBossObjectInputStream;
 import org.jboss.serial.io.JBossObjectOutputStream;
 
 /**
- * Uses the {@link JBossSerializationDetector} class to determine the {@link ObjectInputStream} 
- * and {@link ObjectOutputStream} classes provided as part of the JBoss serialization library should be used.
+ * Uses the {@link JBossSerializationDetector} class to determine the
+ * {@link ObjectInputStream} and {@link ObjectOutputStream} classes provided as
+ * part of the JBoss serialization library should be used.
  * 
  * @author yduchesne
- *
+ * 
  */
 public class SerializationStreams {
-	
-	private SerializationStreams() {
-	}
+
+  private SerializationStreams() {
+  }
 
   public static ObjectOutputStream createObjectOutputStream(OutputStream os) throws IOException {
-  	if (JBossSerializationDetector.isJbossSerializationDetected()) {
-  		return new JBossObjectOutputStream(os);
-  	} else {
-  		return new ObjectOutputStream(os);
-  	}
+    if (JBossSerializationDetector.isJbossSerializationDetected()) {
+      return new JBossObjectOutputStream(os);
+    } else {
+      return new ObjectOutputStream(os);
+    }
   }
-  
+
   public static ObjectInputStream createObjectInputStream(InputStream is) throws IOException {
-  	if (JBossSerializationDetector.isJbossSerializationDetected()) {
-  		return new JBossObjectInputStream(is);
-  	} else {
-  		return new ObjectInputStream(is);
-  	}  	
+    if (JBossSerializationDetector.isJbossSerializationDetected()) {
+      return new JBossObjectInputStream(is);
+    } else {
+      return new ObjectInputStream(is);
+    }
   }
 }

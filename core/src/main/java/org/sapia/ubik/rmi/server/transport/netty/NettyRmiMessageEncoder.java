@@ -8,21 +8,22 @@ import org.sapia.ubik.rmi.server.VmId;
 import org.sapia.ubik.rmi.server.transport.RmiObjectOutput;
 
 /**
- * Encodes a {@link NettyResponse} instance so that it can be sent over the wire.
+ * Encodes a {@link NettyResponse} instance so that it can be sent over the
+ * wire.
  * 
  * @author yduchesne
- *
+ * 
  */
 public class NettyRmiMessageEncoder extends NettyResponseEncoder {
-  
+
   public NettyRmiMessageEncoder(String loggerName) {
     super(loggerName);
   }
-   
+
   public NettyRmiMessageEncoder() {
     super(NettyRmiMessageEncoder.class.getName());
   }
-  
+
   @Override
   protected void setUp(ObjectOutputStream oos, VmId vmId, String transportType) {
     ((RmiObjectOutput) oos).setUp(vmId, transportType);

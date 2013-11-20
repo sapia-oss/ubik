@@ -6,11 +6,11 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * This annotation allows specifying if remote method calls on instances of a given remote interface
- * should use callbacks.
+ * This annotation allows specifying if remote method calls on instances of a
+ * given remote interface should use callbacks.
  * 
  * @author yduchesne
- *
+ * 
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)

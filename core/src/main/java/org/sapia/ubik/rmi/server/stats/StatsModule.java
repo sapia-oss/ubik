@@ -21,47 +21,46 @@ import org.sapia.ubik.taskman.TaskManager;
 import org.sapia.ubik.util.Props;
 
 /**
- * Clears all statistics at startup and shutdown. Also creates a task that dumps statistics to STDOUT
- * if the interval corresponding to {@link Consts#STATS_DUMP_INTERVAL} is specified and greater than
- * zero.
+ * Clears all statistics at startup and shutdown. Also creates a task that dumps
+ * statistics to STDOUT if the interval corresponding to
+ * {@link Consts#STATS_DUMP_INTERVAL} is specified and greater than zero.
  * 
  * @author yduchesne
- *
+ * 
  */
 public class StatsModule implements Module {
-  
-  private static final DateFormat     DATE_FORMAT    = new SimpleDateFormat("yyyy/mm/dd hh:mm:ss:SSS");
-  private static final double         NANOS_IN_MILLI = 1000000;
-  private static final DecimalFormat  DECIMAL_FORMAT = new DecimalFormat("############.############"); 
-  
-  
-  private Category       log = Log.createCategory(getClass());
+
+  private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy/mm/dd hh:mm:ss:SSS");
+  private static final double NANOS_IN_MILLI = 1000000;
+  private static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("############.############");
+
+  private Category log = Log.createCategory(getClass());
   private StatsLogOutput statsLog;
-  private long           lastDumpTime = System.currentTimeMillis();
-  
+  private long lastDumpTime = System.currentTimeMillis();
+
   @Override
   public void init(ModuleContext context) {
   }
-  
+
   @Override
   public void start(ModuleContext context) {
     TaskManager taskManager = context.lookup(TaskManager.class);
-    if(SimonManager.isEnabled()){
+    if (SimonManager.isEnabled()) {
       Props props = new Props().addProperties(System.getProperties());
       long dumpInterval = props.getLongProperty(Consts.STATS_DUMP_INTERVAL, 0);
-      if(dumpInterval > 0){
-        log.info("Stats dump interval set to %s seconds. Stats will be collected", dumpInterval);        
+      if (dumpInterval > 0) {
+        log.info("Stats dump interval set to %s seconds. Stats will be collected", dumpInterval);
         statsLog = new StatsLogOutput();
         dumpInterval = TimeUnit.MILLISECONDS.convert(dumpInterval, TimeUnit.SECONDS);
-        Task task = new Task(){
+        Task task = new Task() {
           public void exec(TaskContext ctx) {
             long currentTime = System.currentTimeMillis();
             String startTime = dateFor(lastDumpTime);
-            String endTime   = dateFor(currentTime);
-            
-            for(Simon stat : Stats.getStats()) {
+            String endTime = dateFor(currentTime);
+
+            for (Simon stat : Stats.getStats()) {
               statsLog.log(format(stat, startTime, endTime));
-              Stats.reset(stat);                
+              Stats.reset(stat);
             }
 
             lastDumpTime = currentTime;
@@ -74,49 +73,42 @@ public class StatsModule implements Module {
     }
 
   }
-  
+
   private String format(Simon stat, String startTime, String endTime) {
     String statValue = statValue(stat);
 
     StringBuilder formatted = new StringBuilder();
-    formatted.append(field(startTime))
-      .append(",")
-      .append(field(endTime))
-      .append(",")
-      .append(field(stat.getName()))
-      .append(",")
-      .append(field(Stats.getDescription(stat)))
-      .append(",")
-      .append(field(statValue));
-    
+    formatted.append(field(startTime)).append(",").append(field(endTime)).append(",").append(field(stat.getName())).append(",")
+        .append(field(Stats.getDescription(stat))).append(",").append(field(statValue));
+
     return formatted.toString();
   }
-  
+
   private String statValue(Simon stat) {
     if (stat instanceof Counter) {
       return Long.toString(((Counter) stat).getCounter());
-    } else if (stat instanceof Stopwatch){
+    } else if (stat instanceof Stopwatch) {
       return DECIMAL_FORMAT.format(((Stopwatch) stat).getMean() / NANOS_IN_MILLI);
     } else {
       throw new IllegalStateException("Expected Counter or Stopwatch instance, got: " + stat);
     }
   }
-  
+
   private String field(String content) {
-    return "\"" + content + "\""; 
+    return "\"" + content + "\"";
   }
-  
+
   private String dateFor(long millis) {
     Calendar cal = Calendar.getInstance();
     cal.setTimeInMillis(millis);
     return DATE_FORMAT.format(cal.getTime());
   }
-  
+
   @Override
   public void stop() {
-  	if(statsLog != null) {
-  		statsLog.close();
-  	}
+    if (statsLog != null) {
+      statsLog.close();
+    }
   }
 
 }

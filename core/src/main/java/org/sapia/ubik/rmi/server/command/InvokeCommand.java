@@ -22,26 +22,24 @@ import org.sapia.ubik.rmi.server.transport.ClassDescriptor;
 import org.sapia.ubik.rmi.server.transport.MarshalledObject;
 import org.sapia.ubik.util.Strings;
 
-
 /**
  * This commands performs a remote method invocation.
- *
+ * 
  * @author Yanick Duchesne
  */
 public class InvokeCommand extends RMICommand implements Externalizable {
-  static final long            serialVersionUID         = 1L;
-  
-  private static final boolean vmUsesMarshalledObjects = 
-    System.getProperty(Consts.MARSHALLING) != null &&
-    System.getProperty(Consts.MARSHALLING).equals("true");
-  
+  static final long serialVersionUID = 1L;
+
+  private static final boolean vmUsesMarshalledObjects = System.getProperty(Consts.MARSHALLING) != null
+      && System.getProperty(Consts.MARSHALLING).equals("true");
+
   private transient Class<?>[] paramTypes;
-  private transient String     transportType;
-  private OID                  oid;
-  private String               methodName;
-  private Object[]             params;
-  private ClassDescriptor[]    paramClasses;
-  private boolean              usesMarshalledObjects = vmUsesMarshalledObjects;
+  private transient String transportType;
+  private OID oid;
+  private String methodName;
+  private Object[] params;
+  private ClassDescriptor[] paramClasses;
+  private boolean usesMarshalledObjects = vmUsesMarshalledObjects;
 
   /**
    * Do not call; used for externalization only.
@@ -50,31 +48,34 @@ public class InvokeCommand extends RMICommand implements Externalizable {
   }
 
   /**
-   * @param oid the {@link DefaultOID} (unique object identifier) of the
-   * object on which the method call should be performed.
-   * @param methodName the name of the method to call.
-   * @param params the method's parameters.
-   * @param paramClasses the method's signature, as a class array.
+   * @param oid
+   *          the {@link DefaultOID} (unique object identifier) of the object on
+   *          which the method call should be performed.
+   * @param methodName
+   *          the name of the method to call.
+   * @param params
+   *          the method's parameters.
+   * @param paramClasses
+   *          the method's signature, as a class array.
    */
-  public InvokeCommand(OID oid, String methodName, Object[] params,
-    Class<?>[] paramClasses, String transportType) {
-    this.oid             = oid;
-    this.methodName      = methodName;
-    this.params          = params;
-    this.paramClasses    = new ClassDescriptor[paramClasses.length];
+  public InvokeCommand(OID oid, String methodName, Object[] params, Class<?>[] paramClasses, String transportType) {
+    this.oid = oid;
+    this.methodName = methodName;
+    this.params = params;
+    this.paramClasses = new ClassDescriptor[paramClasses.length];
 
     for (int i = 0; i < paramClasses.length; i++) {
       this.paramClasses[i] = new ClassDescriptor(paramClasses[i]);
     }
 
-    this.paramTypes      = paramClasses;
-    this.transportType   = transportType;
+    this.paramTypes = paramClasses;
+    this.transportType = transportType;
   }
 
   /**
-   * Returns the object identifier of the object on which
-   * the invocation will be performed.
-   *
+   * Returns the object identifier of the object on which the invocation will be
+   * performed.
+   * 
    * @return an {@link DefaultOID}.
    */
   public OID getOID() {
@@ -83,7 +84,7 @@ public class InvokeCommand extends RMICommand implements Externalizable {
 
   /**
    * Returns the name of the method to invoke.
-   *
+   * 
    * @return a method name.
    */
   public String getMethodName() {
@@ -93,7 +94,7 @@ public class InvokeCommand extends RMICommand implements Externalizable {
   /**
    * Returns the signature (the types of the method's parameters) of the method
    * to call.
-   *
+   * 
    * @return an array of {@link Class} instances.
    */
   public Class<?>[] getParameterTypes() {
@@ -107,9 +108,9 @@ public class InvokeCommand extends RMICommand implements Externalizable {
   /**
    * Returns true if this instance encapsulates method call parameters and
    * return value in {@link MarshalledObject} instances.
-   *
+   * 
    * @return <code>true</code> if this instance uses {@link MarshalledObject}s.
-   *
+   * 
    * @see MarshalledObject
    */
   public boolean usesMarshalledObjects() {
@@ -135,18 +136,17 @@ public class InvokeCommand extends RMICommand implements Externalizable {
     Object obj = doGetObjectFor(oid);
 
     if (paramTypes == null) {
-      if(obj.getClass().getClassLoader() == null){
+      if (obj.getClass().getClassLoader() == null) {
         convertParams(Thread.currentThread().getContextClassLoader());
-      }
-      else{
+      } else {
         convertParams(obj.getClass().getClassLoader());
-      } 
+      }
     }
 
     Method mt = obj.getClass().getMethod(methodName, paramTypes);
 
     ServerPreInvokeEvent preEvt = new ServerPreInvokeEvent(this, obj);
-    
+
     try {
       if (Log.isDebug()) {
         Log.debug(getClass(), "invoking " + mt.getName() + " on " + oid + "(" + obj + ")");
@@ -154,63 +154,53 @@ public class InvokeCommand extends RMICommand implements Externalizable {
       runtime.dispatchEvent(preEvt);
 
       mt.setAccessible(true);
-      Object toReturn = mt.invoke(preEvt.getTarget(),
-          preEvt.getInvokeCommand().getParams());
+      Object toReturn = mt.invoke(preEvt.getTarget(), preEvt.getInvokeCommand().getParams());
 
-      ServerPostInvokeEvent postEvt = new ServerPostInvokeEvent(preEvt.getTarget(),
-          preEvt.getInvokeCommand(),
-          System.currentTimeMillis() - preEvt.getInvokeTime());
-      
+      ServerPostInvokeEvent postEvt = new ServerPostInvokeEvent(preEvt.getTarget(), preEvt.getInvokeCommand(), System.currentTimeMillis()
+          - preEvt.getInvokeTime());
+
       postEvt.setResultObject(toReturn);
 
       runtime.dispatchEvent(postEvt);
 
       if (usesMarshalledObjects) {
-        toReturn = new MarshalledObject(
-            toReturn, 
-            VmId.getInstance(),
-            config.getServerAddress().getTransportType());
+        toReturn = new MarshalledObject(toReturn, VmId.getInstance(), config.getServerAddress().getTransportType());
       }
 
       return toReturn;
     } catch (Throwable e) {
-      
+
       // dispatching post invocation event
-      
+
       if (usesMarshalledObjects) {
-        return new MarshalledObject(e, VmId.getInstance(),config.getServerAddress().getTransportType());
+        return new MarshalledObject(e, VmId.getInstance(), config.getServerAddress().getTransportType());
       }
-      
-      if(e instanceof InvocationTargetException){
-        e = ((InvocationTargetException)e).getTargetException();
+
+      if (e instanceof InvocationTargetException) {
+        e = ((InvocationTargetException) e).getTargetException();
       }
-      ServerPostInvokeEvent postEvt = new ServerPostInvokeEvent(
-          preEvt.getTarget(),
-          preEvt.getInvokeCommand(),
-          System.currentTimeMillis() - preEvt.getInvokeTime(), 
-          e
-      );
-      
-      runtime.dispatchEvent(postEvt);      
+      ServerPostInvokeEvent postEvt = new ServerPostInvokeEvent(preEvt.getTarget(), preEvt.getInvokeCommand(), System.currentTimeMillis()
+          - preEvt.getInvokeTime(), e);
+
+      runtime.dispatchEvent(postEvt);
       throw e;
     }
   }
-  
-  protected Object doGetObjectFor(OID oid) throws NoSuchObjectException  {
-    return Hub.getModules().getObjectTable().getObjectFor(oid);    
+
+  protected Object doGetObjectFor(OID oid) throws NoSuchObjectException {
+    return Hub.getModules().getObjectTable().getObjectFor(oid);
   }
 
   /**
    * @see java.io.Externalizable#readExternal(ObjectInput)
    */
-  public void readExternal(ObjectInput in)
-    throws IOException, ClassNotFoundException {
+  public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
     super.readExternal(in);
-    oid                     = (OID) in.readObject();
-    methodName              = (String) in.readObject();
-    paramClasses            = (ClassDescriptor[]) in.readObject();
-    params                  = (Object[]) in.readObject();
-    usesMarshalledObjects   = in.readBoolean();
+    oid = (OID) in.readObject();
+    methodName = (String) in.readObject();
+    paramClasses = (ClassDescriptor[]) in.readObject();
+    params = (Object[]) in.readObject();
+    usesMarshalledObjects = in.readBoolean();
   }
 
   /**
@@ -235,13 +225,13 @@ public class InvokeCommand extends RMICommand implements Externalizable {
   }
 
   /**
-   * Internally converts the parameters of the method to call. Internally unmarshals
-   * the parameters if they are instances of {@link MarshalledObject}.
-   *
+   * Internally converts the parameters of the method to call. Internally
+   * unmarshals the parameters if they are instances of {@link MarshalledObject}
+   * .
+   * 
    * @see MarshalledObject
    */
-  protected void convertParams(ClassLoader loader)
-    throws IOException, ClassNotFoundException {
+  protected void convertParams(ClassLoader loader) throws IOException, ClassNotFoundException {
     paramTypes = new Class[paramClasses.length];
 
     for (int i = 0; i < paramClasses.length; i++) {
@@ -254,7 +244,7 @@ public class InvokeCommand extends RMICommand implements Externalizable {
       }
     }
   }
-  
+
   @Override
   public String toString() {
     return Strings.toStringFor(this, "methodName", methodName);

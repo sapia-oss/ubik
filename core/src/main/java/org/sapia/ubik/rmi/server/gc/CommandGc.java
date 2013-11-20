@@ -9,17 +9,17 @@ import org.sapia.ubik.rmi.server.Hub;
 import org.sapia.ubik.rmi.server.command.RMICommand;
 import org.sapia.ubik.rmi.server.oid.OID;
 
-
 /**
- * This command is sent by clients ({@link ClientGC} instances) that wish to notify the server that 
- * they have garbage-collected remote references. The server-side GC ({@link ServerGC}) updates the 
- * reference count for all object identifiers it receives (which are passed in through this command).
- *
+ * This command is sent by clients ({@link ClientGC} instances) that wish to
+ * notify the server that they have garbage-collected remote references. The
+ * server-side GC ({@link ServerGC}) updates the reference count for all object
+ * identifiers it receives (which are passed in through this command).
+ * 
  * @author Yanick Duchesne
  */
 public class CommandGc extends RMICommand {
-  
-  private int   count;
+
+  private int count;
   private OID[] oids;
 
   /** Do not call; used for externalization only. */
@@ -27,8 +27,8 @@ public class CommandGc extends RMICommand {
   }
 
   CommandGc(OID[] oids, int count) {
-    this.oids    = oids;
-    this.count   = count;
+    this.oids = oids;
+    this.count = count;
   }
 
   /**
@@ -40,14 +40,8 @@ public class CommandGc extends RMICommand {
     for (; i < count; i++) {
       Hub.getModules().getServerTable().getGc().dereference(vmId, oids[i]);
     }
-    
-    Hub.getModules().getServerRuntime().dispatchEvent(
-      new GcEvent(
-        super.getVmId(),
-        super.getServerAddress(), 
-        count
-      )
-    );
+
+    Hub.getModules().getServerRuntime().dispatchEvent(new GcEvent(super.getVmId(), super.getServerAddress(), count));
 
     Hub.getModules().getServerTable().getGc().touch(vmId);
 
@@ -61,11 +55,10 @@ public class CommandGc extends RMICommand {
   /**
    * @see org.sapia.ubik.rmi.server.command.RMICommand#readExternal(ObjectInput)
    */
-  public void readExternal(ObjectInput in)
-    throws IOException, ClassNotFoundException {
+  public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
     super.readExternal(in);
-    count   = in.readInt();
-    oids    = (OID[]) in.readObject();
+    count = in.readInt();
+    oids = (OID[]) in.readObject();
   }
 
   /**

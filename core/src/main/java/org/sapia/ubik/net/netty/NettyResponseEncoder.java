@@ -27,9 +27,7 @@ import org.sapia.ubik.util.Props;
  */
 public class NettyResponseEncoder extends SimpleChannelHandler {
 
-  private static final int BUFSIZE = Props.getSystemProperties()
-      .getIntProperty(Consts.MARSHALLING_BUFSIZE,
-          Consts.DEFAULT_MARSHALLING_BUFSIZE);
+  private static final int BUFSIZE = Props.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE);
 
   private static final int BYTES_PER_INT = 4;
 
@@ -46,8 +44,7 @@ public class NettyResponseEncoder extends SimpleChannelHandler {
 
     private ObjectOutputStream getObjectOutputStream() throws IOException {
       if (stream == null) {
-        stream = MarshalStreamFactory
-            .createOutputStream(new ChannelBufferOutputStream(outgoing));
+        stream = MarshalStreamFactory.createOutputStream(new ChannelBufferOutputStream(outgoing));
       }
       return stream;
     }
@@ -55,7 +52,7 @@ public class NettyResponseEncoder extends SimpleChannelHandler {
   }
 
   // --------------------------------------------------------------------------
-  
+
   private Category log = Log.createCategory(getClass());
 
   public NettyResponseEncoder() {
@@ -66,36 +63,38 @@ public class NettyResponseEncoder extends SimpleChannelHandler {
   }
 
   @Override
-  public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent evt)
-      throws Exception {
+  public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent evt) throws Exception {
     log.info("Caught error: %s", evt.getCause(), evt.getCause().getMessage());
     ctx.sendUpstream(evt);
   }
 
   @Override
-  public void writeRequested(ChannelHandlerContext ctx, MessageEvent event)
-      throws Exception {
+  public void writeRequested(ChannelHandlerContext ctx, MessageEvent event) throws Exception {
 
     NettyResponse resp = (NettyResponse) event.getMessage();
     log.debug("Write requested for: %s", resp);
-    
+
     EncoderState es = (EncoderState) ctx.getAttachment();
     if (es == null) {
       es = new EncoderState();
       ctx.setAttachment(es);
     }
-    
+
     es.outgoing.clear();
     es.outgoing.writeInt(0); // reserve space for prefix
 
     ObjectOutputStream oos = es.getObjectOutputStream();
-    
+
     setUp(oos, resp.getAssociatedVmId(), resp.getTransportType());
-    
+
     oos.writeObject(resp.getObject());
     oos.flush();
-    
-    es.outgoing.setInt(0, es.outgoing.writerIndex() - BYTES_PER_INT); // setting length at reserved space
+
+    es.outgoing.setInt(0, es.outgoing.writerIndex() - BYTES_PER_INT); // setting
+                                                                      // length
+                                                                      // at
+                                                                      // reserved
+                                                                      // space
     log.debug("Performing write of %s  (%s bytes)", resp, es.outgoing.writerIndex() - BYTES_PER_INT);
     Channels.write(ctx, event.getFuture(), es.outgoing);
   }

@@ -7,7 +7,7 @@ import java.util.Set;
 import org.junit.Test;
 
 public class TCPAddressTest {
-  
+
   @Test
   public void testEquals() {
     TCPAddress addr1 = new TCPAddress("test", "localhost", 2222);
@@ -21,8 +21,8 @@ public class TCPAddressTest {
   public void testSet() {
     TCPAddress addr1 = new TCPAddress("test", "localhost", 2222);
     TCPAddress addr2 = new TCPAddress("test", "localhost", 2223);
-    Set<TCPAddress> set1  = new HashSet<TCPAddress>();
-    Set<TCPAddress> set2  = new HashSet<TCPAddress>();
+    Set<TCPAddress> set1 = new HashSet<TCPAddress>();
+    Set<TCPAddress> set2 = new HashSet<TCPAddress>();
 
     set1.add(addr1);
     set2.add(addr2);

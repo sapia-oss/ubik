@@ -11,42 +11,41 @@ import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.util.SoftReferenceList;
 
-
 /**
- * Helper class that encasulates {@link AsyncEventListener} s and {@link SyncEventListener}s, 
- * grouping them by "event type". This class implements the dispatching of remote events to the encapsulated
- * listeners.
- *
+ * Helper class that encasulates {@link AsyncEventListener} s and
+ * {@link SyncEventListener}s, grouping them by "event type". This class
+ * implements the dispatching of remote events to the encapsulated listeners.
+ * 
  * @see org.sapia.ubik.mcast.AsyncEventListener
  * @see org.sapia.ubik.mcast.SyncEventListener
  * @see org.sapia.ubik.mcast.DomainName
- *
+ * 
  * @author Yanick Duchesne
  */
 public class EventConsumer {
-  
-  private static final SoftReferenceList<AsyncEventListener> EMPTY_ASYNC_LISTENERS  = new SoftReferenceList<AsyncEventListener>();
-  
-  private Category                                              log                   = Log.createCategory(getClass());
-  private Map<String, SoftReferenceList<AsyncEventListener>>    asyncListenersByEvent = new ConcurrentHashMap<String, SoftReferenceList<AsyncEventListener>>();
-  private Map<String, SoftReference<SyncEventListener>>         syncListenersByEvent  = new ConcurrentHashMap<String, SoftReference<SyncEventListener>>();
-  private Map<Object, String>                                   reverseMap            = new WeakHashMap<Object, String>();
-  private DomainName                                            domain;
-  private String                                                node;
+
+  private static final SoftReferenceList<AsyncEventListener> EMPTY_ASYNC_LISTENERS = new SoftReferenceList<AsyncEventListener>();
+
+  private Category log = Log.createCategory(getClass());
+  private Map<String, SoftReferenceList<AsyncEventListener>> asyncListenersByEvent = new ConcurrentHashMap<String, SoftReferenceList<AsyncEventListener>>();
+  private Map<String, SoftReference<SyncEventListener>> syncListenersByEvent = new ConcurrentHashMap<String, SoftReference<SyncEventListener>>();
+  private Map<Object, String> reverseMap = new WeakHashMap<Object, String>();
+  private DomainName domain;
+  private String node;
 
   /**
    * Creates an instance of this class, with the given node identifier, and the
    * given domain.
    */
   public EventConsumer(String node, String domain) {
-    this.domain   = DomainName.parse(domain);
-    this.node     = node;
+    this.domain = DomainName.parse(domain);
+    this.node = node;
     log.debug("Starting node: %s@%s", node, domain);
   }
 
   /**
-   * Creates an instance of this class with the given domain.
-   * Internally creates a globally unique node identifier.
+   * Creates an instance of this class with the given domain. Internally creates
+   * a globally unique node identifier.
    */
   public EventConsumer(String domain) throws UnknownHostException {
     this(UUID.randomUUID().toString(), domain);
@@ -54,7 +53,7 @@ public class EventConsumer {
 
   /**
    * Returns the node identifier of this instance.
-   *
+   * 
    * @return this instance's node identifier.
    */
   public String getNode() {
@@ -63,7 +62,7 @@ public class EventConsumer {
 
   /**
    * Returns the object that represents this instance's domain name.
-   *
+   * 
    * @return this instance's {@link DomainName}.
    */
   public DomainName getDomainName() {
@@ -72,9 +71,11 @@ public class EventConsumer {
 
   /**
    * Registers the given listener with the given "logical" event type.
-   *
-   * @param evtType a logical event type.
-   * @param listener an {@link AsyncEventListener}.
+   * 
+   * @param evtType
+   *          a logical event type.
+   * @param listener
+   *          an {@link AsyncEventListener}.
    */
   public synchronized void registerAsyncListener(String evtType, AsyncEventListener listener) {
     SoftReferenceList<AsyncEventListener> lst = getAsyncListenersFor(evtType, true);
@@ -82,21 +83,21 @@ public class EventConsumer {
       if (!lst.contains(listener)) {
         lst.add(listener);
         reverseMap.put(listener, evtType);
-      }
-      else{
+      } else {
         log.info("A listener is already registered for %", evtType);
-      }      
+      }
     }
   }
 
   /**
    * Registers the given listener with the given "logical" event type.
-   *
-   * @param evtType a logical event type.
-   * @param listener a {@link SyncEventListener}.
+   * 
+   * @param evtType
+   *          a logical event type.
+   * @param listener
+   *          a {@link SyncEventListener}.
    */
-  public synchronized void registerSyncListener(String evtType,
-    SyncEventListener listener) throws ListenerAlreadyRegisteredException {
+  public synchronized void registerSyncListener(String evtType, SyncEventListener listener) throws ListenerAlreadyRegisteredException {
     if (syncListenersByEvent.get(evtType) != null) {
       throw new ListenerAlreadyRegisteredException(evtType);
     }
@@ -106,8 +107,9 @@ public class EventConsumer {
 
   /**
    * Removes the given listener from this instance.
-   *
-   * @param listener the {@link SyncEventListener} to remove.
+   * 
+   * @param listener
+   *          the {@link SyncEventListener} to remove.
    */
   public synchronized void unregisterListener(SyncEventListener listener) {
     String evtId = (String) reverseMap.remove(listener);
@@ -118,8 +120,9 @@ public class EventConsumer {
 
   /**
    * Removes the given listener from this instance.
-   *
-   * @param listener the {@link AsyncEventListener} to remove.
+   * 
+   * @param listener
+   *          the {@link AsyncEventListener} to remove.
    */
   public synchronized void unregisterListener(AsyncEventListener listener) {
     String evtId = (String) reverseMap.remove(listener);
@@ -133,10 +136,13 @@ public class EventConsumer {
   }
 
   /**
-   * Returns <code>true</code> if the passed in listener is held within this instance.
-   *
-   * @param listener an {@link AsyncEventListener}.
-   * @return <code>true</code> if the passed in listener is held within this instance.
+   * Returns <code>true</code> if the passed in listener is held within this
+   * instance.
+   * 
+   * @param listener
+   *          an {@link AsyncEventListener}.
+   * @return <code>true</code> if the passed in listener is held within this
+   *         instance.
    */
   public boolean containsAsyncListener(AsyncEventListener listener) {
     String type = (String) reverseMap.get(listener);
@@ -151,46 +157,51 @@ public class EventConsumer {
 
   /**
    * Checks if a {@link SyncEventListener} exists for the given event type
-   *
-   * @param evtType the type of event for which to perform the check.
-   * @return <code>true</code> if a {@link SyncEventListener} exists
-   * for the given event type.
+   * 
+   * @param evtType
+   *          the type of event for which to perform the check.
+   * @return <code>true</code> if a {@link SyncEventListener} exists for the
+   *         given event type.
    */
   public boolean hasSyncListener(String evtType) {
     return syncListenersByEvent.get(evtType) != null;
   }
 
   /**
-   * Returns <code>true</code> if the given listener is contained
-   * by this instance.
-   *
-   * @param listener a {@link SyncEventListener}.
-   * @return <code>true</code> if the given listener is contained
-   * by this instance.
+   * Returns <code>true</code> if the given listener is contained by this
+   * instance.
+   * 
+   * @param listener
+   *          a {@link SyncEventListener}.
+   * @return <code>true</code> if the given listener is contained by this
+   *         instance.
    */
   public boolean containsSyncListener(SyncEventListener listener) {
     return reverseMap.get(listener) != null;
   }
 
   /**
-   * @return the total number of {@link AsyncEventListener}s and {@link SyncEventListener}s within this instance.
+   * @return the total number of {@link AsyncEventListener}s and
+   *         {@link SyncEventListener}s within this instance.
    */
   public int getListenerCount() {
     return reverseMap.size();
   }
 
   /**
-   * Notification callback that internally dispatches the given remote event to this instance's 
-   * appropriate event {@link AsyncEventListener}s.
+   * Notification callback that internally dispatches the given remote event to
+   * this instance's appropriate event {@link AsyncEventListener}s.
    * <p>
-   * <b>IMPORTANT</b>: this method dispatches the event in the thread that is performing the call.
+   * <b>IMPORTANT</b>: this method dispatches the event in the thread that is
+   * performing the call.
    * 
-   * @param evt a {@link RemoteEvent}.
+   * @param evt
+   *          a {@link RemoteEvent}.
    */
   public void onAsyncEvent(RemoteEvent evt) {
     DomainName dn = null;
-    
-    if(log.isDebug()){
+
+    if (log.isDebug()) {
       log.debug("Received remote event: " + evt.getType() + "@" + evt.getNode() + "@" + evt.getDomainName());
       log.debug("This node: '%s'", node);
       log.debug("Event from this node: " + evt.getNode().equals(node));
@@ -202,56 +213,60 @@ public class EventConsumer {
 
     if (matchesAll(dn, evt.getNode())) {
       log.debug("Notifying...");
-      
+
       notifyAsyncListeners(evt);
     } else if (matchesThis(dn, evt.getNode())) {
       log.debug("Notifying...");
-     
+
       notifyAsyncListeners(evt);
     } else {
-      log.debug("Event was not matched: %s", evt.getType());        
+      log.debug("Event was not matched: %s", evt.getType());
     }
   }
-  
+
   /**
-   * Notification callback that internally dispatches the given remote event to this instance's {@link SyncEventListener}
-   * that handles the given event's type.
+   * Notification callback that internally dispatches the given remote event to
+   * this instance's {@link SyncEventListener} that handles the given event's
+   * type.
    * <p>
-   * The method returns the value that the {@link SyncEventListener} itself returns.
+   * The method returns the value that the {@link SyncEventListener} itself
+   * returns.
    * <p>
-   * <b>IMPORTANT</b>: this method dispatches the event in the thread that is performing the call.
+   * <b>IMPORTANT</b>: this method dispatches the event in the thread that is
+   * performing the call.
    * 
-   * @param evt a {@link RemoteEvent}.
-   * @return the {@link Object} that the matching {@link SyncEventListener} returned (or <code>null</code> if the listener
-   * returns <code>null</code>, or if no listener was found for the given event's type).
+   * @param evt
+   *          a {@link RemoteEvent}.
+   * @return the {@link Object} that the matching {@link SyncEventListener}
+   *         returned (or <code>null</code> if the listener returns
+   *         <code>null</code>, or if no listener was found for the given
+   *         event's type).
    */
   public synchronized Object onSyncEvent(RemoteEvent evt) {
     DomainName dn = null;
-    
-    if(log.isDebug()){
+
+    if (log.isDebug()) {
       log.debug("Received remote event: " + evt.getType() + "@" + evt.getDomainName());
       log.debug("Event from this node: " + evt.getNode().equals(node));
-    }    
+    }
 
     if (evt.getDomainName() != null) {
       dn = DomainName.parse(evt.getDomainName());
     }
 
-    if ((dn == null) && (evt.getNode() != null) &&
-          !evt.getNode().equals(node)) {
+    if ((dn == null) && (evt.getNode() != null) && !evt.getNode().equals(node)) {
       SoftReference<SyncEventListener> reference = syncListenersByEvent.get(evt.getType());
       SyncEventListener sync = reference != null ? reference.get() : null;
 
       if (sync != null) {
         log.debug("Dispatching sync event to: %s", sync);
-               
+
         return sync.onSyncEvent(evt);
       } else {
         log.debug("No listener for event: %s", evt.getType());
         syncListenersByEvent.remove(evt.getType());
       }
-    } else if ((dn != null) && domain.contains(dn) && (evt.getNode() != null) &&
-          !evt.getNode().equals(node)) {
+    } else if ((dn != null) && domain.contains(dn) && (evt.getNode() != null) && !evt.getNode().equals(node)) {
       SoftReference<SyncEventListener> reference = syncListenersByEvent.get(evt.getType());
       SyncEventListener sync = reference != null ? reference.get() : null;
 
@@ -259,33 +274,31 @@ public class EventConsumer {
         log.debug("Dispatching sync event to: %s", sync);
         return sync.onSyncEvent(evt);
       } else {
-        log.debug("No listener for event: %s", evt.getType());        
+        log.debug("No listener for event: %s", evt.getType());
         syncListenersByEvent.remove(evt.getType());
       }
     }
 
     return null;
   }
-  
-  protected boolean matchesAll(DomainName dn, String node){
+
+  protected boolean matchesAll(DomainName dn, String node) {
     return dn == null && node != null && !this.node.equals(node);
   }
-  
-  protected boolean matchesThis(DomainName dn, String node){
-    return (dn != null) && domain.contains(dn) && 
-          (node != null) &&
-          !this.node.equals(node);
-  }  
+
+  protected boolean matchesThis(DomainName dn, String node) {
+    return (dn != null) && domain.contains(dn) && (node != null) && !this.node.equals(node);
+  }
 
   private synchronized void notifyAsyncListeners(RemoteEvent evt) {
-    SoftReferenceList<AsyncEventListener> lst      = getAsyncListenersFor(evt.getType(), false);
-    if(lst.getApproximateSize() == 0){
-      log.debug("No listener for event: %s", evt.getType());        
+    SoftReferenceList<AsyncEventListener> lst = getAsyncListenersFor(evt.getType(), false);
+    if (lst.getApproximateSize() == 0) {
+      log.debug("No listener for event: %s", evt.getType());
     }
-    synchronized(lst) {
+    synchronized (lst) {
       for (AsyncEventListener listener : lst) {
         log.debug("Notifying async listener for: %s -> %s", evt.getType(), listener);
-        listener.onAsyncEvent(evt);        
+        listener.onAsyncEvent(evt);
       }
     }
   }
@@ -293,8 +306,8 @@ public class EventConsumer {
   private SoftReferenceList<AsyncEventListener> getAsyncListenersFor(String evtId, boolean create) {
     SoftReferenceList<AsyncEventListener> lst = asyncListenersByEvent.get(evtId);
     if ((lst == null)) {
-      if(create) {
-        lst = new SoftReferenceList<AsyncEventListener>();        
+      if (create) {
+        lst = new SoftReferenceList<AsyncEventListener>();
         asyncListenersByEvent.put(evtId, lst);
       } else {
         lst = EMPTY_ASYNC_LISTENERS;

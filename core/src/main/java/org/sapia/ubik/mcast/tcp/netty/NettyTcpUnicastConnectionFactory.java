@@ -13,11 +13,11 @@ import org.sapia.ubik.net.SocketConnectionFactory;
  * Implements a factory of {@link NettyTcpUnicastConnection} instances.
  */
 public class NettyTcpUnicastConnectionFactory extends SocketConnectionFactory {
-  
+
   private int bufsize;
-  
+
   public NettyTcpUnicastConnectionFactory(int bufsize) {
-  	super(NettyTcpUnicastAddress.TRANSPORT_TYPE);
+    super(NettyTcpUnicastAddress.TRANSPORT_TYPE);
     this.bufsize = bufsize;
   }
 
@@ -35,6 +35,6 @@ public class NettyTcpUnicastConnectionFactory extends SocketConnectionFactory {
       throw new RemoteException(String.format("Could not connect to %s:%s", host, port));
     } catch (SocketException e) {
       throw new RemoteException(String.format("Could not connect to %s:%s", host, port));
-    }        
+    }
   }
 }

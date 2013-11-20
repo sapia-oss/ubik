@@ -23,16 +23,16 @@ import org.sapia.ubik.util.MinaByteBufferOutputStream;
  * A client-connection used to connect to a {@link MinaTcpUnicastDispatcher}.
  */
 public class MinaTcpUnicastConnection implements Connection {
-	
-  private Socket         		 sock;
-  private int            		 bufsize;
-  private ServerAddress  		 address;
-  private ByteBuffer		 		 byteBuffer;
-  
+
+  private Socket sock;
+  private int bufsize;
+  private ServerAddress address;
+  private ByteBuffer byteBuffer;
+
   public MinaTcpUnicastConnection(Socket sock, int bufsize) throws IOException {
-    this.sock 			= sock;
-    this.address 		= new MinaTcpUnicastAddress(sock.getInetAddress().getHostAddress(), sock.getPort());
-    this.bufsize 		= bufsize;
+    this.sock = sock;
+    this.address = new MinaTcpUnicastAddress(sock.getInetAddress().getHostAddress(), sock.getPort());
+    this.bufsize = bufsize;
     this.byteBuffer = ByteBuffer.allocate(bufsize);
     byteBuffer.setAutoExpand(true);
   }
@@ -45,29 +45,28 @@ public class MinaTcpUnicastConnection implements Connection {
   @Override
   public void send(Object o) throws IOException, RemoteException {
     byteBuffer.clear();
-    ObjectOutputStream	oos = SerializationStreams.createObjectOutputStream(new MinaByteBufferOutputStream(byteBuffer));
+    ObjectOutputStream oos = SerializationStreams.createObjectOutputStream(new MinaByteBufferOutputStream(byteBuffer));
     oos.writeObject(o);
     oos.flush();
     oos.close();
-    
+
     try {
       doSend();
-    } catch(java.net.SocketException e) {
+    } catch (java.net.SocketException e) {
       throw new RemoteException("Communication with server interrupted; server probably disappeared", e);
     }
   }
-  
+
   @Override
-  public Object receive() throws IOException, ClassNotFoundException,
-      RemoteException {
+  public Object receive() throws IOException, ClassNotFoundException, RemoteException {
     try {
-    	DataInputStream dis = new DataInputStream(sock.getInputStream());
-    	dis.readInt();
-    	ObjectInputStream ois = SerializationStreams.createObjectInputStream(new BufferedInputStream(sock.getInputStream(), bufsize));
+      DataInputStream dis = new DataInputStream(sock.getInputStream());
+      dis.readInt();
+      ObjectInputStream ois = SerializationStreams.createObjectInputStream(new BufferedInputStream(sock.getInputStream(), bufsize));
       return ois.readObject();
-    } catch(EOFException e) {
+    } catch (EOFException e) {
       throw new RemoteException("Communication with server interrupted; server probably disappeared", e);
-    } catch(SocketException e) {
+    } catch (SocketException e) {
       throw new RemoteException("Connection could not be opened; server is probably down", e);
     }
   }
@@ -76,16 +75,16 @@ public class MinaTcpUnicastConnection implements Connection {
   public void close() {
     try {
       sock.close();
-    } catch(Exception e) {
-      //noop
+    } catch (Exception e) {
+      // noop
     }
     byteBuffer.release();
   }
-  
-  private void doSend() throws IOException{
-    OutputStream sos     = new BufferedOutputStream(sock.getOutputStream(), bufsize);
+
+  private void doSend() throws IOException {
+    OutputStream sos = new BufferedOutputStream(sock.getOutputStream(), bufsize);
     DataOutputStream dos = new DataOutputStream(sos);
-    byte[] toWrite 			 = new byte[byteBuffer.position()];
+    byte[] toWrite = new byte[byteBuffer.position()];
     dos.writeInt(toWrite.length);
     byteBuffer.flip();
     byteBuffer.get(toWrite);

@@ -24,16 +24,16 @@ import org.sapia.ubik.serialization.SerializationStreams;
  * A client-connection used to connect to a {@link NettyTcpUnicastDispatcher}.
  */
 public class NettyTcpUnicastConnection implements Connection {
-	
-  private Socket         		 sock;
-  private int            		 bufsize;
-  private ServerAddress  		 address;
-  private ChannelBuffer      byteBuffer;
-  
+
+  private Socket sock;
+  private int bufsize;
+  private ServerAddress address;
+  private ChannelBuffer byteBuffer;
+
   public NettyTcpUnicastConnection(Socket sock, int bufsize) throws IOException {
-    this.sock 			= sock;
-    this.address 		= new NettyTcpUnicastAddress(sock.getInetAddress().getHostAddress(), sock.getPort());
-    this.bufsize 		= bufsize;
+    this.sock = sock;
+    this.address = new NettyTcpUnicastAddress(sock.getInetAddress().getHostAddress(), sock.getPort());
+    this.bufsize = bufsize;
     this.byteBuffer = ChannelBuffers.dynamicBuffer(bufsize);
   }
 
@@ -45,29 +45,28 @@ public class NettyTcpUnicastConnection implements Connection {
   @Override
   public void send(Object o) throws IOException, RemoteException {
     byteBuffer.clear();
-    ObjectOutputStream	oos = SerializationStreams.createObjectOutputStream(new ChannelBufferOutputStream(byteBuffer));
+    ObjectOutputStream oos = SerializationStreams.createObjectOutputStream(new ChannelBufferOutputStream(byteBuffer));
     oos.writeObject(o);
     oos.flush();
     oos.close();
-    
+
     try {
       doSend();
-    } catch(java.net.SocketException e) {
+    } catch (java.net.SocketException e) {
       throw new RemoteException("Communication with server interrupted; server probably disappeared", e);
     }
   }
-  
+
   @Override
-  public Object receive() throws IOException, ClassNotFoundException,
-      RemoteException {
+  public Object receive() throws IOException, ClassNotFoundException, RemoteException {
     try {
-    	DataInputStream dis = new DataInputStream(sock.getInputStream());
-    	dis.readInt();
-    	ObjectInputStream ois = SerializationStreams.createObjectInputStream(new BufferedInputStream(sock.getInputStream(), bufsize));
+      DataInputStream dis = new DataInputStream(sock.getInputStream());
+      dis.readInt();
+      ObjectInputStream ois = SerializationStreams.createObjectInputStream(new BufferedInputStream(sock.getInputStream(), bufsize));
       return ois.readObject();
-    } catch(EOFException e) {
+    } catch (EOFException e) {
       throw new RemoteException("Communication with server interrupted; server probably disappeared", e);
-    } catch(SocketException e) {
+    } catch (SocketException e) {
       throw new RemoteException("Connection could not be opened; server is probably down", e);
     }
   }
@@ -76,15 +75,15 @@ public class NettyTcpUnicastConnection implements Connection {
   public void close() {
     try {
       sock.close();
-    } catch(Exception e) {
-      //noop
+    } catch (Exception e) {
+      // noop
     }
   }
-  
-  private void doSend() throws IOException{
-    OutputStream sos     = new BufferedOutputStream(sock.getOutputStream(), bufsize);
+
+  private void doSend() throws IOException {
+    OutputStream sos = new BufferedOutputStream(sock.getOutputStream(), bufsize);
     DataOutputStream dos = new DataOutputStream(sos);
-    byte[] toWrite       = new byte[byteBuffer.writerIndex()];
+    byte[] toWrite = new byte[byteBuffer.writerIndex()];
     dos.writeInt(toWrite.length);
     byteBuffer.readBytes(toWrite);
     dos.write(toWrite);

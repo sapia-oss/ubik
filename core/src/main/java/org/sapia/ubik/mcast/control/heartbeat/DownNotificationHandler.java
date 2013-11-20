@@ -10,32 +10,36 @@ import org.sapia.ubik.mcast.control.ControllerContext;
  * This class holds logic for handling {@link DownNotification}s.
  * 
  * @author yduchesne
- *
+ * 
  */
 public class DownNotificationHandler implements ControlNotificationHandler {
-	
-	private Category log = Log.createCategory(getClass());
 
-	private ControllerContext context;
-	
-	/**
-	 * @param context the {@link ControllerContext}.
-	 */
-	public DownNotificationHandler(ControllerContext context) {
-	  this.context = context;
+  private Category log = Log.createCategory(getClass());
+
+  private ControllerContext context;
+
+  /**
+   * @param context
+   *          the {@link ControllerContext}.
+   */
+  public DownNotificationHandler(ControllerContext context) {
+    this.context = context;
   }
-	
-	/**
-	 * @param originNode the node from which the given notification has cascaded.
-	 * @param notification a {@link ControlNotification} - expected to be a {@link DownNotification}.
-	 */
-	@Override
-	public void handle(String originNode, ControlNotification notification) {
-		DownNotification downNotif = (DownNotification) notification;
-		log.debug("Notified of nodes that are down: %s", downNotif.getDownNodes());
-		
-		for(String down : downNotif.getDownNodes()) {
-			context.getChannelCallback().down(down);
-		}
-	}
+
+  /**
+   * @param originNode
+   *          the node from which the given notification has cascaded.
+   * @param notification
+   *          a {@link ControlNotification} - expected to be a
+   *          {@link DownNotification}.
+   */
+  @Override
+  public void handle(String originNode, ControlNotification notification) {
+    DownNotification downNotif = (DownNotification) notification;
+    log.debug("Notified of nodes that are down: %s", downNotif.getDownNodes());
+
+    for (String down : downNotif.getDownNodes()) {
+      context.getChannelCallback().down(down);
+    }
+  }
 }

@@ -18,12 +18,10 @@ import org.sapia.ubik.rmi.server.transport.memory.InMemoryTransportProvider;
 
 public class HubTest {
 
-  
   @After
   public void tearDown() {
     Hub.shutdown();
   }
-  
 
   @Test
   public void testLifeCycle() {
@@ -32,18 +30,18 @@ public class HubTest {
     Hub.shutdown();
     assertTrue("Hub should be shut down", Hub.isShutdown());
   }
-  
+
   @Test
   public void testExportAndConnect() throws Exception {
     Properties props = new Properties();
     props.setProperty(Consts.TRANSPORT_TYPE, InMemoryAddress.TRANSPORT_TYPE);
-    
+
     TestRemoteInterface obj = mock(TestRemoteInterface.class);
-    
+
     final BlockingRef<Boolean> called = new BlockingRef<Boolean>();
-    
+
     doAnswer(new Answer<Void>() {
-      
+
       @Override
       public Void answer(InvocationOnMock invocation) throws Throwable {
         called.set(true);
@@ -52,12 +50,10 @@ public class HubTest {
     }).when(obj).perform();
 
     Hub.exportObject(obj, props);
-    TestRemoteInterface remoteRef = (TestRemoteInterface)Hub.connect(new InMemoryAddress(InMemoryTransportProvider.DEFAULT_SERVER_NAME));
+    TestRemoteInterface remoteRef = (TestRemoteInterface) Hub.connect(new InMemoryAddress(InMemoryTransportProvider.DEFAULT_SERVER_NAME));
     remoteRef.perform();
     assertTrue(called.await(3000));
-    
+
   }
-  
-  
 
 }

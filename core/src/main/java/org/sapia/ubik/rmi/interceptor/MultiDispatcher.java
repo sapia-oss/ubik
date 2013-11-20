@@ -9,29 +9,29 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.sapia.ubik.log.Log;
 
-
 /**
- * This dispatcher allows to register multiple interceptors
- * for a given event.
- *
+ * This dispatcher allows to register multiple interceptors for a given event.
+ * 
  * @author Yanick Duchesne
  */
 public class MultiDispatcher {
-  
+
   Map<Class<?>, List<InterceptorInfo>> _interceptors = new ConcurrentHashMap<Class<?>, List<InterceptorInfo>>();
 
   /**
    * Adds an interceptor for the given event type.
-   *
-   * @param event an event class.
-   * @param it an <code>Interceptor</code> instance.
-   *
-   * @throws InvalidInterceptorException if the interceptor could not be added.
+   * 
+   * @param event
+   *          an event class.
+   * @param it
+   *          an <code>Interceptor</code> instance.
+   * 
+   * @throws InvalidInterceptorException
+   *           if the interceptor could not be added.
    */
-  public void addInterceptor(Class<?> event, Interceptor it)
-    throws InvalidInterceptorException {
-    Class<?>  itClass   = it.getClass();
-    int    idx       = event.getName().lastIndexOf('.');
+  public void addInterceptor(Class<?> event, Interceptor it) throws InvalidInterceptorException {
+    Class<?> itClass = it.getClass();
+    int idx = event.getName().lastIndexOf('.');
     String shortName;
 
     if (idx < 0) {
@@ -41,16 +41,15 @@ public class MultiDispatcher {
     }
 
     char[] content = shortName.toCharArray();
-    content[0]   = Character.toUpperCase(content[0]);
-    shortName    = "on" + new String(content);
+    content[0] = Character.toUpperCase(content[0]);
+    shortName = "on" + new String(content);
 
     Method m;
 
     try {
       m = itClass.getMethod(shortName, new Class[] { event });
     } catch (Exception e) {
-      throw new InvalidInterceptorException("Method " + shortName + 
-          " with argument of type " + event + " not found on interceptor " + it, e);
+      throw new InvalidInterceptorException("Method " + shortName + " with argument of type " + event + " not found on interceptor " + it, e);
     }
 
     List<InterceptorInfo> interceptors = _interceptors.get(event);
@@ -64,8 +63,8 @@ public class MultiDispatcher {
   }
 
   /**
-   * Dispatches the given event to all interceptors that have
-   * registered for the event's class.
+   * Dispatches the given event to all interceptors that have registered for the
+   * event's class.
    */
   public void dispatch(Event event) {
     List<InterceptorInfo> interceptors = _interceptors.get(event.getClass());
@@ -98,9 +97,8 @@ public class MultiDispatcher {
   }
 
   /**
-   * Template method that is called internally when an error is
-   * trapped when invoking the call-back method on a given
-   * interceptor instance.
+   * Template method that is called internally when an error is trapped when
+   * invoking the call-back method on a given interceptor instance.
    */
   protected void handleError(Throwable t) {
     Log.error(getClass(), t);

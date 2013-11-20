@@ -20,46 +20,42 @@ import org.simpleframework.http.Response;
 
 /**
  * Implements the {@link RmiConnection} interface over HTTP - more precisely,
- * over {@link Request} and {@link Response} instances - from the Simple
- * API - see the <a href="http://www.simpleframework.org/">Simple website</a> for more info.
- * </p>
- * An instance of this class is used on the server side.
- *
+ * over {@link Request} and {@link Response} instances - from the Simple API -
+ * see the <a href="http://www.simpleframework.org/">Simple website</a> for more
+ * info. </p> An instance of this class is used on the server side.
+ * 
  * @see HttpRmiClientConnection
- *
+ * 
  * @author Yanick Duchesne
  */
 class HttpRmiServerConnection implements RmiConnection {
 
-  private int           bufsz = Props.getSystemProperties().getIntProperty(
-                              			Consts.MARSHALLING_BUFSIZE, 
-                              			Consts.DEFAULT_MARSHALLING_BUFSIZE
-                              	 );
-  private Request       req;
-  private Response      res;
-  private HttpAddress   address;
+  private int bufsz = Props.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE);
+  private Request req;
+  private Response res;
+  private HttpAddress address;
 
   /**
-   * Creates an instance of this class with the given request and
-   * response objects, as well as http server address.
+   * Creates an instance of this class with the given request and response
+   * objects, as well as http server address.
    */
   HttpRmiServerConnection(HttpAddress address, Request req, Response res) {
-    this.req       = req;
-    this.res       = res;
-    this.address   = address;
+    this.req = req;
+    this.res = res;
+    this.address = address;
   }
 
   /**
-   * @see org.sapia.ubik.rmi.server.transport.RmiConnection#send(java.lang.Object, org.sapia.ubik.rmi.server.VmId, java.lang.String)
+   * @see org.sapia.ubik.rmi.server.transport.RmiConnection#send(java.lang.Object,
+   *      org.sapia.ubik.rmi.server.VmId, java.lang.String)
    */
-  public void send(Object o, VmId associated, String transportType)
-    throws IOException, RemoteException {
+  public void send(Object o, VmId associated, String transportType) throws IOException, RemoteException {
     try {
       ByteArrayOutputStream bos = new ByteArrayOutputStream(bufsz);
-      ObjectOutputStream    mos = MarshalStreamFactory.createOutputStream(bos);
+      ObjectOutputStream mos = MarshalStreamFactory.createOutputStream(bos);
 
       if ((associated != null) && (transportType != null)) {
-        ((RmiObjectOutput)mos).setUp(associated, transportType);
+        ((RmiObjectOutput) mos).setUp(associated, transportType);
       }
 
       mos.writeObject(o);
@@ -80,7 +76,7 @@ class HttpRmiServerConnection implements RmiConnection {
       os.close();
     } catch (java.net.SocketException e) {
       throw new RemoteException("Communication with server interrupted; server probably disappeared", e);
-    } catch (Exception e){
+    } catch (Exception e) {
       throw new RemoteException("System exception occurred; server may have disappeared", e);
     }
   }
@@ -101,14 +97,13 @@ class HttpRmiServerConnection implements RmiConnection {
   /**
    * @see org.sapia.ubik.net.Connection#receive()
    */
-  public Object receive()
-    throws IOException, ClassNotFoundException, RemoteException {
+  public Object receive() throws IOException, ClassNotFoundException, RemoteException {
     try {
       ObjectInputStream is = MarshalStreamFactory.createInputStream(req.getInputStream());
       return is.readObject();
-    } catch(SocketException e){
+    } catch (SocketException e) {
       throw new RemoteException("Error reading request payload", e);
-    } catch(Exception e){
+    } catch (Exception e) {
       throw new IOException(e);
     }
   }
@@ -124,7 +119,7 @@ class HttpRmiServerConnection implements RmiConnection {
       os.close();
     } catch (java.net.SocketException e) {
       throw new RemoteException("Error writing response payload", e);
-    } catch(Exception e){
+    } catch (Exception e) {
       throw new IOException(e);
     }
 

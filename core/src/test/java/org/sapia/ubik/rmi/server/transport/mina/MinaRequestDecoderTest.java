@@ -23,34 +23,33 @@ import org.sapia.ubik.rmi.server.transport.mina.MinaRequestDecoder;
 
 public class MinaRequestDecoderTest {
 
-	private IoSession 					session;
-	private Map<String, Object> sessionData;
+  private IoSession session;
+  private Map<String, Object> sessionData;
 
-
-	@Before
+  @Before
   public void setUp() throws Exception {
-		sessionData = new HashMap<String, Object>();
-		session 		= mock(IoSession.class);
-		
-		when(session.getAttribute(anyString())).thenAnswer(new Answer<Object>() {
-			@Override
-			public Object answer(InvocationOnMock invocation) throws Throwable {
-			  return sessionData.get(invocation.getArguments()[0]);
-			}
-		});
-		
-		when(session.setAttribute(anyString(), anyObject())).thenAnswer(new Answer<Object>() {
-			@Override
-			public Object answer(InvocationOnMock invocation) throws Throwable {
-			  return sessionData.put((String)invocation.getArguments()[0], invocation.getArguments()[1]);
-			}
-		});		
+    sessionData = new HashMap<String, Object>();
+    session = mock(IoSession.class);
+
+    when(session.getAttribute(anyString())).thenAnswer(new Answer<Object>() {
+      @Override
+      public Object answer(InvocationOnMock invocation) throws Throwable {
+        return sessionData.get(invocation.getArguments()[0]);
+      }
+    });
+
+    when(session.setAttribute(anyString(), anyObject())).thenAnswer(new Answer<Object>() {
+      @Override
+      public Object answer(InvocationOnMock invocation) throws Throwable {
+        return sessionData.put((String) invocation.getArguments()[0], invocation.getArguments()[1]);
+      }
+    });
 
   }
 
-	@Test
-  public void testDoDecode() throws Exception{
-    
+  @Test
+  public void testDoDecode() throws Exception {
+
     String toEncode = "THIS_IS_A_TEST";
     ByteArrayOutputStream bos = new ByteArrayOutputStream();
     ObjectOutputStream oos = MarshalStreamFactory.createOutputStream(bos);
@@ -63,12 +62,12 @@ public class MinaRequestDecoderTest {
     dos.writeInt(bytes.length);
     dos.write(bytes);
     dos.flush();
-    
+
     MinaRequestDecoder decoder = new MinaRequestDecoder();
     TestDecoderOutput out = new TestDecoderOutput();
 
     bytes = bos.toByteArray();
-    ByteBuffer buf = ByteBuffer.allocate(4+bytes.length ,true);
+    ByteBuffer buf = ByteBuffer.allocate(4 + bytes.length, true);
     buf.put(bytes);
     buf.flip();
     decoder.doDecode(session, buf, out);

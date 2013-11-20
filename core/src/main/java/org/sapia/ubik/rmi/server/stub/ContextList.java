@@ -10,36 +10,39 @@ import java.util.Set;
 import org.sapia.ubik.util.Strings;
 
 /**
- * An instance of this class is kept within a {@link RemoteRefStateless} instance. It holds
- * the list of {@link RemoteRefContext}s corresponding to the remote objects to which the remote
- * reference connects.
+ * An instance of this class is kept within a {@link RemoteRefStateless}
+ * instance. It holds the list of {@link RemoteRefContext}s corresponding to the
+ * remote objects to which the remote reference connects.
  * 
  * @author yduchesne
- *
+ * 
  */
 class ContextList implements Contexts.UpdateListener {
-  
+
   /**
-   * An instance of this interface is notified when a removal occurs on a {@link ContextList}.
+   * An instance of this interface is notified when a removal occurs on a
+   * {@link ContextList}.
    */
   public interface RemovalListener {
 
     /**
-     * @param context the {@link RemoteRefContext} that was removed.
+     * @param context
+     *          the {@link RemoteRefContext} that was removed.
      */
     public void onRemoval(RemoteRefContext context);
-    
+
   }
 
-  private Set<RemoteRefContext>  contextSet      = new HashSet<RemoteRefContext>();
+  private Set<RemoteRefContext> contextSet = new HashSet<RemoteRefContext>();
   private List<RemoteRefContext> orderedContexts = new ArrayList<RemoteRefContext>();
-  private List<RemovalListener>  listeners       = new ArrayList<RemovalListener>();
-  
+  private List<RemovalListener> listeners = new ArrayList<RemovalListener>();
+
   /**
    * Replaces this instance's contexts with the list of given ones.
    * 
-   * @param otherContexts the {@link Collection} of {@link RemoteRefContext}s that this instance should
-   * update itself with.
+   * @param otherContexts
+   *          the {@link Collection} of {@link RemoteRefContext}s that this
+   *          instance should update itself with.
    */
   synchronized void update(Collection<RemoteRefContext> otherContexts) {
     contextSet.clear();
@@ -47,13 +50,15 @@ class ContextList implements Contexts.UpdateListener {
     contextSet.addAll(otherContexts);
     orderedContexts.addAll(otherContexts);
   }
-  
+
   /**
-   * @param context the {@link RemoteRefContext} to add to this instance.
-   * @return <code>true</code> if the context was added, <code>false</code> otherwise.
+   * @param context
+   *          the {@link RemoteRefContext} to add to this instance.
+   * @return <code>true</code> if the context was added, <code>false</code>
+   *         otherwise.
    */
   synchronized boolean add(RemoteRefContext context) {
-    if(contextSet.add(context)) { 
+    if (contextSet.add(context)) {
       orderedContexts.add(context);
       return true;
     }
@@ -61,42 +66,44 @@ class ContextList implements Contexts.UpdateListener {
   }
 
   /**
-   * @param context the {@link RemoteRefContext} to add to this instance.
-   * @return <code>true</code> if the context was added, <code>false</code> otherwise.
+   * @param context
+   *          the {@link RemoteRefContext} to add to this instance.
+   * @return <code>true</code> if the context was added, <code>false</code>
+   *         otherwise.
    */
   synchronized boolean remove(RemoteRefContext context) {
-    if(contextSet.remove(context)) {
+    if (contextSet.remove(context)) {
       orderedContexts.remove(context);
       notifyListeners(context);
       return true;
     }
     return false;
   }
-  
+
   synchronized List<RemoteRefContext> getAll() {
     return new ArrayList<RemoteRefContext>(orderedContexts);
   }
-  
+
   synchronized int count() {
     return orderedContexts.size();
   }
-  
+
   /**
    * Rotates this instance's {@link RemoteRefContext}s.
    * 
    * @return the {@link RemoteRefContext} that is the first in this instance's
-   * ordered list (after the internal rotation has been done).
+   *         ordered list (after the internal rotation has been done).
    * @throws RemoteException
    */
   synchronized RemoteRefContext rotate() throws RemoteException {
     if (orderedContexts.size() == 0) {
       throw new RemoteException("No connection available");
-    }      
+    }
     RemoteRefContext toReturn = orderedContexts.remove(0);
     orderedContexts.add(toReturn);
     return toReturn;
   }
-  
+
   /**
    * @see Contexts.UpdateListener
    */
@@ -104,21 +111,23 @@ class ContextList implements Contexts.UpdateListener {
   public void onUpdate(Collection<RemoteRefContext> contexts) {
     this.update(contexts);
   }
-  
+
   /**
    * Adds the given {@link RemovalListener} to this instance.
-   * @param listener a {@link RemovalListener}.
+   * 
+   * @param listener
+   *          a {@link RemovalListener}.
    */
   synchronized void addRemovalListener(RemovalListener listener) {
     listeners.add(listener);
   }
-  
+
   private synchronized void notifyListeners(RemoteRefContext removed) {
-    for(RemovalListener listener : listeners) {
+    for (RemovalListener listener : listeners) {
       listener.onRemoval(removed);
     }
   }
-  
+
   @Override
   public synchronized String toString() {
     return Strings.toString("contexts", orderedContexts);

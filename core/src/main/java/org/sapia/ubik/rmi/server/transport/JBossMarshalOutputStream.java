@@ -12,12 +12,9 @@ import org.sapia.ubik.rmi.server.VmId;
 import org.sapia.ubik.rmi.server.stats.Stats;
 import org.sapia.ubik.util.Assertions;
 
-public class JBossMarshalOutputStream extends JBossObjectOutputStream implements
-    RmiObjectOutput {
+public class JBossMarshalOutputStream extends JBossObjectOutputStream implements RmiObjectOutput {
 
-  private static Stopwatch stubOutput = Stats
-      .createStopwatch(JBossMarshalOutputStream.class, "StubOutput",
-          "Time to create a stub");
+  private static Stopwatch stubOutput = Stats.createStopwatch(JBossMarshalOutputStream.class, "StubOutput", "Time to create a stub");
 
   private VmId id;
   private String transportType;
@@ -38,8 +35,7 @@ public class JBossMarshalOutputStream extends JBossObjectOutputStream implements
    */
   protected Object replaceObject(Object obj) throws IOException {
     if (obj instanceof java.rmi.Remote) {
-      Assertions.illegalState(id == null, "VmId not set on %s", getClass()
-          .getName());
+      Assertions.illegalState(id == null, "VmId not set on %s", getClass().getName());
 
       Split split = stubOutput.start();
       Object remote = serverTable.createRemoteObject(obj, id, transportType);

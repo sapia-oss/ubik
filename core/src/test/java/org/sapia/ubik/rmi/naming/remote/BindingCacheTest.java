@@ -13,25 +13,24 @@ import org.sapia.archie.impl.DefaultNameParser;
 import org.sapia.archie.jndi.JndiNameParser;
 import org.sapia.ubik.rmi.naming.remote.proxy.BindingCache;
 
-
 /**
  * @author Yanick Duchesne
  */
 public class BindingCacheTest extends TestCase {
-  
+
   NameParser parser;
-  
+
   public BindingCacheTest(String arg0) {
     super(arg0);
   }
-  
+
   @Override
   protected void setUp() throws Exception {
     super.setUp();
     parser = new JndiNameParser(new DefaultNameParser());
   }
 
-  public void testAdd() throws Exception{
+  public void testAdd() throws Exception {
     BindingCache bc = new BindingCache();
     bc.add("junit", parser.parse("someObject"), new Object());
     super.assertEquals(1, bc.cachedRefs().size());
@@ -42,13 +41,12 @@ public class BindingCacheTest extends TestCase {
     bc.add("junit", parser.parse("someObject"), "theObject");
 
     ByteArrayOutputStream bos = new ByteArrayOutputStream();
-    ObjectOutputStream    ous = new ObjectOutputStream(bos);
+    ObjectOutputStream ous = new ObjectOutputStream(bos);
     ous.writeObject(bc);
     ous.flush();
     ous.close();
 
-    ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(
-          bos.toByteArray()));
+    ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(bos.toByteArray()));
     bc = (BindingCache) ois.readObject();
     super.assertEquals(1, bc.cachedRefs().size());
 
@@ -62,13 +60,12 @@ public class BindingCacheTest extends TestCase {
     bc.add("junit", parser.parse("someObject"), null);
 
     ByteArrayOutputStream bos = new ByteArrayOutputStream();
-    ObjectOutputStream    ous = new ObjectOutputStream(bos);
+    ObjectOutputStream ous = new ObjectOutputStream(bos);
     ous.writeObject(bc);
     ous.flush();
     ous.close();
 
-    ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(
-          bos.toByteArray()));
+    ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(bos.toByteArray()));
     bc = (BindingCache) ois.readObject();
     super.assertEquals(0, bc.cachedRefs().size());
   }

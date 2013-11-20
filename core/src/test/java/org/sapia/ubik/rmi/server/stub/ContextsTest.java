@@ -13,15 +13,15 @@ import org.sapia.ubik.rmi.server.oid.DefaultOID;
 import org.sapia.ubik.rmi.server.transport.memory.InMemoryAddress;
 
 public class ContextsTest {
-  
+
   List<RemoteRefContext> contextList;
-  Contexts               contexts;
+  Contexts contexts;
 
   @Before
   public void setUp() throws Exception {
     contextList = new ArrayList<RemoteRefContext>();
     contexts = new Contexts();
-    for(int i = 0; i < 5; i++) {
+    for (int i = 0; i < 5; i++) {
       RemoteRefContext ctx = new RemoteRefContext(new DefaultOID(i), new InMemoryAddress("test"));
       contextList.add(ctx);
     }
@@ -30,16 +30,16 @@ public class ContextsTest {
 
   @Test
   public void testUpdateListener() {
-    
+
     Contexts.UpdateListener listener = mock(Contexts.UpdateListener.class);
     contexts.addUpdateListener(listener);
-    
+
     List<RemoteRefContext> toAdd = new ArrayList<RemoteRefContext>();
-    for(int i = 5; i < 10; i++) {
+    for (int i = 5; i < 10; i++) {
       RemoteRefContext ctx = new RemoteRefContext(new DefaultOID(i), new InMemoryAddress("test"));
       toAdd.add(ctx);
     }
-    
+
     contexts.addAll(toAdd);
     verify(listener, times(1)).onUpdate(any(Collection.class));
   }

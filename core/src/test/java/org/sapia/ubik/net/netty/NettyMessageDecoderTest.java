@@ -19,15 +19,15 @@ import org.sapia.ubik.rmi.server.transport.MarshalStreamFactory;
 
 @RunWith(MockitoJUnitRunner.class)
 public class NettyMessageDecoderTest {
-  
+
   private NettyRequestDecoder decoder;
-  
+
   @Mock
   private ChannelHandlerContext context;
-  
+
   @Mock
   private Channel channel;
-  
+
   @Before
   public void setUp() {
     decoder = new NettyRequestDecoder();
@@ -35,7 +35,7 @@ public class NettyMessageDecoderTest {
 
   @Test
   public void testDecode() throws Exception {
-    
+
     NettyResponse toEncode = new NettyResponse("test");
     ByteArrayOutputStream bos = new ByteArrayOutputStream();
     ObjectOutputStream oos = MarshalStreamFactory.createOutputStream(bos);
@@ -49,7 +49,7 @@ public class NettyMessageDecoderTest {
     dos.writeInt(bytes.length);
     dos.write(bytes);
     dos.flush();
-    
+
     bytes = bos.toByteArray();
     ChannelBuffer buf = ChannelBuffers.dynamicBuffer(NettyResponse.PREFIX_LEN + bytes.length);
     buf.writeBytes(bytes);

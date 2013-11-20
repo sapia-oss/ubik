@@ -3,7 +3,6 @@ package org.sapia.ubik.rmi.server;
 import org.sapia.ubik.net.Connection;
 import org.sapia.ubik.net.ServerAddress;
 
-
 /**
  * A command's configuration.
  * 
@@ -11,7 +10,7 @@ import org.sapia.ubik.net.ServerAddress;
  */
 public class Config {
   private ServerAddress addr;
-  private Connection    conn;
+  private Connection conn;
 
   public Config(ServerAddress addr, Connection conn) {
     this.addr = addr;

@@ -5,79 +5,81 @@ import org.jboss.netty.logging.InternalLogger;
 import org.sapia.ubik.log.Category;
 
 /**
- * Adapts the {@link Category} class to Netty's {@link InternalLogger} interface. 
+ * Adapts the {@link Category} class to Netty's {@link InternalLogger}
+ * interface.
  * 
  * @author yduchesne
- *
+ * 
  */
 public class InternalLoggerAdapter implements InternalLogger {
-  
+
   private Category log;
-  
+
   public InternalLoggerAdapter(Category log) {
     this.log = log;
   }
-  
+
   @Override
   public void debug(String arg0) {
     log.debug(arg0);
   }
-  
+
   @Override
   public void debug(String arg0, Throwable arg1) {
     log.debug(arg0, arg1);
   }
-  
+
   @Override
   public void info(String arg0) {
     log.info(arg0);
   }
-  
+
   @Override
   public void info(String arg0, Throwable arg1) {
     log.info(arg0, arg1);
   }
-  
+
   @Override
   public void warn(String arg0) {
     log.warning(arg0);
   }
-  
+
   @Override
   public void warn(String arg0, Throwable arg1) {
     log.warning(arg0, arg1);
   }
-    
+
   @Override
   public void error(String arg0) {
     log.error(arg0);
-    
+
   }
+
   @Override
   public void error(String arg0, Throwable arg1) {
     log.error(arg0, arg1);
-  }  
-  
+  }
+
   @Override
   public boolean isDebugEnabled() {
     return log.isDebug();
   }
-  
+
   @Override
   public boolean isErrorEnabled() {
     return log.isError();
-  }  
-  
+  }
+
   @Override
   public boolean isInfoEnabled() {
     return log.isInfo();
   }
-  
+
   @Override
   public boolean isWarnEnabled() {
     return log.isWarning();
   }
-  
+
   @Override
   public boolean isEnabled(InternalLogLevel arg0) {
     if (arg0 == InternalLogLevel.DEBUG) {
@@ -88,9 +90,9 @@ public class InternalLoggerAdapter implements InternalLogger {
       return log.isWarning();
     } else {
       return log.isError();
-    }     
-  }  
-  
+    }
+  }
+
   @Override
   public void log(InternalLogLevel arg0, String arg1) {
     if (arg0 == InternalLogLevel.DEBUG) {
@@ -103,7 +105,7 @@ public class InternalLoggerAdapter implements InternalLogger {
       log.error(arg1);
     }
   }
-  
+
   @Override
   public void log(InternalLogLevel arg0, String arg1, Throwable arg2) {
     if (arg0 == InternalLogLevel.DEBUG) {
@@ -114,7 +116,7 @@ public class InternalLoggerAdapter implements InternalLogger {
       log.warning(arg1, arg2);
     } else {
       log.error(arg1, arg2);
-    }    
+    }
   }
 
 }

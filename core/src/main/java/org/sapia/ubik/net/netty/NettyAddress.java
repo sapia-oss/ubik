@@ -5,15 +5,15 @@ import org.sapia.ubik.net.TCPAddress;
 import org.sapia.ubik.rmi.server.transport.netty.NettyTransportProvider;
 
 /**
- * Implements the Netty {@link ServerAddress} by extending the {@link TCPAddress}
- * class.
+ * Implements the Netty {@link ServerAddress} by extending the
+ * {@link TCPAddress} class.
  * 
  * @author Yanick Duchesne
  * 
  */
 public class NettyAddress extends TCPAddress {
 
-  static final long  serialVersionUID = 1L;
+  static final long serialVersionUID = 1L;
 
   /**
    * Do not call: meant for externalization.
@@ -21,7 +21,7 @@ public class NettyAddress extends TCPAddress {
   public NettyAddress() {
     super();
   }
-  
+
   /**
    * @param transportType
    *          a transport type

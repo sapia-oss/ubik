@@ -3,13 +3,11 @@ package org.sapia.ubik.rmi.server.invocation;
 import org.sapia.ubik.rmi.interceptor.Event;
 import org.sapia.ubik.rmi.server.command.InvokeCommand;
 
-
 /**
- * This instance is generated on the client-size prior to a
- * remote method call.
+ * This instance is generated on the client-size prior to a remote method call.
  * <p>
- * Intercepting this event allows to implement substitution behavior,
- * such as:
+ * Intercepting this event allows to implement substitution behavior, such as:
+ * 
  * <pre>
  * ...
  *  InvokeCommand inv = event.getInvocable();
@@ -18,11 +16,11 @@ import org.sapia.ubik.rmi.server.command.InvokeCommand;
  *  evt.setCommand(sec);
  * ...
  * </pre>
- *
+ * 
  * @author Yanick Duchesne
  */
 public class ClientPreInvokeEvent implements Event {
-  
+
   private InvokeCommand cmd;
 
   public ClientPreInvokeEvent(InvokeCommand cmd) {
@@ -31,7 +29,7 @@ public class ClientPreInvokeEvent implements Event {
 
   /**
    * Returns the command that will be sent to the server.
-   *
+   * 
    * @return an {@link InvokeCommand} instance.
    */
   public InvokeCommand getCommand() {
@@ -40,8 +38,9 @@ public class ClientPreInvokeEvent implements Event {
 
   /**
    * Sets the command that will be sent to the server.
-   *
-   * @param cmd an {@link InvokeCommand}.
+   * 
+   * @param cmd
+   *          an {@link InvokeCommand}.
    */
   public void setCommand(InvokeCommand cmd) {
     this.cmd = cmd;

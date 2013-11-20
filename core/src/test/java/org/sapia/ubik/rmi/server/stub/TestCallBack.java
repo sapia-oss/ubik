@@ -6,14 +6,13 @@ import org.sapia.ubik.rmi.Callback;
 
 @Callback
 public class TestCallBack implements TestCallbackInterface, Remote {
-	
-	int counter;
 
-	@Override
-	public int callMethod() {
-		counter++;
-		return counter;
-	}
-	
-	
+  int counter;
+
+  @Override
+  public int callMethod() {
+    counter++;
+    return counter;
+  }
+
 }

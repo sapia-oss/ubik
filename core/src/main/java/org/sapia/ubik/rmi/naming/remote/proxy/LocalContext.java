@@ -19,18 +19,17 @@ import org.sapia.ubik.rmi.server.stub.StubContainer;
 import org.sapia.ubik.rmi.server.stub.Stubs;
 import org.sapia.ubik.rmi.server.stub.enrichment.StubEnrichmentStrategy.JndiBindingInfo;
 
-
 /**
  * @author Yanick Duchesne
  */
-@SuppressWarnings(value="unchecked")
+@SuppressWarnings(value = "unchecked")
 public class LocalContext extends ContextProxy implements java.rmi.Remote {
   protected DomainInfo domainInfo;
-  protected String     url;
+  protected String url;
 
   public LocalContext(String url, RemoteContext remote) throws NamingException {
     super(remote);
-    this.url   = url;
+    this.url = url;
     domainInfo = remote.getDomainInfo();
   }
 
@@ -133,7 +132,7 @@ public class LocalContext extends ContextProxy implements java.rmi.Remote {
   /**
    * @see javax.naming.Context#getEnvironment()
    */
-  public Hashtable<?,?> getEnvironment() throws NamingException {
+  public Hashtable<?, ?> getEnvironment() throws NamingException {
     try {
       return super.getEnvironment();
     } catch (UndeclaredThrowableException e) {
@@ -381,8 +380,7 @@ public class LocalContext extends ContextProxy implements java.rmi.Remote {
   protected Object onLookup(Name name, Object obj) throws NamingException {
     if (obj instanceof StubContainer) {
       try {
-        return ((StubContainer) obj).toStub(Thread.currentThread()
-                                                  .getContextClassLoader());
+        return ((StubContainer) obj).toStub(Thread.currentThread().getContextClassLoader());
       } catch (RemoteException e) {
         NamingException ne = new NamingException("Could not acquire stub");
         ne.setRootCause(e);
@@ -399,11 +397,11 @@ public class LocalContext extends ContextProxy implements java.rmi.Remote {
   protected Object onBind(Name n, Object toBind) throws NamingException {
     JndiBindingInfo info = new JndiBindingInfo(url, n, domainInfo.getDomainName(), domainInfo.getMulticastAddress());
     try {
-    	StubProcessor processor = Hub.getModules().getStubProcessor();
-    	toBind = processor.enrichForJndiBinding(toBind, info);
-    	if (Stubs.isStub(toBind)) {
-    		return Stubs.getStubInvocationHandler(toBind).toStubContainer(toBind);
-    	} 
+      StubProcessor processor = Hub.getModules().getStubProcessor();
+      toBind = processor.enrichForJndiBinding(toBind, info);
+      if (Stubs.isStub(toBind)) {
+        return Stubs.getStubInvocationHandler(toBind).toStubContainer(toBind);
+      }
       return toBind;
     } catch (RemoteException e) {
       NamingException ne = new NamingException("Could not enrich stub for binding");
@@ -431,15 +429,12 @@ public class LocalContext extends ContextProxy implements java.rmi.Remote {
   /**
    * "see ContextProxy#onSubContext(javax.naming.Name, javax.naming.Context)
    */
-  protected Context onSubContext(Name name, Context ctx)
-    throws NamingException {
+  protected Context onSubContext(Name name, Context ctx) throws NamingException {
     return new LocalContext(url, (RemoteContext) ctx);
   }
 
-  protected void doFailOver(UndeclaredThrowableException e)
-    throws NamingException {
-    NamingException ne = new NamingException("Unavailable naming service for " +
-        url);
+  protected void doFailOver(UndeclaredThrowableException e) throws NamingException {
+    NamingException ne = new NamingException("Unavailable naming service for " + url);
     ne.setRootCause(e.getUndeclaredThrowable());
   }
 }

@@ -7,50 +7,40 @@ import org.sapia.ubik.rmi.server.transport.TransportManager;
 import org.sapia.ubik.util.Props;
 
 /**
- * Encapsulates components pertaining to command execution logic - including the execution callbacks.
+ * Encapsulates components pertaining to command execution logic - including the
+ * execution callbacks.
  * 
  * @author yduchesne
- *
+ * 
  */
 public class CommandModule implements Module {
-  
-  public  static final String COMMAND_MODULE_SHUTDOWN_TIMEOUT = "ubik.rmi.server.module.command.shutdown-timeout";
-  private static final int    DEFAULT_CALLBACK_THREADS = 5;
-  private static final long   DEFAULT_SHUTDOWN_TIMEOUT = 10000;
-  
-  private CommandProcessor      commandProcessor;
-  private CallbackResponseQueue callbackResponseQueue;
-  private OutqueueManager       outqueues;
-  private long shutdownTimeout  = DEFAULT_SHUTDOWN_TIMEOUT;
-  
 
-  
+  public static final String COMMAND_MODULE_SHUTDOWN_TIMEOUT = "ubik.rmi.server.module.command.shutdown-timeout";
+  private static final int DEFAULT_CALLBACK_THREADS = 5;
+  private static final long DEFAULT_SHUTDOWN_TIMEOUT = 10000;
+
+  private CommandProcessor commandProcessor;
+  private CallbackResponseQueue callbackResponseQueue;
+  private OutqueueManager outqueues;
+  private long shutdownTimeout = DEFAULT_SHUTDOWN_TIMEOUT;
+
   @Override
   public void init(ModuleContext context) {
     callbackResponseQueue = new CallbackResponseQueue();
-    
 
-    int maxOutQueueThreads = Props.getSystemProperties().getIntProperty(
-      Consts.SERVER_CALLBACK_OUTQUEUE_THREADS, 
-      OutqueueManager.DEFAULT_OUTQUEUE_THREADS
-    );
-    outqueues 						= new OutqueueManager(context.lookup(TransportManager.class), callbackResponseQueue, maxOutQueueThreads);
-    
+    int maxOutQueueThreads = Props.getSystemProperties().getIntProperty(Consts.SERVER_CALLBACK_OUTQUEUE_THREADS,
+        OutqueueManager.DEFAULT_OUTQUEUE_THREADS);
+    outqueues = new OutqueueManager(context.lookup(TransportManager.class), callbackResponseQueue, maxOutQueueThreads);
+
     Props props = Props.getSystemProperties();
-    commandProcessor = new CommandProcessor(props.getIntProperty(
-                         Consts.SERVER_CALLBACK_MAX_THREADS, DEFAULT_CALLBACK_THREADS), 
-                         outqueues
-                       );
-    shutdownTimeout  = props.getLongProperty(
-                         COMMAND_MODULE_SHUTDOWN_TIMEOUT, 
-                         DEFAULT_SHUTDOWN_TIMEOUT
-                       );
+    commandProcessor = new CommandProcessor(props.getIntProperty(Consts.SERVER_CALLBACK_MAX_THREADS, DEFAULT_CALLBACK_THREADS), outqueues);
+    shutdownTimeout = props.getLongProperty(COMMAND_MODULE_SHUTDOWN_TIMEOUT, DEFAULT_SHUTDOWN_TIMEOUT);
   }
-  
+
   @Override
   public void start(ModuleContext context) {
   }
-  
+
   @Override
   public void stop() {
     callbackResponseQueue.shutdown(shutdownTimeout);
@@ -68,7 +58,7 @@ public class CommandModule implements Module {
   public CallbackResponseQueue getCallbackResponseQueue() {
     return callbackResponseQueue;
   }
-  
+
   /**
    * @return this instance's {@link CommandProcessor}.
    */

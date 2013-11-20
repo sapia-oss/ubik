@@ -12,9 +12,9 @@ import org.sapia.ubik.rmi.NoSuchObjectException;
 import org.sapia.ubik.rmi.server.oid.DefaultOID;
 
 public class ObjectTableTest {
-  
+
   private ObjectTable objectTable;
-  
+
   @Before
   public void setUp() throws Exception {
     objectTable = new ObjectTable();
@@ -38,7 +38,7 @@ public class ObjectTableTest {
     objectTable.register(oid, "anObject");
     assertTrue(objectTable.remove("anObject"));
   }
-  
+
   @Test
   public void testRemoveForClassLoader() {
     DefaultOID oid = new DefaultOID(1);
@@ -59,7 +59,7 @@ public class ObjectTableTest {
     objectTable.dereference(oid, 1);
     assertTrue(obj.unreferenced);
   }
-  
+
   @Test
   public void testUnregister() throws Exception {
     DefaultOID oid = new DefaultOID(1);
@@ -83,7 +83,7 @@ public class ObjectTableTest {
       objectTable.getObjectFor(oid);
       throw new Exception("NoSuchObjectException should be thrown");
     } catch (NoSuchObjectException e) {
-      //ok
+      // ok
     }
 
     objectTable.register(oid, "anObject");

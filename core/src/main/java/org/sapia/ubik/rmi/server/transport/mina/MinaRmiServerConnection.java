@@ -13,14 +13,14 @@ import org.sapia.ubik.rmi.server.transport.RmiConnection;
  */
 public class MinaRmiServerConnection implements RmiConnection {
 
-  private IoSession     session;
+  private IoSession session;
   private ServerAddress addr;
-  private Object        received;
+  private Object received;
 
   MinaRmiServerConnection(ServerAddress addr, IoSession session, Object received) {
-    this.addr     = addr;
-    this.session  = session;
-    this.received = received; 
+    this.addr = addr;
+    this.session = session;
+    this.received = received;
   }
 
   /**
@@ -40,8 +40,7 @@ public class MinaRmiServerConnection implements RmiConnection {
   /**
    * @see org.sapia.ubik.net.Connection#receive()
    */
-  public Object receive() throws IOException, ClassNotFoundException,
-      RemoteException {
+  public Object receive() throws IOException, ClassNotFoundException, RemoteException {
     return received;
   }
 
@@ -56,15 +55,14 @@ public class MinaRmiServerConnection implements RmiConnection {
    * @see org.sapia.ubik.rmi.server.transport.RmiConnection#send(java.lang.Object,
    *      org.sapia.ubik.rmi.server.VmId, java.lang.String)
    */
-  public void send(Object o, VmId associated, String transportType)
-      throws IOException, RemoteException {
-    
+  public void send(Object o, VmId associated, String transportType) throws IOException, RemoteException {
+
     MinaResponse resp = new MinaResponse();
     resp.setObject(o);
-    if(associated != null && transportType != null) {
+    if (associated != null && transportType != null) {
       resp.setAssociatedVmId(associated);
       resp.setTransportType(transportType);
-    }    
+    }
     session.write(resp);
   }
 }

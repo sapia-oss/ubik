@@ -18,19 +18,19 @@ import org.sapia.ubik.serialization.SerializationStreams;
 
 /**
  * A {@link Connection} implemented through a {@link Socket}.
- *
+ * 
  * @author Yanick Duchesne
  */
 public class SocketConnection implements Connection {
-  static final long            DEFAULT_RESET_INTERVAL = 2000;
-  protected Socket             sock;
-  protected TCPAddress         address;
-  protected ClassLoader        loader;
-  protected ObjectInputStream  is;
+  static final long DEFAULT_RESET_INTERVAL = 2000;
+  protected Socket sock;
+  protected TCPAddress address;
+  protected ClassLoader loader;
+  protected ObjectInputStream is;
   protected ObjectOutputStream os;
-  protected long               lastReset;
-  protected long               resetInterval 					= DEFAULT_RESET_INTERVAL;
-  private   int                bufsize;
+  protected long lastReset;
+  protected long resetInterval = DEFAULT_RESET_INTERVAL;
+  private int bufsize;
 
   public SocketConnection(String transportType, Socket sock, ClassLoader loader, int bufsize) {
     this(transportType, sock, bufsize);
@@ -38,23 +38,24 @@ public class SocketConnection implements Connection {
   }
 
   public SocketConnection(String transportType, Socket sock, int bufsize) {
-    this.sock      = sock;
-    this.bufsize   = bufsize;
-    address        = new TCPAddress(transportType, sock.getInetAddress().getHostAddress(), sock.getPort());
+    this.sock = sock;
+    this.bufsize = bufsize;
+    address = new TCPAddress(transportType, sock.getInetAddress().getHostAddress(), sock.getPort());
   }
-  
+
   /**
-   * Sets the interval at which this instance calls the {@link ObjectOutputStream#reset()}
-   * method on the {@link ObjectOutputStream} that in uses internally for serializing
-   * objects.
+   * Sets the interval at which this instance calls the
+   * {@link ObjectOutputStream#reset()} method on the {@link ObjectOutputStream}
+   * that in uses internally for serializing objects.
    * <p>
    * This instance performs the reset at every write, insuring that no stale
    * object is cached by the underlying {@link ObjectOutputStream}.
-   *
-   * @param interval the interval (in millis) at which this instance calls
-   * the <code>reset</code> method of its {@link ObjectOutputStream}.
+   * 
+   * @param interval
+   *          the interval (in millis) at which this instance calls the
+   *          <code>reset</code> method of its {@link ObjectOutputStream}.
    */
-  public void setResetInterval(long interval){
+  public void setResetInterval(long interval) {
     resetInterval = interval;
   }
 
@@ -62,24 +63,21 @@ public class SocketConnection implements Connection {
    * @see Connection#send(Object)
    */
   public void send(Object o) throws IOException, RemoteException {
-      writeHeader(sock.getOutputStream(), loader);
-      doSend(o, os);
+    writeHeader(sock.getOutputStream(), loader);
+    doSend(o, os);
   }
 
   /**
    * @see Connection#receive()
    */
-  public Object receive()
-    throws IOException, ClassNotFoundException, RemoteException {
+  public Object receive() throws IOException, ClassNotFoundException, RemoteException {
     try {
       readHeader(sock.getInputStream(), loader);
       return is.readObject();
     } catch (EOFException e) {
-      throw new RemoteException("Communication with server interrupted; server probably disappeared",
-        e);
+      throw new RemoteException("Communication with server interrupted; server probably disappeared", e);
     } catch (SocketException e) {
-      throw new RemoteException("Connection could not be opened; server is probably down",
-        e);
+      throw new RemoteException("Connection could not be opened; server is probably down", e);
     }
   }
 
@@ -101,7 +99,7 @@ public class SocketConnection implements Connection {
 
       sock.close();
     } catch (Throwable t) {
-      //noop
+      // noop
     }
   }
 
@@ -114,7 +112,7 @@ public class SocketConnection implements Connection {
 
   /**
    * Returns this instance's internal input stream.
-   *
+   * 
    * @return an {@link InputStream}.
    */
   public InputStream getInputStream() throws IOException {
@@ -123,7 +121,7 @@ public class SocketConnection implements Connection {
 
   /**
    * Returns this instance's internal output stream.
-   *
+   * 
    * @return an {@link OutputStream}.
    */
   public OutputStream getOuputStream() throws IOException {
@@ -131,71 +129,72 @@ public class SocketConnection implements Connection {
   }
 
   /**
-   * Template method internally called by this instance; the method should create
-   * an {@link ObjectOutputStream} for the given parameters.
-   *
-   * @param os the {@link OutputStream} that the returned stream should wrap.
-   * @param loader the {@link ClassLoader} that this instance corresponds to.
+   * Template method internally called by this instance; the method should
+   * create an {@link ObjectOutputStream} for the given parameters.
+   * 
+   * @param os
+   *          the {@link OutputStream} that the returned stream should wrap.
+   * @param loader
+   *          the {@link ClassLoader} that this instance corresponds to.
    * @return an {@link ObjectOutputStream}.
-   * @throws IOException if a problem occurs creating the desired object.
+   * @throws IOException
+   *           if a problem occurs creating the desired object.
    */
-  protected ObjectOutputStream newOutputStream(OutputStream os,
-    ClassLoader loader) throws IOException {
+  protected ObjectOutputStream newOutputStream(OutputStream os, ClassLoader loader) throws IOException {
     return SerializationStreams.createObjectOutputStream(os);
   }
 
   /**
-   * Template method internally called by this instance; the method should create
-   * an {@link ObjectInputStream} for the given parameters.
+   * Template method internally called by this instance; the method should
+   * create an {@link ObjectInputStream} for the given parameters.
    * <p>
-   * The returned instance can use the passed in {@link ClassLoader} to resolve the classes 
-   * of the deserialized objects.
-   *
+   * The returned instance can use the passed in {@link ClassLoader} to resolve
+   * the classes of the deserialized objects.
+   * 
    * @see ObjectInputStream#resolveClass(java.io.ObjectStreamClass)
-   * @param is the {@link InputStream} that the returned stream should wrap.
-   * @param loader the {@link ClassLoader} that this instance corresponds to.
+   * @param is
+   *          the {@link InputStream} that the returned stream should wrap.
+   * @param loader
+   *          the {@link ClassLoader} that this instance corresponds to.
    * @return an {@link ObjectInputStream}.
-   * @throws IOException if a problem occurs creating the desired object.
-
+   * @throws IOException
+   *           if a problem occurs creating the desired object.
    */
-  protected ObjectInputStream newInputStream(InputStream is, ClassLoader loader)
-    throws IOException {
+  protected ObjectInputStream newInputStream(InputStream is, ClassLoader loader) throws IOException {
     return SerializationStreams.createObjectInputStream(is);
   }
-  
-  protected void doSend(Object toSend, ObjectOutputStream mos) throws IOException{
-    try{
+
+  protected void doSend(Object toSend, ObjectOutputStream mos) throws IOException {
+    try {
       mos.writeObject(toSend);
       mos.flush();
-       
+
     } catch (java.net.SocketException e) {
-      throw new RemoteException("Communication with server interrupted; server probably disappeared",
-        e);
-    } catch (EOFException e) { 
-      throw new RemoteException("Communication with server interrupted; server probably disappeared",
-        e);      
+      throw new RemoteException("Communication with server interrupted; server probably disappeared", e);
+    } catch (EOFException e) {
+      throw new RemoteException("Communication with server interrupted; server probably disappeared", e);
     }
   }
-  
-  protected void writeHeader(OutputStream outputStream, ClassLoader loader) throws IOException{
-    DataOutputStream dos = new DataOutputStream(outputStream);    
+
+  protected void writeHeader(OutputStream outputStream, ClassLoader loader) throws IOException {
+    DataOutputStream dos = new DataOutputStream(outputStream);
     if (os == null || (System.currentTimeMillis() - lastReset) >= resetInterval) {
       lastReset = System.currentTimeMillis();
-      dos.writeBoolean(true);      
+      dos.writeBoolean(true);
       dos.flush();
       os = null;
       os = newOutputStream(new BufferedOutputStream(outputStream, bufsize), loader);
-    } else{
+    } else {
       dos.writeBoolean(false);
       dos.flush();
     }
   }
-  
-  protected void readHeader(InputStream inputStream, ClassLoader loader) throws IOException{
+
+  protected void readHeader(InputStream inputStream, ClassLoader loader) throws IOException {
     DataInputStream dis = new DataInputStream(inputStream);
-    
+
     boolean reset = dis.readBoolean();
-    if(is == null || reset){
+    if (is == null || reset) {
       is = null;
       is = newInputStream(new BufferedInputStream(inputStream, bufsize), loader);
     }

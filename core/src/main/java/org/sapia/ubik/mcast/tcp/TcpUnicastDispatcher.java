@@ -23,55 +23,53 @@ import org.sapia.ubik.net.WorkerPool;
 import org.sapia.ubik.util.Localhost;
 
 /**
- * Implements a {@link UnicastDispatcher} over standard server sockets. This class is legacy and the
- * NIO implementation is preferred.
+ * Implements a {@link UnicastDispatcher} over standard server sockets. This
+ * class is legacy and the NIO implementation is preferred.
  * 
  * @author yduchesne
- *
+ * 
  */
 public class TcpUnicastDispatcher extends BaseTcpUnicastDispatcher {
-  
-  public static final String TRANSPORT_TYPE  = "tcp/unicast";
-  
-  private TCPUnicastSocketServer  socketServer;
-  private ServerAddress           address;
-  private Thread                  serverThread;
-  
+
+  public static final String TRANSPORT_TYPE = "tcp/unicast";
+
+  private TCPUnicastSocketServer socketServer;
+  private ServerAddress address;
+  private Thread serverThread;
+
   /**
    * @param consumer
    * @throws IOException
    */
-  public TcpUnicastDispatcher(EventConsumer consumer, ConfigurableExecutor.ThreadingConfiguration conf) throws IOException{
+  public TcpUnicastDispatcher(EventConsumer consumer, ConfigurableExecutor.ThreadingConfiguration conf) throws IOException {
     super(consumer);
-    this.socketServer = new TCPUnicastSocketServer(Localhost.getAnyLocalAddress().getHostAddress(), consumer, conf);  
+    this.socketServer = new TCPUnicastSocketServer(Localhost.getAnyLocalAddress().getHostAddress(), consumer, conf);
   }
 
   // --------------------------------------------------------------------------
-  // UnicastDispatcher interface  
-  
+  // UnicastDispatcher interface
+
   @Override
   public ServerAddress getAddress() throws IllegalStateException {
     if (address == null) {
       address = new TCPAddress(doGetTransportType(), socketServer.getAddress(), socketServer.getPort());
-      log.debug("Server address for node %s: %s", consumer.getNode(), address);      
+      log.debug("Server address for node %s: %s", consumer.getNode(), address);
     }
     return address;
   }
-  
+
   // --------------------------------------------------------------------------
   // Inherited abstract methods
-  
+
   @Override
   protected void doStart() {
-    if(serverThread != null && serverThread.isAlive()) {
+    if (serverThread != null && serverThread.isAlive()) {
       throw new IllegalStateException("Server already started");
     }
 
-    serverThread = NamedThreadFactory.createWith("tcp.unicast.dispatcher.Server")
-      .setDaemon(true)
-      .newThread(socketServer);
+    serverThread = NamedThreadFactory.createWith("tcp.unicast.dispatcher.Server").setDaemon(true).newThread(socketServer);
     serverThread.start();
-    try{
+    try {
       socketServer.waitStarted();
     } catch (InterruptedException e) {
       throw new IllegalStateException("Thread interrupted while waiting for socket server startup", e);
@@ -79,18 +77,18 @@ public class TcpUnicastDispatcher extends BaseTcpUnicastDispatcher {
       throw new IllegalStateException("Could not start socket server", e);
     }
   }
-  
+
   @Override
   protected void doClose() {
     socketServer.close();
     ThreadShutdown.create(serverThread).shutdownLenient();
   }
-  
+
   @Override
   protected String doGetTransportType() {
     return TRANSPORT_TYPE;
-  }  
-  
+  }
+
   @Override
   protected ConnectionFactory doGetConnectionFactory(int soTimeout) {
     SocketConnectionFactory connections = new SocketConnectionFactory(TRANSPORT_TYPE);
@@ -99,47 +97,47 @@ public class TcpUnicastDispatcher extends BaseTcpUnicastDispatcher {
   }
 
   // ==========================================================================
-  
+
   class TCPUnicastSocketServer extends SocketServer {
-    
-    public TCPUnicastSocketServer(String bindAddress, EventConsumer consumer, ConfigurableExecutor.ThreadingConfiguration conf) throws IOException{
+
+    public TCPUnicastSocketServer(String bindAddress, EventConsumer consumer, ConfigurableExecutor.ThreadingConfiguration conf) throws IOException {
       super(doGetTransportType(), bindAddress, 0, new TCPUnicastThreadPool(consumer, conf), new DefaultUbikServerSocketFactory());
     }
-    
-    public TCPUnicastSocketServer(EventConsumer consumer, ConfigurableExecutor.ThreadingConfiguration conf) throws IOException{
+
+    public TCPUnicastSocketServer(EventConsumer consumer, ConfigurableExecutor.ThreadingConfiguration conf) throws IOException {
       super(doGetTransportType(), 0, new TCPUnicastThreadPool(consumer, conf), new DefaultUbikServerSocketFactory());
-    }    
+    }
   }
 
   // --------------------------------------------------------------------------
-  
+
   class TCPUnicastThreadPool extends WorkerPool<Request> {
-    
+
     TCPUnicastThreadPool(EventConsumer consumer, ConfigurableExecutor.ThreadingConfiguration config) {
       super(consumer.getNode() + "Unicast@" + consumer.getDomainName().toString(), true, config);
     }
-   
+
     @Override
     protected Worker<Request> newWorker() {
       return new TCPUnicastWorker();
     }
   }
-  
+
   // --------------------------------------------------------------------------
-  
+
   class TCPUnicastWorker implements Worker<Request> {
-    
-    private Category      log       = Log.createCategory(getClass());
+
+    private Category log = Log.createCategory(getClass());
 
     @Override
     public void execute(Request req) {
 
       try {
         Object o = req.getConnection().receive();
-        
+
         if (o instanceof RemoteEvent) {
           RemoteEvent evt = (RemoteEvent) o;
-          
+
           if (evt.isSync()) {
             if (consumer.hasSyncListener(evt.getType())) {
               log.debug("Received sync remote event %s from %s, notifying listener", evt.getType(), evt.getNode());
@@ -158,9 +156,8 @@ public class TcpUnicastDispatcher extends BaseTcpUnicastDispatcher {
         }
       } catch (Exception e) {
         log.error("Error caught handling request", e);
-      } 
+      }
     }
   }
-  
 
 }

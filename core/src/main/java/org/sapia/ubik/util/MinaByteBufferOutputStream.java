@@ -6,19 +6,20 @@ import java.io.OutputStream;
 import org.apache.mina.common.ByteBuffer;
 
 /**
- * An {@link OutputStream} implementation that writes to an internal {@link ByteBuffer}.
+ * An {@link OutputStream} implementation that writes to an internal
+ * {@link ByteBuffer}.
  * 
  * @author yduchesne
- *
+ * 
  */
-public class MinaByteBufferOutputStream  extends OutputStream {
-	
+public class MinaByteBufferOutputStream extends OutputStream {
+
   private ByteBuffer buf;
-  
-  public MinaByteBufferOutputStream(ByteBuffer buf){
+
+  public MinaByteBufferOutputStream(ByteBuffer buf) {
     this.buf = buf;
   }
-  
+
   public synchronized void write(int b) throws IOException {
     buf.put((byte) b);
   }

@@ -4,29 +4,29 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
-
 /**
- * This dispatcher allows to register only one interceptor
- * per event type.
- *
+ * This dispatcher allows to register only one interceptor per event type.
+ * 
  * @author Yanick Duchesne
  */
 public class SingleDispatcher {
-  
+
   Map<Class<?>, InterceptorInfo> _interceptors = new HashMap<Class<?>, InterceptorInfo>();
 
   /**
    * Registers an interceptor with the given event type.
-   *
-   * @param event an event class.
-   * @param it an <code>Interceptor</code> instance.
-   *
-   * @throws InvalidInterceptorException if the interceptor could not be registered.
+   * 
+   * @param event
+   *          an event class.
+   * @param it
+   *          an <code>Interceptor</code> instance.
+   * 
+   * @throws InvalidInterceptorException
+   *           if the interceptor could not be registered.
    */
-  public void registerInterceptor(Class<?> event, Interceptor it)
-    throws InvalidInterceptorException {
-    Class<?> itClass   = it.getClass();
-    int    idx       = event.getName().lastIndexOf('.');
+  public void registerInterceptor(Class<?> event, Interceptor it) throws InvalidInterceptorException {
+    Class<?> itClass = it.getClass();
+    int idx = event.getName().lastIndexOf('.');
     String shortName;
 
     if (idx < 0) {
@@ -36,8 +36,8 @@ public class SingleDispatcher {
     }
 
     char[] content = shortName.toCharArray();
-    content[0]   = Character.toUpperCase(content[0]);
-    shortName    = "on" + new String(content);
+    content[0] = Character.toUpperCase(content[0]);
+    shortName = "on" + new String(content);
 
     Method m;
 
@@ -48,16 +48,15 @@ public class SingleDispatcher {
     }
 
     if (_interceptors.get(event) != null) {
-      throw new InvalidInterceptorException(
-        "interceptor already registered for " + event.getName());
+      throw new InvalidInterceptorException("interceptor already registered for " + event.getName());
     }
 
     _interceptors.put(event, new InterceptorInfo(it, m));
   }
 
   /**
-   * Dispatches the given event to the interceptor that has
-   * registered for the event's class.
+   * Dispatches the given event to the interceptor that has registered for the
+   * event's class.
    */
   public void dispatch(Event event) {
     InterceptorInfo info = (InterceptorInfo) _interceptors.get(event.getClass());
@@ -74,9 +73,8 @@ public class SingleDispatcher {
   }
 
   /**
-   * Template method that is called internally when an error is
-   * trapped when invoking the call-back method on a given
-   * interceptor instance.
+   * Template method that is called internally when an error is trapped when
+   * invoking the call-back method on a given interceptor instance.
    */
   protected void handleError(Throwable t) {
     t.printStackTrace();

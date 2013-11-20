@@ -19,42 +19,38 @@ import org.sapia.ubik.test.TestUtils;
 public class RemoteRefExTest {
 
   private TestInMemoryTransportSetup transport;
-  
+
   @Before
   public void setUp() {
     transport = new TestInMemoryTransportSetup();
     transport.setUp();
-  }  
-  
+  }
+
   @After
   public void tearDown() {
     transport.tearDown();
   }
-  
+
   @Test
   public void testSerializeDeserialize() throws Exception {
     RemoteRefContext context = new RemoteRefContext(new DefaultOID(0), new TCPAddress("test", "localhost", 0));
     RemoteRefEx ref = new RemoteRefEx(context);
     Object proxy;
 
-    proxy = Proxy.newProxyInstance(
-        Thread.currentThread().getContextClassLoader(),
-        TestUtils.getInterfacesFor(java.rmi.Remote.class), 
-        ref
-    );
+    proxy = Proxy.newProxyInstance(Thread.currentThread().getContextClassLoader(), TestUtils.getInterfacesFor(java.rmi.Remote.class), ref);
 
     byte[] bytes = TestUtils.serialize(proxy);
     proxy = TestUtils.deserialize(bytes);
   }
-  
+
   @Test
   public void testExportConnect() throws Exception {
     TestRemoteInterface remoteObject = mock(TestRemoteInterface.class);
-    
+
     Object remoteProxy = transport.exportObject(remoteObject);
-    RemoteRefEx ref  = (RemoteRefEx)Proxy.getInvocationHandler(remoteProxy);
+    RemoteRefEx ref = (RemoteRefEx) Proxy.getInvocationHandler(remoteProxy);
     assertEquals(1, Hub.getModules().getObjectTable().getRefCount(ref.getContexts().iterator().next().getOid()));
-    
+
     remoteProxy = transport.connect();
     assertEquals(1, Hub.getModules().getObjectTable().getRefCount(ref.getContexts().iterator().next().getOid()));
   }

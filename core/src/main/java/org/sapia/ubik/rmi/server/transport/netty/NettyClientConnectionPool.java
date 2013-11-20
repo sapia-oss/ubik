@@ -16,7 +16,7 @@ import org.sapia.ubik.util.pool.PooledObjectCreationException;
  * @author Yanick Duchesne
  */
 public class NettyClientConnectionPool implements Connections {
-  
+
   private ConnectionPool pool;
 
   /**
@@ -24,15 +24,11 @@ public class NettyClientConnectionPool implements Connections {
    *          the host of the server to connect to.
    * @param port
    *          the port of the server.
-   * @param bufsize 
-   * 					the size of connection buffers.
+   * @param bufsize
+   *          the size of connection buffers.
    */
   NettyClientConnectionPool(String host, int port, int bufsize) {
-    pool = new ConnectionPool.Builder()
-      .host(host)
-      .port(port)
-      .connectionFactory(new NettyConnectionFactory(bufsize))
-      .build();
+    pool = new ConnectionPool.Builder().host(host).port(port).connectionFactory(new NettyConnectionFactory(bufsize)).build();
   }
 
   /**
@@ -59,7 +55,7 @@ public class NettyClientConnectionPool implements Connections {
   public void clear() {
     pool.shrinkTo(0);
   }
-  
+
   @Override
   public void invalidate(RmiConnection conn) {
     pool.invalidate(conn);

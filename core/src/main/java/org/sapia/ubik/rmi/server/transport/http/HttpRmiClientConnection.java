@@ -25,59 +25,53 @@ import org.sapia.ubik.rmi.server.transport.RmiObjectOutput;
 import org.sapia.ubik.util.Assertions;
 import org.sapia.ubik.util.Props;
 
-
 /**
  * Implements the {@link RmiConnection} interface over HTTP - more precisely,
- * over a Jakarta HTTP client. Data is sent using the POST method.
- * </p>
- * An instance of this class is used on the client side.
- *
+ * over a Jakarta HTTP client. Data is sent using the POST method. </p> An
+ * instance of this class is used on the client side.
+ * 
  * @see org.sapia.ubik.rmi.server.transport.http.HttpRmiServerConnection
- *
+ * 
  * @author Yanick Duchesne
  */
 public class HttpRmiClientConnection implements RmiConnection {
-  
-  private static Stopwatch serializationTime   = Stats.createStopwatch(HttpRmiClientConnection.class, 
-      "SerializationDuration", "Time required to serialize an object");
 
-  private static Stopwatch sendTime = Stats.createStopwatch(HttpRmiClientConnection.class, 
-      "SendDuration", "Time required to send an object over the network");
+  private static Stopwatch serializationTime = Stats.createStopwatch(HttpRmiClientConnection.class, "SerializationDuration",
+      "Time required to serialize an object");
 
-  
+  private static Stopwatch sendTime = Stats.createStopwatch(HttpRmiClientConnection.class, "SendDuration",
+      "Time required to send an object over the network");
+
   private static final int STATUS_OK = 200;
-  
-  private HttpAddress      address;
-  private HttpClient       client;
-  private HttpPost         post;
-  private byte[]           responsePayload;
-  private int              bufsz = Props.getSystemProperties().getIntProperty(
-																			Consts.MARSHALLING_BUFSIZE, 
-																			Consts.DEFAULT_MARSHALLING_BUFSIZE
-  																 );
+
+  private HttpAddress address;
+  private HttpClient client;
+  private HttpPost post;
+  private byte[] responsePayload;
+  private int bufsz = Props.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE);
 
   /**
-   * Creates an instance of this class with the given HTTP client and
-   * uri to connect to.
+   * Creates an instance of this class with the given HTTP client and uri to
+   * connect to.
    */
   public HttpRmiClientConnection(HttpClient client, HttpAddress address) {
-    this.client  = client;
+    this.client = client;
     this.address = address;
   }
 
   /**
-   * @see org.sapia.ubik.rmi.server.transport.RmiConnection#send(java.lang.Object, org.sapia.ubik.rmi.server.VmId, java.lang.String)
+   * @see org.sapia.ubik.rmi.server.transport.RmiConnection#send(java.lang.Object,
+   *      org.sapia.ubik.rmi.server.VmId, java.lang.String)
    */
-  public void send(Object o, VmId associated, String transportType)
-    throws IOException, RemoteException {
+  public void send(Object o, VmId associated, String transportType) throws IOException, RemoteException {
     post = new HttpPost(address.toString());
 
     ByteArrayOutputStream bos = new ByteArrayOutputStream(bufsz);
-    
+
     Split split = serializationTime.start();
-    ObjectOutputStream    mos = MarshalStreamFactory.createOutputStream(bos);
+    ObjectOutputStream mos = MarshalStreamFactory.createOutputStream(bos);
     if ((associated != null) && (transportType != null)) {
-      ((RmiObjectOutput)mos).setUp(associated, transportType);
+      ((RmiObjectOutput) mos).setUp(associated, transportType);
     }
     mos.writeObject(o);
     mos.flush();
@@ -90,19 +84,17 @@ public class HttpRmiClientConnection implements RmiConnection {
     if (data.length > bufsz) {
       bufsz = data.length;
     }
-    
+
     post.setEntity(new ByteArrayEntity(data));
     try {
       HttpResponse response = client.execute(post);
       if (response.getStatusLine().getStatusCode() != STATUS_OK) {
-        throw new IOException("HTTP response error " 
-            + response.getStatusLine().getStatusCode() 
-            + " caught: " 
+        throw new IOException("HTTP response error " + response.getStatusLine().getStatusCode() + " caught: "
             + response.getStatusLine().getReasonPhrase());
       }
       responsePayload = EntityUtils.toByteArray(response.getEntity());
     } finally {
-      post.releaseConnection();      
+      post.releaseConnection();
     }
     split.stop();
   }
@@ -123,12 +115,11 @@ public class HttpRmiClientConnection implements RmiConnection {
   /**
    * @see org.sapia.ubik.net.Connection#receive()
    */
-  public Object receive()
-    throws IOException, ClassNotFoundException, RemoteException {
+  public Object receive() throws IOException, ClassNotFoundException, RemoteException {
     Assertions.illegalState(responsePayload == null, "Cannot receive; response payload not set");
-    
-    byte[] thePayload    = responsePayload;
-    responsePayload      = null;
+
+    byte[] thePayload = responsePayload;
+    responsePayload = null;
     ObjectInputStream is = MarshalStreamFactory.createInputStream(new ByteArrayInputStream(thePayload));
 
     try {

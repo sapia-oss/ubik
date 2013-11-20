@@ -25,38 +25,33 @@ import org.sapia.ubik.rmi.naming.remote.discovery.JndiDiscoListener;
 import org.sapia.ubik.rmi.naming.remote.discovery.ServiceDiscoListener;
 import org.sapia.ubik.rmi.naming.remote.discovery.ServiceDiscoveryEvent;
 
-
 /**
- * An instance of this class is created by a {@link RemoteInitialContextFactory}. It allows
- * clients to register ServiceDiscoveryListener that are notified when new services
- * are bound to the JNDI servers on the network.
- *
+ * An instance of this class is created by a {@link RemoteInitialContextFactory}
+ * . It allows clients to register ServiceDiscoveryListener that are notified
+ * when new services are bound to the JNDI servers on the network.
+ * 
  * @see RemoteInitialContextFactory
  * @see ServiceDiscoListener
  * @see ServiceDiscoveryEvent
- *
+ * 
  * @author Yanick Duchesne
  */
-@SuppressWarnings(value="unchecked")
-public class ReliableLocalContext extends LocalContext
-  implements AsyncEventListener {
+@SuppressWarnings(value = "unchecked")
+public class ReliableLocalContext extends LocalContext implements AsyncEventListener {
   private static ThreadLocal<Context> currentContext = new ThreadLocal<Context>();
-  private static String      PING           = "ubik/rmi/naming/ping/test";
-  private BindingCache       bindings       = new BindingCache();
-  private DiscoveryHelper    helper;
-  private List<Context>			 servers        = Collections.synchronizedList(new ArrayList<Context>());
-  private ContextResolver    resolver;
+  private static String PING = "ubik/rmi/naming/ping/test";
+  private BindingCache bindings = new BindingCache();
+  private DiscoveryHelper helper;
+  private List<Context> servers = Collections.synchronizedList(new ArrayList<Context>());
+  private ContextResolver resolver;
 
   /**
    * Constructor for ReliableLocalContext.
    */
-  public ReliableLocalContext(EventChannel channel, 
-                              String url,
-                              RemoteContext ctx,
-                              boolean publish,
-                              ContextResolver resolver) throws NamingException, IOException {
+  public ReliableLocalContext(EventChannel channel, String url, RemoteContext ctx, boolean publish, ContextResolver resolver) throws NamingException,
+      IOException {
     super(url, ctx);
-    helper        = new DiscoveryHelper(channel);
+    helper = new DiscoveryHelper(channel);
     this.resolver = resolver;
     channel.registerAsyncListener(JNDIConsts.JNDI_SERVER_DISCO, this);
     channel.registerAsyncListener(JNDIConsts.JNDI_SERVER_PUBLISH, this);
@@ -66,7 +61,7 @@ public class ReliableLocalContext extends LocalContext
         channel.dispatch(JNDIConsts.JNDI_CLIENT_PUBLISH, "");
       }
     }
-    
+
     currentContext.set(this);
   }
 
@@ -78,14 +73,16 @@ public class ReliableLocalContext extends LocalContext
   }
 
   /**
-   * @see org.sapia.ubik.rmi.naming.remote.proxy.LocalContext#bind(String, Object)
+   * @see org.sapia.ubik.rmi.naming.remote.proxy.LocalContext#bind(String,
+   *      Object)
    */
   public void bind(String n, Object o) throws NamingException {
     rebind(n, o);
   }
 
   /**
-   * @see org.sapia.ubik.rmi.naming.remote.proxy.LocalContext#rebind(Name, Object)
+   * @see org.sapia.ubik.rmi.naming.remote.proxy.LocalContext#rebind(Name,
+   *      Object)
    */
   public void rebind(Name n, Object o) throws NamingException {
     super.rebind(n, o);
@@ -96,7 +93,8 @@ public class ReliableLocalContext extends LocalContext
   }
 
   /**
-   * @see org.sapia.ubik.rmi.naming.remote.proxy.LocalContext#rebind(String, Object)
+   * @see org.sapia.ubik.rmi.naming.remote.proxy.LocalContext#rebind(String,
+   *      Object)
    */
   public void rebind(String n, Object o) throws NamingException {
     super.rebind(n, o);
@@ -108,8 +106,9 @@ public class ReliableLocalContext extends LocalContext
 
   /**
    * Adds a service discovery listener to this instance.
-   *
-   * @param listener a {@link ServiceDiscoListener}.
+   * 
+   * @param listener
+   *          a {@link ServiceDiscoListener}.
    */
   public void addServiceDiscoListener(ServiceDiscoListener listener) {
     if (!helper.getChannel().isClosed()) {
@@ -119,8 +118,9 @@ public class ReliableLocalContext extends LocalContext
 
   /**
    * Adds a JNDI discovery listener to this instance.
-   *
-   * @param listener a {@link JndiDiscoListener}.
+   * 
+   * @param listener
+   *          a {@link JndiDiscoListener}.
    */
   public void addJndiDiscoListener(JndiDiscoListener listener) {
     if (!helper.getChannel().isClosed()) {
@@ -133,7 +133,7 @@ public class ReliableLocalContext extends LocalContext
    */
   public void onAsyncEvent(RemoteEvent evt) {
     try {
-      ServerAddress serverAddress;      
+      ServerAddress serverAddress;
       if (evt.getType().equals(JNDIConsts.JNDI_SERVER_DISCO)) {
         serverAddress = (TCPAddress) evt.getData();
         Context remoteCtx = (Context) resolver.resolve(serverAddress);
@@ -158,8 +158,7 @@ public class ReliableLocalContext extends LocalContext
   /**
    * @see org.sapia.ubik.rmi.naming.remote.proxy.LocalContext#doFailOver(UndeclaredThrowableException)
    */
-  protected void doFailOver(UndeclaredThrowableException e)
-    throws NamingException {
+  protected void doFailOver(UndeclaredThrowableException e) throws NamingException {
     if (!(e.getUndeclaredThrowable() instanceof RemoteException)) {
       super.doFailOver(e);
     }
@@ -199,12 +198,13 @@ public class ReliableLocalContext extends LocalContext
   }
 
   /**
-   * Returns the instance of this class that is currently registered with the calling thread.
-   *
-   * @throws IllegalStateException if no instance of this class is currently registered.
+   * Returns the instance of this class that is currently registered with the
+   * calling thread.
+   * 
+   * @throws IllegalStateException
+   *           if no instance of this class is currently registered.
    */
-  public static ReliableLocalContext currentContext()
-    throws IllegalStateException {
+  public static ReliableLocalContext currentContext() throws IllegalStateException {
     ReliableLocalContext ctx = (ReliableLocalContext) currentContext.get();
 
     if (ctx == null) {
@@ -213,24 +213,26 @@ public class ReliableLocalContext extends LocalContext
 
     return ctx;
   }
-  
+
   /**
    * @return the <code>EventChannel</code> used by this instance to perform
-   * discovery.
+   *         discovery.
    */
-  public EventChannel getEventChannel(){
+  public EventChannel getEventChannel() {
     return helper.getChannel();
   }
 
-  /*////////////////////////////////////////////////////////////////////
-                              INNER CLASSES
-  ////////////////////////////////////////////////////////////////////*/
-  
+  /*
+   * //////////////////////////////////////////////////////////////////// INNER
+   * CLASSES
+   * ////////////////////////////////////////////////////////////////////
+   */
+
   class JndiListenerWrapper implements JndiDiscoListener {
     private JndiDiscoListener _wrapped;
 
     JndiListenerWrapper(JndiDiscoListener toWrap) {
-      _wrapped   = toWrap;
+      _wrapped = toWrap;
     }
 
     /**

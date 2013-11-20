@@ -21,12 +21,9 @@ import org.sapia.ubik.util.Assertions;
  * 
  * @author Yanick Duchesne
  */
-public class MarshalOutputStream extends ObjectOutputStream implements
-    RmiObjectOutput {
+public class MarshalOutputStream extends ObjectOutputStream implements RmiObjectOutput {
 
-  private static Stopwatch stubOutput = Stats
-      .createStopwatch(JBossMarshalOutputStream.class, "StubOutput",
-          "Time to create a stub");
+  private static Stopwatch stubOutput = Stats.createStopwatch(JBossMarshalOutputStream.class, "StubOutput", "Time to create a stub");
 
   private VmId id;
   private String transportType;
@@ -47,8 +44,7 @@ public class MarshalOutputStream extends ObjectOutputStream implements
    */
   protected Object replaceObject(Object obj) throws IOException {
     if (obj instanceof java.rmi.Remote) {
-      Assertions.illegalState(id == null, "VmId not set on %s", getClass()
-          .getName());
+      Assertions.illegalState(id == null, "VmId not set on %s", getClass().getName());
       Split split = stubOutput.start();
       Object remote = serverTable.createRemoteObject(obj, id, transportType);
       split.stop();

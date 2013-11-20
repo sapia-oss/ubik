@@ -18,63 +18,64 @@ import org.sapia.ubik.rmi.server.Hub;
 import org.sapia.ubik.util.PropertiesUtil;
 
 public class DiscoveryHelperTest {
-	
-	private EmbeddableJNDIServer jndi;
-	private DiscoveryHelper 		 helper;
-	
-	@Before
-	public void setUp() throws Exception {
-	  PropertiesUtil.clearUbikSystemProperties();
-		jndi   = new EmbeddableJNDIServer(EventChannelTestSupport.createEventChannel("test"), 1099);
-		helper = new DiscoveryHelper(EventChannelTestSupport.createEventChannel("test"));
-		jndi.start(true);
-		Thread.sleep(3000);
-		
-	}
-	
-	@After
-	public void tearDown() {
-    PropertiesUtil.clearUbikSystemProperties();	  
-		helper.close();
-		jndi.stop();
-	}
 
-	@Test
-	public void testServiceDiscovery() throws Exception {
-		final BlockingRef<TestService> ref = new BlockingRef<DiscoveryHelperTest.TestService>();
-		helper.addServiceDiscoListener(new ServiceDiscoListener() {
-			@Override
-			public void onServiceDiscovered(ServiceDiscoveryEvent evt) {
-				try {
-					ref.set((TestService)evt.getService());
-				} catch (RemoteException e) {
-					e.printStackTrace();
-				}
-			}
-		});
-		
-		TestService toBind = new TestService() {};
-		jndi.getRootContext().bind("test", Hub.exportObject(toBind));
-		
-		TestService service = ref.await(3000);
-		assertNotNull("Service not discovered", service);
-	}
-	
-	@Test
-	public void testJndiDiscovery() throws Exception {
-		final BlockingRef<Boolean> ref = new BlockingRef<Boolean>();
-		helper.addJndiDiscoListener(new JndiDiscoListener() {
-			@Override
-			public void onJndiDiscovered(Context ctx) {
-				ref.set(new Boolean(true));
-			}
-		});
-		
-		Boolean discovered = ref.await(3000);
-		assertNotNull("JNDI not discovered", discovered);
-	}
-	
-	interface TestService extends Remote {
-		
-	}
+  private EmbeddableJNDIServer jndi;
+  private DiscoveryHelper helper;
+
+  @Before
+  public void setUp() throws Exception {
+    PropertiesUtil.clearUbikSystemProperties();
+    jndi = new EmbeddableJNDIServer(EventChannelTestSupport.createEventChannel("test"), 1099);
+    helper = new DiscoveryHelper(EventChannelTestSupport.createEventChannel("test"));
+    jndi.start(true);
+    Thread.sleep(3000);
+
+  }
+
+  @After
+  public void tearDown() {
+    PropertiesUtil.clearUbikSystemProperties();
+    helper.close();
+    jndi.stop();
+  }
+
+  @Test
+  public void testServiceDiscovery() throws Exception {
+    final BlockingRef<TestService> ref = new BlockingRef<DiscoveryHelperTest.TestService>();
+    helper.addServiceDiscoListener(new ServiceDiscoListener() {
+      @Override
+      public void onServiceDiscovered(ServiceDiscoveryEvent evt) {
+        try {
+          ref.set((TestService) evt.getService());
+        } catch (RemoteException e) {
+          e.printStackTrace();
+        }
+      }
+    });
+
+    TestService toBind = new TestService() {
+    };
+    jndi.getRootContext().bind("test", Hub.exportObject(toBind));
+
+    TestService service = ref.await(3000);
+    assertNotNull("Service not discovered", service);
+  }
+
+  @Test
+  public void testJndiDiscovery() throws Exception {
+    final BlockingRef<Boolean> ref = new BlockingRef<Boolean>();
+    helper.addJndiDiscoListener(new JndiDiscoListener() {
+      @Override
+      public void onJndiDiscovered(Context ctx) {
+        ref.set(new Boolean(true));
+      }
+    });
+
+    Boolean discovered = ref.await(3000);
+    assertNotNull("JNDI not discovered", discovered);
+  }
+
+  interface TestService extends Remote {
+
+  }
 }

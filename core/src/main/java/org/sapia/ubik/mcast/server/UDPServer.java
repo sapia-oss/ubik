@@ -15,18 +15,17 @@ import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.Defaults;
 import org.sapia.ubik.util.Localhost;
 
-
 /**
  * Implements a basic UDP server.
  * 
  * @author Yanick Duchesne
  */
 public abstract class UDPServer extends Thread {
-  
-  private 	Category         log     				= Log.createCategory(getClass());
-  protected DatagramSocket 	 sock;
-  private 	int              bufsize 				= Defaults.DEFAULT_UDP_PACKET_SIZE;
-  protected ThreadStartup    startupBarrier = new ThreadStartup();
+
+  private Category log = Log.createCategory(getClass());
+  protected DatagramSocket sock;
+  private int bufsize = Defaults.DEFAULT_UDP_PACKET_SIZE;
+  protected ThreadStartup startupBarrier = new ThreadStartup();
 
   /**
    * Constructor for UDPServer.
@@ -35,13 +34,12 @@ public abstract class UDPServer extends Thread {
     this(name, 0);
   }
 
-  public UDPServer(String name, int port)
-    throws java.net.SocketException {
+  public UDPServer(String name, int port) throws java.net.SocketException {
     super(name);
     super.setDaemon(true);
-    try{
+    try {
       sock = createSocket(port);
-    }catch(UnknownHostException e){
+    } catch (UnknownHostException e) {
       throw new IllegalStateException("Could not bind to local address", e);
     }
   }
@@ -49,9 +47,8 @@ public abstract class UDPServer extends Thread {
   public void setBufsize(int size) {
     bufsize = size;
   }
-  
-  
-  private static DatagramSocket createSocket(int port) throws UnknownHostException, SocketException{
+
+  private static DatagramSocket createSocket(int port) throws UnknownHostException, SocketException {
     DatagramSocket socket = new DatagramSocket(port, Localhost.getAnyLocalAddress());
     return socket;
   }
@@ -72,7 +69,7 @@ public abstract class UDPServer extends Thread {
       } catch (SocketTimeoutException e) {
         log.warning("Socket timeout out error while waiting for request", e);
       } catch (InterruptedIOException e) {
-        if(!sock.isClosed()) {
+        if (!sock.isClosed()) {
           sock.close();
         }
         break;

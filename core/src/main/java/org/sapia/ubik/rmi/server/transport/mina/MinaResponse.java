@@ -16,42 +16,44 @@ import org.sapia.ubik.rmi.server.VmId;
  * 
  */
 public class MinaResponse implements Externalizable {
-  
-  private VmId   associatedVmId;
+
+  private VmId associatedVmId;
   private Object object;
   private String transportType;
-  
+
   public VmId getAssociatedVmId() {
     return associatedVmId;
   }
+
   public void setAssociatedVmId(VmId associatedVmId) {
     this.associatedVmId = associatedVmId;
   }
-  
+
   public Object getObject() {
     return object;
   }
+
   public void setObject(Object object) {
     this.object = object;
   }
-  
+
   public String getTransportType() {
     return transportType;
   }
+
   public void setTransportType(String transportType) {
     this.transportType = transportType;
   }
-  
+
   // --------------------------------------------------------------------------
-  
+
   @Override
-  public void readExternal(ObjectInput in) throws IOException,
-      ClassNotFoundException {
+  public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
     associatedVmId = (VmId) in.readObject();
-    object         = in.readObject();
-    transportType  = (String) in.readObject();
+    object = in.readObject();
+    transportType = (String) in.readObject();
   }
-  
+
   @Override
   public void writeExternal(ObjectOutput out) throws IOException {
     out.writeObject(associatedVmId);

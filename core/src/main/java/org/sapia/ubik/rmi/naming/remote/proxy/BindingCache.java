@@ -25,7 +25,6 @@ import org.sapia.ubik.rmi.server.stub.StubInvocationHandler;
 import org.sapia.ubik.rmi.server.stub.Stubs;
 import org.sapia.ubik.rmi.server.stub.enrichment.StubEnrichmentStrategy.JndiBindingInfo;
 
-
 /**
  * A client-side binding cache.
  * 
@@ -33,7 +32,7 @@ import org.sapia.ubik.rmi.server.stub.enrichment.StubEnrichmentStrategy.JndiBind
  */
 public class BindingCache implements Externalizable {
 
-  private Category       log      = Log.createCategory(getClass());
+  private Category log = Log.createCategory(getClass());
   private List<BoundRef> services = new CopyOnWriteArrayList<BoundRef>();
 
   public BindingCache() {
@@ -60,36 +59,34 @@ public class BindingCache implements Externalizable {
       try {
         if ((ref.domainName != null) && domain.contains(ref.domainName)) {
           Object toBind;
-          if(ref.obj instanceof Reference<?>){
-            toBind = ((Reference<?>)ref.obj).get();
-          }
-          else{
+          if (ref.obj instanceof Reference<?>) {
+            toBind = ((Reference<?>) ref.obj).get();
+          } else {
             toBind = ref.obj;
           }
-          if(toBind != null){
+          if (toBind != null) {
             JndiBindingInfo info = new JndiBindingInfo(baseUrl, ref.name, ref.domainName, mcastAddress);
             try {
-              log.debug("Enriching stub %s", ref.name);              
+              log.debug("Enriching stub %s", ref.name);
               toBind = Hub.getModules().getStubProcessor().enrichForJndiBinding(toBind, info);
-             	if (Stubs.isStub(toBind)) {
-             		ctx.rebind(ref.name, Stubs.getStubInvocationHandler(toBind).toStubContainer(toBind));
-            	} else {
-            		ctx.rebind(ref.name, toBind);
-            	}
+              if (Stubs.isStub(toBind)) {
+                ctx.rebind(ref.name, Stubs.getStubInvocationHandler(toBind).toStubContainer(toBind));
+              } else {
+                ctx.rebind(ref.name, toBind);
+              }
             } catch (RemoteException e) {
               log.error("Could not enrich stub", e);
             }
           }
         }
       } catch (NamingException e) {
-        //noop;
+        // noop;
       }
     }
   }
 
-  @SuppressWarnings(value="unchecked")
-  public void readExternal(ObjectInput in)
-    throws IOException, ClassNotFoundException {
+  @SuppressWarnings(value = "unchecked")
+  public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
     services = (List<BoundRef>) in.readObject();
   }
 
@@ -111,8 +108,8 @@ public class BindingCache implements Externalizable {
   }
 
   public static class BoundRef implements Externalizable {
-    public Name       name;
-    public Object     obj;
+    public Name name;
+    public Object obj;
     public DomainName domainName;
 
     /**
@@ -122,16 +119,15 @@ public class BindingCache implements Externalizable {
     }
 
     BoundRef(String domainName, Name name, Object o) {
-      this.domainName   = DomainName.parse(domainName);
-      this.name         = name;
-      this.obj          = new SoftReference<Object>(o);
+      this.domainName = DomainName.parse(domainName);
+      this.name = name;
+      this.obj = new SoftReference<Object>(o);
     }
 
-    public void readExternal(ObjectInput in)
-      throws IOException, ClassNotFoundException {
-      this.name         = (Name)in.readObject();
-      this.obj          = in.readObject();
-      this.domainName   = (DomainName) in.readObject();
+    public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+      this.name = (Name) in.readObject();
+      this.obj = in.readObject();
+      this.domainName = (DomainName) in.readObject();
     }
 
     public void writeExternal(ObjectOutput out) throws IOException {
@@ -140,7 +136,7 @@ public class BindingCache implements Externalizable {
       Object toWrite;
 
       if (obj instanceof SoftReference<?>) {
-        toWrite = ((SoftReference<?>)obj).get();
+        toWrite = ((SoftReference<?>) obj).get();
       } else {
         toWrite = obj;
       }

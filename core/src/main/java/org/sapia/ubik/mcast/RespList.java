@@ -3,25 +3,26 @@ package org.sapia.ubik.mcast;
 import java.util.ArrayList;
 import java.util.List;
 
-
 /**
  * Models a list of {@link Response} objects.
- *
+ * 
  * @author Yanick Duchesne
  */
 public class RespList {
   private List<Response> resps;
 
   /**
-   * @param capacity the initial capacity of the {@link List} that is internally
-   * created to hold {@link Response} instances.
+   * @param capacity
+   *          the initial capacity of the {@link List} that is internally
+   *          created to hold {@link Response} instances.
    */
   public RespList(int capacity) {
     resps = new ArrayList<Response>(capacity);
   }
-  
+
   /**
-   * @param responses a {@link List} of {@link Response} instances.
+   * @param responses
+   *          a {@link List} of {@link Response} instances.
    */
   public RespList(List<Response> responses) {
     this.resps = responses;
@@ -29,18 +30,19 @@ public class RespList {
 
   /**
    * Adds the given response to this instance.
-   *
-   * @param resp a {@link Response} object.
+   * 
+   * @param resp
+   *          a {@link Response} object.
    */
   public void addResponse(Response resp) {
     resps.add(resp);
   }
 
   /**
-   * Returns the {@link Response} object at
-   * the given index.
-   *
-   * @param index an index.
+   * Returns the {@link Response} object at the given index.
+   * 
+   * @param index
+   *          an index.
    * @return a {@link Response} object.
    */
   public Response get(int index) {
@@ -48,12 +50,11 @@ public class RespList {
   }
 
   /**
-   * Returns <code>true</code> if this instance contains a
-   * {@link Response} object that represents an error
-   * that occurred on the remote side.
-   *
-   * @return <code>true</code> if this instance contains a
-   * {@link Response} object that holds a {@link Throwable}
+   * Returns <code>true</code> if this instance contains a {@link Response}
+   * object that represents an error that occurred on the remote side.
+   * 
+   * @return <code>true</code> if this instance contains a {@link Response}
+   *         object that holds a {@link Throwable}
    */
   public boolean containsError() {
     Response r;
@@ -70,13 +71,12 @@ public class RespList {
   }
 
   /**
-   * Returns <code>true</code> if this instance contains
-   * a {@link Response} object whose status is "suspect" -
-   * meaning that the corresponding node is probably down.
-   *
-   * @return <code>true</code> if this instance contains
-   * a {@link Response} whose corresponding node is probably
-   * down.
+   * Returns <code>true</code> if this instance contains a {@link Response}
+   * object whose status is "suspect" - meaning that the corresponding node is
+   * probably down.
+   * 
+   * @return <code>true</code> if this instance contains a {@link Response}
+   *         whose corresponding node is probably down.
    */
   public boolean containsSuspect() {
     Response r;
@@ -94,7 +94,7 @@ public class RespList {
 
   /**
    * Returns the number of responses within this instance.
-   *
+   * 
    * @return the number of responses within this instance.
    */
   public int count() {

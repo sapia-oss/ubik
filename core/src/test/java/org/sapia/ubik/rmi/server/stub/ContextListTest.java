@@ -13,13 +13,13 @@ import org.sapia.ubik.rmi.server.oid.DefaultOID;
 import org.sapia.ubik.rmi.server.transport.memory.InMemoryAddress;
 
 public class ContextListTest {
-  
+
   private ContextList contexts;
 
   @Before
   public void setUp() throws Exception {
     contexts = new ContextList();
-    for(int i = 0; i < 5; i++) {
+    for (int i = 0; i < 5; i++) {
       RemoteRefContext ctx = new RemoteRefContext(new DefaultOID(i), new InMemoryAddress("test"));
       contexts.add(ctx);
     }
@@ -28,7 +28,7 @@ public class ContextListTest {
   @Test
   public void testRemove() {
     int originalSize = contexts.count();
-    RemoteRefContext toRemove = contexts.getAll().get(0); 
+    RemoteRefContext toRemove = contexts.getAll().get(0);
     contexts.remove(toRemove);
     assertEquals("Removal did not occur", originalSize - 1, contexts.count());
   }
@@ -40,7 +40,7 @@ public class ContextListTest {
 
   @Test
   public void testRotate() throws Exception {
-    RemoteRefContext expectedNext  = contexts.getAll().get(1);
+    RemoteRefContext expectedNext = contexts.getAll().get(1);
     contexts.rotate();
     assertEquals("Rotation did not occur; last should become next", expectedNext, contexts.getAll().get(0));
   }
@@ -50,10 +50,8 @@ public class ContextListTest {
     Collection<RemoteRefContext> allContexts = contexts.getAll();
     allContexts.add(new RemoteRefContext(new DefaultOID(contexts.count()), new InMemoryAddress("test")));
     contexts.onUpdate(allContexts);
-    
-    assertTrue(
-        "Update did not occur, original context list should have been updated", 
-        contexts.getAll().containsAll(allContexts));
+
+    assertTrue("Update did not occur, original context list should have been updated", contexts.getAll().containsAll(allContexts));
   }
 
   @Test

@@ -6,11 +6,11 @@ import java.io.ObjectInputStream;
 
 /**
  * This class is used to unmarshal incoming responses from servers.
- *
+ * 
  * @see org.sapia.ubik.rmi.server.Server
  * @see org.sapia.ubik.rmi.server.transport.RmiConnection
  * @see org.sapia.ubik.rmi.server.transport.TransportProvider
- *
+ * 
  * @author Yanick Duchesne
  */
 public class MarshalInputStream extends ObjectInputStream {
@@ -25,9 +25,9 @@ public class MarshalInputStream extends ObjectInputStream {
   protected Object resolveObject(Object arg) throws IOException {
     return arg;
   }
-  
+
   protected Object readObjectOverride() throws IOException, ClassNotFoundException {
-     return super.readUnshared();
+    return super.readUnshared();
   }
-  
+
 }

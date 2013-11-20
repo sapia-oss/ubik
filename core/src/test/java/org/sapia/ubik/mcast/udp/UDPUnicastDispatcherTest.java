@@ -1,6 +1,5 @@
 package org.sapia.ubik.mcast.udp;
 
-
 import java.io.IOException;
 
 import org.sapia.ubik.mcast.Defaults;

@@ -16,7 +16,7 @@ public class EventChannelTestSupport {
     properties.setProperty(Consts.UNICAST_PROVIDER, Consts.UNICAST_PROVIDER_MEMORY);
     return new EventChannel(domainName, new Props().addProperties(properties));
   }
-  
+
   public static EventChannel createEventChannel(String domainName) throws Exception {
     Properties properties = new Properties();
     properties.setProperty(Consts.BROADCAST_PROVIDER, Consts.BROADCAST_PROVIDER_MEMORY);

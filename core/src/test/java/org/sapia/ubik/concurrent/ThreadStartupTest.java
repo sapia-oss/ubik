@@ -13,7 +13,7 @@ public class ThreadStartupTest {
   public void testStarted() throws Exception {
     final ThreadStartup startup = new ThreadStartup();
     final AtomicBoolean started = new AtomicBoolean(false);
-    
+
     Thread t = createThread(new Runnable() {
       @Override
       public void run() {
@@ -23,7 +23,7 @@ public class ThreadStartupTest {
     });
     t.start();
     startup.await();
-    
+
     assertTrue(started.get());
   }
 
@@ -31,7 +31,7 @@ public class ThreadStartupTest {
   public void testFailed() throws Exception {
     final ThreadStartup startup = new ThreadStartup();
     final AtomicBoolean started = new AtomicBoolean(false);
-    
+
     Thread t = createThread(new Runnable() {
       @Override
       public void run() {
@@ -40,19 +40,18 @@ public class ThreadStartupTest {
       }
     });
     t.start();
-    
+
     try {
       startup.await();
     } catch (Exception e) {
       assertEquals("test", e.getMessage());
-      assertTrue(started.get());  
+      assertTrue(started.get());
     }
-    
+
   }
-  
+
   private Thread createThread(Runnable r) {
     return new Thread(r);
   }
-
 
 }

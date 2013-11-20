@@ -15,16 +15,14 @@ import org.sapia.ubik.rmi.server.transport.MarshalStreamFactory;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
 import org.sapia.ubik.rmi.server.transport.RmiObjectOutput;
 
-
 /**
  * A connection over a {@link Socket} - the connection uses the
  * {@link MarshalOutputStream} class to serialize outgoing objects.
- *
+ * 
  * @author Yanick Duchesne
  */
-public class SocketRmiConnection extends SocketConnection
-  implements RmiConnection {
-	
+public class SocketRmiConnection extends SocketConnection implements RmiConnection {
+
   public SocketRmiConnection(String transportType, Socket sock, ClassLoader loader, int bufsize) {
     super(transportType, sock, loader, bufsize);
   }
@@ -34,33 +32,32 @@ public class SocketRmiConnection extends SocketConnection
   }
 
   /**
-   * @see org.sapia.ubik.rmi.server.transport.RmiConnection#send(Object, VmId, String)
+   * @see org.sapia.ubik.rmi.server.transport.RmiConnection#send(Object, VmId,
+   *      String)
    */
-  public void send(Object o, VmId vmId, String tranportType)
-    throws IOException, RemoteException {
+  public void send(Object o, VmId vmId, String tranportType) throws IOException, RemoteException {
     try {
       writeHeader(sock.getOutputStream(), loader);
       ((RmiObjectOutput) os).setUp(vmId, tranportType);
       super.doSend(o, os);
     } catch (java.net.SocketException e) {
-      throw new RemoteException("communication with server interrupted; server probably disappeared",
-        e);
+      throw new RemoteException("communication with server interrupted; server probably disappeared", e);
     }
   }
 
   /**
-   * @see org.sapia.ubik.net.SocketConnection#newOutputStream(OutputStream, ClassLoader)
+   * @see org.sapia.ubik.net.SocketConnection#newOutputStream(OutputStream,
+   *      ClassLoader)
    */
-  protected ObjectOutputStream newOutputStream(OutputStream os,
-    ClassLoader loader) throws IOException {
+  protected ObjectOutputStream newOutputStream(OutputStream os, ClassLoader loader) throws IOException {
     return MarshalStreamFactory.createOutputStream(os);
   }
 
   /**
-   * @see org.sapia.ubik.net.SocketConnection#newInputStream(InputStream, ClassLoader)
+   * @see org.sapia.ubik.net.SocketConnection#newInputStream(InputStream,
+   *      ClassLoader)
    */
-  protected ObjectInputStream newInputStream(InputStream is, ClassLoader loader)
-    throws IOException {
+  protected ObjectInputStream newInputStream(InputStream is, ClassLoader loader) throws IOException {
     return MarshalStreamFactory.createInputStream(is);
   }
 }

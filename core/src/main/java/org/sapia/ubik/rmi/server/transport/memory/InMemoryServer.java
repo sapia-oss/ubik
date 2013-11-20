@@ -16,38 +16,38 @@ import org.sapia.ubik.rmi.server.transport.CommandHandler;
  * Implements an in-memory {@link Server}.
  * 
  * @author yduchesne
- *
+ * 
  */
 public class InMemoryServer implements Server {
-  
+
   private InMemoryAddress serverAddress;
   private ExecutorService requestProcessor = Executors.newFixedThreadPool(10);
-  private CommandHandler  handler;
-  
+  private CommandHandler handler;
+
   public InMemoryServer(MultiDispatcher dispatcher, InMemoryAddress serverAddress) {
     handler = new CommandHandler(dispatcher, getClass());
-    this.serverAddress  = serverAddress;
+    this.serverAddress = serverAddress;
   }
-  
+
   @Override
   public ServerAddress getServerAddress() {
     return serverAddress;
   }
-  
+
   @Override
   public void start() throws RemoteException {
-    
+
   }
-  
+
   @Override
   public void close() {
     requestProcessor.shutdown();
   }
-  
+
   void handle(final InMemoryRequest request) {
-    
+
     final Object data;
-    
+
     try {
       data = request.getData();
     } catch (Exception e) {
@@ -58,12 +58,12 @@ public class InMemoryServer implements Server {
         Log.error(getClass(), "Could send back error data", e);
       }
       return;
-    } 
-    
-    if(data instanceof RMICommand) {
-      
+    }
+
+    if (data instanceof RMICommand) {
+
       requestProcessor.execute(new Runnable() {
-        
+
         @Override
         public void run() {
           RMICommand cmd = (RMICommand) data;
@@ -72,7 +72,7 @@ public class InMemoryServer implements Server {
           handler.handleCommand(cmd, connection);
         }
       });
-      
+
     } else {
       try {
         request.setResponse(new IllegalArgumentException("Expected RMICommand instance, got " + data));
@@ -80,7 +80,7 @@ public class InMemoryServer implements Server {
         Log.error(getClass(), "Could not set response", e);
       }
     }
-    
+
   }
 
 }

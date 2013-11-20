@@ -18,7 +18,7 @@ import org.sapia.ubik.rmi.server.transport.memory.InMemoryTransportProvider;
 public class TestInMemoryTransportSetup {
 
   private Map<String, Object> services = new HashMap<String, Object>();
-  
+
   public void setUp() {
     // making sure we're shut down
     Hub.shutdown();
@@ -26,7 +26,7 @@ public class TestInMemoryTransportSetup {
     System.setProperty(Consts.COLOCATED_CALLS_ENABLED, "false");
     System.setProperty(InMemoryTransportProvider.MARSHALLING, "true");
   }
-  
+
   public void tearDown() {
     ServiceLocator.unregisterHandler("ubik-local");
     System.setProperty(Consts.COLOCATED_CALLS_ENABLED, "true");
@@ -37,30 +37,28 @@ public class TestInMemoryTransportSetup {
   public void bind(String name, Object object) {
     services.put(name, object);
   }
-  
+
   public Object exportObject(Object toExport) throws RemoteException {
     Properties props = new Properties();
     props.setProperty(Consts.TRANSPORT_TYPE, InMemoryAddress.TRANSPORT_TYPE);
     return Hub.exportObject(toExport, props);
   }
-  
+
   public Object connect() throws RemoteException {
     return Hub.connect(new InMemoryAddress(InMemoryTransportProvider.DEFAULT_SERVER_NAME));
   }
-  
+
   private class MapServiceHandler implements ServiceHandler {
-    
+
     @Override
-    public Object handleLookup(String host, int port, String path,
-        Map<String, String> attributes) throws NameNotFoundException,
-        NamingException {
-      
+    public Object handleLookup(String host, int port, String path, Map<String, String> attributes) throws NameNotFoundException, NamingException {
+
       Object toReturn = services.get(path);
-      if(toReturn == null) {
+      if (toReturn == null) {
         throw new NameNotFoundException(path);
       }
       return toReturn;
     }
   }
-  
+
 }

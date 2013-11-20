@@ -5,7 +5,6 @@ import org.sapia.archie.NodeFactory;
 import org.sapia.archie.ProcessingException;
 import org.sapia.archie.sync.Synchronizer;
 
-
 /**
  * A Ubik-specific {@link NodeFactory}.
  * 

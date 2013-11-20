@@ -16,7 +16,7 @@ import org.sapia.ubik.util.pool.PooledObjectCreationException;
  * @author Yanick Duchesne
  */
 public class MinaRmiClientConnectionPool implements Connections {
-  
+
   private ConnectionPool pool;
 
   /**
@@ -24,15 +24,11 @@ public class MinaRmiClientConnectionPool implements Connections {
    *          the host of the server to connect to.
    * @param port
    *          the port of the server.
-   * @param bufsize 
-   * 					the size of connection buffers.
+   * @param bufsize
+   *          the size of connection buffers.
    */
   MinaRmiClientConnectionPool(String host, int port, int bufsize) {
-    pool = new ConnectionPool.Builder()
-      .host(host)
-      .port(port)
-      .connectionFactory(new MinaRmiConnectionFactory(bufsize))
-      .build();
+    pool = new ConnectionPool.Builder().host(host).port(port).connectionFactory(new MinaRmiConnectionFactory(bufsize)).build();
   }
 
   /**
@@ -59,7 +55,7 @@ public class MinaRmiClientConnectionPool implements Connections {
   public void clear() {
     pool.shrinkTo(0);
   }
-  
+
   @Override
   public void invalidate(RmiConnection conn) {
     pool.invalidate(conn);

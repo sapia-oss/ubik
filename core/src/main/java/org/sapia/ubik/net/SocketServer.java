@@ -12,120 +12,126 @@ import org.sapia.ubik.concurrent.ThreadStartup;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 
-
 /**
  * Implements a socket server.
- *
+ * 
  * @author Yanick Duchesne
  */
 public abstract class SocketServer implements Runnable {
-  
+
   private static final long STARTUP_DELAY = 10000;
-  
-  protected Category                  log = Log.createCategory(getClass());
-  private   ServerSocket              server;
-  protected SocketConnectionFactory   fac;
-  private   String                    address;
-  private   WorkerPool<Request>       tp;
-  private   ThreadStartup             startupBarrier = new ThreadStartup();
+
+  protected Category log = Log.createCategory(getClass());
+  private ServerSocket server;
+  protected SocketConnectionFactory fac;
+  private String address;
+  private WorkerPool<Request> tp;
+  private ThreadStartup startupBarrier = new ThreadStartup();
 
   /**
-   * @param port the port that this server should listen on.
-   * @param tp the {@link WorkerPool} to use to create worker threads for request processing.
-   * @param socketFactory the {@link UbikServerSocketFactory} that will be used to create this instance's
-   * {@link ServerSocket}.
-   * @throws java.io.IOException if an IO problem occurs construction this instance.
+   * @param port
+   *          the port that this server should listen on.
+   * @param tp
+   *          the {@link WorkerPool} to use to create worker threads for request
+   *          processing.
+   * @param socketFactory
+   *          the {@link UbikServerSocketFactory} that will be used to create
+   *          this instance's {@link ServerSocket}.
+   * @throws java.io.IOException
+   *           if an IO problem occurs construction this instance.
    */
-  protected SocketServer(
-  		String transportType,
-      int port, 
-      WorkerPool<Request> tp,
-      UbikServerSocketFactory socketFactory) throws java.io.IOException {
+  protected SocketServer(String transportType, int port, WorkerPool<Request> tp, UbikServerSocketFactory socketFactory) throws java.io.IOException {
     this(port, new SocketConnectionFactory(transportType), tp, socketFactory);
   }
 
   /**
-   * @param bindAddr the address to which the server should be bound.
-   * @param port the port that this server should listen on.
-   * @param tp the {@link WorkerPool} to use to create worker threads for request processing.
-   * @param socketFactory the {@link UbikServerSocketFactory} that will be used to create this instance's
-   * {@link ServerSocket}.
-   * @throws java.io.IOException if an IO problem occurs construction this instance.
+   * @param bindAddr
+   *          the address to which the server should be bound.
+   * @param port
+   *          the port that this server should listen on.
+   * @param tp
+   *          the {@link WorkerPool} to use to create worker threads for request
+   *          processing.
+   * @param socketFactory
+   *          the {@link UbikServerSocketFactory} that will be used to create
+   *          this instance's {@link ServerSocket}.
+   * @throws java.io.IOException
+   *           if an IO problem occurs construction this instance.
    */
-  protected SocketServer(
-  		String transportType,
-      String bindAddr, 
-      int port, 
-      WorkerPool<Request> tp,
-      UbikServerSocketFactory socketFactory) throws java.io.IOException {
+  protected SocketServer(String transportType, String bindAddr, int port, WorkerPool<Request> tp, UbikServerSocketFactory socketFactory)
+      throws java.io.IOException {
     this(bindAddr, port, new SocketConnectionFactory(transportType), tp, socketFactory);
   }
 
   /**
-   * @param port the port that this server should listen on.
-   * @param fac the {@link SocketConnectionFactory} for which to create server-side {@link Connection} instances.
-   * @param tp the {@link WorkerPool} to use to create worker threads for request processing.
-   * @param socketFactory the {@link UbikServerSocketFactory} that will be used to create this instance's
-   * {@link ServerSocket}.
-   * @throws java.io.IOException if an IO problem occurs construction this instance.
+   * @param port
+   *          the port that this server should listen on.
+   * @param fac
+   *          the {@link SocketConnectionFactory} for which to create
+   *          server-side {@link Connection} instances.
+   * @param tp
+   *          the {@link WorkerPool} to use to create worker threads for request
+   *          processing.
+   * @param socketFactory
+   *          the {@link UbikServerSocketFactory} that will be used to create
+   *          this instance's {@link ServerSocket}.
+   * @throws java.io.IOException
+   *           if an IO problem occurs construction this instance.
    */
-  protected SocketServer(
-      int port, 
-      SocketConnectionFactory fac, 
-      WorkerPool<Request> tp,
-      UbikServerSocketFactory socketFactory) throws java.io.IOException {
-    server   = socketFactory.createServerSocket(port);
-    this.fac      = fac;
-    this.tp       = tp;
+  protected SocketServer(int port, SocketConnectionFactory fac, WorkerPool<Request> tp, UbikServerSocketFactory socketFactory)
+      throws java.io.IOException {
+    server = socketFactory.createServerSocket(port);
+    this.fac = fac;
+    this.tp = tp;
   }
 
   /**
-   * @param bindAddr the address to which the server should be bound.
-   * @param port the port that this server should listen on.
-   * @param fac the {@link SocketConnectionFactory} for which to create server-side {@link Connection} instances.
-   * @param tp the {@link WorkerPool} to use to create worker threads for request processing.
-   * @param socketFactory the {@link UbikServerSocketFactory} that will be used to create this instance's
-   * {@link ServerSocket}.
-   * @throws java.io.IOException if an IO problem occurs construction this instance.
+   * @param bindAddr
+   *          the address to which the server should be bound.
+   * @param port
+   *          the port that this server should listen on.
+   * @param fac
+   *          the {@link SocketConnectionFactory} for which to create
+   *          server-side {@link Connection} instances.
+   * @param tp
+   *          the {@link WorkerPool} to use to create worker threads for request
+   *          processing.
+   * @param socketFactory
+   *          the {@link UbikServerSocketFactory} that will be used to create
+   *          this instance's {@link ServerSocket}.
+   * @throws java.io.IOException
+   *           if an IO problem occurs construction this instance.
    */
-  protected SocketServer(
-      String bindAddr, 
-      int port,
-      SocketConnectionFactory fac, 
-      WorkerPool<Request> tp,
-      UbikServerSocketFactory socketFactory) throws java.io.IOException {
+  protected SocketServer(String bindAddr, int port, SocketConnectionFactory fac, WorkerPool<Request> tp, UbikServerSocketFactory socketFactory)
+      throws java.io.IOException {
     this.server = socketFactory.createServerSocket(port, bindAddr);
-    this.fac    = fac;
-    this.tp     = tp;
+    this.fac = fac;
+    this.tp = tp;
   }
 
   /**
    * Creates a new SocketServer instance
-   *
+   * 
    * @param tp
    * @param server
    * @throws IOException
    */
-  protected SocketServer(String transportType, WorkerPool<Request> tp, ServerSocket server)
-    throws IOException {
+  protected SocketServer(String transportType, WorkerPool<Request> tp, ServerSocket server) throws IOException {
     this(new SocketConnectionFactory(transportType), tp, server);
   }
 
   /**
    * Creates a new SocketServer instance.
-   *
+   * 
    * @param fac
    * @param tp
    * @param server
    * @throws IOException
    */
-  protected SocketServer(
-      SocketConnectionFactory fac, 
-      WorkerPool<Request> tp,
-      ServerSocket server) throws IOException {
+  protected SocketServer(SocketConnectionFactory fac, WorkerPool<Request> tp, ServerSocket server) throws IOException {
     this.server = server;
-    this.fac    = fac;
-    this.tp     = tp;
+    this.fac = fac;
+    this.tp = tp;
   }
 
   public String getAddress() {
@@ -136,8 +142,7 @@ public abstract class SocketServer implements Runnable {
         try {
           address = InetAddress.getLocalHost().getHostAddress();
         } catch (UnknownHostException e) {
-          throw new IllegalStateException(e.getClass().getName() +
-            " caught - msg " + e.getMessage());
+          throw new IllegalStateException(e.getClass().getName() + " caught - msg " + e.getMessage());
         }
       }
     }
@@ -148,8 +153,8 @@ public abstract class SocketServer implements Runnable {
   public int getPort() {
     return server.getLocalPort();
   }
-  
-  public int getThreadCount(){
+
+  public int getThreadCount() {
     return tp.getThreadCount();
   }
 
@@ -173,7 +178,7 @@ public abstract class SocketServer implements Runnable {
               server.setSoTimeout(1);
               client = server.accept();
             } catch (SocketTimeoutException e) {
-              //noop;
+              // noop;
             }
 
             server.setSoTimeout(0);
@@ -186,11 +191,11 @@ public abstract class SocketServer implements Runnable {
             client = server.accept();
           }
         } catch (SocketTimeoutException ste) {
-          //noop;
+          // noop;
           continue;
         } catch (SocketException e) {
           if (!startupBarrier.isStarted()) {
-            log.error("Error accepting client connections", e);            
+            log.error("Error accepting client connections", e);
             startupBarrier.failed(e);
           } else {
             log.info("Shutting down");
@@ -214,15 +219,17 @@ public abstract class SocketServer implements Runnable {
   }
 
   /**
-   * Call to block on this instance until its internal socket server
-   * has been started.
-   *
-   * @throws InterruptedException if the calling thread is interrupted while waiting.
-   * @throws SocketException if a socket-related exception occurs while starting up.
-   * @throws Exception if a generic exception occurs while starting up.
+   * Call to block on this instance until its internal socket server has been
+   * started.
+   * 
+   * @throws InterruptedException
+   *           if the calling thread is interrupted while waiting.
+   * @throws SocketException
+   *           if a socket-related exception occurs while starting up.
+   * @throws Exception
+   *           if a generic exception occurs while starting up.
    */
-  public synchronized void waitStarted()
-    throws InterruptedException, SocketException, Exception {
+  public synchronized void waitStarted() throws InterruptedException, SocketException, Exception {
     startupBarrier.await(STARTUP_DELAY);
   }
 
@@ -230,8 +237,8 @@ public abstract class SocketServer implements Runnable {
     log.error("Error while handling request", t);
     return true;
   }
-  
+
   public ServerSocket serverSocket() {
-  	return server;
+    return server;
   }
 }

@@ -4,7 +4,7 @@ import java.rmi.Remote;
 import java.rmi.RemoteException;
 
 public interface TestRemoteInterface extends Remote {
-  
+
   public void perform() throws RemoteException;
 
 }

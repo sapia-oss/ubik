@@ -10,34 +10,32 @@ import java.util.Set;
 
 import org.sapia.ubik.rmi.server.stub.Stub;
 
-
 public class TestUtils {
-	
+
   private TestUtils() {
     super();
   }
 
-  public static Object deserialize(byte[] bytes)
-    throws IOException, ClassNotFoundException {
+  public static Object deserialize(byte[] bytes) throws IOException, ClassNotFoundException {
     ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(bytes));
-    Object            o   = ois.readObject();
+    Object o = ois.readObject();
 
     return o;
   }
 
   public static byte[] serialize(Object o) throws IOException {
     ByteArrayOutputStream bos = new ByteArrayOutputStream();
-    ObjectOutputStream    ous = new ObjectOutputStream(bos);
+    ObjectOutputStream ous = new ObjectOutputStream(bos);
     ous.writeObject(o);
     ous.flush();
     ous.close();
 
     return bos.toByteArray();
   }
-  
+
   public static Class<?>[] getInterfacesFor(Class<?> clazz) {
-    HashSet<Class<?>> set     = new HashSet<Class<?>>();
-    Class<?>   			  current = clazz;
+    HashSet<Class<?>> set = new HashSet<Class<?>>();
+    Class<?> current = clazz;
     appendInterfaces(current, set);
     set.add(Stub.class);
 

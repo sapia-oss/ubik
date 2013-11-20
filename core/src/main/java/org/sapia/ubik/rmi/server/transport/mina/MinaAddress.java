@@ -12,7 +12,7 @@ import org.sapia.ubik.net.TCPAddress;
  */
 public class MinaAddress extends TCPAddress {
 
-  static final long          serialVersionUID = 1L;
+  static final long serialVersionUID = 1L;
 
   public MinaAddress() {
     super();

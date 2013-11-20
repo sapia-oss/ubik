@@ -8,14 +8,14 @@ import org.sapia.ubik.mcast.control.ControlNotificationHandler;
 import org.sapia.ubik.mcast.control.ControllerContext;
 
 public class ChallengeCompletionNotificationHandler implements ControlNotificationHandler {
-  
-  private Category          log      = Log.createCategory(getClass());
+
+  private Category log = Log.createCategory(getClass());
   private ControllerContext context;
-  
+
   public ChallengeCompletionNotificationHandler(ControllerContext context) {
     this.context = context;
   }
-  
+
   @Override
   public void handle(String originNode, ControlNotification notif) {
     ChallengeCompletionNotification completionNotif = (ChallengeCompletionNotification) notif;
@@ -28,7 +28,5 @@ public class ChallengeCompletionNotificationHandler implements ControlNotificati
       context.setMasterNode(completionNotif.getMasterNode());
     }
   }
-  
-  
 
 }

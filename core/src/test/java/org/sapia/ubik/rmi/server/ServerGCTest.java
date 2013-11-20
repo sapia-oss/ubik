@@ -13,15 +13,14 @@ import org.sapia.ubik.rmi.server.oid.DefaultOID;
 import org.sapia.ubik.taskman.MockTaskManager;
 import org.sapia.ubik.taskman.TaskManager;
 
-
 /**
  * @author Yanick Duchesne
  */
 public class ServerGCTest {
-  
-  private ServerGC        gc;
+
+  private ServerGC gc;
   private ModuleContainer container;
-  
+
   @Before
   public void setUp() {
     container = new ModuleContainer();
@@ -32,7 +31,7 @@ public class ServerGCTest {
     container.init();
     container.start();
   }
-  
+
   @After
   public void tearDown() {
     container.stop();
@@ -40,15 +39,15 @@ public class ServerGCTest {
 
   @Test
   public void testRegisterRef() throws Exception {
-    DefaultOID  oid  = new DefaultOID(1);
-    VmId vmid = new VmId(1,1);
+    DefaultOID oid = new DefaultOID(1);
+    VmId vmid = new VmId(1, 1);
     gc.registerRef(vmid, oid, "addr_1");
     assertEquals(1, gc.getRefCount(vmid, oid));
   }
 
   public void testUnregisterRef() throws Exception {
-    DefaultOID  oid  = new DefaultOID(2);
-    VmId vmid = new VmId(2,2);
+    DefaultOID oid = new DefaultOID(2);
+    VmId vmid = new VmId(2, 2);
     gc.clear();
     gc.registerRef(vmid, oid, "addr_2");
     gc.dereference(vmid, oid);
@@ -56,10 +55,10 @@ public class ServerGCTest {
   }
 
   public void testMultiVm() throws Exception {
-    VmId   vm1 = new VmId(1,1);
-    VmId   vm2 = new VmId(2,2);
-    VmId   vm3 = new VmId(3,2);
-    DefaultOID    oid = new DefaultOID(3);
+    VmId vm1 = new VmId(1, 1);
+    VmId vm2 = new VmId(2, 2);
+    VmId vm3 = new VmId(3, 2);
+    DefaultOID oid = new DefaultOID(3);
     String obj = "object3";
     gc.clear();
 

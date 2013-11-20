@@ -13,44 +13,41 @@ import org.sapia.ubik.mcast.control.challenge.ChallengeResponse.Code;
  * A handler of {@link ChallengeRequest}s.
  * 
  * @author yduchesne
- *
+ * 
  */
 public class ChallengeRequestHandler implements ControlRequestHandler {
-	
-	private Category log = Log.createCategory(getClass());
-	
-	private ControllerContext context;
-	
-	public ChallengeRequestHandler(ControllerContext context) {
-	  this.context = context;
+
+  private Category log = Log.createCategory(getClass());
+
+  private ControllerContext context;
+
+  public ChallengeRequestHandler(ControllerContext context) {
+    this.context = context;
   }
-	
-	/**
-	 * This method checks of this node is currently {@link Role#MASTER} or {@link Role#MASTER_CANDIDATE}.
-	 * If so, the challenge fails. Otherwise, the challenge succeeds. A response to either effect is sent
-	 * to the node currently attempting to become the master.
-	 * 
-	 * @see ControlRequestHandler#handle(String, ControlRequest)
-	 */
-	@Override
-	public void handle(String originNode, ControlRequest request) {
-		log.debug("Received challenge request from %s (master is %s)", originNode, request.getMasterNode());
-		context.challengeRequestReceived();
-		context.getChannelCallback().heartbeat(originNode, request.getMasterAddress());
-		if(context.getRole() == Role.MASTER || context.getRole() == Role.MASTER_CANDIDATE) {
-			log.debug("This node's status is currently %s. The challenge fails", context.getRole());
-			context.getChannelCallback().sendResponse(
-					request.getMasterNode(), 
-					ControlResponseFactory.createChallengeResponse(Code.DENIED, request, context.getChannelCallback().getAddress())
-			);
-		} else {
-			log.debug("Challenge accepted by node %s. Sending response to %s", context.getNode(), request.getMasterNode());
-			context.setRole(Role.SLAVE);
-			context.getChannelCallback().sendResponse(
-					request.getMasterNode(), 
-					ControlResponseFactory.createChallengeResponse(Code.ACCEPTED, request, context.getChannelCallback().getAddress())
-			);
-		}
-	}
+
+  /**
+   * This method checks of this node is currently {@link Role#MASTER} or
+   * {@link Role#MASTER_CANDIDATE}. If so, the challenge fails. Otherwise, the
+   * challenge succeeds. A response to either effect is sent to the node
+   * currently attempting to become the master.
+   * 
+   * @see ControlRequestHandler#handle(String, ControlRequest)
+   */
+  @Override
+  public void handle(String originNode, ControlRequest request) {
+    log.debug("Received challenge request from %s (master is %s)", originNode, request.getMasterNode());
+    context.challengeRequestReceived();
+    context.getChannelCallback().heartbeat(originNode, request.getMasterAddress());
+    if (context.getRole() == Role.MASTER || context.getRole() == Role.MASTER_CANDIDATE) {
+      log.debug("This node's status is currently %s. The challenge fails", context.getRole());
+      context.getChannelCallback().sendResponse(request.getMasterNode(),
+          ControlResponseFactory.createChallengeResponse(Code.DENIED, request, context.getChannelCallback().getAddress()));
+    } else {
+      log.debug("Challenge accepted by node %s. Sending response to %s", context.getNode(), request.getMasterNode());
+      context.setRole(Role.SLAVE);
+      context.getChannelCallback().sendResponse(request.getMasterNode(),
+          ControlResponseFactory.createChallengeResponse(Code.ACCEPTED, request, context.getChannelCallback().getAddress()));
+    }
+  }
 
 }

@@ -7,29 +7,29 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
 
-
 /**
  * This utility class adapts a {@link MultiplexSocketConnector} to a
- * {@link java.net.ServerSocket}. That means that a socket connector, that
- * was previously created with a multiplex server socket, can be used as
- * a traditionnal server socket. This adapter can be useful when integrating
- * the multiplex module into existing code that rely on the {@link java.net.ServerSocket}
- * object.
+ * {@link java.net.ServerSocket}. That means that a socket connector, that was
+ * previously created with a multiplex server socket, can be used as a
+ * traditionnal server socket. This adapter can be useful when integrating the
+ * multiplex module into existing code that rely on the
+ * {@link java.net.ServerSocket} object.
  * <p>
- *
+ * 
  * Note that the following methods are not supported:
  * <ul>
- *   <li>bind(SocketAddress endpoint)</li>
- *   <li>bind(SocketAddress endpoint, int backlog)</li>
- *   <li>setSoTimeout(int timeout)</li>
- *   <li>setReuseAddress(boolean on)</li>
- *   <li>setReceiveBufferSize(int size)</li>
- * </ul><p>
- *
- * Calling any of these methods will result in an {@link UnsupportedOperationException}
- * beign thrown.
- *
- *
+ * <li>bind(SocketAddress endpoint)</li>
+ * <li>bind(SocketAddress endpoint, int backlog)</li>
+ * <li>setSoTimeout(int timeout)</li>
+ * <li>setReuseAddress(boolean on)</li>
+ * <li>setReceiveBufferSize(int size)</li>
+ * </ul>
+ * <p>
+ * 
+ * Calling any of these methods will result in an
+ * {@link UnsupportedOperationException} beign thrown.
+ * 
+ * 
  * @author <a href="mailto:jc@sapia-oss.org">Jean-Cedric Desrochers</a>
  */
 public class ServerSocketAdapter extends ServerSocket {
@@ -39,8 +39,7 @@ public class ServerSocketAdapter extends ServerSocket {
   /**
    * Creates a new ServerSocketAdapter instance.
    */
-  public ServerSocketAdapter(MultiplexSocketConnector anInterceptor)
-    throws IOException {
+  public ServerSocketAdapter(MultiplexSocketConnector anInterceptor) throws IOException {
     super();
     theDelegate = anInterceptor;
   }
@@ -55,8 +54,7 @@ public class ServerSocketAdapter extends ServerSocket {
   /**
    * @see java.net.ServerSocket#bind(java.net.SocketAddress, int)
    */
-  public void bind(SocketAddress endpoint, int backlog)
-    throws IOException {
+  public void bind(SocketAddress endpoint, int backlog) throws IOException {
     throw new UnsupportedOperationException();
   }
 

@@ -10,21 +10,20 @@ import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.server.Hub;
 import org.sapia.ubik.rmi.server.oid.OID;
 
-
 /**
- * A method invocation command that is executed asynchronously: it is sent from the client
- * and received at the server, where it is dispatched to the 
- * {@link CommandProcessor#processAsyncCommand(String, org.sapia.ubik.rmi.server.VmId, ServerAddress, Command)} method.  
- *
+ * A method invocation command that is executed asynchronously: it is sent from
+ * the client and received at the server, where it is dispatched to the
+ * {@link CommandProcessor#processAsyncCommand(String, org.sapia.ubik.rmi.server.VmId, ServerAddress, Command)}
+ * method.
+ * 
  * @author Yanick Duchesne
  */
-public class CallbackInvokeCommand extends InvokeCommand
-  implements Externalizable {
-  
-  static final long     serialVersionUID = 1L;
-  
-  private boolean       executed;
-  private long          respId;
+public class CallbackInvokeCommand extends InvokeCommand implements Externalizable {
+
+  static final long serialVersionUID = 1L;
+
+  private boolean executed;
+  private long respId;
   private ServerAddress callBackId;
 
   /**
@@ -34,13 +33,18 @@ public class CallbackInvokeCommand extends InvokeCommand
   }
 
   /**
-   * @param oid the object identifier of the object on which to perform the invocation.
-   * @param methodName the name of the method to call on the target object.
-   * @param params the parameters of the method.
-   * @param paramClasses the classes of the method's parameters (representing the method's signature).
+   * @param oid
+   *          the object identifier of the object on which to perform the
+   *          invocation.
+   * @param methodName
+   *          the name of the method to call on the target object.
+   * @param params
+   *          the parameters of the method.
+   * @param paramClasses
+   *          the classes of the method's parameters (representing the method's
+   *          signature).
    */
-  public CallbackInvokeCommand(OID oid, String methodName, Object[] params,
-    Class<?>[] paramClasses, String transportType) {
+  public CallbackInvokeCommand(OID oid, String methodName, Object[] params, Class<?>[] paramClasses, String transportType) {
     super(oid, methodName, params, paramClasses, transportType);
   }
 
@@ -70,12 +74,11 @@ public class CallbackInvokeCommand extends InvokeCommand
   /**
    * @see java.io.Externalizable#readExternal(ObjectInput)
    */
-  public void readExternal(ObjectInput in)
-    throws IOException, ClassNotFoundException {
+  public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
     super.readExternal(in);
-    executed     = in.readBoolean();
-    respId       = in.readLong();
-    callBackId   = (ServerAddress) in.readObject();
+    executed = in.readBoolean();
+    respId = in.readLong();
+    callBackId = (ServerAddress) in.readObject();
   }
 
   /**
@@ -89,7 +92,7 @@ public class CallbackInvokeCommand extends InvokeCommand
   }
 
   public final void setUp(long respId, ServerAddress callBackId) {
-    this.respId       = respId;
-    this.callBackId   = callBackId;
+    this.respId = respId;
+    this.callBackId = callBackId;
   }
 }

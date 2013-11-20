@@ -16,9 +16,9 @@ public class PoolTest {
 
   @Test
   public void testAcquire() throws Exception {
-    Pool<String>   p = new TestPool();
+    Pool<String> p = new TestPool();
 
-    List<String>   acquired = new ArrayList<String>();
+    List<String> acquired = new ArrayList<String>();
     String o;
 
     for (int i = 0; i < 10; i++) {
@@ -52,9 +52,9 @@ public class PoolTest {
   }
 
   public void testShrink() throws Exception {
-    Pool<String>   p        = new TestPool();
-    List<String>   acquired = new ArrayList<String>();
-    String         o;
+    Pool<String> p = new TestPool();
+    List<String> acquired = new ArrayList<String>();
+    String o;
 
     for (int i = 0; i < 10; i++) {
       o = p.acquire();
@@ -71,7 +71,7 @@ public class PoolTest {
   }
 
   static class TestPool extends Pool<String> {
-    
+
     public TestPool() {
       super();
     }

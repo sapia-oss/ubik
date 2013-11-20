@@ -7,21 +7,20 @@ import java.util.UUID;
 
 import org.sapia.ubik.util.Strings;
 
-
 /**
  * An instance of this class identifies a JVM uniquely.
- *
+ * 
  * @author Yanick Duchesne
  */
 public class VmId implements java.io.Externalizable {
-  
+
   public static final long serialVersionUID = 1L;
-  
-  private static VmId     instance;
+
+  private static VmId instance;
 
   static {
-      UUID uuid = UUID.randomUUID();
-      instance = new VmId(uuid.getLeastSignificantBits(), uuid.getMostSignificantBits());
+    UUID uuid = UUID.randomUUID();
+    instance = new VmId(uuid.getLeastSignificantBits(), uuid.getMostSignificantBits());
   }
 
   private long left, right;
@@ -46,11 +45,10 @@ public class VmId implements java.io.Externalizable {
    * @see java.lang.Object#equals(java.lang.Object)
    */
   public boolean equals(Object other) {
-    if(other instanceof VmId){
-      VmId otherId = (VmId)other;
+    if (other instanceof VmId) {
+      VmId otherId = (VmId) other;
       return left == otherId.left && right == otherId.right;
-    }
-    else{
+    } else {
       return false;
     }
   }
@@ -59,15 +57,14 @@ public class VmId implements java.io.Externalizable {
    * @see java.lang.Object#hashCode()
    */
   public int hashCode() {
-    return (int)((right + left) * 31);
+    return (int) ((right + left) * 31);
   }
 
   /**
    * @see java.io.Externalizable#readExternal(ObjectInput)
    */
-  public void readExternal(ObjectInput in)
-    throws IOException, ClassNotFoundException {
-    left  = in.readLong();
+  public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+    left = in.readLong();
     right = in.readLong();
   }
 

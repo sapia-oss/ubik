@@ -6,12 +6,11 @@ import java.io.ObjectOutput;
 
 import org.sapia.ubik.rmi.server.command.RMICommand;
 
-
 /**
  * This command sends back a remote reference to the caller, for the server
  * listening at the port specified in the constructor.
+ * 
  * @author Yanick Duchesne
-
  */
 public class CommandConnect extends RMICommand {
   private String transportType;
@@ -34,8 +33,7 @@ public class CommandConnect extends RMICommand {
   /**
    * @see org.sapia.ubik.rmi.server.command.RMICommand#readExternal(java.io.ObjectInput)
    */
-  public void readExternal(ObjectInput in)
-    throws IOException, ClassNotFoundException {
+  public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
     super.readExternal(in);
     transportType = in.readUTF();
   }

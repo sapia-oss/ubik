@@ -8,7 +8,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class CallbackResponseQueueTest {
-  
+
   private CallbackResponseQueue queue;
 
   @Before

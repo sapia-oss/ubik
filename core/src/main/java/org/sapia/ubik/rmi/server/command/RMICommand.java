@@ -10,31 +10,31 @@ import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.server.Config;
 import org.sapia.ubik.rmi.server.VmId;
 
-
 /**
- * This class models an executable command. Typically, a command object
- * is created on the client side, then sent to the server where it is executed.
- *
+ * This class models an executable command. Typically, a command object is
+ * created on the client side, then sent to the server where it is executed.
+ * 
  * @author Yanick Duchesne
  */
 public abstract class RMICommand extends Command implements Externalizable {
-  
+
   protected transient Config config;
-  protected VmId             vmId = VmId.getInstance();
+  protected VmId vmId = VmId.getInstance();
 
   public RMICommand() {
   }
 
   /**
-   * Initializes this instance with a {@link Config}  upon its
-   * arrival at the server. It is a server's responsability to call this
-   * method once it receives a command.
+   * Initializes this instance with a {@link Config} upon its arrival at the
+   * server. It is a server's responsability to call this method once it
+   * receives a command.
    * <p>
-   * When overriding this method, <code>super.init(config)</code> must
-   * be called. If a command nests another one, it should also call
+   * When overriding this method, <code>super.init(config)</code> must be
+   * called. If a command nests another one, it should also call
    * {@link #init(Config)} on the nested command.
-   *
-   * @param config <code>CommandConfig</code>
+   * 
+   * @param config
+   *          <code>CommandConfig</code>
    */
   public void init(Config config) {
     this.config = config;
@@ -48,9 +48,9 @@ public abstract class RMICommand extends Command implements Externalizable {
   }
 
   /**
-   * Returns this command's target server address, which corresponds
-   * to the server that received this command.
-   *
+   * Returns this command's target server address, which corresponds to the
+   * server that received this command.
+   * 
    * @return this command's {@link ServerAddress}
    */
   public ServerAddress getServerAddress() {
@@ -59,7 +59,7 @@ public abstract class RMICommand extends Command implements Externalizable {
 
   /**
    * Returns this command's connection.
-   *
+   * 
    * @return a {@link Connection}.
    */
   public final Connection getConnection() {
@@ -68,16 +68,16 @@ public abstract class RMICommand extends Command implements Externalizable {
 
   /**
    * Executes this command.
-   *
-   * @throws Throwable if an error occurs while executing this command
+   * 
+   * @throws Throwable
+   *           if an error occurs while executing this command
    */
   public abstract Object execute() throws Throwable;
 
   /**
    * @see java.io.Externalizable#readExternal(ObjectInput)
    */
-  public void readExternal(ObjectInput in)
-    throws IOException, ClassNotFoundException {
+  public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
     vmId = (VmId) in.readObject();
   }
 

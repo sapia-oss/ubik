@@ -17,72 +17,69 @@ import org.sapia.ubik.net.ServerAddress;
  * Implements an in-memory {@link UnicastDispatcher}.
  * 
  * @author yduchesne
- *
+ * 
  */
-public class InMemoryUnicastDispatcher implements UnicastDispatcher{
-  
-  private Category                log      = Log.createCategory(getClass());
-  private InMemoryDispatchChannel channel  = InMemoryDispatchChannel.getInstance();
-  private InMemoryUnicastAddress  address  = new InMemoryUnicastAddress();
-  private EventConsumer           consumer;
-  
+public class InMemoryUnicastDispatcher implements UnicastDispatcher {
+
+  private Category log = Log.createCategory(getClass());
+  private InMemoryDispatchChannel channel = InMemoryDispatchChannel.getInstance();
+  private InMemoryUnicastAddress address = new InMemoryUnicastAddress();
+  private EventConsumer consumer;
+
   public InMemoryUnicastDispatcher(EventConsumer consumer) {
     this.consumer = consumer;
   }
-  
+
   @Override
   public void start() {
     channel.registerDispatcher(this);
   }
-  
+
   @Override
   public void close() {
     channel.unregisterDispatcher(this);
   }
-  
+
   EventConsumer getConsumer() {
     return consumer;
   }
-  
+
   @Override
   public ServerAddress getAddress() throws IllegalStateException {
     return address;
   }
 
   @Override
-  public void dispatch(ServerAddress addr, String type, Object data)
-      throws IOException {
+  public void dispatch(ServerAddress addr, String type, Object data) throws IOException {
     RemoteEvent evt = new RemoteEvent(null, type, data).setNode(consumer.getNode()).setSync();
     evt.setUnicastAddress(addr);
-    doSend((InMemoryUnicastAddress) addr, evt, false); 
+    doSend((InMemoryUnicastAddress) addr, evt, false);
   }
-  
+
   @Override
-  public RespList send(List<ServerAddress> addresses, String type, Object data)
-      throws IOException {
+  public RespList send(List<ServerAddress> addresses, String type, Object data) throws IOException {
     RemoteEvent evt = new RemoteEvent(null, type, data).setNode(consumer.getNode()).setSync();
     evt.setUnicastAddress(getAddress());
 
     InMemoryUnicastAddress current;
-    RespList   resps = new RespList(addresses.size());
-    Response   resp;
+    RespList resps = new RespList(addresses.size());
+    Response resp;
 
     for (int i = 0; i < addresses.size(); i++) {
       current = (InMemoryUnicastAddress) addresses.get(i);
       resp = (Response) doSend(current, evt, true);
       resps.addResponse(resp);
-    } 
-    return resps;  
+    }
+    return resps;
   }
-  
+
   @Override
-  public Response send(ServerAddress addr, String type, Object data)
-      throws IOException {
+  public Response send(ServerAddress addr, String type, Object data) throws IOException {
     RemoteEvent evt = new RemoteEvent(null, type, data).setNode(consumer.getNode()).setSync();
     evt.setUnicastAddress(addr);
     return (Response) doSend((InMemoryUnicastAddress) addr, evt, true);
   }
-  
+
   private Object doSend(InMemoryUnicastAddress destination, RemoteEvent toSend, boolean synchro) {
 
     if (synchro) {
@@ -93,44 +90,44 @@ public class InMemoryUnicastDispatcher implements UnicastDispatcher{
         throw new IllegalStateException("Thread interrupted while waiting for sync response");
       }
     } else {
-      log.debug("Sending async to %s, event type: %s", destination, toSend.getType());    	
+      log.debug("Sending async to %s, event type: %s", destination, toSend.getType());
       channel.sendASync(destination, toSend);
       return null;
     }
-  }    
-  
+  }
+
   // --------------------------------------------------------------------------
-  
+
   public static class InMemoryUnicastAddress implements ServerAddress {
-    
+
     static final long serialVersionUID = 1L;
-    
-    public static final String TRANSPORT  = "mem/unicast";
-    
+
+    public static final String TRANSPORT = "mem/unicast";
+
     private String node = UUID.randomUUID().toString();
-    
+
     @Override
     public String getTransportType() {
       return TRANSPORT;
     }
-    
+
     @Override
     public int hashCode() {
       return node.hashCode();
     }
-    
+
     @Override
     public boolean equals(Object obj) {
-      if(obj instanceof InMemoryUnicastAddress) {
+      if (obj instanceof InMemoryUnicastAddress) {
         InMemoryUnicastAddress other = (InMemoryUnicastAddress) obj;
         return other.node.equals(node);
       }
       return false;
     }
-    
+
     public String toString() {
       return String.format("[%s]", node);
     }
-  }    
+  }
 
 }

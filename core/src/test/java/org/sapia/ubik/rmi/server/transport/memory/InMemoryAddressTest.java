@@ -23,12 +23,12 @@ public class InMemoryAddressTest {
     InMemoryAddress address2 = new InMemoryAddress("test");
     assertEquals(address1, address2);
   }
-  
+
   @Test
   public void testNotEquals() {
     InMemoryAddress address1 = new InMemoryAddress("test1");
     InMemoryAddress address2 = new InMemoryAddress("test2");
     assertNotSame(address1, address2);
-  }  
+  }
 
 }

@@ -9,37 +9,36 @@ import org.sapia.ubik.mcast.RemoteEvent;
 import org.sapia.ubik.mcast.Response;
 
 /**
- * An instance of this class is hooked into Mina's request handling mechanism. It
- * receives Ubik commands and executes them.
+ * An instance of this class is hooked into Mina's request handling mechanism.
+ * It receives Ubik commands and executes them.
  * 
  * @author yduchesne
- *
+ * 
  */
-public class MinaTcpUnicastHandler extends IoHandlerAdapter{
-  
-  private Category       log      = Log.createCategory(getClass());
-  private EventConsumer  consumer;
+public class MinaTcpUnicastHandler extends IoHandlerAdapter {
 
-  
-  public MinaTcpUnicastHandler(EventConsumer consumer){
+  private Category log = Log.createCategory(getClass());
+  private EventConsumer consumer;
+
+  public MinaTcpUnicastHandler(EventConsumer consumer) {
     this.consumer = consumer;
   }
-  
+
   public void sessionCreated(IoSession sess) throws Exception {
     log.debug("Connection created from %s", sess.getRemoteAddress());
-  }  
+  }
 
   public void exceptionCaught(IoSession sess, Throwable err) throws Exception {
     log.error("Exception caught", err);
     sess.close();
   }
-  
+
   public void messageReceived(IoSession sess, Object o) throws Exception {
-    
+
     try {
       if (o instanceof RemoteEvent) {
         RemoteEvent evt = (RemoteEvent) o;
-        
+
         if (evt.isSync()) {
           if (consumer.hasSyncListener(evt.getType())) {
             log.debug("Received sync remote event %s from %s, notifying listener", evt.getType(), evt.getNode());
@@ -58,7 +57,7 @@ public class MinaTcpUnicastHandler extends IoHandlerAdapter{
       }
     } catch (Exception e) {
       log.error("Error caught handling request", e);
-    }     
+    }
   }
-  
+
 }

@@ -2,7 +2,7 @@ package org.sapia.ubik.rmi.server.transport.socket;
 
 /**
  * @author yduchesne
- *
+ * 
  */
 public interface SocketRmiServerMBean {
 
@@ -13,12 +13,12 @@ public interface SocketRmiServerMBean {
 
   /**
    * @return the port on which this server listens.
-   */  
+   */
   public int getPort();
 
   /**
    * @return the number of request processing threads.
    */
   public int getThreadCount();
-  
+
 }

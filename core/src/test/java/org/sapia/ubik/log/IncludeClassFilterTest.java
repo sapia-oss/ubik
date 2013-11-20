@@ -9,20 +9,20 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class IncludeClassFilterTest {
-	
-	private IncludeClassFilter filter;
-	
-	@Before
-	public void setUp() {
-		filter = IncludeClassFilter.newInstance(String.class);
-	}
-	
-		@Test
-	public void testAccepts() {
-		filter.addClass(Date.class);
-		assertTrue(filter.accepts(String.class.getName()));
-		assertTrue(filter.accepts(Date.class.getName()));
-		assertFalse(filter.accepts(Integer.class.getName()));
-	}
+
+  private IncludeClassFilter filter;
+
+  @Before
+  public void setUp() {
+    filter = IncludeClassFilter.newInstance(String.class);
+  }
+
+  @Test
+  public void testAccepts() {
+    filter.addClass(Date.class);
+    assertTrue(filter.accepts(String.class.getName()));
+    assertTrue(filter.accepts(Date.class.getName()));
+    assertFalse(filter.accepts(Integer.class.getName()));
+  }
 
 }

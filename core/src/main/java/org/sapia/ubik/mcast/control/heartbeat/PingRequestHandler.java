@@ -7,16 +7,16 @@ import org.sapia.ubik.mcast.control.SynchronousControlRequestHandler;
 import org.sapia.ubik.mcast.control.SynchronousControlResponse;
 
 public class PingRequestHandler implements SynchronousControlRequestHandler {
-	
-	private ControllerContext context;
-	
-	public PingRequestHandler(ControllerContext context) {
-	  this.context = context;
+
+  private ControllerContext context;
+
+  public PingRequestHandler(ControllerContext context) {
+    this.context = context;
   }
-	
-	@Override
-	public SynchronousControlResponse handle(String originNode, SynchronousControlRequest request) {
-	  return ControlResponseFactory.createPingResponse(context.getNode());
-	}
+
+  @Override
+  public SynchronousControlResponse handle(String originNode, SynchronousControlRequest request) {
+    return ControlResponseFactory.createPingResponse(context.getNode());
+  }
 
 }

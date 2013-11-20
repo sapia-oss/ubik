@@ -7,17 +7,18 @@ import java.io.PrintWriter;
  * Exception-related methods.
  * 
  * @author yduchesne
- *
+ * 
  */
 public final class Exceptions {
-  
+
   private Exceptions() {
   }
-  
+
   /**
    * Returns the given error's stack trace as a string.
    * 
-   * @param err a {@link Throwable}.
+   * @param err
+   *          a {@link Throwable}.
    * @return a stack trace, as a {@link String}.
    */
   public static String stackTraceToString(Throwable err) {

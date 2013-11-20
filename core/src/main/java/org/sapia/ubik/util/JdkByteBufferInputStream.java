@@ -12,33 +12,32 @@ import java.nio.ByteBuffer;
  */
 public class JdkByteBufferInputStream extends InputStream {
 
-	private ByteBuffer buf;
+  private ByteBuffer buf;
 
-	public JdkByteBufferInputStream(ByteBuffer buf) {
-		this.buf = buf;
-	}
-	
-	@Override
-	public int available() throws IOException {
-	  return buf.remaining();
-	}
+  public JdkByteBufferInputStream(ByteBuffer buf) {
+    this.buf = buf;
+  }
 
-	public int read() throws IOException {
-		if (!buf.hasRemaining()) {
-			return -1;
-		}
-		return buf.get() & 0xFF;
-	}
+  @Override
+  public int available() throws IOException {
+    return buf.remaining();
+  }
 
-	public int read(byte[] bytes, int off, int len)
-	    throws IOException {
-		if (!buf.hasRemaining()) {
-			return -1;
-		}
+  public int read() throws IOException {
+    if (!buf.hasRemaining()) {
+      return -1;
+    }
+    return buf.get() & 0xFF;
+  }
 
-		len = Math.min(len, buf.remaining());
-		buf.get(bytes, off, len);
-		return len;
-	}
+  public int read(byte[] bytes, int off, int len) throws IOException {
+    if (!buf.hasRemaining()) {
+      return -1;
+    }
+
+    len = Math.min(len, buf.remaining());
+    buf.get(bytes, off, len);
+    return len;
+  }
 
 }

@@ -7,14 +7,13 @@ import java.io.ObjectOutput;
 import org.sapia.ubik.net.TCPAddress;
 import org.sapia.ubik.net.Uri;
 
-
 /**
  * Models an HTTP address.
- *
+ * 
  * @author Yanick Duchesne
  */
 public class HttpAddress extends TCPAddress {
-  
+
   private String uri;
 
   /** Do not call; used for externalization only. */
@@ -22,17 +21,20 @@ public class HttpAddress extends TCPAddress {
   }
 
   /**
-   * @param uri the {@link Uri} for which to create an instance of this class.
+   * @param uri
+   *          the {@link Uri} for which to create an instance of this class.
    */
-  public HttpAddress(Uri uri) { 
+  public HttpAddress(Uri uri) {
     this(HttpConsts.HTTP_TRANSPORT_TYPE, uri);
   }
-  
+
   /**
    * Returns an address of the form <code>http://host:port/ubik</code>.
    * 
-   * @param host the HTTP host to connect to
-   * @param port the HTTP port of the host to connect to.
+   * @param host
+   *          the HTTP host to connect to
+   * @param port
+   *          the HTTP port of the host to connect to.
    * @return a new {@link HttpAddress}.
    */
   public static HttpAddress newDefaultInstance(String host, int port) {
@@ -41,12 +43,13 @@ public class HttpAddress extends TCPAddress {
 
   protected HttpAddress(String transportType, Uri uri) {
     super(transportType, uri.getHost(), uri.getPort());
-    this.uri           = uri.toString();
+    this.uri = uri.toString();
     this.transportType = transportType;
   }
 
   /**
-   * Returns the string corresponding to this address' URL (of the form http://someHost:somePort).
+   * Returns the string corresponding to this address' URL (of the form
+   * http://someHost:somePort).
    */
   public String toString() {
     return uri;
@@ -55,8 +58,7 @@ public class HttpAddress extends TCPAddress {
   /**
    * @see org.sapia.ubik.net.TCPAddress#readExternal(java.io.ObjectInput)
    */
-  public void readExternal(ObjectInput in)
-    throws IOException, ClassNotFoundException {
+  public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
     super.readExternal(in);
     uri = in.readUTF();
   }

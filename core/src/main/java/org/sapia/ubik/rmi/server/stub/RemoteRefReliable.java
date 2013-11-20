@@ -12,19 +12,18 @@ import org.sapia.ubik.log.Log;
 import org.sapia.ubik.rmi.naming.ServiceLocator;
 import org.sapia.ubik.rmi.server.ShutdownException;
 
-
 /**
- * A stub handler that manages reconnecting to another server instance
- * provided a method call fails.
- *
+ * A stub handler that manages reconnecting to another server instance provided
+ * a method call fails.
+ * 
  */
 public class RemoteRefReliable extends RemoteRefEx {
-  
+
   static final long serialVersionUID = 1L;
-  
-  private           String   url;
+
+  private String url;
   private transient Category log = Log.createCategory(getClass());
-  private transient Object   lock = new Object();
+  private transient Object lock = new Object();
 
   /**
    * Do not use: meant for externalization.
@@ -35,8 +34,9 @@ public class RemoteRefReliable extends RemoteRefEx {
 
   /**
    * Creates an instance of this class, with the given context.
-   *
-   * @param context a {@link RemoteRefContext}.
+   * 
+   * @param context
+   *          a {@link RemoteRefContext}.
    */
   public RemoteRefReliable(RemoteRefContext context, String url) {
     super(context);
@@ -46,13 +46,12 @@ public class RemoteRefReliable extends RemoteRefEx {
   /**
    * @see java.lang.reflect.InvocationHandler#invoke(Object, Method, Object[])
    */
-  public Object invoke(Object obj, Method toCall, Object[] params)
-    throws Throwable {
+  public Object invoke(Object obj, Method toCall, Object[] params) throws Throwable {
     try {
       return super.invoke(obj, toCall, params);
     } catch (java.rmi.RemoteException e) {
       if (url != null) {
-      	log.info("RemoteException caught, performing failover");
+        log.info("RemoteException caught, performing failover");
         return doFailOver(obj, toCall, params, e);
       } else {
         throw e;
@@ -63,8 +62,7 @@ public class RemoteRefReliable extends RemoteRefEx {
   /**
    * @see java.io.Externalizable#readExternal(ObjectInput)
    */
-  public void readExternal(ObjectInput in)
-    throws IOException, ClassNotFoundException {
+  public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
     super.readExternal(in);
     url = (String) in.readObject();
   }
@@ -78,10 +76,10 @@ public class RemoteRefReliable extends RemoteRefEx {
   }
 
   /**
-   * @see org.sapia.ubik.rmi.server.stub.RemoteRefEx#onShutdown(Object, Method, Object[])
+   * @see org.sapia.ubik.rmi.server.stub.RemoteRefEx#onShutdown(Object, Method,
+   *      Object[])
    */
-  protected Object onShutdown(Object proxy, Method toCall, Object[] params)
-    throws Throwable {
+  protected Object onShutdown(Object proxy, Method toCall, Object[] params) throws Throwable {
     return doFailOver(proxy, toCall, params, new ShutdownException());
   }
 
@@ -93,7 +91,7 @@ public class RemoteRefReliable extends RemoteRefEx {
       Object remote = ServiceLocator.lookup(url);
 
       log.debug("Looked up remote object %s", url);
-      
+
       synchronized (lock) {
         log.debug("Performing failover for %s", url);
         RemoteRefContext newContext = Stubs.getStubInvocationHandler(remote).getContexts().iterator().next();

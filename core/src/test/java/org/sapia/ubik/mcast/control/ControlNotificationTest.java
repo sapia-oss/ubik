@@ -10,7 +10,7 @@ import org.junit.Test;
 import org.sapia.ubik.util.Collections2;
 
 public class ControlNotificationTest {
-  
+
   @Test
   public void testNestedSplit() {
     Set<String> targetedNodes = new HashSet<String>();
@@ -18,7 +18,7 @@ public class ControlNotificationTest {
       targetedNodes.add("node_" + i);
     }
     TestControlNotification notif = new TestControlNotification(targetedNodes);
-    
+
     List<SplittableMessage> splits = notif.split(10);
     for (int i = 0; i < splits.size(); i++) {
       assertEquals(10, splits.get(i).getTargetedNodes().size());
@@ -28,7 +28,7 @@ public class ControlNotificationTest {
       }
     }
   }
-  
+
   @Test
   public void testBatchSizeLargerDividor() {
     Set<String> targetedNodes = Collections2.arrayToSet("1", "2");
@@ -42,21 +42,20 @@ public class ControlNotificationTest {
     TestControlNotification notif = new TestControlNotification(targetedNodes);
     assertEquals(2, notif.split(2).size());
   }
-  
+
   @Test
   public void testBatchSizeOddLargerSplitOddDivisor() {
     Set<String> targetedNodes = Collections2.arrayToSet("1", "2", "3", "4", "5");
     TestControlNotification notif = new TestControlNotification(targetedNodes);
     assertEquals(3, notif.split(3).size());
-  }  
-  
+  }
+
   public static class TestControlNotification extends ControlNotification {
-    
+
     public TestControlNotification(Set<String> targetedNodes) {
       super(targetedNodes);
     }
-    
-    
+
     @Override
     protected ControlNotification getCopy(Set<String> targetedNodes) {
       return new TestControlNotification(targetedNodes);

@@ -8,18 +8,20 @@ import java.io.OutputStream;
  * Provides utility methods pertaining to streams.
  * 
  * @author yduchesne
- *
+ * 
  */
 public final class Streams {
 
   private Streams() {
   }
-  
+
   /**
-   * This methods flushes and closes a stream and catches any thrown {@link IOException} doing so. If
-   * the given stream is <code>null</code>, it is simply ignored.
+   * This methods flushes and closes a stream and catches any thrown
+   * {@link IOException} doing so. If the given stream is <code>null</code>, it
+   * is simply ignored.
    * 
-   * @param os an {@link OutputStream} to flush and close.
+   * @param os
+   *          an {@link OutputStream} to flush and close.
    */
   public static final void flushAndCloseSilently(OutputStream os) {
     if (os != null) {
@@ -32,15 +34,16 @@ public final class Streams {
         os.close();
       } catch (Exception e) {
         // noop
-      }      
+      }
     }
   }
-  
+
   /**
-   * This methods closes a stream and catches any thrown {@link IOException} doing so. If
-   * the given stream is <code>null</code>, it is simply ignored.
+   * This methods closes a stream and catches any thrown {@link IOException}
+   * doing so. If the given stream is <code>null</code>, it is simply ignored.
    * 
-   * @param os an {@link OutputStream} to close.
+   * @param os
+   *          an {@link OutputStream} to close.
    */
   public static final void closeSilently(OutputStream os) {
     if (os != null) {
@@ -48,15 +51,16 @@ public final class Streams {
         os.close();
       } catch (Exception e) {
         // noop
-      }      
+      }
     }
-  }  
-  
+  }
+
   /**
-   * This methods closes a stream and catches any thrown {@link IOException} doing so. If
-   * the given stream is <code>null</code>, it is simply ignored.
+   * This methods closes a stream and catches any thrown {@link IOException}
+   * doing so. If the given stream is <code>null</code>, it is simply ignored.
    * 
-   * @param is an {@link InputStream} to flush.
+   * @param is
+   *          an {@link InputStream} to flush.
    */
   public static final void closeSilently(InputStream is) {
     if (is != null) {

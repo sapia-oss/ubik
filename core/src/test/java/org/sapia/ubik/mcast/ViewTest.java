@@ -11,7 +11,7 @@ import org.sapia.ubik.net.TCPAddress;
 public class ViewTest {
 
   private View view;
-  
+
   @Before
   public void setUp() throws Exception {
     view = new View();
@@ -19,10 +19,12 @@ public class ViewTest {
 
   @Test
   public void testEventChannelStateListenerOnUpWithNewHost() {
-    
+
     final AtomicBoolean onUp = new AtomicBoolean();
     EventChannelStateListener listener = new EventChannelStateListener() {
-      public void onDown(org.sapia.ubik.mcast.EventChannelStateListener.EventChannelEvent event) {}
+      public void onDown(org.sapia.ubik.mcast.EventChannelStateListener.EventChannelEvent event) {
+      }
+
       public void onUp(org.sapia.ubik.mcast.EventChannelStateListener.EventChannelEvent event) {
         onUp.set(true);
       }
@@ -31,13 +33,15 @@ public class ViewTest {
     view.addHost(new TCPAddress("test", "test", 1), "123");
     assertTrue("EventChannelStateListener onUp() not called", onUp.get());
   }
-  
+
   @Test
   public void testEventChannelStateListenerOnUpWithHeartbeat() {
-    
+
     final AtomicBoolean onUp = new AtomicBoolean();
     EventChannelStateListener listener = new EventChannelStateListener() {
-      public void onDown(org.sapia.ubik.mcast.EventChannelStateListener.EventChannelEvent event) {}
+      public void onDown(org.sapia.ubik.mcast.EventChannelStateListener.EventChannelEvent event) {
+      }
+
       public void onUp(org.sapia.ubik.mcast.EventChannelStateListener.EventChannelEvent event) {
         onUp.set(true);
       }
@@ -46,7 +50,7 @@ public class ViewTest {
     view.heartbeat(new TCPAddress("test", "test", 1), "123");
     assertTrue("EventChannelStateListener onUp() not called", onUp.get());
   }
-  
+
   @Test
   public void testEventChannelStateListenerOnDown() throws Exception {
     final AtomicBoolean onDown = new AtomicBoolean();
@@ -54,6 +58,7 @@ public class ViewTest {
       public void onDown(org.sapia.ubik.mcast.EventChannelStateListener.EventChannelEvent event) {
         onDown.set(true);
       }
+
       public void onUp(org.sapia.ubik.mcast.EventChannelStateListener.EventChannelEvent event) {
 
       }
@@ -72,6 +77,7 @@ public class ViewTest {
       public void onDown(org.sapia.ubik.mcast.EventChannelStateListener.EventChannelEvent event) {
         notified.set(true);
       }
+
       public void onUp(org.sapia.ubik.mcast.EventChannelStateListener.EventChannelEvent event) {
         notified.set(true);
       }

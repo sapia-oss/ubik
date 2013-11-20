@@ -20,21 +20,19 @@ import org.sapia.ubik.mcast.RespList;
 import org.sapia.ubik.mcast.Response;
 import org.sapia.ubik.mcast.SyncEventListener;
 
-
 /**
  * Synchronizes distributed JNDI nodes by using an {@link EventChannel}.
  * 
  * @author Yanick Duchesne
  */
-public class UbikSynchronizer implements Synchronizer, AsyncEventListener,
-  SyncEventListener {
-  
-  private Category     log      = Log.createCategory(getClass());
+public class UbikSynchronizer implements Synchronizer, AsyncEventListener, SyncEventListener {
+
+  private Category log = Log.createCategory(getClass());
   private EventChannel channel;
-  private Archie       root;
+  private Archie root;
 
   UbikSynchronizer(EventChannel channel) throws NamingException {
-    this.channel   = channel;
+    this.channel = channel;
     channel.registerAsyncListener(SyncPutEvent.class.getName(), this);
 
     try {
@@ -69,14 +67,16 @@ public class UbikSynchronizer implements Synchronizer, AsyncEventListener,
   }
 
   /**
-   * @param root the {@link SynchronizedNode} that acts as the root node.
+   * @param root
+   *          the {@link SynchronizedNode} that acts as the root node.
    */
   public void setRoot(SynchronizedNode root) {
     this.root = new Archie(root);
   }
 
   /**
-   * @see org.sapia.archie.sync.Synchronizer#onGetValue(org.sapia.archie.Name, org.sapia.archie.NamePart)
+   * @see org.sapia.archie.sync.Synchronizer#onGetValue(org.sapia.archie.Name,
+   *      org.sapia.archie.NamePart)
    */
   public Object onGetValue(Name nodeAbsolutePath, NamePart valueName) {
     Response toReturn = null;
@@ -104,13 +104,12 @@ public class UbikSynchronizer implements Synchronizer, AsyncEventListener,
   }
 
   /**
-   * @see org.sapia.archie.sync.Synchronizer#onPutValue(org.sapia.archie.Name, org.sapia.archie.NamePart, java.lang.Object, boolean)
+   * @see org.sapia.archie.sync.Synchronizer#onPutValue(org.sapia.archie.Name,
+   *      org.sapia.archie.NamePart, java.lang.Object, boolean)
    */
-  public void onPutValue(Name nodeAbsolutePath, NamePart valueName,
-    Object value, boolean overwrite) {
+  public void onPutValue(Name nodeAbsolutePath, NamePart valueName, Object value, boolean overwrite) {
     log.debug("Dispatching put for %s (%s)", nodeAbsolutePath, value);
-    SyncPutEvent evt = new SyncPutEvent(nodeAbsolutePath, valueName, value,
-        overwrite);
+    SyncPutEvent evt = new SyncPutEvent(nodeAbsolutePath, valueName, value, overwrite);
 
     try {
       channel.dispatch(SyncPutEvent.class.getName(), evt);
@@ -120,7 +119,8 @@ public class UbikSynchronizer implements Synchronizer, AsyncEventListener,
   }
 
   /**
-   * @see org.sapia.archie.sync.Synchronizer#onRemoveValue(org.sapia.archie.Name, org.sapia.archie.NamePart)
+   * @see org.sapia.archie.sync.Synchronizer#onRemoveValue(org.sapia.archie.Name,
+   *      org.sapia.archie.NamePart)
    */
   public void onRemoveValue(Name nodeAbsolutePath, NamePart name) {
     SyncRemoveEvent evt = new SyncRemoveEvent(nodeAbsolutePath, name);
@@ -138,9 +138,8 @@ public class UbikSynchronizer implements Synchronizer, AsyncEventListener,
   public void onAsyncEvent(RemoteEvent evt) {
     if (evt.getType().equals(SyncPutEvent.class.getName())) {
       try {
-        SyncPutEvent     put  = (SyncPutEvent) evt.getData();
-        SynchronizedNode node = (SynchronizedNode) root().lookupNode(put.getNodePath(),
-            true);
+        SyncPutEvent put = (SyncPutEvent) evt.getData();
+        SynchronizedNode node = (SynchronizedNode) root().lookupNode(put.getNodePath(), true);
         node.synchronizePut(put.getName(), put.getValue(), true);
       } catch (NotFoundException e) {
         // noop
@@ -156,9 +155,8 @@ public class UbikSynchronizer implements Synchronizer, AsyncEventListener,
   public Object onSyncEvent(RemoteEvent evt) {
     if (evt.getType().equals(SyncGetEvent.class.getName())) {
       try {
-        SyncGetEvent     get  = (SyncGetEvent) evt.getData();
-        SynchronizedNode node = (SynchronizedNode) root().lookupNode(get.getNodePath(),
-            true);
+        SyncGetEvent get = (SyncGetEvent) evt.getData();
+        SynchronizedNode node = (SynchronizedNode) root().lookupNode(get.getNodePath(), true);
 
         return node.synchronizeGet(get.getName());
       } catch (Exception e) {

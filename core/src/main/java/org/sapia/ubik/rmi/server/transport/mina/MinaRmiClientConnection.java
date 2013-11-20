@@ -26,27 +26,28 @@ import org.sapia.ubik.rmi.server.transport.RmiObjectOutput;
 import org.sapia.ubik.util.MinaByteBufferOutputStream;
 
 /**
- * A connection over a Socket the connection uses the {@link MarshalOutputStream} class to serialize outgoing objects.
+ * A connection over a Socket the connection uses the
+ * {@link MarshalOutputStream} class to serialize outgoing objects.
  */
 public class MinaRmiClientConnection implements RmiConnection {
-  
-  private static Stopwatch serializationTime   = Stats.createStopwatch(MinaRmiClientConnection.class, 
-      "SerializationDuration", "Time required to serialize an object");
 
-  private static Stopwatch sendTime = Stats.createStopwatch(MinaRmiClientConnection.class, 
-      "SendDuration", "Time required to send an object over the network");
-	
-  private Socket         		 sock;
-  private int            		 bufsize;
-  private ServerAddress  		 address;
-  private ByteBuffer		 		 byteBuffer;
+  private static Stopwatch serializationTime = Stats.createStopwatch(MinaRmiClientConnection.class, "SerializationDuration",
+      "Time required to serialize an object");
+
+  private static Stopwatch sendTime = Stats.createStopwatch(MinaRmiClientConnection.class, "SendDuration",
+      "Time required to send an object over the network");
+
+  private Socket sock;
+  private int bufsize;
+  private ServerAddress address;
+  private ByteBuffer byteBuffer;
   private ObjectOutputStream oos;
-  private ObjectInputStream  ois;
-  
+  private ObjectInputStream ois;
+
   public MinaRmiClientConnection(Socket sock, int bufsize) throws IOException {
-    this.sock 			= sock;
-    this.address 		= new MinaAddress(sock.getInetAddress().getHostAddress(), sock.getPort());
-    this.bufsize 		= bufsize;
+    this.sock = sock;
+    this.address = new MinaAddress(sock.getInetAddress().getHostAddress(), sock.getPort());
+    this.bufsize = bufsize;
     this.byteBuffer = ByteBuffer.allocate(bufsize);
     byteBuffer.setAutoExpand(true);
   }
@@ -62,14 +63,13 @@ public class MinaRmiClientConnection implements RmiConnection {
    * @see org.sapia.ubik.rmi.server.transport.RmiConnection#send(Object, VmId,
    *      String)
    */
-  public void send(Object o, VmId vmId, String transportType)
-      throws IOException, RemoteException {
+  public void send(Object o, VmId vmId, String transportType) throws IOException, RemoteException {
     byteBuffer.clear();
-    if(oos == null) {
-    	oos = MarshalStreamFactory.createOutputStream(new MinaByteBufferOutputStream(byteBuffer));
+    if (oos == null) {
+      oos = MarshalStreamFactory.createOutputStream(new MinaByteBufferOutputStream(byteBuffer));
     }
-    ((RmiObjectOutput)oos).setUp(vmId, transportType);
-    
+    ((RmiObjectOutput) oos).setUp(vmId, transportType);
+
     Split split = serializationTime.start();
     oos.writeObject(o);
     oos.flush();
@@ -77,7 +77,7 @@ public class MinaRmiClientConnection implements RmiConnection {
 
     try {
       doSend();
-    } catch(java.net.SocketException e) {
+    } catch (java.net.SocketException e) {
       throw new RemoteException("Communication with server interrupted; server probably disappeared", e);
     }
   }
@@ -87,37 +87,36 @@ public class MinaRmiClientConnection implements RmiConnection {
    */
   public void send(Object o) throws IOException, RemoteException {
     byteBuffer.clear();
-    if(oos == null) {
-    	oos = MarshalStreamFactory.createOutputStream(new MinaByteBufferOutputStream(byteBuffer));
+    if (oos == null) {
+      oos = MarshalStreamFactory.createOutputStream(new MinaByteBufferOutputStream(byteBuffer));
     }
-    
+
     Split split = serializationTime.start();
     oos.writeObject(o);
     oos.flush();
     split.stop();
-    
+
     try {
       doSend();
-    } catch(java.net.SocketException e) {
+    } catch (java.net.SocketException e) {
       throw new RemoteException("Communication with server interrupted; server probably disappeared", e);
     }
   }
-  
+
   /**
    * @see org.sapia.ubik.net.Connection#receive()
    */
-  public Object receive() throws IOException, ClassNotFoundException,
-      RemoteException {
+  public Object receive() throws IOException, ClassNotFoundException, RemoteException {
     try {
-    	DataInputStream dis = new DataInputStream(sock.getInputStream());
-    	dis.readInt();
-    	if(ois == null) {
-    		ois = MarshalStreamFactory.createInputStream(new BufferedInputStream(sock.getInputStream(), bufsize));
-    	}
+      DataInputStream dis = new DataInputStream(sock.getInputStream());
+      dis.readInt();
+      if (ois == null) {
+        ois = MarshalStreamFactory.createInputStream(new BufferedInputStream(sock.getInputStream(), bufsize));
+      }
       return ois.readObject();
-    } catch(EOFException e) {
+    } catch (EOFException e) {
       throw new RemoteException("Communication with server interrupted; server probably disappeared", e);
-    } catch(SocketException e) {
+    } catch (SocketException e) {
       throw new RemoteException("Connection could not be opened; server is probably down", e);
     }
   }
@@ -128,17 +127,17 @@ public class MinaRmiClientConnection implements RmiConnection {
   public void close() {
     try {
       sock.close();
-    } catch(Throwable t) {
-      //noop
+    } catch (Throwable t) {
+      // noop
     }
     byteBuffer.release();
   }
-  
+
   private void doSend() throws IOException {
     Split split = sendTime.start();
-    OutputStream sos     = new BufferedOutputStream(sock.getOutputStream(), bufsize);
+    OutputStream sos = new BufferedOutputStream(sock.getOutputStream(), bufsize);
     DataOutputStream dos = new DataOutputStream(sos);
-    byte[] toWrite 			 = new byte[byteBuffer.position()];
+    byte[] toWrite = new byte[byteBuffer.position()];
     dos.writeInt(toWrite.length);
     byteBuffer.flip();
     byteBuffer.get(toWrite);

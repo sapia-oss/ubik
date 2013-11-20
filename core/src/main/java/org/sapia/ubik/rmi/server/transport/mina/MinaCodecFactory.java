@@ -9,18 +9,18 @@ import org.apache.mina.filter.codec.ProtocolEncoder;
  * {@link MinaResponseEncoder}s.
  * 
  * @author yduchesne
- *
+ * 
  */
-public class MinaCodecFactory implements ProtocolCodecFactory{
-  
+public class MinaCodecFactory implements ProtocolCodecFactory {
+
   public static final int PREFIX_LEN = 4;
-  
+
   public ProtocolDecoder getDecoder() throws Exception {
     return new MinaRequestDecoder();
   }
-  
+
   public ProtocolEncoder getEncoder() throws Exception {
     return new MinaResponseEncoder();
   }
-  
+
 }

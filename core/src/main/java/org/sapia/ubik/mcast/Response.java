@@ -2,42 +2,42 @@ package org.sapia.ubik.mcast;
 
 import org.sapia.ubik.net.ServerAddress;
 
-
 /**
  * Models a synchronous response to a remote event.
- *
+ * 
  * @see org.sapia.ubik.mcast.EventChannel#send(ServerAddress, String, Object)
  * @see org.sapia.ubik.mcast.EventChannel#send(String, Object)
  * @see Response
- *
+ * 
  * @author Yanick Duchesne
  */
 public class Response implements java.io.Serializable {
-  
+
   static final long serialVersionUID = 1L;
-  
+
   /**
-   * Corresponds to the OK status, signifying that the response
-   * was returned normally.
+   * Corresponds to the OK status, signifying that the response was returned
+   * normally.
    */
   public static final int STATUS_OK = 0;
 
   /**
-   * Indicates that the remote node corresponding to this instance
-   * is probably down.
+   * Indicates that the remote node corresponding to this instance is probably
+   * down.
    */
   public static final int STATUS_SUSPECT = 1;
-  
-  private long            eventId;
-  private Object          data;
-  private boolean         none;
-  private int             status = STATUS_OK;
+
+  private long eventId;
+  private Object data;
+  private boolean none;
+  private int status = STATUS_OK;
+
   /**
    * Constructor for Response.
    */
   public Response(long eventId, Object data) {
-    this.eventId   = eventId;
-    this.data      = data;
+    this.eventId = eventId;
+    this.data = data;
   }
 
   /**
@@ -49,9 +49,9 @@ public class Response implements java.io.Serializable {
 
   /**
    * Returns the {@link Throwable} held within this response.
-   *
+   * 
    * @return a {@link Throwable}.
-   *
+   * 
    * @see #isError()
    */
   public Throwable getThrowable() {
@@ -64,9 +64,8 @@ public class Response implements java.io.Serializable {
 
   /**
    * Returns the data held by this instance.
-   *
-   * @return an {@link Object}, or null if this response
-   * has no data.
+   * 
+   * @return an {@link Object}, or null if this response has no data.
    */
   public Object getData() {
     return data;
@@ -74,7 +73,7 @@ public class Response implements java.io.Serializable {
 
   /**
    * Returns this instance's status.
-   *
+   * 
    * @see #STATUS_OK
    * @see #STATUS_SUSPECT
    */

@@ -21,62 +21,69 @@ import org.sapia.ubik.rmi.server.command.RMICommand;
 import org.sapia.ubik.util.Localhost;
 
 /**
- * A standard socket server implementation - listening on given port (or on a randomly chosen port) 
- * for incoming {@link RMICommand} instances.
- *
+ * A standard socket server implementation - listening on given port (or on a
+ * randomly chosen port) for incoming {@link RMICommand} instances.
+ * 
  * @author Yanick Duchesne
  */
 public class SocketRmiServer extends SocketServer implements Server, SocketRmiServerMBean {
-    
+
   /**
    * A convenient {@link SocketRmiServer} builder.
    */
   public static class Builder {
-    
-  	private String                  transportType;
-    private String                  bindAddress;
-    private int                     port;
-    private long                    resetInterval;
-    private ThreadingConfiguration  threadConfiguration = new ThreadingConfiguration();
+
+    private String transportType;
+    private String bindAddress;
+    private int port;
+    private long resetInterval;
+    private ThreadingConfiguration threadConfiguration = new ThreadingConfiguration();
     private SocketConnectionFactory connectionFactory;;
     private UbikServerSocketFactory serverSocketFactory;
-    
+
     private Builder(String transportType) {
-    	this.transportType = transportType;
+      this.transportType = transportType;
     }
- 
+
     /**
-     * @param bindAddress the address to which the server should be bound (if not specified, the {@link Localhost} class 
-     * is used to select one).
+     * @param bindAddress
+     *          the address to which the server should be bound (if not
+     *          specified, the {@link Localhost} class is used to select one).
      * @return this instance.
      */
     public Builder setBindAddress(String bindAddress) {
       this.bindAddress = bindAddress;
       return this;
     }
-    
+
     /**
-     * @param port the port on which the server should listen - if not specified, a random port is selected.
+     * @param port
+     *          the port on which the server should listen - if not specified, a
+     *          random port is selected.
      * @return this instance.
      */
     public Builder setPort(int port) {
       this.port = port;
       return this;
     }
-    
+
     /**
-     * @param threadConf the threading {@link ThreadingConfiguration} to use.
+     * @param threadConf
+     *          the threading {@link ThreadingConfiguration} to use.
      * @return this instance.
      */
     public Builder setThreadingConfig(ThreadingConfiguration threadConf) {
       this.threadConfiguration = threadConf;
       return this;
     }
-    
+
     /**
-     * If a  {@link #connectionFactory} is explicitely specified, this property will have no effect.
+     * If a {@link #connectionFactory} is explicitely specified, this property
+     * will have no effect.
      * 
-     * @param resetInterval the interval (in millis) at which the MarshalOutputStream will reset it's internal object cache.
+     * @param resetInterval
+     *          the interval (in millis) at which the MarshalOutputStream will
+     *          reset it's internal object cache.
      * @see #setConnectionFactory(SocketConnectionFactory)
      * @return this instance.
      */
@@ -86,90 +93,77 @@ public class SocketRmiServer extends SocketServer implements Server, SocketRmiSe
     }
 
     /**
-     * @param serverSocketFactory the {@link UbikServerSocketFactory} that the server will be using
-     * to create a {@link ServerSocket} instance.
+     * @param serverSocketFactory
+     *          the {@link UbikServerSocketFactory} that the server will be
+     *          using to create a {@link ServerSocket} instance.
      * @return this instance.
      */
     public Builder setServerSocketFactory(UbikServerSocketFactory serverSocketFactory) {
       this.serverSocketFactory = serverSocketFactory;
       return this;
     }
-    
+
     /**
-     * @param connectionFactory the {@link SocketConnectionFactory} to use on the server-side, to handle 
-     * communication with clients.
+     * @param connectionFactory
+     *          the {@link SocketConnectionFactory} to use on the server-side,
+     *          to handle communication with clients.
      * @return this instance.
      */
     public Builder setConnectionFactory(SocketConnectionFactory connectionFactory) {
       this.connectionFactory = connectionFactory;
       return this;
     }
-    
-    protected Builder() {}
-   
+
+    protected Builder() {
+    }
+
     public static Builder create(String transportType) {
       return new Builder(transportType);
     }
-    
+
     // ------------------------------------------------------------------------
-    
+
     public SocketRmiServer build() throws IOException {
-      
+
       SocketRmiServerThreadPool threadPool = new SocketRmiServerThreadPool("ubik.rmi.tcp.SocketServerThread", true, threadConfiguration);
-      
-      if(connectionFactory == null) {
+
+      if (connectionFactory == null) {
         SocketRmiConnectionFactory rmiConnectionFactory = new SocketRmiConnectionFactory(transportType);
         rmiConnectionFactory.setResetInterval(resetInterval);
         connectionFactory = rmiConnectionFactory;
       }
-      
-      if(serverSocketFactory == null) {
+
+      if (serverSocketFactory == null) {
         serverSocketFactory = new DefaultUbikServerSocketFactory();
       }
-      
-      if(bindAddress != null) {
+
+      if (bindAddress != null) {
         return new SocketRmiServer(transportType, bindAddress, port, threadPool, connectionFactory, serverSocketFactory);
       } else {
         return new SocketRmiServer(transportType, port, threadPool, connectionFactory, serverSocketFactory);
       }
-      
+
     }
-    
+
   }
 
   // --------------------------------------------------------------------------
-  
+
   private ServerAddress addr;
-  private Thread        serverThread;
-  
-  protected SocketRmiServer(
-  		String transportType,
-      String bindAddr, 
-      int port, 
-      WorkerPool<Request> tp,
-      SocketConnectionFactory connectionFactory,
+  private Thread serverThread;
+
+  protected SocketRmiServer(String transportType, String bindAddr, int port, WorkerPool<Request> tp, SocketConnectionFactory connectionFactory,
       UbikServerSocketFactory serverSocketFactory) throws IOException {
-    super(bindAddr, 
-          port, 
-          connectionFactory,
-          tp, 
-          serverSocketFactory);
-    addr = new TCPAddress(transportType, getAddress(), getPort());            
+    super(bindAddr, port, connectionFactory, tp, serverSocketFactory);
+    addr = new TCPAddress(transportType, getAddress(), getPort());
   }
-    
-  protected SocketRmiServer(
-    		String transportType,
-        int port, 
-        WorkerPool<Request> tp,
-        SocketConnectionFactory connectionFactory,
-        UbikServerSocketFactory serverSocketFactory) throws IOException {
-      super(port, 
-            connectionFactory,
-            tp, 
-            serverSocketFactory);
-    addr = new TCPAddress(transportType, getAddress(), getPort());            
+
+  protected SocketRmiServer(String transportType, int port, WorkerPool<Request> tp, SocketConnectionFactory connectionFactory,
+      UbikServerSocketFactory serverSocketFactory) throws IOException {
+    super(port, connectionFactory, tp, serverSocketFactory);
+    addr = new TCPAddress(transportType, getAddress(), getPort());
   }
-  
+
   /**
    * @see org.sapia.ubik.rmi.server.Server#getServerAddress()()
    */
@@ -196,7 +190,7 @@ public class SocketRmiServer extends SocketServer implements Server, SocketRmiSe
       throw re;
     }
   }
-  
+
   @Override
   public void close() {
     try {
@@ -205,5 +199,5 @@ public class SocketRmiServer extends SocketServer implements Server, SocketRmiSe
       ThreadShutdown.create(serverThread).shutdownLenient();
     }
   }
-  
+
 }

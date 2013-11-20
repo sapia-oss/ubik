@@ -5,5 +5,5 @@ import java.rmi.Remote;
 public interface NettyService extends Remote {
 
   public String getMessage();
-  
+
 }

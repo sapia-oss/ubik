@@ -5,19 +5,20 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
 /**
- * An {@link OutputStream} implementation that writes to an internal {@link ByteBuffer}.
+ * An {@link OutputStream} implementation that writes to an internal
+ * {@link ByteBuffer}.
  * 
  * @author yduchesne
- *
+ * 
  */
-public class JdkByteBufferOutputStream  extends OutputStream {
-	
+public class JdkByteBufferOutputStream extends OutputStream {
+
   private ByteBuffer buf;
-  
-  public JdkByteBufferOutputStream(ByteBuffer buf){
+
+  public JdkByteBufferOutputStream(ByteBuffer buf) {
     this.buf = buf;
   }
-  
+
   public synchronized void write(int b) throws IOException {
     buf.put((byte) b);
   }

@@ -5,7 +5,6 @@ import java.io.ObjectOutputStream;
 
 import junit.framework.TestCase;
 
-
 /**
  * @author <a href="mailto:jc@sapia-oss.org">Jean-Cedric Desrochers</a>
  */
@@ -19,13 +18,12 @@ public class ObjectStreamSelectorTest extends TestCase {
 
   public void testObjectStream() throws Exception {
     ByteArrayOutputStream data = new ByteArrayOutputStream();
-    ObjectOutputStream    oos = new ObjectOutputStream(data);
+    ObjectOutputStream oos = new ObjectOutputStream(data);
     oos.writeObject("testObjectStream");
     oos.flush();
 
     ObjectStreamSelector selector = new ObjectStreamSelector();
-    assertTrue("Should select the object stream",
-      selector.selectStream(data.toByteArray()));
+    assertTrue("Should select the object stream", selector.selectStream(data.toByteArray()));
   }
 
   public void testStringStream() throws Exception {
@@ -34,7 +32,6 @@ public class ObjectStreamSelectorTest extends TestCase {
     data.flush();
 
     ObjectStreamSelector selector = new ObjectStreamSelector();
-    assertTrue("Should select the object stream",
-      !selector.selectStream(data.toByteArray()));
+    assertTrue("Should select the object stream", !selector.selectStream(data.toByteArray()));
   }
 }

@@ -19,28 +19,27 @@ public class NettyServerTest implements NettyService {
     Hub.shutdown();
     System.setProperty(Consts.COLOCATED_CALLS_ENABLED, "false");
   }
-  
+
   @After
   public void tearDown() {
     Hub.shutdown();
     System.clearProperty(Consts.COLOCATED_CALLS_ENABLED);
   }
-  
+
   @Test
   public void test() throws Exception {
     Properties props = new Properties();
     props.setProperty(Consts.TRANSPORT_TYPE, NettyTransportProvider.TRANSPORT_TYPE);
     props.setProperty(NettyConsts.SERVER_PORT_KEY, "8000");
     Hub.exportObject(this, props);
-    
+
     Hub.connect(new NettyAddress(Localhost.getAnyLocalAddress().getHostAddress(), 8000));
     Hub.shutdown();
   }
-  
-  
+
   @Override
   public String getMessage() {
     return "test";
   }
-  
+
 }

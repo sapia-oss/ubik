@@ -29,10 +29,9 @@ import org.sapia.ubik.util.Collections2;
 import org.sapia.ubik.util.Function;
 import org.sapia.ubik.util.Strings;
 
-
 /**
- * A {@link StubInvocationHandler} that manages reconnecting to another server instance
- * provided a method call fails.
+ * A {@link StubInvocationHandler} that manages reconnecting to another server
+ * instance provided a method call fails.
  * <p>
  * Note that this class does NOT inherit from {@link RemoteRef} - despite what
  * the name might suggest. This is because this class, by definition, does not
@@ -41,24 +40,25 @@ import org.sapia.ubik.util.Strings;
  * Indeed, an instance of this class corresponds to all servers that were bound
  * under a given name.
  * <p>
- * This design might be reviewed eventually, to provide a more consistent class hierarchy.
- *
+ * This design might be reviewed eventually, to provide a more consistent class
+ * hierarchy.
+ * 
  */
 public class RemoteRefStateless implements StubInvocationHandler, Externalizable, HealthCheck {
-  
+
   static final long serialVersionUID = 1L;
-  
+
   private static final LocalMethodMap LOCAL_METHODS = LocalMethodMap.buildDefaultMap();
-  
-  private static Category                         log            = Log.createCategory(RemoteRefStateless.class); 
-  
-  private Name                                    name;
-  private String                                  domain;
-  private MulticastAddress                        multicastAddress;
-  private OID                                     oid            = new DefaultOID(UIDGenerator.createUID());
-  private transient ContextList                   contexts       = new ContextList();           
+
+  private static Category log = Log.createCategory(RemoteRefStateless.class);
+
+  private Name name;
+  private String domain;
+  private MulticastAddress multicastAddress;
+  private OID oid = new DefaultOID(UIDGenerator.createUID());
+  private transient ContextList contexts = new ContextList();
   private transient volatile InvocationDispatcher dispatcher;
-  
+
   /**
    * Do not use: meant for externalization.
    */
@@ -70,18 +70,18 @@ public class RemoteRefStateless implements StubInvocationHandler, Externalizable
    * Creates an instance of this class
    */
   public RemoteRefStateless(Name name, String domain, MulticastAddress multicastAddress) {
-    this.name             = name;
-    this.domain           = domain;
+    this.name = name;
+    this.domain = domain;
     this.multicastAddress = multicastAddress;
   }
-  
+
   /**
    * @return this instance's domain.
    */
   public String getDomain() {
     return domain;
   }
-  
+
   /**
    * @return this instance's {@link MulticastAddress}.
    */
@@ -90,12 +90,13 @@ public class RemoteRefStateless implements StubInvocationHandler, Externalizable
   }
 
   /**
-   * @return the {@link Name} under which this instance's corresponding remote object was bound.
+   * @return the {@link Name} under which this instance's corresponding remote
+   *         object was bound.
    */
   public Name getName() {
     return name;
   }
-  
+
   @Override
   public Collection<RemoteRefContext> getContexts() {
     return contexts.getAll();
@@ -104,15 +105,14 @@ public class RemoteRefStateless implements StubInvocationHandler, Externalizable
   /**
    * @see java.lang.reflect.InvocationHandler#invoke(Object, Method, Object[])
    */
-  public Object invoke(Object obj, Method toCall, Object[] params)
-    throws Throwable {
-    Object      toReturn = null;
+  public Object invoke(Object obj, Method toCall, Object[] params) throws Throwable {
+    Object toReturn = null;
 
     LocalMethodInvoker invoker = LOCAL_METHODS.getInvokerFor(toCall);
-    if(invoker != null) {
+    if (invoker != null) {
       return invoker.invoke(this, params);
     }
-    
+
     RemoteRefContext context = acquire();
     log.debug("Performing invocation using context: %s", context);
     try {
@@ -152,22 +152,21 @@ public class RemoteRefStateless implements StubInvocationHandler, Externalizable
     });
     return new StubContainerBase(names, this);
   }
-  
+
   /**
    * @see java.io.Externalizable#readExternal(ObjectInput)
    */
-  @SuppressWarnings(value="unchecked")
-  public void readExternal(ObjectInput in)
-    throws IOException, ClassNotFoundException {
-    name                 = (Name) in.readObject();
-    domain               = in.readUTF();
-    multicastAddress     = (MulticastAddress)in.readObject();
-    oid                  = (OID) in.readObject();
-    Collection<RemoteRefContext> remoteContexts  = (Collection<RemoteRefContext>) in.readObject();
+  @SuppressWarnings(value = "unchecked")
+  public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+    name = (Name) in.readObject();
+    domain = in.readUTF();
+    multicastAddress = (MulticastAddress) in.readObject();
+    oid = (OID) in.readObject();
+    Collection<RemoteRefContext> remoteContexts = (Collection<RemoteRefContext>) in.readObject();
     contexts = new ContextList();
-   
+
     log.info("Deserializing stateless stub (%s); endpoints: %s", name, remoteContexts);
-    
+
     Hub.getModules().getStatelessStubTable().registerStatelessRef(this, remoteContexts);
   }
 
@@ -184,16 +183,16 @@ public class RemoteRefStateless implements StubInvocationHandler, Externalizable
 
   /**
    * Returns this instance's underlying connection information.
-   *
+   * 
    * @return this instance's {@link Contexts}.
    */
   ContextList getContextList() {
     return contexts;
   }
-  
-  private boolean clean(){
-    synchronized(contexts){
-      for(RemoteRefContext context : contexts.getAll()){
+
+  private boolean clean() {
+    synchronized (contexts) {
+      for (RemoteRefContext context : contexts.getAll()) {
         try {
           Stubs.trySendCommand(new CommandPing(), context);
         } catch (RemoteException e) {
@@ -203,42 +202,24 @@ public class RemoteRefStateless implements StubInvocationHandler, Externalizable
           log.warning("Unknown error trying to clean endpoint " + context, e);
         }
       }
-      
+
     }
-    return contexts.count() > 0; 
+    return contexts.count() > 0;
   }
-  
-  private Object doInvoke(RemoteRefContext context, Object obj, Method toCall,
-    Object[] params) throws Throwable {
+
+  private Object doInvoke(RemoteRefContext context, Object obj, Method toCall, Object[] params) throws Throwable {
     Object toReturn = null;
 
     if (context.isCallback()) {
       log.debug("Invoking (callback): %s", toCall);
 
-      toReturn = dispatcher().dispatchInvocation(
-      		context.getVmId(),
-          context.getConnections(),
-          new CallbackInvokeCommand(
-              context.getOid(), 
-              toCall.getName(), 
-              params,
-              toCall.getParameterTypes(), 
-              context.getAddress().getTransportType())
-          );
+      toReturn = dispatcher().dispatchInvocation(context.getVmId(), context.getConnections(),
+          new CallbackInvokeCommand(context.getOid(), toCall.getName(), params, toCall.getParameterTypes(), context.getAddress().getTransportType()));
     } else {
       log.debug("Invoking (no callback): %s", toCall);
-      
-      toReturn = dispatcher().dispatchInvocation(
-      		context.getVmId(),      		
-          context.getConnections(),
-          new InvokeCommand(
-              context.getOid(), 
-              toCall.getName(), 
-              params,
-              toCall.getParameterTypes(), 
-              context.getAddress().getTransportType()
-          )
-      );
+
+      toReturn = dispatcher().dispatchInvocation(context.getVmId(), context.getConnections(),
+          new InvokeCommand(context.getOid(), toCall.getName(), params, toCall.getParameterTypes(), context.getAddress().getTransportType()));
     }
 
     if (toReturn == null) {
@@ -250,22 +231,20 @@ public class RemoteRefStateless implements StubInvocationHandler, Externalizable
 
     return toReturn;
   }
-  
+
   private RemoteRefContext acquire() throws RemoteException {
     log.debug("Proceeding to round-robin");
     return contexts.rotate();
   }
 
-  private RemoteRefContext removeAcquire(RemoteRefContext toRemove)
-    throws RemoteException {
-    log.info("Removing invalid instance: %s", toRemove.getAddress());      
+  private RemoteRefContext removeAcquire(RemoteRefContext toRemove) throws RemoteException {
+    log.info("Removing invalid instance: %s", toRemove.getAddress());
     contexts.remove(toRemove);
-    log.debug("Remaining: %s", contexts);            
+    log.debug("Remaining: %s", contexts);
     return acquire();
   }
-  
-  private Object handleError(RemoteRefContext context, Object obj, Method toCall,
-    Object[] params, Throwable err) throws Throwable {
+
+  private Object handleError(RemoteRefContext context, Object obj, Method toCall, Object[] params, Throwable err) throws Throwable {
     do {
       context = removeAcquire(context);
 
@@ -276,14 +255,13 @@ public class RemoteRefStateless implements StubInvocationHandler, Externalizable
           err = t;
         }
       }
-    } while ((err instanceof ShutdownException ||
-          err instanceof RemoteException) && (contexts.count() > 0));
+    } while ((err instanceof ShutdownException || err instanceof RemoteException) && (contexts.count() > 0));
 
     throw err;
   }
-  
+
   private InvocationDispatcher dispatcher() {
-    if(dispatcher == null) {
+    if (dispatcher == null) {
       dispatcher = Hub.getModules().getInvocationDispatcher();
     }
     return dispatcher;
@@ -294,18 +272,14 @@ public class RemoteRefStateless implements StubInvocationHandler, Externalizable
   }
 
   public boolean equals(Object o) {
-    if(o instanceof RemoteRefStateless) {
-      RemoteRefStateless other = (RemoteRefStateless)o;
+    if (o instanceof RemoteRefStateless) {
+      RemoteRefStateless other = (RemoteRefStateless) o;
       return this == other || other.oid.equals(oid);
     }
     return false;
   }
 
   public String toString() {
-    return Strings.toString(
-        "name", name, 
-        "domain", domain,
-        "multicastAddress", multicastAddress, 
-        "contexts", contexts);
+    return Strings.toString("name", name, "domain", domain, "multicastAddress", multicastAddress, "contexts", contexts);
   }
 }

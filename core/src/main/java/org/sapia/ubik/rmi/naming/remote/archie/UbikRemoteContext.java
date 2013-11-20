@@ -14,7 +14,6 @@ import org.sapia.ubik.mcast.EventChannel;
 import org.sapia.ubik.rmi.naming.remote.DomainInfo;
 import org.sapia.ubik.rmi.naming.remote.RemoteContext;
 
-
 /**
  * Implements a remote {@link JndiContext}.
  * 
@@ -49,7 +48,7 @@ public class UbikRemoteContext extends JndiContext implements RemoteContext {
   public void bind(Name name, Object obj) throws NamingException {
     super.rebind(name, obj);
   }
-  
+
   /**
    * @see javax.naming.Context#bind(java.lang.String, java.lang.Object)
    */
@@ -62,17 +61,15 @@ public class UbikRemoteContext extends JndiContext implements RemoteContext {
 
     return new UbikRemoteContext(sync);
   }
-  
+
   @SuppressWarnings("rawtypes")
-  protected NamingEnumeration newNamingEnum(Iterator entries,
-    Iterator childNodes, int listType) {
+  protected NamingEnumeration newNamingEnum(Iterator entries, Iterator childNodes, int listType) {
     return new UbikNamingEnum(entries, childNodes, listType);
   }
 
-  public static UbikRemoteContext newInstance(EventChannel channel)
-    throws NamingException {
+  public static UbikRemoteContext newInstance(EventChannel channel) throws NamingException {
     UbikSynchronizer sync = new UbikSynchronizer(channel);
-    UbikNodeFactory  fac = new UbikNodeFactory(sync);
+    UbikNodeFactory fac = new UbikNodeFactory(sync);
 
     try {
       UbikSyncNode root = new UbikSyncNode(fac);

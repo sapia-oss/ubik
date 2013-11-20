@@ -15,39 +15,41 @@ import org.simpleframework.transport.connect.Connection;
 import org.simpleframework.transport.connect.SocketConnection;
 
 /**
- * Implements a {@link Server} that receives requests from Ubik RMI clients
- * over HTTP.
+ * Implements a {@link Server} that receives requests from Ubik RMI clients over
+ * HTTP.
  * <p>
- * An instance of this class maintains a thread pool. The threads are used to process
- * incoming commands. Threads are released to the pool once their execution has completed.
- *
+ * An instance of this class maintains a thread pool. The threads are used to
+ * process incoming commands. Threads are released to the pool once their
+ * execution has completed.
+ * 
  * @see org.sapia.ubik.rmi.Consts#SERVER_MAX_THREADS
- *
+ * 
  * @author Yanick Duchesne
  */
 class HttpRmiServer implements Server, HttpConsts {
 
-  private int           localPort;  
-  private Router        handlers;
-  private Connection    connection;
-  private HttpAddress   address;
-  
+  private int localPort;
+  private Router handlers;
+  private Connection connection;
+  private HttpAddress address;
+
   /**
    * Creates an instance of this class.
-   *
-   * @param router the {@link Router} that holds the {@link Handler}s used to process incoming requests.
-   * @param transportType a "transport type" identifier.
-   * @param port a port (must be >= 0).
+   * 
+   * @param router
+   *          the {@link Router} that holds the {@link Handler}s used to process
+   *          incoming requests.
+   * @param transportType
+   *          a "transport type" identifier.
+   * @param port
+   *          a port (must be >= 0).
    */
-  HttpRmiServer(
-      Router router,
-      Uri serverUrl,
-      int localPort) {
-    
+  HttpRmiServer(Router router, Uri serverUrl, int localPort) {
+
     Assertions.illegalState(serverUrl.getPort() <= 0, "Server does not support dynamic port");
-    this.address    = new HttpAddress(serverUrl);
-    this.handlers   = router;
-    this.localPort  = localPort;
+    this.address = new HttpAddress(serverUrl);
+    this.handlers = router;
+    this.localPort = localPort;
   }
 
   /**
@@ -72,7 +74,6 @@ class HttpRmiServer implements Server, HttpConsts {
   public ServerAddress getServerAddress() {
     return this.address;
   }
-
 
   /**
    * @see org.sapia.ubik.rmi.server.Server#start()

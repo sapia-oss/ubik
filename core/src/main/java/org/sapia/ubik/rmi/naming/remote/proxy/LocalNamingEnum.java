@@ -8,7 +8,6 @@ import javax.naming.NamingException;
 import org.sapia.archie.jndi.proxy.EnumProxy;
 import org.sapia.ubik.rmi.naming.remote.RemoteContext;
 
-
 /**
  * @author Yanick Duchesne
  */
@@ -21,10 +20,8 @@ public class LocalNamingEnum extends EnumProxy {
     this.url = url;
   }
 
-  public Object onNextElement(Name contextName, Object next)
-    throws NamingException {
-    if (next instanceof Binding &&
-          ((Binding) next).getObject() instanceof RemoteContext) {
+  public Object onNextElement(Name contextName, Object next) throws NamingException {
+    if (next instanceof Binding && ((Binding) next).getObject() instanceof RemoteContext) {
       Binding b = (Binding) next;
       b.setObject(new LocalContext(url, (RemoteContext) b.getObject()));
 

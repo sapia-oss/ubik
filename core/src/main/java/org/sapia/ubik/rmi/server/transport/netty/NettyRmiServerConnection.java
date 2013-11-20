@@ -15,12 +15,12 @@ import org.sapia.ubik.util.Assertions;
 public class NettyRmiServerConnection implements RmiConnection {
 
   private ServerAddress addr;
-  private Object        received;
+  private Object received;
   private NettyResponse response;
 
   NettyRmiServerConnection(ServerAddress addr, Object received) {
-    this.addr     = addr;
-    this.received = received; 
+    this.addr = addr;
+    this.received = received;
   }
 
   /**
@@ -40,8 +40,7 @@ public class NettyRmiServerConnection implements RmiConnection {
   /**
    * @see org.sapia.ubik.net.Connection#receive()
    */
-  public Object receive() throws IOException, ClassNotFoundException,
-      RemoteException {
+  public Object receive() throws IOException, ClassNotFoundException, RemoteException {
     return received;
   }
 
@@ -56,12 +55,11 @@ public class NettyRmiServerConnection implements RmiConnection {
    * @see org.sapia.ubik.rmi.server.transport.RmiConnection#send(java.lang.Object,
    *      org.sapia.ubik.rmi.server.VmId, java.lang.String)
    */
-  public void send(Object o, VmId associated, String transportType)
-      throws IOException, RemoteException {
-    
+  public void send(Object o, VmId associated, String transportType) throws IOException, RemoteException {
+
     response = new NettyResponse(associated, transportType, o);
   }
-  
+
   NettyResponse getResponse() {
     Assertions.illegalState(response == null, "Response not set");
     return response;

@@ -10,35 +10,36 @@ import org.sapia.ubik.net.UriSyntaxException;
 import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
 
-
 /**
  * This class implements the <code>Connections</code> interface over Apache's
- * {@link HttpClient}. It does not do pooling, and leaves connection management to the
- * client.
- *
+ * {@link HttpClient}. It does not do pooling, and leaves connection management
+ * to the client.
+ * 
  * @author Yanick Duchesne
  */
 public class HttpClientConnectionPool implements Connections {
-  
-  private HttpAddress                    address;
+
+  private HttpAddress address;
   private PoolingClientConnectionManager connectionPool;
-  private HttpClient                     client;
+  private HttpClient client;
 
   /**
-   * @param address the address of the target server.
-   * @param maxConnections the maximum number of connections that the
-   * {@link HttpClient} should pool at once. 
+   * @param address
+   *          the address of the target server.
+   * @param maxConnections
+   *          the maximum number of connections that the {@link HttpClient}
+   *          should pool at once.
    */
-  public HttpClientConnectionPool(HttpAddress address, int maxConnections)
-    throws UriSyntaxException {
-    this.address   = address;
+  public HttpClientConnectionPool(HttpAddress address, int maxConnections) throws UriSyntaxException {
+    this.address = address;
     connectionPool = new PoolingClientConnectionManager();
     connectionPool.setDefaultMaxPerRoute(maxConnections);
-    client         = new DefaultHttpClient(connectionPool);
+    client = new DefaultHttpClient(connectionPool);
   }
 
   /**
-   * @param serverUri the address of the target server.
+   * @param serverUri
+   *          the address of the target server.
    */
   public HttpClientConnectionPool(Uri serverUri) {
     this.address = new HttpAddress(serverUri);
@@ -56,18 +57,18 @@ public class HttpClientConnectionPool implements Connections {
     connectionPool.shutdown();
     connectionPool = new PoolingClientConnectionManager();
     connectionPool.setDefaultMaxPerRoute(connectionPool.getDefaultMaxPerRoute());
-    client         = new DefaultHttpClient(connectionPool);
+    client = new DefaultHttpClient(connectionPool);
   }
 
   @Override
   public String getTransportType() {
     return address.getTransportType();
   }
-  
+
   @Override
   public void release(RmiConnection conn) {
   }
-  
+
   @Override
   public void invalidate(RmiConnection conn) {
   }

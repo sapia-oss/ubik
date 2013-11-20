@@ -22,61 +22,62 @@ import org.sapia.ubik.util.Strings;
  * Encapsulates the state common to remote references.
  * 
  * @author yduchesne
- *
+ * 
  */
-public class RemoteRefContext implements Externalizable{
-  
+public class RemoteRefContext implements Externalizable {
+
   static final long serialVersionUID = 1L;
 
-  private OID                              oid;
-  private ServerAddress                    address;
-  private boolean                          callback;
-  private int                              hopCount;
-  private VmId                             vmId          = VmId.getInstance();
-  
-  protected transient volatile Connections pool;
-  protected transient Object               lock          = new Object();
+  private OID oid;
+  private ServerAddress address;
+  private boolean callback;
+  private int hopCount;
+  private VmId vmId = VmId.getInstance();
 
+  protected transient volatile Connections pool;
+  protected transient Object lock = new Object();
 
   /** Used for serialization only */
-  public RemoteRefContext(){}
-  
+  public RemoteRefContext() {
+  }
+
   public RemoteRefContext(OID oid, ServerAddress address) {
-    this.oid     = oid;
+    this.oid = oid;
     this.address = address;
   }
-  
+
   /**
    * @return this instance's {@link OID}.
    */
   public OID getOid() {
     return oid;
   }
-  
+
   /**
    * @return this instance's {@link ServerAddress}.
    */
   public ServerAddress getAddress() {
     return address;
   }
-  
+
   /**
    * @return this instance's {@link VmId}.
    */
   public VmId getVmId() {
     return vmId;
   }
-  
+
   /**
    * 
-   * @param callback <code>true</code> if this instance's corresponding stub supports
-   * callback invocations, <code>false</code>
-   *
+   * @param callback
+   *          <code>true</code> if this instance's corresponding stub supports
+   *          callback invocations, <code>false</code>
+   * 
    */
   public void setCallback(boolean callback) {
     this.callback = callback;
   }
-  
+
   /**
    * @return this instance's <code>callback/code> flag.
    */
@@ -84,50 +85,49 @@ public class RemoteRefContext implements Externalizable{
     return callback;
   }
 
-
   /**
    * @return this instance's hop count.
    */
   public int getHopCount() {
     return hopCount;
   }
-  
+
   /**
    * @return <code>true</code> if this is this instance's first hop.
    */
   public boolean isFirstHop() {
     return hopCount <= 1;
   }
-  
+
   /**
    * @return the {@link Connections} that this instance uses.
    */
   public Connections getConnections() {
-    if(pool == null) {
+    if (pool == null) {
       synchronized (lock) {
         if (pool == null) {
           try {
-           initPool(false);
-          } catch(RemoteException e) {
+            initPool(false);
+          } catch (RemoteException e) {
             throw new RemoteRuntimeException("Could not initialize connection pool", e);
           }
         }
       }
-    } 
+    }
     return pool;
   }
-  
+
   @Override
   public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-    this.oid      = (OID)in.readObject();
-    this.address  = (ServerAddress)in.readObject();
+    this.oid = (OID) in.readObject();
+    this.address = (ServerAddress) in.readObject();
     this.callback = in.readBoolean();
     this.hopCount = in.readInt();
     hopCount++;
-    this.vmId     = (VmId)in.readObject();
+    this.vmId = (VmId) in.readObject();
     createReference();
   }
-  
+
   @Override
   public void writeExternal(ObjectOutput out) throws IOException {
     out.writeObject(oid);
@@ -136,31 +136,26 @@ public class RemoteRefContext implements Externalizable{
     out.writeInt(hopCount);
     out.writeObject(vmId);
   }
-  
+
   public int hashCode() {
     return oid.hashCode();
   }
 
   public boolean equals(Object other) {
-    if(other instanceof RemoteRefContext) {
+    if (other instanceof RemoteRefContext) {
       RemoteRefContext otherContext = (RemoteRefContext) other;
       return oid.equals(otherContext.oid);
-    } 
+    }
     return false;
-  }  
-  
+  }
+
   @Override
   public String toString() {
-    return Strings.toString(
-        "oid", oid, 
-        "address", address, 
-        "vmId", vmId, 
-        "callback", callback,
-        "hopCount", hopCount);
+    return Strings.toString("oid", oid, "address", address, "vmId", vmId, "callback", callback, "hopCount", hopCount);
   }
-  
+
   protected Object sendCommand(RMICommand cmd) throws Throwable {
-    if(pool == null) {
+    if (pool == null) {
       synchronized (lock) {
         if (pool == null) {
           initPool(false);
@@ -198,20 +193,20 @@ public class RemoteRefContext implements Externalizable{
     }
   }
 
-  protected synchronized void initPool(boolean force)
-    throws java.rmi.RemoteException {
+  protected synchronized void initPool(boolean force) throws java.rmi.RemoteException {
     if (pool == null) {
       pool = Hub.getModules().getTransportManager().getConnectionsFor(address);
     } else if (force) {
       pool.clear();
       pool = Hub.getModules().getTransportManager().getConnectionsFor(address);
     }
-  }  
-  
-  private void createReference() throws RemoteException{
+  }
+
+  private void createReference() throws RemoteException {
     ClientRuntime runtime = Hub.getModules().getClientRuntime();
-    if(!isFirstHop()) {
-      if(Log.isDebug()) Log.debug(getClass(), "Creating remote ref " + oid);
+    if (!isFirstHop()) {
+      if (Log.isDebug())
+        Log.debug(getClass(), "Creating remote ref " + oid);
       runtime.createReference(address, oid);
     }
     runtime.getGc().register(address, oid, this);

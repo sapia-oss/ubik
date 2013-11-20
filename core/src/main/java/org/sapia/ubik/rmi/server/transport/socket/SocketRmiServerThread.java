@@ -14,18 +14,18 @@ import org.sapia.ubik.rmi.server.transport.CommandHandler;
 
 /**
  * Implements a thread in a {@link SocketRmiServer} instance.
- *
+ * 
  * @author Yanick Duchesne
  */
 public class SocketRmiServerThread implements Worker<Request> {
 
-  private Category       log      = Log.createCategory(getClass());
+  private Category log = Log.createCategory(getClass());
   private CommandHandler handler;
 
   SocketRmiServerThread(MultiDispatcher dispatcher) {
     handler = new CommandHandler(dispatcher, getClass());
   }
-  
+
   @Override
   public void execute(Request req) {
     log.debug("Handling request");
@@ -46,15 +46,12 @@ public class SocketRmiServerThread implements Worker<Request> {
         continue;
       }
 
-      log.debug("Command received: %s from %s@%s", 
-                cmd.getClass().getName(), 
-                req.getConnection().getServerAddress(), 
-                cmd.getVmId());
-      
+      log.debug("Command received: %s from %s@%s", cmd.getClass().getName(), req.getConnection().getServerAddress(), cmd.getVmId());
+
       cmd.init(new Config(req.getServerAddress(), req.getConnection()));
-      
+
       handler.handleCommand(cmd, req.getConnection());
     }
   }
-  
+
 }

@@ -15,38 +15,38 @@ import org.sapia.ubik.rmi.server.transport.netty.NettyTransportProvider;
 import org.sapia.ubik.rmi.server.transport.socket.SocketTransportProvider;
 import org.sapia.ubik.util.Assertions;
 
-
 /**
- * The transport manager is the single-entry point into Ubik RMI's transport layer. It allows registering {@link TransportProvider} instances,
- * which provide transport implementations on top of different network protocols.
+ * The transport manager is the single-entry point into Ubik RMI's transport
+ * layer. It allows registering {@link TransportProvider} instances, which
+ * provide transport implementations on top of different network protocols.
  * <p>
  * This class registers the following transport providers automatically:
  * 
  * <ul>
- *  <li> {@link SocketTransportProvider}.
- *  <li> {@link MinaTransportProvider}.
- *  <li> {@link NettyTransportProvider}.
- *  <li> {@link InMemoryTransportProvider}.
- *  <li> {@link HttpTransportProvider}.  
+ * <li> {@link SocketTransportProvider}.
+ * <li> {@link MinaTransportProvider}.
+ * <li> {@link NettyTransportProvider}.
+ * <li> {@link InMemoryTransportProvider}.
+ * <li> {@link HttpTransportProvider}.
  * </ul>
- *
+ * 
  * @author Yanick Duchesne
  */
 public class TransportManager implements Module {
-  
+
   private Map<String, TransportProvider> providers = new ConcurrentHashMap<String, TransportProvider>();
-  
+
   @Override
   public void init(ModuleContext context) {
-  	registerProvider(new SocketTransportProvider());
+    registerProvider(new SocketTransportProvider());
     registerProvider(new NettyTransportProvider());
     registerProvider(new MinaTransportProvider());
     registerProvider(new InMemoryTransportProvider());
     registerProvider(new HttpTransportProvider());
-    
+
     String[] propNames = (String[]) System.getProperties().keySet().toArray(new String[System.getProperties().size()]);
-    String   propName;
-    String   className;
+    String propName;
+    String className;
 
     for (int i = 0; i < propNames.length; i++) {
       propName = (String) propNames[i];
@@ -60,42 +60,38 @@ public class TransportManager implements Module {
           TransportProvider provider = (TransportProvider) Class.forName(className).newInstance();
           registerProvider(provider);
         } catch (Throwable e) {
-          throw new IllegalStateException(
-            "Could not instantiate transport provider: " + className, e);
+          throw new IllegalStateException("Could not instantiate transport provider: " + className, e);
         }
       }
     }
   }
-  
-  
+
   @Override
   public void start(ModuleContext context) {
   }
-  
+
   @Override
   public void stop() {
-    for(TransportProvider provider : providers.values()) {
+    for (TransportProvider provider : providers.values()) {
       provider.shutdown();
     }
-    
+
     providers.clear();
   }
-  
 
   /**
-   * Registers the transport provider of the given type with the transport manager. The
-   * provider is internally mapped to its "transport type".
-   *
+   * Registers the transport provider of the given type with the transport
+   * manager. The provider is internally mapped to its "transport type".
+   * 
    * @see TransportProvider#getTransportType()
-   * @param provider a {@link TransportProvider} instance.
-   * @throws IllegalArgumentException if a provider is already registered for the
-   * given type.
+   * @param provider
+   *          a {@link TransportProvider} instance.
+   * @throws IllegalArgumentException
+   *           if a provider is already registered for the given type.
    */
   public void registerProvider(TransportProvider provider) {
     if (providers.containsKey(provider.getTransportType())) {
-      throw new IllegalArgumentException(
-        "Transport provider already registered for: " +
-        provider.getTransportType());
+      throw new IllegalArgumentException("Transport provider already registered for: " + provider.getTransportType());
     }
 
     providers.put(provider.getTransportType(), provider);
@@ -103,11 +99,12 @@ public class TransportManager implements Module {
 
   /**
    * Returns the transport provider corresponding to the given type.
-   *
-   * @param type the logical type of the desired transport provider.
+   * 
+   * @param type
+   *          the logical type of the desired transport provider.
    * @return a {@link TransportProvider}.
-   * @throws IllegalArgumentException if no provider is registered for
-   * the passed in type.
+   * @throws IllegalArgumentException
+   *           if no provider is registered for the passed in type.
    */
   public TransportProvider getProviderFor(String type) {
     TransportProvider provider = providers.get(type);
@@ -120,21 +117,22 @@ public class TransportManager implements Module {
   }
 
   /***
-   * Gets a connection pool that holds connections to a server,
-   * given the server's address.
-   *
+   * Gets a connection pool that holds connections to a server, given the
+   * server's address.
+   * 
    * @return a {@link Connections} instance.
-   * @param address a {@link ServerAddress}.
-   * @throws RemoteException if an problem occurs acquiring the connection.
+   * @param address
+   *          a {@link ServerAddress}.
+   * @throws RemoteException
+   *           if an problem occurs acquiring the connection.
    */
-  public Connections getConnectionsFor(ServerAddress address)
-    throws RemoteException {
+  public Connections getConnectionsFor(ServerAddress address) throws RemoteException {
     return getProviderFor(address.getTransportType()).getPoolFor(address);
   }
 
   /**
    * Returns the default transport provider.
-   *
+   * 
    * @return the {@link SocketTransportProvider}.
    */
   public SocketTransportProvider getDefaultProvider() {

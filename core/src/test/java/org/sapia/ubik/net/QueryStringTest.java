@@ -11,7 +11,7 @@ public class QueryStringTest {
 
   @Test
   public void testParse() throws Exception {
-    String      s  = "/some/path?name1=value1&name2=value2";
+    String s = "/some/path?name1=value1&name2=value2";
     QueryString qs = QueryString.parse(s);
     assertEquals("/some/path", qs.getPath());
     assertEquals("value1", qs.getParameter("name1"));
@@ -20,7 +20,7 @@ public class QueryStringTest {
 
   @Test
   public void testToString() throws Exception {
-    String      s  = "/some/path?name1=value1&name2=value2";
+    String s = "/some/path?name1=value1&name2=value2";
     QueryString qs = QueryString.parse(s);
     qs = QueryString.parse(qs.toString());
     assertEquals("/some/path", qs.getPath());

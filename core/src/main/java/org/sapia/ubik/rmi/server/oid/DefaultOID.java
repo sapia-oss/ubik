@@ -7,18 +7,17 @@ import java.io.ObjectOutput;
 
 import org.sapia.ubik.util.Strings;
 
-
 /**
  * This class models a unique remote object identifier. An instance of this
  * class uniquely identifies a remote object, even among multiple VMs.
- *
+ * 
  * @author Yanick Duchesne
  */
 public class DefaultOID implements Externalizable, OID {
   static final long serialVersionUID = 1L;
   private static final Object unique = new Object();
-  private long      id;
-  private int       hashCode;
+  private long id;
+  private int hashCode;
 
   /** Do not call; used for externalization only. */
   public DefaultOID() {
@@ -28,13 +27,13 @@ public class DefaultOID implements Externalizable, OID {
    * Creates an instance of this class with the given identifier string.
    */
   public DefaultOID(long id) {
-    this.id    = id;
-    hashCode   = (int) (id ^ (id >>> 32)) ^ unique.hashCode();
+    this.id = id;
+    hashCode = (int) (id ^ (id >>> 32)) ^ unique.hashCode();
   }
 
   /**
    * Creates a hashcode with this instance's internal ID string.
-   *
+   * 
    * @return a hashcode
    */
   public int hashCode() {
@@ -42,11 +41,11 @@ public class DefaultOID implements Externalizable, OID {
   }
 
   /**
-   * @return <code>true</code> if the object passed in is another object identifier
-   * representing the same remote reference has this.
+   * @return <code>true</code> if the object passed in is another object
+   *         identifier representing the same remote reference has this.
    */
   public boolean equals(Object o) {
-    if(o instanceof DefaultOID) {
+    if (o instanceof DefaultOID) {
       return (((DefaultOID) o).id == id) && (hashCode == o.hashCode());
     }
     return false;
@@ -55,10 +54,9 @@ public class DefaultOID implements Externalizable, OID {
   /**
    * @see java.io.Externalizable#readExternal(ObjectInput)
    */
-  public void readExternal(ObjectInput in)
-    throws IOException, ClassNotFoundException {
-    id         = in.readLong();
-    hashCode   = in.readInt();
+  public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+    id = in.readLong();
+    hashCode = in.readInt();
   }
 
   /**
@@ -68,7 +66,7 @@ public class DefaultOID implements Externalizable, OID {
     out.writeLong(id);
     out.writeInt(hashCode);
   }
-  
+
   public String toString() {
     return Strings.toString("id", id, "hashCode", Integer.toHexString(hashCode));
   }

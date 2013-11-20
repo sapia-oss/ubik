@@ -13,7 +13,7 @@ import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
 
 public class InMemoryTransportProviderTest {
-  
+
   private InMemoryTransportProvider provider;
 
   @Before
@@ -39,22 +39,22 @@ public class InMemoryTransportProviderTest {
   }
 
   @Test
-  public void testNewServer() throws Exception{
+  public void testNewServer() throws Exception {
     Properties props = new Properties();
     props.setProperty(InMemoryTransportProvider.SERVER_NAME, "test");
     Server server = provider.newServer(props);
     ServerAddress address = new InMemoryAddress("test");
     assertEquals(address, server.getServerAddress());
   }
-  
+
   // --------------------------------------------------------------------------
-  
+
   static class TestRMICommand extends RMICommand {
-    
+
     @Override
     public Object execute() throws Throwable {
       return "TEST-RESPONSE";
     }
-  } 
+  }
 
 }

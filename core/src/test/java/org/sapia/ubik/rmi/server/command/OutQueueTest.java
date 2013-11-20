@@ -12,12 +12,11 @@ import org.sapia.ubik.concurrent.BlockingRef;
 import org.sapia.ubik.rmi.server.VmId;
 import org.sapia.ubik.rmi.server.transport.memory.InMemoryAddress;
 
-
 public class OutQueueTest {
-    
+
   private Destination destination;
-  private OutQueue    queue;
-  
+  private OutQueue queue;
+
   @Before
   public void setUp() throws Exception {
     destination = new Destination(new InMemoryAddress("test"), VmId.getInstance());
@@ -27,7 +26,7 @@ public class OutQueueTest {
 
   @Test
   public void testAddResponseAndNotification() throws Exception {
-    final BlockingRef<Destination>    destinationRef  = new BlockingRef<Destination>();
+    final BlockingRef<Destination> destinationRef = new BlockingRef<Destination>();
     final BlockingRef<List<Response>> responseListRef = new BlockingRef<List<Response>>();
     queue.addQueueListener(new OutQueue.OutQueueListener() {
       @Override
@@ -36,16 +35,16 @@ public class OutQueueTest {
         responseListRef.set(responses);
       }
     });
-    
+
     Response res = new Response(1, "response");
     try {
       queue.add(res);
       assertEquals(1, responseListRef.await(3000).size());
     } catch (RejectedExecutionException e) {
-    	// noop
+      // noop
     }
   }
-  
+
   @Test
   public void testShutdown() throws InterruptedException {
     queue.shutdown(1000);

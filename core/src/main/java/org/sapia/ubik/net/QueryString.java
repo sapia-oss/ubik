@@ -4,19 +4,18 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-
 /**
- * This class models a query string. A query string has a format similar
- * to the following:
- *
+ * This class models a query string. A query string has a format similar to the
+ * following:
+ * 
  * <pre>
  *   /some/path?name1=value1&name2=value2
  * </pre>
- *
+ * 
  * @author Yanick Duchesne
  */
 public class QueryString {
-  private String              path = "/";
+  private String path = "/";
   private Map<String, String> properties = new HashMap<String, String>();
 
   /**
@@ -27,10 +26,11 @@ public class QueryString {
 
   /**
    * Constructor for QueryString.
-   *
+   * 
    * This constructor takes the path of the query string.
-   *
-   * @param path a path
+   * 
+   * @param path
+   *          a path
    */
   public QueryString(String path) {
     this.path = path;
@@ -38,7 +38,7 @@ public class QueryString {
 
   /**
    * Returns this instance's path.
-   *
+   * 
    * @return a path.
    */
   public String getPath() {
@@ -47,30 +47,32 @@ public class QueryString {
 
   /**
    * Returns this instance's parameters.
-   *
+   * 
    * @return a {@link Map} containing name/value pairs.
    */
-  public Map<String,String> getParameters() {
+  public Map<String, String> getParameters() {
     return properties;
   }
 
   /**
    * Adds the passed in name/value pair as parameter.
-   *
-   * @param name an object attribute name
-   * @param value an object attribute value.
+   * 
+   * @param name
+   *          an object attribute name
+   * @param value
+   *          an object attribute value.
    */
   public void addParameter(String name, String value) {
     properties.put(name, value);
   }
 
   /**
-   * Returns the value for the parameter with the passed
-   * in name.
-   *
-   * @param name the name of the parameter whose value should be returned.
-   * @return the value of the given parameter, or <code>null</code>
-   * if no such value exists.
+   * Returns the value for the parameter with the passed in name.
+   * 
+   * @param name
+   *          the name of the parameter whose value should be returned.
+   * @return the value of the given parameter, or <code>null</code> if no such
+   *         value exists.
    */
   public String getParameter(String name) {
     return (String) properties.get(name);
@@ -78,8 +80,9 @@ public class QueryString {
 
   /**
    * Sets this instance's path.
-   *
-   * @param path a path.
+   * 
+   * @param path
+   *          a path.
    */
   void setPath(String path) {
     this.path = path;
@@ -87,7 +90,7 @@ public class QueryString {
 
   /**
    * Parses a query string and returns its object representation.
-   *
+   * 
    * @return a <code>QueryString</code>
    */
   public static QueryString parse(String queryStr) {
@@ -103,8 +106,8 @@ public class QueryString {
       Map.Entry<String, String> entry;
       buf.append(QueryStringParser.QMARK);
 
-      Iterator<Map.Entry<String, String>> itr  = properties.entrySet().iterator();
-      int      count = 0;
+      Iterator<Map.Entry<String, String>> itr = properties.entrySet().iterator();
+      int count = 0;
 
       while (itr.hasNext()) {
         entry = (Map.Entry<String, String>) itr.next();
@@ -113,8 +116,7 @@ public class QueryString {
           buf.append(QueryStringParser.AMP);
         }
 
-        buf.append(entry.getKey().toString()).append(QueryStringParser.EQ)
-           .append(entry.getValue());
+        buf.append(entry.getKey().toString()).append(QueryStringParser.EQ).append(entry.getValue());
         count++;
       }
     }

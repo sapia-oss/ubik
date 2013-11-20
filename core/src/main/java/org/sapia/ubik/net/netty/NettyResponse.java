@@ -16,15 +16,15 @@ import org.sapia.ubik.util.Strings;
  * @author yduchesne
  * 
  * @see NettyRmiMessageEncoder
- *
+ * 
  */
 public class NettyResponse implements Externalizable {
-  
+
   public static final int BUFSZ = 256;
   public static final int PREFIX_LEN = 4;
   public static final int PREFIX_CONTENT_LENGHT_BYTE_INDEX = 4;
-  
-  private VmId   associatedVmId;
+
+  private VmId associatedVmId;
   private Object object;
   private String transportType;
   private boolean error;
@@ -34,35 +34,40 @@ public class NettyResponse implements Externalizable {
    */
   public NettyResponse() {
   }
-  
+
   /**
-   * @param object the {@link Object} consisting of this instance's payload.
+   * @param object
+   *          the {@link Object} consisting of this instance's payload.
    */
   public NettyResponse(Object object) {
     this(null, null, object);
   }
 
-  
   /**
-   * @param associatedVmId the {@link VmId} corresponding to the JVM from which this message originate.
-   * @param transportType the transport type identifier.
-   * @param object the {@link Object} consisting of this instance's payload.
+   * @param associatedVmId
+   *          the {@link VmId} corresponding to the JVM from which this message
+   *          originate.
+   * @param transportType
+   *          the transport type identifier.
+   * @param object
+   *          the {@link Object} consisting of this instance's payload.
    */
   public NettyResponse(VmId associatedVmId, String transportType, Object object) {
     this.associatedVmId = associatedVmId;
-    this.transportType  = transportType;
-    this.object         = object;
+    this.transportType = transportType;
+    this.object = object;
   }
-  
+
   /**
    * Sets this instance's error flag to <code>true</code>.
-   * @return this instance. 
+   * 
+   * @return this instance.
    */
   NettyResponse error() {
     this.error = true;
     return this;
   }
-  
+
   /**
    * @return <code>true</code> if this instance correspond to an error.
    */
@@ -71,13 +76,13 @@ public class NettyResponse implements Externalizable {
   }
 
   /**
-   * @return this instance's {@link VmId}, identifying the JVM from which this instance
-   * originates.
+   * @return this instance's {@link VmId}, identifying the JVM from which this
+   *         instance originates.
    */
   public VmId getAssociatedVmId() {
     return associatedVmId;
   }
-  
+
   /**
    * @return the {@link Object} consisting of this instanc's payload.
    */
@@ -86,31 +91,31 @@ public class NettyResponse implements Externalizable {
   }
 
   /**
-   * @return this instance's transport type, identifying the {@link TransportProvider} in the context
-   * of which this instance is sent/received, or <code>null</code> if it was not specified at 
-   * construction time.
+   * @return this instance's transport type, identifying the
+   *         {@link TransportProvider} in the context of which this instance is
+   *         sent/received, or <code>null</code> if it was not specified at
+   *         construction time.
    */
   public String getTransportType() {
     return transportType;
   }
-  
+
   // --------------------------------------------------------------------------
-  
+
   @Override
-  public void readExternal(ObjectInput in) throws IOException,
-      ClassNotFoundException {
+  public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
     associatedVmId = (VmId) in.readObject();
-    object         = in.readObject();
-    transportType  = (String) in.readObject();
+    object = in.readObject();
+    transportType = (String) in.readObject();
   }
-  
+
   @Override
   public void writeExternal(ObjectOutput out) throws IOException {
     out.writeObject(associatedVmId);
     out.writeObject(object);
     out.writeObject(transportType);
   }
-  
+
   @Override
   public String toString() {
     return Strings.toStringFor(this, "object", object);

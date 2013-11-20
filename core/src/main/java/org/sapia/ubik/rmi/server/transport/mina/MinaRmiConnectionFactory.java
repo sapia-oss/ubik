@@ -13,11 +13,11 @@ import org.sapia.ubik.net.SocketConnectionFactory;
  * Implements a factory of {@link MinaRmiClientConnection} instances.
  */
 public class MinaRmiConnectionFactory extends SocketConnectionFactory {
-  
+
   private int bufsize;
-  
+
   public MinaRmiConnectionFactory(int bufsize) {
-  	super(MinaTransportProvider.TRANSPORT_TYPE);
+    super(MinaTransportProvider.TRANSPORT_TYPE);
     this.bufsize = bufsize;
   }
 
@@ -38,6 +38,6 @@ public class MinaRmiConnectionFactory extends SocketConnectionFactory {
       throw new RemoteException(String.format("Could not connect to %s:%s", host, port));
     } catch (SocketException e) {
       throw new RemoteException(String.format("Could not connect to %s:%s", host, port));
-    }        
+    }
   }
 }

@@ -2,7 +2,6 @@ package org.sapia.ubik.rmi.naming;
 
 import junit.framework.TestCase;
 
-
 /**
  * @author Yanick Duchesne
  */

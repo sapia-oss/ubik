@@ -12,41 +12,44 @@ import org.sapia.ubik.util.Strings;
  * 
  */
 public class InMemoryAddress implements ServerAddress {
-  
-  static final long          serialVersionUID = 1L;
 
-  public static final String TRANSPORT_TYPE   = "in-memory";
-  
+  static final long serialVersionUID = 1L;
+
+  public static final String TRANSPORT_TYPE = "in-memory";
+
   private String name;
-  
+
   /**
-   * @param name the name that identifies the in-memory server to which this instance corresponds.
+   * @param name
+   *          the name that identifies the in-memory server to which this
+   *          instance corresponds.
    */
   public InMemoryAddress(String name) {
     this.name = name;
   }
-  
+
   /**
-   * @return the name of the in-memory server to which this instance corresponds.
+   * @return the name of the in-memory server to which this instance
+   *         corresponds.
    */
   public String getName() {
     return name;
   }
-  
+
   @Override
   public boolean equals(Object obj) {
-    if(obj instanceof InMemoryAddress) {
+    if (obj instanceof InMemoryAddress) {
       InMemoryAddress other = (InMemoryAddress) obj;
       return name.equals(other.name);
     }
     return false;
   }
-  
+
   @Override
   public String getTransportType() {
     return TRANSPORT_TYPE;
   }
-  
+
   @Override
   public int hashCode() {
     return name.hashCode();

@@ -11,54 +11,50 @@ import org.sapia.ubik.rmi.server.transport.RmiConnection;
  * This class corresponds to the client-side of the in-memory connection.
  * 
  * @author yduchesne
- *
+ * 
  */
 public class InMemoryRequestConnection implements RmiConnection {
-  
-  private boolean                   useMarshalling;
-  private InMemoryAddress           address;
+
+  private boolean useMarshalling;
+  private InMemoryAddress address;
   private InMemoryTransportProvider provider;
-  private InMemoryRequest           request;
-  
-  InMemoryRequestConnection(
-      boolean useMarshalling,
-      InMemoryAddress address, 
-      InMemoryTransportProvider provider) {
+  private InMemoryRequest request;
+
+  InMemoryRequestConnection(boolean useMarshalling, InMemoryAddress address, InMemoryTransportProvider provider) {
     this.useMarshalling = useMarshalling;
-    this.address        = address;
-    this.provider       = provider;
+    this.address = address;
+    this.provider = provider;
   }
-  
+
   @Override
   public void send(Object toSend) throws IOException, RemoteException {
     request = new InMemoryRequest(useMarshalling, toSend);
     InMemoryServer server = (InMemoryServer) provider.getServerFor(address);
     server.handle(request);
   }
-  
+
   @Override
-  public void send(Object toSend, VmId associated, String transportType)
-      throws IOException, RemoteException {
-    request = new InMemoryRequest(useMarshalling, toSend);    
+  public void send(Object toSend, VmId associated, String transportType) throws IOException, RemoteException {
+    request = new InMemoryRequest(useMarshalling, toSend);
     InMemoryServer server = (InMemoryServer) provider.getServerFor(address);
-    server.handle(request);    
+    server.handle(request);
   }
-  
+
   @Override
-  public Object receive() throws IOException, ClassNotFoundException,
-      RemoteException {
-    if(request == null) return null;
+  public Object receive() throws IOException, ClassNotFoundException, RemoteException {
+    if (request == null)
+      return null;
     try {
       return request.waitForResponse();
     } catch (InterruptedException e) {
       throw new RemoteException("Interrupted while waiting for response", e);
     }
   }
-  
+
   @Override
   public void close() {
   }
-  
+
   @Override
   public ServerAddress getServerAddress() {
     return address;

@@ -9,21 +9,21 @@ import org.sapia.ubik.mcast.BroadcastDispatcherTestSupport;
 import org.sapia.ubik.mcast.EventConsumer;
 
 public class AvisBroadcastDispatcherTest extends BroadcastDispatcherTestSupport {
-  
-  private TestRouterSetup         router;
-  
+
+  private TestRouterSetup router;
+
   @Before
   public void setUp() throws Exception {
     router = new TestRouterSetup();
     router.setUp();
     super.setUp();
   }
-  
+
   @Override
   public BroadcastDispatcher createDispatcher(EventConsumer consumer) throws IOException {
     return new AvisBroadcastDispatcher(consumer, "elvin://localhost");
   }
-  
+
   @After
   public void tearDown() throws Exception {
     super.tearDown();

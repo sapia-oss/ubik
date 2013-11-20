@@ -5,25 +5,24 @@ import java.io.Serializable;
 import org.sapia.archie.Name;
 import org.sapia.archie.NamePart;
 
-
 /**
  * Holds basic synchronization data.
  * 
  * @author Yanick Duchesne
  */
 public class SyncEvent implements Serializable {
-  
+
   static final long serialVersionUID = 1L;
-  
-  private Name     nodePath;
+
+  private Name nodePath;
   private NamePart name;
 
   /**
    * Constructor for SyncEvent.
    */
   public SyncEvent(Name nodePath, NamePart name) {
-    this.nodePath   = nodePath;
-    this.name       = name;
+    this.nodePath = nodePath;
+    this.name = name;
   }
 
   /**

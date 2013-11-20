@@ -7,18 +7,17 @@ import java.io.ObjectOutput;
 import java.util.HashMap;
 import java.util.Map;
 
-
 /**
- * Encapsulates a class name and creates a {@link Class} instance
- * using that name, from a given {@link ClassLoader}. Used to transport class
- * info over the wire, without incurring {@link ClassNotFoundException}s.
- *
+ * Encapsulates a class name and creates a {@link Class} instance using that
+ * name, from a given {@link ClassLoader}. Used to transport class info over the
+ * wire, without incurring {@link ClassNotFoundException}s.
+ * 
  * @author Yanick Duchesne
  */
 public class ClassDescriptor implements Externalizable {
-  
+
   private static final long serialVersionUID = 6382603348796329430l;
-  
+
   private static Map<String, Class<?>> primitives = new HashMap<String, Class<?>>();
 
   static {
@@ -33,23 +32,22 @@ public class ClassDescriptor implements Externalizable {
   }
 
   private transient Class<?> type;
-  private String          className;
-  private boolean         primitive;
+  private String className;
+  private boolean primitive;
 
   /* Do not use; meant for deserialization. */
   public ClassDescriptor() {
   }
 
   public ClassDescriptor(Class<?> type) {
-    this.type        = type;
-    this.primitive   = type.isPrimitive();
-    this.className   = type.getName();
+    this.type = type;
+    this.primitive = type.isPrimitive();
+    this.className = type.getName();
   }
 
-  public void readExternal(ObjectInput in)
-    throws IOException, ClassNotFoundException {
-    className   = in.readUTF();
-    primitive   = in.readBoolean();
+  public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+    className = in.readUTF();
+    primitive = in.readBoolean();
   }
 
   public void writeExternal(ObjectOutput out) throws IOException {

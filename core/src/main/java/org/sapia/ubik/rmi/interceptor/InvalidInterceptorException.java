@@ -1,14 +1,12 @@
 package org.sapia.ubik.rmi.interceptor;
 
-
 /**
- * Signals that an interceptor could not be registered for a given
- * event.
- *
+ * Signals that an interceptor could not be registered for a given event.
+ * 
  * @author Yanick Duchesne
  */
 public class InvalidInterceptorException extends RuntimeException {
-  
+
   static final long serialVersionUID = 1L;
 
   private Throwable err;

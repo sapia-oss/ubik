@@ -4,7 +4,6 @@ import java.io.UnsupportedEncodingException;
 
 import junit.framework.TestCase;
 
-
 /**
  * @author <a href="mailto:jc@sapia-oss.org">Jean-Cedric Desrochers</a>
  */
@@ -19,16 +18,15 @@ public class HttpStreamSelectorTest extends TestCase {
     byte[] data3 = new byte[0];
 
     try {
-      data1   = "UBIK!#@/$abcdefg".getBytes("UTF-8");
-      data2   = "POST / HTTP/1.1\nHost: localhost\n".getBytes("UTF-8");
-      data3   = "GET /server/mplex/test?param1=value1&param2=value2 HTTP/1.1\nHost: localhost\n".getBytes(
-          "UTF-8");
+      data1 = "UBIK!#@/$abcdefg".getBytes("UTF-8");
+      data2 = "POST / HTTP/1.1\nHost: localhost\n".getBytes("UTF-8");
+      data3 = "GET /server/mplex/test?param1=value1&param2=value2 HTTP/1.1\nHost: localhost\n".getBytes("UTF-8");
     } catch (UnsupportedEncodingException e) {
       e.printStackTrace();
     } finally {
-      ubikHeader          = data1;
-      simpleHttpHeader    = data2;
-      complexHttpHeader   = data3;
+      ubikHeader = data1;
+      simpleHttpHeader = data2;
+      complexHttpHeader = data3;
     }
   }
 
@@ -80,8 +78,7 @@ public class HttpStreamSelectorTest extends TestCase {
     assertTrue(!selector.selectStream(complexHttpHeader));
   }
 
-  public void testHttpMethodAndRequestPatternSelector()
-    throws Exception {
+  public void testHttpMethodAndRequestPatternSelector() throws Exception {
     HttpStreamSelector selector = new HttpStreamSelector("POST", "/");
     assertTrue(!selector.selectStream(ubikHeader));
     assertTrue(selector.selectStream(simpleHttpHeader));

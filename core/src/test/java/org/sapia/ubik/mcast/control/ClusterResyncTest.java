@@ -14,12 +14,12 @@ import org.sapia.ubik.util.Collections2;
 
 public class ClusterResyncTest {
 
-  
-  private EventChannelController  controller;
-  private ChannelCallback         callback;
-  private Clock.MutableClock      clock;
-  private ServerAddress           serverAddress;
+  private EventChannelController controller;
+  private ChannelCallback callback;
+  private Clock.MutableClock clock;
+  private ServerAddress serverAddress;
   private ControllerConfiguration config;
+
   @Before
   public void setUp() throws IOException, InterruptedException {
     callback = mock(ChannelCallback.class);
@@ -30,15 +30,14 @@ public class ClusterResyncTest {
     config.setResponseTimeout(100);
     controller = new EventChannelController(clock, config, callback);
     serverAddress = mock(ServerAddress.class);
-    
+
     when(callback.getNodes()).thenReturn(new HashSet<String>());
     when(callback.getAddress()).thenReturn(serverAddress);
     when(callback.getNode()).thenReturn("testNode");
-    when(callback.sendSynchronousRequest(anySet(), any(SynchronousControlRequest.class)))
-      .thenReturn(new HashSet<SynchronousControlResponse>());
+    when(callback.sendSynchronousRequest(anySet(), any(SynchronousControlRequest.class))).thenReturn(new HashSet<SynchronousControlResponse>());
 
   }
-  
+
   @Test
   public void testResync() {
     controller.checkStatus();
@@ -46,7 +45,7 @@ public class ClusterResyncTest {
     controller.checkStatus();
     verify(callback).resync();
   }
-  
+
   @Test
   public void testResyncNodeCountThresholdReached() {
     controller.checkStatus();
@@ -56,7 +55,7 @@ public class ClusterResyncTest {
     controller.checkStatus();
     verify(callback).resync();
   }
-  
+
   @Test
   public void testResyncNotRetriedBeforeTimeout() {
     controller.checkStatus();
@@ -65,7 +64,7 @@ public class ClusterResyncTest {
     controller.checkStatus();
     verify(callback).resync();
   }
-  
+
   @Test
   public void testResyncRetriedAfterTimeout() {
     controller.checkStatus();

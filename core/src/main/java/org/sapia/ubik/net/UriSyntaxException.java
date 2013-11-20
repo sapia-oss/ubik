@@ -1,6 +1,5 @@
 package org.sapia.ubik.net;
 
-
 /**
  * Thrown when a URI could not be parsed.
  * 
@@ -9,9 +8,9 @@ package org.sapia.ubik.net;
  * @author Yanick Duchesne
  */
 public class UriSyntaxException extends RuntimeException {
-  
+
   static final long serialVersionUID = 1L;
-  
+
   /**
    * Constructor for UriSyntaxException.
    */

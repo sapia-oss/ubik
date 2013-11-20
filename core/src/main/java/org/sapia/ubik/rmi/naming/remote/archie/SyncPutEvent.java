@@ -12,20 +12,19 @@ import org.sapia.archie.NamePart;
  * @author Yanick Duchesne
  */
 public class SyncPutEvent extends SyncEvent implements Serializable {
-  
+
   static final long serialVersionUID = 1L;
-  
-  private Object  toBind;
+
+  private Object toBind;
   private boolean overwrite;
 
   /**
    * Constructor for SyncPutEvent.
    */
-  public SyncPutEvent(Name nodePath, NamePart name, Object toBind,
-    boolean overwrite) {
+  public SyncPutEvent(Name nodePath, NamePart name, Object toBind, boolean overwrite) {
     super(nodePath, name);
-    this.toBind      = toBind;
-    this.overwrite   = overwrite;
+    this.toBind = toBind;
+    this.overwrite = overwrite;
   }
 
   /**
@@ -36,8 +35,9 @@ public class SyncPutEvent extends SyncEvent implements Serializable {
   }
 
   /**
-   * @return <code>true</code> if the object held by this instance should overwrite any existing
-   * object under the same name as this instance's.
+   * @return <code>true</code> if the object held by this instance should
+   *         overwrite any existing object under the same name as this
+   *         instance's.
    */
   public boolean getOverwrite() {
     return overwrite;

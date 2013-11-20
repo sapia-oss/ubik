@@ -22,13 +22,14 @@ import org.sapia.ubik.log.Log;
 import org.sapia.ubik.rmi.server.Hub;
 
 /**
- * An instance of this class holds the list of {@link Response}s resulting from the 
- * to the execution of 
+ * An instance of this class holds the list of {@link Response}s resulting from
+ * the to the execution of
+ * 
  * @author yduchesne
- *
+ * 
  */
 public final class CallbackResponseCommand extends RMICommand {
-  
+
   private List<Response> responses;
 
   /**
@@ -65,7 +66,7 @@ public final class CallbackResponseCommand extends RMICommand {
   /**
    * @see org.sapia.ubik.rmi.server.command.RMICommand#readExternal(ObjectInput)
    */
-  @SuppressWarnings(value="unchecked")
+  @SuppressWarnings(value = "unchecked")
   public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
     super.readExternal(in);
     responses = (List<Response>) in.readObject();

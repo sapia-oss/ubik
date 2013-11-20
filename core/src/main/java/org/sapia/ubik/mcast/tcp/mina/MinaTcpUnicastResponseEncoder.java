@@ -16,37 +16,34 @@ import org.sapia.ubik.util.Props;
  * An encoder of unicast responses.
  * 
  * @author yduchesne
- *
+ * 
  */
 public class MinaTcpUnicastResponseEncoder implements ProtocolEncoder {
-	
-  private static final int BUFSIZE = Props.getSystemProperties().getIntProperty(
-                                  			Consts.MARSHALLING_BUFSIZE, 
-                                  			Consts.DEFAULT_MARSHALLING_BUFSIZE
-                                  	 );
+
+  private static final int BUFSIZE = Props.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE);
 
   private static final String ENCODER_STATE = "ENCODER_STATE";
-  
+
   private static final int BYTES_PER_INT = 4;
 
   // --------------------------------------------------------------------------
-  
+
   private static class EncoderState {
-  	
-    private ByteBuffer 				 outgoing;
-    
+
+    private ByteBuffer outgoing;
+
     private EncoderState() throws IOException {
-    	outgoing = ByteBuffer.allocate(BUFSIZE);
-    	outgoing.setAutoExpand(true);
+      outgoing = ByteBuffer.allocate(BUFSIZE);
+      outgoing.setAutoExpand(true);
     }
-    
+
   }
-  
+
   // --------------------------------------------------------------------------
-  
+
   public void encode(IoSession sess, Object toEncode, ProtocolEncoderOutput output) throws Exception {
-    
-    EncoderState es = (EncoderState)sess.getAttribute(ENCODER_STATE);
+
+    EncoderState es = (EncoderState) sess.getAttribute(ENCODER_STATE);
     if (es == null) {
       es = new EncoderState();
       sess.setAttribute(ENCODER_STATE, es);
@@ -55,19 +52,23 @@ public class MinaTcpUnicastResponseEncoder implements ProtocolEncoder {
     es.outgoing.putInt(0); // reserve space for length header
     doEncode(toEncode, es.outgoing, output);
   }
-  
+
   void doEncode(Object toEncode, ByteBuffer outputBuffer, ProtocolEncoderOutput output) throws Exception {
     ObjectOutputStream oos = SerializationStreams.createObjectOutputStream(new MinaByteBufferOutputStream(outputBuffer));
     oos.writeObject(toEncode);
     oos.flush();
     oos.close();
-    outputBuffer.putInt(0, outputBuffer.position() - BYTES_PER_INT); // setting length at reserved space
+    outputBuffer.putInt(0, outputBuffer.position() - BYTES_PER_INT); // setting
+                                                                     // length
+                                                                     // at
+                                                                     // reserved
+                                                                     // space
     outputBuffer.flip();
-    output.write(outputBuffer);  	
+    output.write(outputBuffer);
   }
-  
+
   public void dispose(IoSession sess) throws Exception {
-    EncoderState es = (EncoderState)sess.getAttribute(ENCODER_STATE);  	
+    EncoderState es = (EncoderState) sess.getAttribute(ENCODER_STATE);
     if (es != null) {
       es.outgoing.release();
     }

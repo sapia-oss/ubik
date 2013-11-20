@@ -22,36 +22,35 @@ import org.sapia.ubik.util.Assertions;
 
 /**
  * Dispatches objects using a multicast channel.
- *
+ * 
  * @author Yanick Duchesne
  */
 public class UDPBroadcastDispatcher implements BroadcastDispatcher {
-  
-  private static Category     log           = Log.createCategory(UDPBroadcastDispatcher.class);
-  private String              node;
-  private String              domain;
-  private BroadcastServer     server;
-  private int                 bufsz         = Defaults.DEFAULT_UDP_PACKET_SIZE;
+
+  private static Category log = Log.createCategory(UDPBroadcastDispatcher.class);
+  private String node;
+  private String domain;
+  private BroadcastServer server;
+  private int bufsz = Defaults.DEFAULT_UDP_PACKET_SIZE;
   private UDPMulticastAddress address;
 
-  public UDPBroadcastDispatcher(EventConsumer cons, String mcastHost,
-    int mcastPort, int ttl) throws IOException {
+  public UDPBroadcastDispatcher(EventConsumer cons, String mcastHost, int mcastPort, int ttl) throws IOException {
     server = new BroadcastServer(cons, mcastHost, mcastPort, ttl);
     server.setBufsize(bufsz);
-    node       = cons.getNode();
-    domain     = cons.getDomainName().toString();
-    address    = new UDPMulticastAddress(mcastHost, mcastPort);
+    node = cons.getNode();
+    domain = cons.getDomainName().toString();
+    address = new UDPMulticastAddress(mcastHost, mcastPort);
   }
 
-   /**
-   * Sets this instance buffer size. This size is used to create
-   * the byte arrays that store the data of incoming UDP datagrams.
+  /**
+   * Sets this instance buffer size. This size is used to create the byte arrays
+   * that store the data of incoming UDP datagrams.
    * <p>
-   * The size should be large enough to hold the data of incoming
-   * datagrams.
-   *
-   * @param size a buffer size - corresponding to the size of expected
-   * UDP datagrams.
+   * The size should be large enough to hold the data of incoming datagrams.
+   * 
+   * @param size
+   *          a buffer size - corresponding to the size of expected UDP
+   *          datagrams.
    */
   public void setBufsize(int size) {
     bufsz = size;
@@ -60,7 +59,7 @@ public class UDPBroadcastDispatcher implements BroadcastDispatcher {
 
   /**
    * Returns the node identifier of this instance.
-   *
+   * 
    * @return this instance's node identifier.
    */
   public String getNode() {
@@ -88,8 +87,7 @@ public class UDPBroadcastDispatcher implements BroadcastDispatcher {
   /**
    * @see BroadcastDispatcher#dispatch(ServerAddress, boolean, String, Object)
    */
-  public void dispatch(ServerAddress unicastAddr, boolean alldomains, String evtType, Object data)
-    throws IOException {
+  public void dispatch(ServerAddress unicastAddr, boolean alldomains, String evtType, Object data) throws IOException {
     RemoteEvent evt;
 
     if (alldomains) {
@@ -98,28 +96,27 @@ public class UDPBroadcastDispatcher implements BroadcastDispatcher {
       evt = new RemoteEvent(domain, evtType, data).setNode(node);
     }
     evt.setUnicastAddress(unicastAddr);
-    
-    if(server != null) {
-    	server.send(McastUtil.toBytes(evt, bufsz));
+
+    if (server != null) {
+      server.send(McastUtil.toBytes(evt, bufsz));
     }
   }
 
   /**
    * @see BroadcastDispatcher#dispatch(ServerAddress, String, String, Object)
    */
-  public void dispatch(ServerAddress unicastAddr, String domain, String evtType, Object data)
-    throws IOException {
+  public void dispatch(ServerAddress unicastAddr, String domain, String evtType, Object data) throws IOException {
     RemoteEvent evt;
 
     log.debug("Sending event bytes for: %s", evtType);
     evt = new RemoteEvent(domain, evtType, data).setNode(node);
     evt.setUnicastAddress(unicastAddr);
-    
-    if(server != null) {    
-    	server.send(McastUtil.toBytes(evt, bufsz));
+
+    if (server != null) {
+      server.send(McastUtil.toBytes(evt, bufsz));
     }
   }
-  
+
   /**
    * @see BroadcastDispatcher#getMulticastAddress()
    */
@@ -128,38 +125,39 @@ public class UDPBroadcastDispatcher implements BroadcastDispatcher {
     return address;
   }
 
-  /*////////////////////////////////////////////////////////////////
-                             INNER CLASSES
-  ////////////////////////////////////////////////////////////////*/
-  
+  /*
+   * //////////////////////////////////////////////////////////////// INNER
+   * CLASSES ////////////////////////////////////////////////////////////////
+   */
+
   public static class UDPMulticastAddress implements MulticastAddress {
-    
+
     static final long serialVersionUID = 1L;
-    
+
     public static final String TRANSPORT = "upd/broadcast";
-    
+
     private String mcastAddress;
-    private int    mcastPort;
-    
+    private int mcastPort;
+
     public UDPMulticastAddress(String mcastAddress, int mcastPort) {
       this.mcastAddress = mcastAddress;
       this.mcastPort = mcastPort;
     }
-    
+
     @Override
     public boolean equals(Object obj) {
-      if(obj instanceof UDPMulticastAddress) {
+      if (obj instanceof UDPMulticastAddress) {
         UDPMulticastAddress other = (UDPMulticastAddress) obj;
         return other.mcastAddress.equals(mcastAddress) && other.mcastPort == mcastPort;
       }
       return false;
     }
-    
+
     @Override
     public String getTransportType() {
       return TRANSPORT;
     }
-    
+
     @Override
     public Map<String, String> toParameters() {
       Map<String, String> params = new HashMap<String, String>();
@@ -168,21 +166,17 @@ public class UDPBroadcastDispatcher implements BroadcastDispatcher {
       params.put(Consts.MCAST_PORT_KEY, Integer.toString(mcastPort));
       return params;
     }
-    
+
   }
 
   /**
    * @author Yanick Duchesne
    */
   private static class BroadcastServer extends MulticastServer {
-    
+
     EventConsumer consumer;
 
-    private BroadcastServer(
-      EventConsumer consumer, 
-      String mcastAddress, 
-      int mcastPort, 
-      int ttl) throws IOException {
+    private BroadcastServer(EventConsumer consumer, String mcastAddress, int mcastPort, int ttl) throws IOException {
       super("mcast.BroadcastServer", mcastAddress, mcastPort, ttl);
       this.consumer = consumer;
     }
@@ -191,8 +185,8 @@ public class UDPBroadcastDispatcher implements BroadcastDispatcher {
       try {
         consumer.onAsyncEvent((RemoteEvent) McastUtil.fromDatagram(pack));
       } catch (EOFException e) {
-      	log.warning("Could not deserialize remote event, packet size may be too short " + this.bufSize());
-      
+        log.warning("Could not deserialize remote event, packet size may be too short " + this.bufSize());
+
       } catch (Exception e) {
         log.error("Could not deserialize remote event", e);
       }

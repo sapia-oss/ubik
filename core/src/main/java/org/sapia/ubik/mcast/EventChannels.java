@@ -16,17 +16,20 @@ import org.sapia.ubik.util.Props;
  * A convenient factory of {@link EventChannel}s.
  * 
  * @author yduchesne
- *
+ * 
  */
 public class EventChannels {
 
   /**
-   * Creates an event channel that uses a {@link UDPBroadcastDispatcher} and a {@link UDPUnicastDispatcher}. 
-   * The {@link UDPBroadcastDispatcher} will be created using the default multicast address and port.
+   * Creates an event channel that uses a {@link UDPBroadcastDispatcher} and a
+   * {@link UDPUnicastDispatcher}. The {@link UDPBroadcastDispatcher} will be
+   * created using the default multicast address and port.
    * 
-   * @param domain the channel's domain.
+   * @param domain
+   *          the channel's domain.
    * @return a new {@link EventChannel}
-   * @throws IOException if a problem occurs creating the channel.
+   * @throws IOException
+   *           if a problem occurs creating the channel.
    * 
    * @see Consts#DEFAULT_MCAST_ADDR
    * @see Consts#DEFAULT_MCAST_PORT
@@ -34,40 +37,50 @@ public class EventChannels {
   public static EventChannel createDefaultUdpEventChannel(String domain) throws IOException {
     return new EventChannel(domain, Consts.DEFAULT_MCAST_ADDR, Consts.DEFAULT_MCAST_PORT);
   }
-  
+
   /**
-   * Creates an event channel that uses a {@link UDPBroadcastDispatcher} and a {@link UDPUnicastDispatcher}. 
-   * The {@link UDPBroadcastDispatcher} will be created using the given multicast address and port.
+   * Creates an event channel that uses a {@link UDPBroadcastDispatcher} and a
+   * {@link UDPUnicastDispatcher}. The {@link UDPBroadcastDispatcher} will be
+   * created using the given multicast address and port.
    * 
-   * @param domain the channel's domain.
+   * @param domain
+   *          the channel's domain.
    * @return a new {@link EventChannel}
-   * @throws IOException if a problem occurs creating the channel.
-   */  
+   * @throws IOException
+   *           if a problem occurs creating the channel.
+   */
   public static EventChannel createUdpEventChannel(String domain, String mcastAddr, int mcastPort) throws IOException {
     return new EventChannel(domain, mcastAddr, mcastPort);
   }
-  
+
   /**
-   * Creates an event channel that uses a {@link UDPBroadcastDispatcher} and a {@link TcpUnicastDispatcher}. 
-   * The {@link UDPBroadcastDispatcher} will be created using the given multicast address and port.
+   * Creates an event channel that uses a {@link UDPBroadcastDispatcher} and a
+   * {@link TcpUnicastDispatcher}. The {@link UDPBroadcastDispatcher} will be
+   * created using the given multicast address and port.
    * 
-   * @param domain the channel's domain.
+   * @param domain
+   *          the channel's domain.
    * @return a new {@link EventChannel}
-   * @throws IOException if a problem occurs creating the channel.
-   */  
+   * @throws IOException
+   *           if a problem occurs creating the channel.
+   */
   public static EventChannel createTcpEventChannel(String domain, String mcastAddr, int mcastPort) throws IOException {
     Properties properties = new Properties();
     properties.setProperty(Consts.UNICAST_PROVIDER, Consts.UNICAST_PROVIDER_TCP);
     return new EventChannel(domain, new Props().addProperties(properties));
   }
-  
+
   /**
-   * Creates an {@link EventChannel} that uses an {@link AvisBroadcastDispatcher} and a {@link TcpUnicastDispatcher}.
+   * Creates an {@link EventChannel} that uses an
+   * {@link AvisBroadcastDispatcher} and a {@link TcpUnicastDispatcher}.
    * 
-   * @param domain the channel's domain.
-   * @param avisUrl the URL of the Avis router to connect to.
+   * @param domain
+   *          the channel's domain.
+   * @param avisUrl
+   *          the URL of the Avis router to connect to.
    * @return a new {@link EventChannel}
-   * @throws IOException if a problem occurs creating the channel.
+   * @throws IOException
+   *           if a problem occurs creating the channel.
    */
   public static EventChannel createAvisEventChannel(String domain, String avisUrl) throws IOException {
     Properties properties = new Properties();
@@ -76,20 +89,24 @@ public class EventChannels {
     properties.setProperty(Consts.BROADCAST_AVIS_URL, avisUrl);
     return new EventChannel(domain, new Props().addProperties(properties));
   }
-  
+
   /**
-   * Creates an event channel that uses a {@link InMemoryBroadcastDispatcher} and an {@link InMemoryUnicastDispatcher}. 
-   * The {@link UDPBroadcastDispatcher} will be created using the given multicast address and port.
+   * Creates an event channel that uses a {@link InMemoryBroadcastDispatcher}
+   * and an {@link InMemoryUnicastDispatcher}. The
+   * {@link UDPBroadcastDispatcher} will be created using the given multicast
+   * address and port.
    * 
-   * @param domain the channel's domain.
+   * @param domain
+   *          the channel's domain.
    * @return a new {@link EventChannel}
-   * @throws IOException if a problem occurs creating the channel.
-   */  
+   * @throws IOException
+   *           if a problem occurs creating the channel.
+   */
   public static EventChannel createInMemoryEventChannel(String domain) throws IOException {
     Properties properties = new Properties();
     properties.setProperty(Consts.BROADCAST_PROVIDER, Consts.BROADCAST_PROVIDER_MEMORY);
     properties.setProperty(Consts.UNICAST_PROVIDER, Consts.UNICAST_PROVIDER_MEMORY);
     return new EventChannel(domain, new Props().addProperties(properties));
   }
-  
+
 }

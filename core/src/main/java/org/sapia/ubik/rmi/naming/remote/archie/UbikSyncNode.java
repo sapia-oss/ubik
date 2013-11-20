@@ -15,20 +15,19 @@ import org.sapia.ubik.log.Log;
 import org.sapia.ubik.rmi.server.stub.HealthCheck;
 import org.sapia.ubik.rmi.server.stub.Stub;
 
-
 /**
  * @author Yanick Duchesne
  */
 public class UbikSyncNode extends SynchronizedNode implements java.rmi.Remote {
-  
+
   public UbikSyncNode(UbikNodeFactory fac) throws ProcessingException {
     super(new UbikReliableNode(fac));
   }
 
   static final class UbikReliableNode extends AttributeNode implements Remote {
-    
+
     private Category log = Log.createCategory(getClass());
-    
+
     @SuppressWarnings("rawtypes")
     UbikReliableNode(UbikNodeFactory fac) throws ProcessingException {
       super(new ConcurrentHashMap(), new ConcurrentHashMap(), fac);
@@ -53,7 +52,7 @@ public class UbikSyncNode extends SynchronizedNode implements java.rmi.Remote {
 
         if (handler instanceof HealthCheck) {
           try {
-            log.debug("Performing health check for %s", handler);            
+            log.debug("Performing health check for %s", handler);
             boolean valid = ((HealthCheck) handler).isValid();
             log.debug("Health check for %s, valid = %s", handler, valid);
           } catch (Exception e) {

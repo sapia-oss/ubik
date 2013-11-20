@@ -10,26 +10,25 @@ import java.util.Random;
 
 import org.sapia.ubik.net.SocketConnection;
 
-
 /**
  * @author Yanick Duchesne
  */
 public class MultiplexedClient {
-  public static final long  START_TIME   = System.currentTimeMillis();
-  public static final int   SLEEP_FACTOR = 200;
-  private static int        _totalThreadsHttp;
-  private static long       _totalTimeHttp;
-  private static long       _minTimeHttp;
-  private static long       _maxTimeHttp;
-  private static long       _iterationHttp;
-  private static int        _totalThreadsObject;
-  private static long       _totalTimeObject;
-  private static long       _minTimeObject;
-  private static long       _maxTimeObject;
-  private static long       _iterationObject;
-  private static final byte TYPE_HTTP    = 1;
-  private static final byte TYPE_OBJECT  = 2;
-  private static boolean    statsLogged  = false;
+  public static final long START_TIME = System.currentTimeMillis();
+  public static final int SLEEP_FACTOR = 200;
+  private static int _totalThreadsHttp;
+  private static long _totalTimeHttp;
+  private static long _minTimeHttp;
+  private static long _maxTimeHttp;
+  private static long _iterationHttp;
+  private static int _totalThreadsObject;
+  private static long _totalTimeObject;
+  private static long _minTimeObject;
+  private static long _maxTimeObject;
+  private static long _iterationObject;
+  private static final byte TYPE_HTTP = 1;
+  private static final byte TYPE_OBJECT = 2;
+  private static boolean statsLogged = false;
 
   /**
    * Constructor for MyClient.
@@ -42,31 +41,24 @@ public class MultiplexedClient {
     if (type == TYPE_HTTP) {
       _totalTimeHttp += delta;
       _iterationHttp++;
-      _minTimeHttp   = ((_minTimeHttp == 0) ? delta
-                                            : Math.min(_minTimeHttp, delta));
-      _maxTimeHttp   = Math.max(_maxTimeHttp, delta);
+      _minTimeHttp = ((_minTimeHttp == 0) ? delta : Math.min(_minTimeHttp, delta));
+      _maxTimeHttp = Math.max(_maxTimeHttp, delta);
     } else if (type == TYPE_OBJECT) {
       _totalTimeObject += delta;
       _iterationObject++;
-      _minTimeObject   = ((_minTimeObject == 0) ? delta
-                                                : Math.min(_minTimeObject, delta));
-      _maxTimeObject   = Math.max(_maxTimeObject, delta);
+      _minTimeObject = ((_minTimeObject == 0) ? delta : Math.min(_minTimeObject, delta));
+      _maxTimeObject = Math.max(_maxTimeObject, delta);
     }
   }
 
   public static synchronized void logStat() {
     StringBuffer aBuffer = new StringBuffer();
-    aBuffer.append(System.currentTimeMillis() - START_TIME)
-           .append("\tHTTP\tthread\t").append(_totalThreadsHttp)
-           .append("\tcount\t").append(_iterationHttp).append("\tavg time\t")
-           .append(_totalTimeHttp / _iterationHttp).append("\tmin time\t")
-           .append(_minTimeHttp).append("\tmax time\t").append(_maxTimeHttp)
-           .append("\ttot time\t").append(_totalTimeHttp)
-           .append("\n\tOBJECT\tthread\t").append(_totalThreadsObject)
-           .append("\tcount\t").append(_iterationObject).append("\tavg time\t")
-           .append(_totalTimeObject / _iterationObject).append("\tmin time\t")
-           .append(_minTimeObject).append("\tmax time\t").append(_maxTimeObject)
-           .append("\ttot time\t").append(_totalTimeObject).append("\n");
+    aBuffer.append(System.currentTimeMillis() - START_TIME).append("\tHTTP\tthread\t").append(_totalThreadsHttp).append("\tcount\t")
+        .append(_iterationHttp).append("\tavg time\t").append(_totalTimeHttp / _iterationHttp).append("\tmin time\t").append(_minTimeHttp)
+        .append("\tmax time\t").append(_maxTimeHttp).append("\ttot time\t").append(_totalTimeHttp).append("\n\tOBJECT\tthread\t")
+        .append(_totalThreadsObject).append("\tcount\t").append(_iterationObject).append("\tavg time\t").append(_totalTimeObject / _iterationObject)
+        .append("\tmin time\t").append(_minTimeObject).append("\tmax time\t").append(_maxTimeObject).append("\ttot time\t").append(_totalTimeObject)
+        .append("\n");
 
     System.out.println(aBuffer.toString());
   }
@@ -77,12 +69,10 @@ public class MultiplexedClient {
 
   public static synchronized void log(String log) {
     StringBuffer aBuffer = new StringBuffer();
-    aBuffer.append(System.currentTimeMillis() - START_TIME).append(" [")
-           .append(Thread.currentThread().getName()).append("] ").append(log);
+    aBuffer.append(System.currentTimeMillis() - START_TIME).append(" [").append(Thread.currentThread().getName()).append("] ").append(log);
 
-    //    System.out.println(aBuffer.toString());
-    if ((_iterationHttp > 0) && (_iterationObject > 0) &&
-          (((_iterationHttp + _iterationObject) % 100) == 0)) {
+    // System.out.println(aBuffer.toString());
+    if ((_iterationHttp > 0) && (_iterationObject > 0) && (((_iterationHttp + _iterationObject) % 100) == 0)) {
       if (!statsLogged) {
         statsLogged = true;
         logStat();
@@ -94,8 +84,7 @@ public class MultiplexedClient {
 
   public static void main(String[] args) {
     for (int i = 1; i <= 25; i++) {
-      Thread objectClient = new Thread(new ObjectClient(), "object-client-" +
-          i);
+      Thread objectClient = new Thread(new ObjectClient(), "object-client-" + i);
       objectClient.start();
       _totalThreadsObject++;
 
@@ -111,11 +100,11 @@ public class MultiplexedClient {
   }
 
   /**
-   *
+   * 
    * @
    */
   public static class ObjectClient implements Runnable {
-    private Random           _random = new Random();
+    private Random _random = new Random();
     private SocketConnection _conn;
 
     private SocketConnection getConnection() throws IOException {
@@ -134,7 +123,7 @@ public class MultiplexedClient {
           try {
             log("Sending...");
 
-            long   start   = System.currentTimeMillis();
+            long start = System.currentTimeMillis();
             Object request = "This is foo!!!";
             getConnection().send(request);
 
@@ -165,7 +154,7 @@ public class MultiplexedClient {
   }
 
   /**
-   *
+   * 
    * @
    */
   public static class HttpClient implements Runnable {
@@ -174,7 +163,7 @@ public class MultiplexedClient {
     private HttpURLConnection getConnection() throws IOException {
       log("Getting new HTTP connection to port 7777...");
 
-      URL               anURL = new URL("http://localhost:7777");
+      URL anURL = new URL("http://localhost:7777");
       HttpURLConnection _conn = (HttpURLConnection) anURL.openConnection();
       _conn.setRequestMethod("POST");
       _conn.setDoInput(true);
@@ -202,11 +191,11 @@ public class MultiplexedClient {
 
             log("Receiving HTTP...");
 
-            InputStream           is       = conn.getInputStream();
+            InputStream is = conn.getInputStream();
             ByteArrayOutputStream response = new ByteArrayOutputStream();
 
-            boolean               isDone = false;
-            byte[]                data   = new byte[1024];
+            boolean isDone = false;
+            byte[] data = new byte[1024];
 
             while (!isDone) {
               int length = is.read(data);

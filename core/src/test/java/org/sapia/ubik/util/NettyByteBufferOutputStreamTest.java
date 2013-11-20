@@ -23,26 +23,26 @@ public class NettyByteBufferOutputStreamTest {
   public void testWriteByteArray() throws IOException {
     ChannelBuffer buf = ChannelBuffers.buffer(10);
     NettyByteBufferOutputStream os = new NettyByteBufferOutputStream(buf);
-    byte[] bytes  = new byte[] { (byte)1, (byte)2, (byte)3 };
+    byte[] bytes = new byte[] { (byte) 1, (byte) 2, (byte) 3 };
     os.write(bytes);
     byte[] read = new byte[3];
     buf.readBytes(read);
     assertEquals(1, read[0]);
     assertEquals(2, read[1]);
-    assertEquals(3, read[2]);    
+    assertEquals(3, read[2]);
   }
-  
+
   @Test
   public void testWriteByteArrayWithStartAndOffset() throws IOException {
     ChannelBuffer buf = ChannelBuffers.buffer(10);
     NettyByteBufferOutputStream os = new NettyByteBufferOutputStream(buf);
-    byte[] bytes  = new byte[] { (byte)1, (byte)2, (byte)3, (byte)4, (byte)5, (byte)6,};
+    byte[] bytes = new byte[] { (byte) 1, (byte) 2, (byte) 3, (byte) 4, (byte) 5, (byte) 6, };
     os.write(bytes);
     byte[] read = new byte[3];
     buf.readBytes(read, 0, 3);
     assertEquals(1, read[0]);
     assertEquals(2, read[1]);
-    assertEquals(3, read[2]);    
-  }  
+    assertEquals(3, read[2]);
+  }
 
 }

@@ -13,33 +13,32 @@ import org.apache.mina.common.ByteBuffer;
  */
 public class MinaByteBufferInputStream extends InputStream {
 
-	private ByteBuffer buf;
+  private ByteBuffer buf;
 
-	public MinaByteBufferInputStream(ByteBuffer buf) {
-		this.buf = buf;
-	}
-	
-	@Override
-	public int available() throws IOException {
-	  return buf.remaining();
-	}
+  public MinaByteBufferInputStream(ByteBuffer buf) {
+    this.buf = buf;
+  }
 
-	public int read() throws IOException {
-		if (!buf.hasRemaining()) {
-			return -1;
-		}
+  @Override
+  public int available() throws IOException {
+    return buf.remaining();
+  }
+
+  public int read() throws IOException {
+    if (!buf.hasRemaining()) {
+      return -1;
+    }
     return buf.get() & 0xFF;
-	}
+  }
 
-	public int read(byte[] bytes, int off, int len)
-	    throws IOException {
-		if (!buf.hasRemaining()) {
-			return -1;
-		}
+  public int read(byte[] bytes, int off, int len) throws IOException {
+    if (!buf.hasRemaining()) {
+      return -1;
+    }
 
-		len = Math.min(len, buf.remaining());
-		buf.get(bytes, off, len);
-		return len;
-	}
+    len = Math.min(len, buf.remaining());
+    buf.get(bytes, off, len);
+    return len;
+  }
 
 }

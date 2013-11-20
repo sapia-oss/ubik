@@ -16,39 +16,39 @@ import org.sapia.ubik.util.PropertiesUtil;
 import org.sapia.ubik.util.Props;
 
 public class RemoteInitialContextFactoryTest {
-	
-	private EmbeddableJNDIServer server;
-		
-	@Before
-	public void setUp() throws Exception {
-    PropertiesUtil.clearUbikSystemProperties();	  
-		System.setProperty(Consts.UBIK_DOMAIN_NAME, "test");
-		System.setProperty(Consts.BROADCAST_PROVIDER, Consts.BROADCAST_PROVIDER_MEMORY);
-		System.setProperty(Consts.BROADCAST_MEMORY_NODE, "test");
-		EventChannel ec = new EventChannel("test", Props.getSystemProperties());
-		server = new EmbeddableJNDIServer(ec, 1099);
-		server.start(false);
-	}
 
-	@After
-	public void tearDown() {
-	  PropertiesUtil.clearUbikSystemProperties();
-		server.stop();
-	}
+  private EmbeddableJNDIServer server;
 
-	@Test
-	public void testJndiDiscovery() throws Exception {
-		Hashtable props = new Hashtable();
-		props.put(InitialContext.PROVIDER_URL, "ubik://localhost:9999/");
-		props.put(InitialContext.INITIAL_CONTEXT_FACTORY, RemoteInitialContextFactory.class.getName());
-		InitialContext context = new InitialContext(props);  
-		try {
-			context.lookup("some/service");
-			fail("NameNotFoundException should have been thrown");
-		} catch (NameNotFoundException e) {
-			// ok
-		} 
-		context.close();
-	}
+  @Before
+  public void setUp() throws Exception {
+    PropertiesUtil.clearUbikSystemProperties();
+    System.setProperty(Consts.UBIK_DOMAIN_NAME, "test");
+    System.setProperty(Consts.BROADCAST_PROVIDER, Consts.BROADCAST_PROVIDER_MEMORY);
+    System.setProperty(Consts.BROADCAST_MEMORY_NODE, "test");
+    EventChannel ec = new EventChannel("test", Props.getSystemProperties());
+    server = new EmbeddableJNDIServer(ec, 1099);
+    server.start(false);
+  }
+
+  @After
+  public void tearDown() {
+    PropertiesUtil.clearUbikSystemProperties();
+    server.stop();
+  }
+
+  @Test
+  public void testJndiDiscovery() throws Exception {
+    Hashtable props = new Hashtable();
+    props.put(InitialContext.PROVIDER_URL, "ubik://localhost:9999/");
+    props.put(InitialContext.INITIAL_CONTEXT_FACTORY, RemoteInitialContextFactory.class.getName());
+    InitialContext context = new InitialContext(props);
+    try {
+      context.lookup("some/service");
+      fail("NameNotFoundException should have been thrown");
+    } catch (NameNotFoundException e) {
+      // ok
+    }
+    context.close();
+  }
 
 }

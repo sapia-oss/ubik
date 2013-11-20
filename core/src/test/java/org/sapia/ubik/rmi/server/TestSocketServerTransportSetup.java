@@ -10,11 +10,11 @@ import org.sapia.ubik.rmi.naming.remote.EmbeddableJNDIServer;
 import org.sapia.ubik.rmi.naming.remote.RemoteInitialContextFactory;
 
 public class TestSocketServerTransportSetup {
-  
-  EmbeddableJNDIServer jndi;  
+
+  EmbeddableJNDIServer jndi;
   Context context;
-  
-  public void setUp() throws Exception{
+
+  public void setUp() throws Exception {
     System.setProperty(Consts.COLOCATED_CALLS_ENABLED, "false");
     jndi = new EmbeddableJNDIServer("testDomain", 1099);
     jndi.start(true);
@@ -24,33 +24,32 @@ public class TestSocketServerTransportSetup {
     props.setProperty(Context.PROVIDER_URL, "ubik://localhost:1099/");
     props.setProperty(Context.INITIAL_CONTEXT_FACTORY, RemoteInitialContextFactory.class.getName());
     context = new InitialContext(props);
-    
+
   }
-  
+
   public void tearDown() {
     System.clearProperty(Consts.COLOCATED_CALLS_ENABLED);
-    if(jndi != null) {
+    if (jndi != null) {
       jndi.stop();
     }
     try {
-    	context.close();
+      context.close();
     } catch (Exception e) {
-    	
+
     }
     Hub.shutdown();
   }
-  
+
   public Object exportObject(Object toExport) throws Exception {
     return Hub.exportObject(toExport);
   }
-  
+
   public void bind(String name, Object remote) throws Exception {
     context.bind(name, Hub.exportObject(remote));
   }
-  
+
   public Object lookup(String name) throws Exception {
     return context.lookup(name);
   }
-  
-  
+
 }

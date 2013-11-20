@@ -18,9 +18,9 @@ import org.sapia.ubik.rmi.server.Hub;
 
 public abstract class UnicastDispatcherTestSupport {
 
-  private static final String SYNC_EVENT_TYPE  = "sync";
+  private static final String SYNC_EVENT_TYPE = "sync";
   private static final String ASYNC_EVENT_TYPE = "async";
-  
+
   private UnicastDispatcher source;
   private List<UnicastDispatcher> destinations;
   private BlockingCompletionQueue<String> queue;
@@ -28,25 +28,25 @@ public abstract class UnicastDispatcherTestSupport {
   @Before
   public void setUp() throws Exception {
     Hub.start();
-    source       = createUnicastDispatcher(new EventConsumer("testDomain"));
+    source = createUnicastDispatcher(new EventConsumer("testDomain"));
     source.start();
     destinations = new ArrayList<UnicastDispatcher>(5);
-    for(int i = 0; i < 5; i++) {
+    for (int i = 0; i < 5; i++) {
       EventConsumer consumer = new EventConsumer("testDomain");
       UnicastDispatcher dispatcher = createUnicastDispatcher(consumer);
       dispatcher.start();
       consumer.registerAsyncListener(ASYNC_EVENT_TYPE, createAsyncListener("listener" + i));
-      consumer.registerSyncListener(SYNC_EVENT_TYPE,   createSyncEventListener("listener" + i));
+      consumer.registerSyncListener(SYNC_EVENT_TYPE, createSyncEventListener("listener" + i));
       destinations.add(dispatcher);
     }
-    
+
   }
-  
+
   @After
   public void tearDown() throws Exception {
     Hub.shutdown();
     source.close();
-    for(UnicastDispatcher dispatcher : destinations) {
+    for (UnicastDispatcher dispatcher : destinations) {
       dispatcher.close();
     }
   }
@@ -64,12 +64,11 @@ public abstract class UnicastDispatcherTestSupport {
     queue = new BlockingCompletionQueue<String>(3);
     RespList responses = source.send(selectedDestinations(3), SYNC_EVENT_TYPE, "test");
     assertEquals("Expected 3 responses", 3, responses.count());
-    for(int i = 0; i < responses.count(); i++) {
+    for (int i = 0; i < responses.count(); i++) {
       Response r = responses.get(i);
       assertTrue("Expected data", r.getData() != null);
-    }    
+    }
   }
-
 
   @Test
   public void testSendToSingleDestination() throws Exception {
@@ -77,20 +76,20 @@ public abstract class UnicastDispatcherTestSupport {
     Response response = source.send(selectedDestinations(1).get(0), SYNC_EVENT_TYPE, "test");
     assertTrue(response.getData() != null);
   }
-  
+
   private ServerAddress randomDestination() {
     return destinations.get(new Random().nextInt(destinations.size())).getAddress();
   }
-  
-  private List<ServerAddress> selectedDestinations(int count) { 
+
+  private List<ServerAddress> selectedDestinations(int count) {
     List<ServerAddress> destinationAddresses = new ArrayList<ServerAddress>(count);
-    for(int i = 0; i < count; i++) {
+    for (int i = 0; i < count; i++) {
       UnicastDispatcher dispatcher = destinations.get(i);
       destinationAddresses.add(dispatcher.getAddress());
     }
     return destinationAddresses;
   }
-  
+
   private AsyncEventListener createAsyncListener(final String listenerId) {
     return new AsyncEventListener() {
       @Override
@@ -99,7 +98,7 @@ public abstract class UnicastDispatcherTestSupport {
       }
     };
   }
-  
+
   private SyncEventListener createSyncEventListener(final String listenerId) {
     return new SyncEventListener() {
       @Override
@@ -108,7 +107,7 @@ public abstract class UnicastDispatcherTestSupport {
       }
     };
   }
-  
+
   protected abstract UnicastDispatcher createUnicastDispatcher(EventConsumer consumer) throws IOException;
 
 }

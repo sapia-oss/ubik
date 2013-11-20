@@ -22,44 +22,44 @@ import org.sapia.ubik.rmi.server.transport.mina.MinaResponse;
 import org.sapia.ubik.rmi.server.transport.mina.MinaResponseEncoder;
 
 public class MinaResponseEncoderTest {
-	
-	private MinaResponseEncoder  encoder;
-	private IoSession 					session;
-	private Map<String, Object> sessionData;
-	private TestEncoderOutput   output;
 
-	@Before
+  private MinaResponseEncoder encoder;
+  private IoSession session;
+  private Map<String, Object> sessionData;
+  private TestEncoderOutput output;
+
+  @Before
   public void setUp() throws Exception {
-		encoder     = new MinaResponseEncoder();
-		sessionData = new HashMap<String, Object>();
-		session 		= mock(IoSession.class);
-		
-		when(session.getAttribute(anyString())).thenAnswer(new Answer<Object>() {
-			@Override
-			public Object answer(InvocationOnMock invocation) throws Throwable {
-			  return sessionData.get(invocation.getArguments()[0]);
-			}
-		});
-		
-		when(session.setAttribute(anyString(), anyObject())).thenAnswer(new Answer<Object>() {
-			@Override
-			public Object answer(InvocationOnMock invocation) throws Throwable {
-			  return sessionData.put((String)invocation.getArguments()[0], invocation.getArguments()[1]);
-			}
-		});		
-		output = new TestEncoderOutput();
+    encoder = new MinaResponseEncoder();
+    sessionData = new HashMap<String, Object>();
+    session = mock(IoSession.class);
+
+    when(session.getAttribute(anyString())).thenAnswer(new Answer<Object>() {
+      @Override
+      public Object answer(InvocationOnMock invocation) throws Throwable {
+        return sessionData.get(invocation.getArguments()[0]);
+      }
+    });
+
+    when(session.setAttribute(anyString(), anyObject())).thenAnswer(new Answer<Object>() {
+      @Override
+      public Object answer(InvocationOnMock invocation) throws Throwable {
+        return sessionData.put((String) invocation.getArguments()[0], invocation.getArguments()[1]);
+      }
+    });
+    output = new TestEncoderOutput();
   }
-	
-	@After
-	public void tearDown() {
-		output.close();
-	}
-  
-	@Test
-  public void testEncode() throws Exception{
+
+  @After
+  public void tearDown() {
+    output.close();
+  }
+
+  @Test
+  public void testEncode() throws Exception {
     String toEncode = "THIS_IS_A_TEST";
     MinaResponse res = new MinaResponse();
-    res.setObject(toEncode);    
+    res.setObject(toEncode);
 
     encoder.encode(session, res, output);
     int length = output.buf.getInt();
@@ -69,9 +69,7 @@ public class MinaResponseEncoderTest {
     ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
     ObjectInputStream ois = MarshalStreamFactory.createInputStream(bis);
     assertEquals(toEncode, ois.readObject());
-    
+
   }
 
 }
-
-

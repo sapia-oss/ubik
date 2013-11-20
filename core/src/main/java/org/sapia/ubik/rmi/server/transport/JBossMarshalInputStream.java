@@ -6,7 +6,7 @@ import java.io.InputStream;
 import org.jboss.serial.io.JBossObjectInputStream;
 
 public class JBossMarshalInputStream extends JBossObjectInputStream {
-  
+
   JBossMarshalInputStream(InputStream is) throws IOException {
     super(is);
     super.enableResolveObject(true);

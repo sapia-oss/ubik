@@ -15,7 +15,7 @@ public class RemoteRefContextTest {
     RemoteRefContext context2 = new RemoteRefContext(new DefaultOID(1), new InMemoryAddress("test2"));
     assertEquals("Contexts should be considered equal", context1, context2);
   }
-  
+
   @Test
   public void testNotEquals() {
     RemoteRefContext context1 = new RemoteRefContext(new DefaultOID(1), new InMemoryAddress("test1"));
