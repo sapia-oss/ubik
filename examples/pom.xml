@@ -4,9 +4,7 @@
   <description>A RMI-like distributed computing framework</description>
   <url>http://www.sapia-oss.org/projects/console/index.html</url>
 
-  <groupId>org.sapia</groupId>
   <artifactId>sapia_ubik_example</artifactId>
-  <version>3.7-SNAPSHOT</version>
 
   <parent>
     <groupId>org.sapia</groupId>
