@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -50,7 +51,7 @@ public class Purgatory {
 
   // --------------------------------------------------------------------------
 
-  private Map<String, DownNode> nodes = new HashMap<String, DownNode>();
+  private Map<String, DownNode> nodes = new ConcurrentHashMap<String, DownNode>();
 
   /**
    * @param node
@@ -119,9 +120,11 @@ public class Purgatory {
     Set<String> toReturn = new HashSet<String>();
     for (DownNode n : nodes.values()) {
       if (n.getAttempts() > maxAttempts) {
-        nodes.remove(n.node);
         toReturn.add(n.node);
       }
+    }
+    for (String node: toReturn) {
+    	nodes.remove(node);
     }
     return toReturn;
   }

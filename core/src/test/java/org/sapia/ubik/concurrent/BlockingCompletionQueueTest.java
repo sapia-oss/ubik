@@ -40,6 +40,20 @@ public class BlockingCompletionQueueTest {
     assertEquals(queue.getExpectedCount(), items.size());
   }
 
+  @Test(expected = IllegalStateException.class)
+  public void testAddWithCompleted() throws Exception {
+    for (int i = 0; i < queue.getExpectedCount(); i++) {
+      executor.execute(new Runnable() {
+        @Override
+        public void run() {
+          queue.add(new Random().nextInt(10));
+        }
+      });
+    }
+    queue.await();
+    queue.add(new Random().nextInt(10));
+  }
+
   @Test
   public void testAwaitWithTimeout() throws Exception {
     for (int i = 0; i < queue.getExpectedCount(); i++) {

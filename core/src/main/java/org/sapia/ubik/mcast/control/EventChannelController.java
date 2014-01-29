@@ -246,10 +246,10 @@ public class EventChannelController {
             }));
           }
           Set<String> purged = context.getPurgatory().clear(config.getForceResyncAttempts());
-          if (!purged.isEmpty() && log.isDebug()) {
-            log.debug("Purged nodes from purgatory (those are definitely lost):");
+          if (!purged.isEmpty() && log.isInfo()) {
+            log.info("Purged nodes from purgatory (those are definitely lost):");
             for (String p : purged) {
-              log.debug(p);
+              log.info(p);
             }
           }
         }
