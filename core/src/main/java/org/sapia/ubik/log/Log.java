@@ -278,11 +278,14 @@ public class Log {
   private static void display(String caller, Level level, Object msg) {
     if (filter.accepts(caller)) {
       if (msg instanceof Throwable) {
-        output.log("[" + DATE_FORMAT.format(new java.util.Date()) + "][" + caller + "@" + Thread.currentThread().getName() + "] "
+        output.log("[" + DATE_FORMAT.format(new java.util.Date()) + "][" + caller + "@" + Thread.currentThread().getName() + "] " 
+            + "[" + level.name() +  "]"
             + ((Throwable) msg).getMessage());
         output.log((Throwable) msg);
       } else {
-        output.log("[" + DATE_FORMAT.format(new java.util.Date()) + "][" + caller + "@" + Thread.currentThread().getName() + "] " + msg);
+        output.log("[" + DATE_FORMAT.format(new java.util.Date()) + "][" + caller + "@" + Thread.currentThread().getName() + "] "
+            + "[" + level.name() +  "]"
+            + msg);
       }
     }
   }
@@ -291,7 +294,9 @@ public class Log {
     if (msg == null) {
       display(caller, level, t);
     } else if (filter.accepts(caller)) {
-      output.log("[" + DATE_FORMAT.format(new java.util.Date()) + "][" + caller + "@" + Thread.currentThread().getName() + "] " + msg + " - "
+      output.log("[" + DATE_FORMAT.format(new java.util.Date()) + "][" + caller + "@" + Thread.currentThread().getName() + "] "
+          + "[" + level.name() +  "]"
+          + msg + " - "
           + t.getMessage());
       output.log(t);
     }
