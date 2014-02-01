@@ -34,10 +34,11 @@ public class BlockingCompletionQueue<T> {
    *          the item to add to this queue.
    */
   public void add(T item) {
-    checkCompleted();
-    Assertions.illegalState(countdown.getCount() == 0, "All expected items have been added");
-    items.add(item);
-    countdown.countDown();
+    if (!completed) {
+      Assertions.illegalState(countdown.getCount() == 0, "All expected items have been added");
+      items.add(item);
+      countdown.countDown();
+    }
   }
 
   /**
@@ -48,15 +49,17 @@ public class BlockingCompletionQueue<T> {
    *           if the calling thread is interrupted while waiting.
    */
   public List<T> await() throws InterruptedException {
-    checkCompleted();
-    countdown.await();
-    List<T> toReturn;
-    synchronized (items) {
-      toReturn = new ArrayList<T>(items);
-      items.clear();
-      completed = true;
-    }
-    return toReturn;
+    if (!completed) {
+      countdown.await();
+      List<T> toReturn;
+      synchronized (items) {
+        toReturn = new ArrayList<T>(items);
+        items.clear();
+        completed = true;
+      }
+      return toReturn;
+    } 
+    return Collections.emptyList();
   }
 
   /**
@@ -71,15 +74,18 @@ public class BlockingCompletionQueue<T> {
    *           if the calling thread is interrupted while waiting.
    */
   public List<T> await(long timeout) throws InterruptedException {
-    checkCompleted();
-    countdown.await(timeout, TimeUnit.MILLISECONDS);
-    List<T> toReturn;
-    synchronized (items) {
-      toReturn = new ArrayList<T>(items);
-      items.clear();
-      completed = true;
+    if (!completed) {
+      countdown.await(timeout, TimeUnit.MILLISECONDS);
+      List<T> toReturn;
+      synchronized (items) {
+        toReturn = new ArrayList<T>(items);
+        items.clear();
+        completed = true;
+      }
+      return toReturn;
+    } else {
+      return Collections.emptyList();
     }
-    return toReturn;
   }
 
   /**
@@ -87,12 +93,6 @@ public class BlockingCompletionQueue<T> {
    */
   public int getExpectedCount() {
     return expectedCount;
-  }
-
-  private void checkCompleted() {
-    if (completed) {
-      throw new IllegalStateException("This queue's items have been removed (warning: this instance should not be reused)");
-    }
   }
 
 }

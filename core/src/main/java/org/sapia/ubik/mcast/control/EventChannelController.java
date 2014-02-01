@@ -92,7 +92,7 @@ public class EventChannelController {
     notificationHandlers.put(DownNotification.class.getName(), new DownNotificationHandler(context));
     notificationHandlers.put(ChallengeCompletionNotification.class.getName(), new ChallengeCompletionNotificationHandler(context));
 
-    autoResyncInterval = new Delay(clock, config.getResyncInterval());
+    autoResyncInterval      = new Delay(clock, config.getResyncInterval());
     masterBroadcastInterval = new Delay(clock, config.getMasterBroadcastInterval());
   }
 
@@ -224,7 +224,7 @@ public class EventChannelController {
 
         // either resynching or sending master broadcast
         if (context.getChannelCallback().getNodes().size() <= config.getResyncNodeCount() && autoResyncInterval.isOver()) {
-          log.debug("Number of peers deemed not enough, forcing a resync");
+          log.info("Number of peers deemed not enough, forcing a resync");
           context.getChannelCallback().resync();
           autoResyncInterval.reset();
         } else if (masterBroadcastInterval.isOver() && config.isMasterBroadcastEnabled()) {
@@ -233,7 +233,7 @@ public class EventChannelController {
 
         // broadcast "force resync" events to all nodes in the purgatory
         if (context.getPurgatory().size() > 0) {
-          log.debug("Got %s nodes in purgatory", context.getPurgatory().size());
+          log.info("Got %s nodes in purgatory", context.getPurgatory().size());
           List<Set<DownNode>> batches = Collections2.splitAsSets(context.getPurgatory().getDownNodes(), config.getForceResyncBatchSize());
           for (Set<DownNode> batch : batches) {
             context.getChannelCallback().forceResyncOf(Collections2.convertAsSet(batch, new Function<String, DownNode>() {
@@ -280,7 +280,7 @@ public class EventChannelController {
           context.getChannelCallback().resync();
           autoResyncInterval.reset();
         }
-        log.debug("Heartbeat request has not been received in timely manner since last time, triggering challenge");
+        log.info("Heartbeat request has not been received in timely manner since last time, triggering challenge");
         doTriggerChallenge(true);
       }
     }

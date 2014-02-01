@@ -101,7 +101,7 @@ public class HeartbeatResponseHandler implements ControlResponseHandler {
     if (replyingNodes.size() >= targetedNodes.size()) {
       log.debug("Received %s/%s responses. All expected responses received", replyingNodes.size(), targetedNodes.size());
     } else {
-      log.debug("Received %s/%s responses (dead nodes detected)", replyingNodes.size(), targetedNodes.size());
+      log.info("Received %s/%s responses (dead nodes detected)", replyingNodes.size(), targetedNodes.size());
 
       // those nodes that have replied or removed from the original set of
       // targeted nodes,
@@ -120,7 +120,7 @@ public class HeartbeatResponseHandler implements ControlResponseHandler {
       replyingNodes.addAll(responding);
 
       if (!targetedNodes.isEmpty()) {
-        log.debug("Got %s down nodes", targetedNodes.size());
+        log.info("Got %s down nodes", targetedNodes.size());
         for (String down : targetedNodes) {
           context.getChannelCallback().down(down);
         }
@@ -132,6 +132,7 @@ public class HeartbeatResponseHandler implements ControlResponseHandler {
 
       context.notifyHeartbeatCompleted(expectedCount, replyingNodes.size());
       if (forceResync) {
+        log.info("Added %s nodes to purgatory", targetedNodes.size());
         context.getPurgatory().addAll(targetedNodes);
       }
     }

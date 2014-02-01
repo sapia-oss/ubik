@@ -40,7 +40,7 @@ public class BlockingCompletionQueueTest {
     assertEquals(queue.getExpectedCount(), items.size());
   }
 
-  @Test(expected = IllegalStateException.class)
+  @Test
   public void testAddWithCompleted() throws Exception {
     for (int i = 0; i < queue.getExpectedCount(); i++) {
       executor.execute(new Runnable() {
@@ -52,6 +52,7 @@ public class BlockingCompletionQueueTest {
     }
     queue.await();
     queue.add(new Random().nextInt(10));
+    assertTrue(queue.await().isEmpty());
   }
 
   @Test
