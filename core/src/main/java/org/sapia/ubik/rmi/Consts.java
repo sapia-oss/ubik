@@ -242,6 +242,15 @@ public interface Consts {
    */
   public static final String MCAST_MAX_CLIENT_CONNECTIONS = "ubik.rmi.naming.mcast.tcp.client.max-connections";
 
+  
+  /**
+   * Corresponds to the
+   * <code>ubik.rmi.naming.mcast.broadcast.monitor.interval</code> property key.
+   * The value of this property specifies the number of seconds between reconnection attempts when a connection failure occurs
+   * on the broadcast dispatcher (defaults to 30000 millis).
+   */
+  public static final String MCAST_BROADCAST_MONITOR_INTERVAL = "ubik.rmi.naming.mcast.broadcast.monitor.interval";
+  
   /**
    * Identifies the unicast provider to use as part of {@link EventChannel}s.
    */

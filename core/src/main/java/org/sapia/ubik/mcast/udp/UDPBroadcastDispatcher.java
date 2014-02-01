@@ -16,6 +16,8 @@ import org.sapia.ubik.mcast.McastUtil;
 import org.sapia.ubik.mcast.MulticastAddress;
 import org.sapia.ubik.mcast.RemoteEvent;
 import org.sapia.ubik.mcast.server.MulticastServer;
+import org.sapia.ubik.net.ConnectionStateListener;
+import org.sapia.ubik.net.ConnectionStateListenerList;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.util.Assertions;
@@ -33,6 +35,7 @@ public class UDPBroadcastDispatcher implements BroadcastDispatcher {
   private BroadcastServer server;
   private int bufsz = Defaults.DEFAULT_UDP_PACKET_SIZE;
   private UDPMulticastAddress address;
+  private ConnectionStateListenerList stateListeners = new ConnectionStateListenerList();
 
   public UDPBroadcastDispatcher(EventConsumer cons, String mcastHost, int mcastPort, int ttl) throws IOException {
     server = new BroadcastServer(cons, mcastHost, mcastPort, ttl);
@@ -71,7 +74,9 @@ public class UDPBroadcastDispatcher implements BroadcastDispatcher {
    */
   public void start() {
     Assertions.illegalState(server == null, "Instance was closed; cannot be started again");
+    stateListeners.onConnected();
     server.start();
+    
   }
 
   /**
@@ -124,6 +129,16 @@ public class UDPBroadcastDispatcher implements BroadcastDispatcher {
   public MulticastAddress getMulticastAddress() {
     return address;
   }
+  
+  @Override
+  public void addConnectionStateListener(ConnectionStateListener listener) {
+    stateListeners.add(listener);
+  }
+
+  @Override
+  public void removeConnectionStateListener(ConnectionStateListener listener) {
+    stateListeners.remove(listener);
+  }  
 
   /*
    * //////////////////////////////////////////////////////////////// INNER

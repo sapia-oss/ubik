@@ -26,6 +26,8 @@ import org.sapia.ubik.mcast.control.SynchronousControlRequest;
 import org.sapia.ubik.mcast.control.SynchronousControlResponse;
 import org.sapia.ubik.mcast.udp.UDPBroadcastDispatcher;
 import org.sapia.ubik.mcast.udp.UDPUnicastDispatcher;
+import org.sapia.ubik.net.ConnectionStateListener;
+import org.sapia.ubik.net.ConnectionStateListenerList;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.util.Clock;
@@ -129,9 +131,10 @@ public class EventChannel {
   private volatile State state = State.CREATED;
   private int maxPublishAttempts = DEFAULT_MAX_PUB_ATTEMPTS;
   private long publishInterval = MIN_PUB_INTERVAL + new Random().nextInt(MIN_PUB_OFFSET);
+  private ConnectionStateListenerList stateListeners = new ConnectionStateListenerList();
   private ExecutorService publishExecutor = Executors.newSingleThreadExecutor(NamedThreadFactory.createWith("Ubik.EventChannel.Publish").setDaemon(
       true));
-
+  
   /**
    * Creates an instance of this class that will use IP multicast and UDP
    * unicast.
@@ -157,6 +160,20 @@ public class EventChannel {
     unicast = new UDPUnicastDispatcher(consumer, props.getIntProperty(Consts.MCAST_HANDLER_COUNT, Defaults.DEFAULT_HANDLER_COUNT));
     init(props);
   }
+  
+  /**
+   * @param listener adds the given {@link ConnectionStateListener}.
+   */
+  public void addConnectionStateListener(ConnectionStateListener listener) {
+    stateListeners.add(listener);
+  }
+  
+  /**
+   * @param listener removes the given {@link ConnectionStateListener} from this instance.
+   */
+  public void removeConnectionStateListener(ConnectionStateListener listener) {
+    stateListeners.add(listener);    
+  }  
 
   /**
    * Creates an instance of this class that uses a
@@ -191,8 +208,8 @@ public class EventChannel {
    */
   public EventChannel(String domain, Props config) throws IOException {
     config.addSystemProperties();
-    consumer = new EventConsumer(domain);
-    unicast = DispatcherFactory.createUnicastDispatcher(consumer, config);
+    consumer  = new EventConsumer(domain);
+    unicast   = DispatcherFactory.createUnicastDispatcher(consumer, config);
     broadcast = DispatcherFactory.createBroadcastDispatcher(consumer, config);
     init(config);
   }
@@ -251,10 +268,43 @@ public class EventChannel {
    */
   public synchronized void start() throws IOException {
     if (state == State.CREATED) {
+      
+      broadcast.addConnectionStateListener(new ConnectionStateListener() {
+        
+        private int resyncAttempts = 0;
+        
+        @Override
+        public void onReconnected() {
+          if (doResync()) stateListeners.notifyReconnected();
+        }
+        
+        @Override
+        public void onDisconnected() {
+          stateListeners.notifyDisconnected();          
+        }
+        
+        @Override
+        public void onConnected() {
+          if (doResync()) stateListeners.notifyConnected();          
+        }
+        
+        private boolean doResync() {
+          try {
+            resync();
+            if (resyncAttempts > 0) {
+              Thread.sleep(new Random().nextInt(MIN_STARTUP_DELAY) + MIN_STARTUP_DELAY_OFFSET);
+            }
+            resyncAttempts++;
+            return true;
+          } catch (InterruptedException e) {
+            return false;
+          }
+        }
+      });
+      
       broadcast.start();
       unicast.start();
       address = unicast.getAddress();
-      resync();
       state = State.STARTED;
     }
   }

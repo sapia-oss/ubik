@@ -11,6 +11,8 @@ import org.sapia.ubik.mcast.BroadcastDispatcher;
 import org.sapia.ubik.mcast.EventConsumer;
 import org.sapia.ubik.mcast.MulticastAddress;
 import org.sapia.ubik.mcast.RemoteEvent;
+import org.sapia.ubik.net.ConnectionStateListener;
+import org.sapia.ubik.net.ConnectionStateListenerList;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
 
@@ -28,6 +30,7 @@ public class InMemoryBroadcastDispatcher implements BroadcastDispatcher {
   private InMemoryDispatchChannel channel = InMemoryDispatchChannel.getInstance();
   private EventConsumer consumer;
   private String domain;
+  private ConnectionStateListenerList stateListeners = new ConnectionStateListenerList();
 
   private InMemoryMulticastAddress address;
 
@@ -43,6 +46,7 @@ public class InMemoryBroadcastDispatcher implements BroadcastDispatcher {
 
   @Override
   public void start() {
+    stateListeners.notifyConnected();
     channel.registerDispatcher(this);
   }
 
@@ -88,6 +92,16 @@ public class InMemoryBroadcastDispatcher implements BroadcastDispatcher {
     evt.setUnicastAddress(unicastAddr);
     channel.dispatch(this, evt);
   }
+  
+  @Override
+  public void addConnectionStateListener(ConnectionStateListener listener) {
+    stateListeners.add(listener);
+  }
+
+  @Override
+  public void removeConnectionStateListener(ConnectionStateListener listener) {
+    stateListeners.remove(listener);
+  }  
 
   EventConsumer getConsumer() {
     return consumer;

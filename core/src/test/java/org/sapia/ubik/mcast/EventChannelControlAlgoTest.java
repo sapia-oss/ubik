@@ -28,6 +28,7 @@ public class EventChannelControlAlgoTest {
 
   @Before
   public void setUp() throws Exception {
+    //Log.setDebug();
     clock = Clock.MutableClock.getInstance();
     channels = new ArrayList<EventChannel>();
     listener = new TestControllerListener();

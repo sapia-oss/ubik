@@ -120,6 +120,13 @@ public class Defaults {
    * @see Consts#MCAST_MASTER_BROADCAST_INTERVAL
    */
   public static final long DEFAULT_MASTER_BROADCAST_INTERVAL = 120000L;
+  
+  /**
+   * The default broadcast monitor reconnection interval.
+   * 
+   * @see Consts#MCAST_BROADCAST_MONITOR_INTERVAL
+   */  
+  public static final long DEFAULT_BROADCAST_MONITOR_INTERVAL = 30000L;
 
   private Defaults() {
   }

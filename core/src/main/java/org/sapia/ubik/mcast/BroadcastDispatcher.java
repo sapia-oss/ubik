@@ -2,6 +2,7 @@ package org.sapia.ubik.mcast;
 
 import java.io.IOException;
 
+import org.sapia.ubik.net.ConnectionStateListener;
 import org.sapia.ubik.net.ServerAddress;
 
 /**
@@ -66,4 +67,14 @@ public interface BroadcastDispatcher {
    * @return this instance's {@link MulticastAddress}.
    */
   public MulticastAddress getMulticastAddress();
+  
+  /**
+   * @param listener a {@link ConnectionStateListener} to add.
+   */
+  public void addConnectionStateListener(ConnectionStateListener listener);
+  
+  /**
+   * @param listener a {@link ConnectionStateListener} to remove.
+   */
+  public void removeConnectionStateListener(ConnectionStateListener listener);
 }

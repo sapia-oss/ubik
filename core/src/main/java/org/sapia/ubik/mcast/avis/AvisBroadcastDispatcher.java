@@ -5,20 +5,24 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import org.avis.client.Elvin;
 import org.avis.client.GeneralNotificationEvent;
 import org.avis.client.GeneralNotificationListener;
 import org.avis.client.Notification;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.BroadcastDispatcher;
+import org.sapia.ubik.mcast.Defaults;
 import org.sapia.ubik.mcast.EventConsumer;
+import org.sapia.ubik.mcast.McastUtil;
 import org.sapia.ubik.mcast.MulticastAddress;
 import org.sapia.ubik.mcast.RemoteEvent;
-import org.sapia.ubik.mcast.McastUtil;
+import org.sapia.ubik.net.ConnectionMonitor;
+import org.sapia.ubik.net.ConnectionStateListener;
+import org.sapia.ubik.net.ConnectionStateListenerList;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.util.Base64;
+import org.sapia.ubik.util.Props;
 
 /**
  * Implements a {@link BroadcastDispatcher} on top of the Avis group
@@ -28,6 +32,10 @@ import org.sapia.ubik.util.Base64;
  * 
  */
 public class AvisBroadcastDispatcher implements BroadcastDispatcher {
+  
+  public enum ConnectionState {
+    DOWN, UP
+  }
 
   private static final String NOTIF_TYPE = "ubik.broadcast.avis";
   private static final String ANY_DOMAIN = "*";
@@ -36,14 +44,17 @@ public class AvisBroadcastDispatcher implements BroadcastDispatcher {
   private Category log = Log.createCategory(getClass());
   private EventConsumer consumer;
   private String domain;
-  private Elvin elvinConnection;
+  private AvisConnector connector;
   private AvisAddress address;
   private int bufsize;
+  private ConnectionStateListenerList listeners = new ConnectionStateListenerList();
+  private volatile ConnectionState state = ConnectionState.UP;
+  private ConnectionMonitor monitor;
 
   public AvisBroadcastDispatcher(EventConsumer consumer, String avisUrl) throws IOException {
     this.consumer = consumer;
     domain = consumer.getDomainName().toString();
-    elvinConnection = new Elvin(avisUrl);
+    connector = new AvisConnector(avisUrl);
     address = new AvisAddress(avisUrl);
   }
 
@@ -63,59 +74,113 @@ public class AvisBroadcastDispatcher implements BroadcastDispatcher {
 
   @Override
   public void dispatch(ServerAddress unicastAddr, boolean alldomains, String evtType, Object data) throws IOException {
-
-    RemoteEvent evt;
-
-    if (alldomains) {
-      evt = new RemoteEvent(null, evtType, data).setNode(consumer.getNode());
-      evt.setUnicastAddress(unicastAddr);
-      elvinConnection.send(createNotification(evt, ANY_DOMAIN));
-
+    if (state == ConnectionState.UP) {
+      RemoteEvent evt;
+  
+      try {
+        if (alldomains) {
+          evt = new RemoteEvent(null, evtType, data).setNode(consumer.getNode());
+          evt.setUnicastAddress(unicastAddr);
+          connector.getConnection().send(createNotification(evt, ANY_DOMAIN));
+    
+        } else {
+          evt = new RemoteEvent(domain, evtType, data).setNode(consumer.getNode());
+          evt.setUnicastAddress(unicastAddr);
+          connector.getConnection().send(createNotification(evt, domain));
+    
+        }
+      } catch (IOException e) {
+        watchConnection();
+      }
     } else {
-      evt = new RemoteEvent(domain, evtType, data).setNode(consumer.getNode());
-      evt.setUnicastAddress(unicastAddr);
-      elvinConnection.send(createNotification(evt, domain));
-
+      log.debug("Connection currently down: cannot dispatch");
     }
   }
 
   @Override
   public void dispatch(ServerAddress unicastAddr, String domain, String evtType, Object data) throws IOException {
-    log.debug("Sending event bytes for: %s", evtType);
-    RemoteEvent evt = new RemoteEvent(domain, evtType, data).setNode(consumer.getNode());
-    evt.setUnicastAddress(unicastAddr);
-    elvinConnection.send(createNotification(evt, domain));
+    if (state == ConnectionState.UP) {
+      log.debug("Sending event bytes for: %s", evtType);
+      RemoteEvent evt = new RemoteEvent(domain, evtType, data).setNode(consumer.getNode());
+      evt.setUnicastAddress(unicastAddr);
+      try {
+        connector.getConnection().send(createNotification(evt, domain));
+      } catch (IOException e) {
+        watchConnection();
+      }
+    } else {
+      log.debug("Connection currently down: cannot dispatch");
+    }
   }
 
   @Override
   public void start() {
     try {
-      elvinConnection.subscribe(String.format("(begins-with(Domain, \"%s\") || Domain == '*') && Type == '%s'", consumer.getDomainName().get(0),
-          NOTIF_TYPE));
-      elvinConnection.addNotificationListener(new GeneralNotificationListener() {
-        @Override
-        public void notificationReceived(GeneralNotificationEvent event) {
-          try {
-            log.debug("Received GeneralNotificationEvent: %s", event.notification);
-            byte[] bytes = Base64.decode(((String) event.notification.get("Payload")).getBytes());
-            Object data = McastUtil.fromBytes(bytes);
-            if (data instanceof RemoteEvent) {
-              consumer.onAsyncEvent((RemoteEvent) data);
-            }
-          } catch (Exception e) {
-            log.error("Could not deserialize data", e);
-          }
-        }
-      });
-    } catch (Exception e) {
-      throw new IllegalArgumentException("Could not start", e);
+      doConnect();
+      listeners.onConnected();
+    } catch (IOException e) {
+      log.warning("I/O error caught: cannot connect to Avis router. Will attempt reconnecting", e);
+      watchConnection();
     }
   }
 
   @Override
   public void close() {
-    elvinConnection.close();
+    connector.disconnect();
+    if (monitor != null) {
+      monitor.stop();
+    }
   }
+  
+  @Override
+  public void addConnectionStateListener(ConnectionStateListener listener) {
+    listeners.add(listener);
+  }
+  
+  @Override
+  public void removeConnectionStateListener(ConnectionStateListener listener) {
+    listeners.remove(listener);
+  }
+  
+  private synchronized void doConnect() throws IOException {
+    connector.connect();
+    connector.getConnection().subscribe(String.format("(begins-with(Domain, \"%s\") || Domain == '*') && Type == '%s'", consumer.getDomainName().get(0),
+        NOTIF_TYPE));
+    connector.getConnection().addNotificationListener(new GeneralNotificationListener() {
+      @Override
+      public void notificationReceived(GeneralNotificationEvent event) {
+        try {
+          log.debug("Received GeneralNotificationEvent: %s", event.notification);
+          byte[] bytes = Base64.decode(((String) event.notification.get("Payload")).getBytes());
+          Object data = McastUtil.fromBytes(bytes);
+          if (data instanceof RemoteEvent) {
+            consumer.onAsyncEvent((RemoteEvent) data);
+          }
+        } catch (Exception e) {
+          log.error("Could not deserialize data", e);
+        }
+      }
+    });    
+    
+    state = ConnectionState.UP;
+  }
+  
+  private synchronized void watchConnection() {
+    if (state == ConnectionState.UP) {
+      listeners.onDisconnected();
+      monitor = new ConnectionMonitor("AvisBroadcastDispatcher::" + this.domain + "::" + this.getNode(), new ConnectionMonitor.ConnectionFacade() {
+        @Override
+        public void tryConnection() throws IOException {
+          doConnect();
+          log.debug("Reconnected to Avis router");
+          monitor = null;
+        }
+      }, 
+      this.listeners,
+      Props.getSystemProperties().getLongProperty(Consts.MCAST_BROADCAST_MONITOR_INTERVAL, Defaults.DEFAULT_BROADCAST_MONITOR_INTERVAL));
+      state = ConnectionState.DOWN;
+    } 
+  }  
 
   private Notification createNotification(RemoteEvent evt, String domain) throws IOException {
     Notification notification = new Notification();

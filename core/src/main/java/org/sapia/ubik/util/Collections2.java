@@ -147,6 +147,7 @@ public final class Collections2 {
    * @return the {@link List} into which the given array's elements have been
    *         copied.
    */
+  @SafeVarargs
   public static <T> List<T> arrayToList(T... array) {
     List<T> list = new ArrayList<T>(array.length);
     for (T a : array) {
@@ -164,6 +165,7 @@ public final class Collections2 {
    * @return the {@link Set} into which the given array's elements have been
    *         copied.
    */
+  @SafeVarargs
   public static <T> Set<T> arrayToSet(T... array) {
     Set<T> set = new HashSet<T>();
     for (T a : array) {
