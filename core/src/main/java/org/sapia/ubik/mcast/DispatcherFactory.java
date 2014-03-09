@@ -32,10 +32,10 @@ public final class DispatcherFactory {
 
   static {
     try {
-      Class.forName("org.jboss.netty.channel.ChannelHandler");
+      Class.forName("org.apache.mina.filter.codec.ProtocolCodecFilter");
       isNioEnabled = true;
     } catch (Exception e) {
-      log.info("Netty not detected in classpath, will use non-NIO TCP unicast", log.noArgs());
+      log.info("Netty not detected in classpath, will use non-NIO TCP unicast");
       isNioEnabled = false;
     }
 
