@@ -290,7 +290,17 @@ public interface Consts {
    * Identifies the Avis URL.
    */
   public static final String BROADCAST_AVIS_URL = "ubik.rmi.naming.broadcast.avis.url";
-
+  
+  /**
+   * Identifies the Hazelcast broadcast provider.
+   */
+  public static final String BROADCAST_PROVIDER_HAZELCAST = "ubik.rmi.naming.broadcast.hazelcast";
+  
+  /**
+   * Identifies the Halzecast topic name.
+   */
+  public static final String BROADCAST_HAZELCAST_TOPIC = "ubik.rmi.naming.broadcast.hazelcast.topic";
+  
   /**
    * Identifies the in-memory broadcast provider.
    */

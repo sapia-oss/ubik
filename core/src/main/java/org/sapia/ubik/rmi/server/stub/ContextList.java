@@ -1,6 +1,5 @@
 package org.sapia.ubik.rmi.server.stub;
 
-import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -32,11 +31,56 @@ class ContextList implements Contexts.UpdateListener {
     public void onRemoval(RemoteRefContext context);
 
   }
+  
+  /**
+   * This interface is meant to isolate a {@link ThreadSpecificContextList} from the {@link ContextList}
+   * to which it is associated.
+   */
+  public interface Callback {
+    
+    /**
+     * @return the timestamp at which the {@link ContextList} behind this
+     * instance was last modified.
+     */
+    public long getTimestamp();
+    
+    /**
+     * @return the currently available {@link RemoteRefContext}s, each corresponding
+     * to a remote object.
+     */
+    public List<RemoteRefContext> getContexts();
+  }
+  
+  // ==========================================================================
 
+  private volatile long timestamp = System.nanoTime();
   private Set<RemoteRefContext> contextSet = new HashSet<RemoteRefContext>();
-  private List<RemoteRefContext> orderedContexts = new ArrayList<RemoteRefContext>();
   private List<RemovalListener> listeners = new ArrayList<RemovalListener>();
 
+  /**
+   * @return a {@link ThreadSpecificContextList} attached to this instance.
+   */
+  synchronized ThreadSpecificContextList getThreadSpecificContextList() {
+    return new ThreadSpecificContextList(new Callback() {
+      @Override
+      public long getTimestamp() {
+        return timestamp;
+      }
+      
+      @Override
+      public List<RemoteRefContext> getContexts() {
+        return getAll();
+      }
+    });
+  }
+  
+  /**
+   * @return the time at which this instance was last modified.
+   */
+  long getTimestamp() {
+    return timestamp;
+  }
+  
   /**
    * Replaces this instance's contexts with the list of given ones.
    * 
@@ -46,9 +90,8 @@ class ContextList implements Contexts.UpdateListener {
    */
   synchronized void update(Collection<RemoteRefContext> otherContexts) {
     contextSet.clear();
-    orderedContexts.clear();
     contextSet.addAll(otherContexts);
-    orderedContexts.addAll(otherContexts);
+    timestamp = System.nanoTime();
   }
 
   /**
@@ -59,7 +102,7 @@ class ContextList implements Contexts.UpdateListener {
    */
   synchronized boolean add(RemoteRefContext context) {
     if (contextSet.add(context)) {
-      orderedContexts.add(context);
+      timestamp = System.nanoTime();
       return true;
     }
     return false;
@@ -73,35 +116,25 @@ class ContextList implements Contexts.UpdateListener {
    */
   synchronized boolean remove(RemoteRefContext context) {
     if (contextSet.remove(context)) {
-      orderedContexts.remove(context);
+      timestamp = System.nanoTime();
       notifyListeners(context);
       return true;
     }
     return false;
   }
 
+  /**
+   * @return the {@link List} of {@link RemoteRefContext}s held by this instance.
+   */
   synchronized List<RemoteRefContext> getAll() {
-    return new ArrayList<RemoteRefContext>(orderedContexts);
-  }
-
-  synchronized int count() {
-    return orderedContexts.size();
+    return new ArrayList<RemoteRefContext>(contextSet);
   }
 
   /**
-   * Rotates this instance's {@link RemoteRefContext}s.
-   * 
-   * @return the {@link RemoteRefContext} that is the first in this instance's
-   *         ordered list (after the internal rotation has been done).
-   * @throws RemoteException
+   * @return the number of {@link RemoteRefContext}s currently held by this instance.
    */
-  synchronized RemoteRefContext rotate() throws RemoteException {
-    if (orderedContexts.size() == 0) {
-      throw new RemoteException("No connection available");
-    }
-    RemoteRefContext toReturn = orderedContexts.remove(0);
-    orderedContexts.add(toReturn);
-    return toReturn;
+  synchronized int count() {
+    return contextSet.size();
   }
 
   /**
@@ -130,6 +163,6 @@ class ContextList implements Contexts.UpdateListener {
 
   @Override
   public synchronized String toString() {
-    return Strings.toString("contexts", orderedContexts);
+    return Strings.toString("contexts", contextSet);
   }
 }

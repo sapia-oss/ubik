@@ -140,11 +140,6 @@ public class UDPBroadcastDispatcher implements BroadcastDispatcher {
     stateListeners.remove(listener);
   }  
 
-  /*
-   * //////////////////////////////////////////////////////////////// INNER
-   * CLASSES ////////////////////////////////////////////////////////////////
-   */
-
   public static class UDPMulticastAddress implements MulticastAddress {
 
     static final long serialVersionUID = 1L;

@@ -7,6 +7,8 @@ import org.sapia.ubik.concurrent.ConfigurableExecutor;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.avis.AvisBroadcastDispatcher;
+import org.sapia.ubik.mcast.hazelcast.HazelcastBroadcastDispatcher;
+import org.sapia.ubik.mcast.hazelcast.HazelcastMulticastAddress;
 import org.sapia.ubik.mcast.memory.InMemoryBroadcastDispatcher;
 import org.sapia.ubik.mcast.memory.InMemoryUnicastDispatcher;
 import org.sapia.ubik.mcast.tcp.TcpUnicastDispatcher;
@@ -81,7 +83,7 @@ public final class DispatcherFactory {
         dispatcher.setResponseTimeout(props.getIntProperty(Consts.MCAST_SYNC_RESPONSE_TIMEOUT, Defaults.DEFAULT_SYNC_RESPONSE_TIMEOUT));
         return dispatcher;
       } else {
-        log.info("Creating TCP unicast provider");
+        log.info("Creating BIO TCP unicast provider");
         ConfigurableExecutor.ThreadingConfiguration threadingConfig = new ConfigurableExecutor.ThreadingConfiguration();
         threadingConfig.setMaxPoolSize(props.getIntProperty(Consts.MCAST_HANDLER_COUNT, Defaults.DEFAULT_HANDLER_COUNT));
         threadingConfig.setCorePoolSize(props.getIntProperty(Consts.MCAST_HANDLER_COUNT, Defaults.DEFAULT_HANDLER_COUNT));
@@ -91,8 +93,7 @@ public final class DispatcherFactory {
         dispatcher.setResponseTimeout(props.getIntProperty(Consts.MCAST_SYNC_RESPONSE_TIMEOUT, Defaults.DEFAULT_SYNC_RESPONSE_TIMEOUT));
         return dispatcher;
       }
-    }
-
+    } 
   }
 
   /**
@@ -115,9 +116,14 @@ public final class DispatcherFactory {
       return new InMemoryBroadcastDispatcher(consumer);
     } else if (provider.equals(Consts.BROADCAST_PROVIDER_AVIS)) {
       log.info("Creating AVIS broadcast provider");
-      String avisUrl = props.getProperty(Consts.BROADCAST_AVIS_URL);
+      String avisUrl = props.getNotNullProperty(Consts.BROADCAST_AVIS_URL);
       AvisBroadcastDispatcher dispatcher = new AvisBroadcastDispatcher(consumer, avisUrl);
       dispatcher.setBufsize(props.getIntProperty(Consts.MCAST_BUFSIZE_KEY, AvisBroadcastDispatcher.DEFAULT_BUFSZ));
+      return dispatcher;
+    } else if (provider.equals(Consts.BROADCAST_PROVIDER_HAZELCAST)) {
+      log.info("Creating HAZELCAST broadcast provider");
+      String topic = props.getNotNullProperty(Consts.BROADCAST_HAZELCAST_TOPIC);
+      HazelcastBroadcastDispatcher dispatcher = new HazelcastBroadcastDispatcher(consumer, topic);
       return dispatcher;
     } else {
       log.info("Creating UDP broadcast provider");
@@ -143,6 +149,8 @@ public final class DispatcherFactory {
     } else if (provider.equals(Consts.BROADCAST_PROVIDER_AVIS)) {
       String avisUrl = props.getProperty(Consts.BROADCAST_AVIS_URL);
       return new AvisBroadcastDispatcher.AvisAddress(avisUrl);
+    } else if (provider.equals(Consts.BROADCAST_PROVIDER_HAZELCAST)) {
+      return new HazelcastMulticastAddress(props.getNotNullProperty(Consts.BROADCAST_HAZELCAST_TOPIC));
     } else {
       return new UDPBroadcastDispatcher.UDPMulticastAddress(props.getProperty(Consts.MCAST_ADDR_KEY, Consts.DEFAULT_MCAST_ADDR),
           props.getIntProperty(Consts.MCAST_PORT_KEY, Consts.DEFAULT_MCAST_PORT));

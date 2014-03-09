@@ -57,6 +57,7 @@ public class RemoteRefStateless implements StubInvocationHandler, Externalizable
   private MulticastAddress multicastAddress;
   private OID oid = new DefaultOID(UIDGenerator.createUID());
   private transient ContextList contexts = new ContextList();
+  private transient ThreadLocal<ThreadSpecificContextList> threadContexts = new ThreadLocal<>();
   private transient volatile InvocationDispatcher dispatcher;
 
   /**
@@ -234,7 +235,12 @@ public class RemoteRefStateless implements StubInvocationHandler, Externalizable
 
   private RemoteRefContext acquire() throws RemoteException {
     log.debug("Proceeding to round-robin");
-    return contexts.rotate();
+    ThreadSpecificContextList tsl = threadContexts.get();
+    if (tsl == null) {
+      tsl = contexts.getThreadSpecificContextList();
+      threadContexts.set(tsl);
+    }
+    return tsl.roundrobin();
   }
 
   private RemoteRefContext removeAcquire(RemoteRefContext toRemove) throws RemoteException {

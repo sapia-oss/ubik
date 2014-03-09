@@ -233,6 +233,15 @@
 			<artifactId>avis-common</artifactId>
 			<version>1.2.2</version>
 		</dependency>
+		
+		<!-- The following are necessary for using Ubik's Hazelcast Broadcast dispatcher   -->
+		
+		<dependency>
+			<groupId>com.hazelcast</groupId>
+			<artifactId>hazelcast</artifactId>
+			<version>3.1.6</version>
+			<optional>true</optional>
+		</dependency>
 
 	</dependencies>
 </project>
