@@ -26,7 +26,6 @@ class ThreadSpecificContextList {
    */
   ThreadSpecificContextList(ContextList.Callback owner) {
     this.owner = owner;
-    timestamp  = owner.getTimestamp();
   }
   
   /**

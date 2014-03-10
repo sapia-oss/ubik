@@ -22,8 +22,16 @@ public class Singleton {
    * @param instance the {@link HazelcastInstance} to use.
    */
   public static void set(HazelcastInstance instance) {
-    Assertions.illegalState(singleton == null, "HazelcastInstance already set");
+    Assertions.illegalState(singleton != null, "HazelcastInstance already set");
     singleton = instance;
+  }
+  
+  /**
+   * Internally sets the {@link HazelcastInstance} to <code>null</code> - IMPORTANT: the instance is not shut down.
+   * It is the application's responsibility to do so.
+   */
+  public static void unset() {
+    singleton = null;
   }
   
   /**
@@ -31,7 +39,7 @@ public class Singleton {
    */
   public static HazelcastInstance get() {
     Assertions.illegalState(
-        singleton != null, 
+        singleton == null, 
         "HazelcastInstance not set: call set on %s to set the instance to use", 
         Singleton.class.getName()
     );

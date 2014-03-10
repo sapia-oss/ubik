@@ -5,6 +5,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.sapia.ubik.concurrent.BlockingRef;
@@ -26,6 +27,7 @@ public abstract class BroadcastDispatcherTestSupport {
 
   @Before
   public void setUp() throws Exception {
+    doSetup();
     source = createDispatcher(sourceConsumer = new EventConsumer("broadcast/01"));
     domainDestination = createDispatcher(domainConsumer = new EventConsumer("broadcast/01"));
     nonDomainDestination = createDispatcher(nonDomainConsumer = new EventConsumer("broadcast/02"));
@@ -37,11 +39,19 @@ public abstract class BroadcastDispatcherTestSupport {
     allDomainDestination.start();
   }
 
+  @After
   public void tearDown() throws Exception {
+    doTearDown();
     source.close();
     domainDestination.close();
     nonDomainDestination.close();
     allDomainDestination.close();
+  }
+
+  protected void doSetup() throws Exception {
+  }
+  
+  protected void doTearDown() throws Exception {
   }
 
   @Test

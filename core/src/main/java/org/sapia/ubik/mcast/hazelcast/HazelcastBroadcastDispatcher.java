@@ -65,7 +65,11 @@ public class HazelcastBroadcastDispatcher implements BroadcastDispatcher {
   
   @Override
   public void close() {
-    topic.destroy();
+    try {
+      topic.destroy();
+    } catch (RuntimeException e) {
+      // noop
+    }
   }
 
   @Override
