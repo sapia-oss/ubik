@@ -2,6 +2,7 @@ package org.sapia.ubik.mcast.hazelcast;
 
 import java.io.IOException;
 
+import org.sapia.ubik.ioc.BeanLookup;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.BroadcastDispatcher;
@@ -12,6 +13,7 @@ import org.sapia.ubik.mcast.udp.UDPBroadcastDispatcher;
 import org.sapia.ubik.net.ConnectionStateListener;
 import org.sapia.ubik.net.ConnectionStateListenerList;
 import org.sapia.ubik.net.ServerAddress;
+import org.sapia.ubik.rmi.server.Hub;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ITopic;
@@ -22,11 +24,12 @@ import com.hazelcast.core.MessageListener;
  * Implements the {@link BroadcastDispatcher} interface on top of a Hazelcast {@link ITopic}.
  * <p>
  * An instance of this class accesses the {@link HazelcastInstance} that must have previously
- * created and set on the {@link Singleton} class.
+ * created and set on the {@link Singleton} class, or have been made available through a {@link BeanLookup}
+ * registered with the {@link Hub} class (the lookup mechanism is used first).
  * <p>
- * Setting that instance of the responsibility of applications, and it should be done prior to
+ * Setting that instance is the responsibility of applications, and should be done prior to
  * using Ubik in code.
- * 
+ *
  * @author yduchesne
  *
  */
@@ -38,18 +41,22 @@ public class HazelcastBroadcastDispatcher implements BroadcastDispatcher {
   private ITopic<MessagePayload> topic;
   private HazelcastMulticastAddress address;
   private ConnectionStateListenerList listeners = new ConnectionStateListenerList();
-  
+
   public HazelcastBroadcastDispatcher(EventConsumer consumer, String topicName) {
     this.consumer = consumer;
     this.domain   = consumer.getDomainName().toString();
-    this.topic    = Singleton.get().getTopic(topicName);
-    this.address  = new HazelcastMulticastAddress(topic.getName());
+    HazelcastInstance instance = Hub.getBean(HazelcastInstance.class);
+    if (instance == null) {
+       instance = Singleton.get();
+    }
+    this.topic   = instance.getTopic(topicName);
+    this.address = new HazelcastMulticastAddress(topic.getName());
   }
-  
+
   @Override
   public void start() {
     topic.addMessageListener(new MessageListener<MessagePayload>() {
-      
+
       @Override
       public void onMessage(Message<MessagePayload> msg) {
         MessagePayload payload = msg.getMessageObject();
@@ -62,7 +69,7 @@ public class HazelcastBroadcastDispatcher implements BroadcastDispatcher {
     });
     listeners.notifyConnected();
   }
-  
+
   @Override
   public void close() {
     try {
@@ -83,10 +90,10 @@ public class HazelcastBroadcastDispatcher implements BroadcastDispatcher {
       evt = new RemoteEvent(domain, evtType, data).setNode(consumer.getNode());
     }
     evt.setUnicastAddress(unicastAddr);
-    
+
     topic.publish(new MessagePayload(evt));
   }
-  
+
   @Override
   public void dispatch(ServerAddress unicastAddr, String domain, String evtType,
       Object data) throws IOException {
@@ -98,24 +105,24 @@ public class HazelcastBroadcastDispatcher implements BroadcastDispatcher {
 
     topic.publish(new MessagePayload(evt));
   }
-  
+
   @Override
   public MulticastAddress getMulticastAddress() {
     return address;
   }
-  
+
   @Override
   public String getNode() {
     return consumer.getNode();
   }
-  
+
   @Override
-  public void removeConnectionStateListener(ConnectionStateListener listener) {   
+  public void removeConnectionStateListener(ConnectionStateListener listener) {
     listeners.remove(listener);
   }
-  
+
   @Override
-  public void addConnectionStateListener(ConnectionStateListener listener) {    
+  public void addConnectionStateListener(ConnectionStateListener listener) {
     listeners.add(listener);
   }
 

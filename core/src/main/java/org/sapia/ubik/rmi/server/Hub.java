@@ -3,12 +3,17 @@ package org.sapia.ubik.rmi.server;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.sapia.ubik.ioc.BeanLookup;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.ServerAddress;
+import org.sapia.ubik.net.ThreadInterruptedException;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
@@ -18,7 +23,7 @@ import org.sapia.ubik.rmi.server.transport.mina.MinaTransportProvider;
 
 /**
  * This class is the single-entry point into Ubik RMI's API.
- * 
+ *
  * @author Yanick Duchesne
  */
 public class Hub {
@@ -31,12 +36,47 @@ public class Hub {
   private static final Modules container = new Modules();
   private static AtomicBoolean shutdown = new AtomicBoolean();
 
+  private static List<BeanLookup> lookups = Collections.synchronizedList(new ArrayList<BeanLookup>());
+
+  /**
+   * @param lookup a {@link BeanLookup} to add to this instance.
+   * @see BeanLookup
+   */
+  public static void addBeanLookup(BeanLookup lookup) {
+    lookups.add(lookup);
+  }
+
+  /**
+   * @param lookup removes the given {@link BeanLookup} from this instance.
+   */
+  public static void removeBeanLookup(BeanLookup lookup) {
+    lookups.remove(lookup);
+  }
+
+  /**
+   * @param typeOf the {@link Class} of the bean to look up.
+   * @return the bean corresponding to the given class, or <code>null</code> if no
+   * such bean is found.
+   * @see BeanLookup
+   */
+  public static <T> T getBean(Class<T> typeOf) {
+    synchronized (lookups) {
+      for (BeanLookup b : lookups) {
+        T t = b.getBean(typeOf);
+        if (t != null) {
+          return t;
+        }
+      }
+    }
+    return null;
+  }
+
   /**
    * "Exports" the passed in object as a remote RMI server: this method
    * internally starts an RMI server that listens on a random port and
    * implements the interfaces of the passed in object. The stub is returned and
    * can be bound to the JNDI.
-   * 
+   *
    * @see #exportObject(Object, int)
    * @see #connect(String, int)
    * @return the stub corresponding to the exported object.
@@ -52,7 +92,7 @@ public class Hub {
 
   /**
    * This method creates a server listening on the specified port.
-   * 
+   *
    * @see #exportObject(Object)
    * @throws RemoteException
    *           if a problem occurs performing the connection.
@@ -72,7 +112,7 @@ public class Hub {
    * "transport type" (ubik.rmi.transport.type).
    * <p>
    * The method returns the stub for the given object.
-   * 
+   *
    * @param object
    *          the {@link Object} to export.
    * @param props
@@ -93,7 +133,7 @@ public class Hub {
    * transport type.
    * <p>
    * The method returns the stub for the given object.
-   * 
+   *
    * @param object
    *          an {@link Object} to export.
    * @param transportType
@@ -118,9 +158,9 @@ public class Hub {
    * NOTE: this method does not stop the server through which the exported
    * instance is receiving remote method calls. To stop the servers that have
    * been started by this class, call the latter's {@link #shutdown()} method.
-   * 
+   *
    * @see #shutdown(long)
-   * 
+   *
    * @param o
    *          the exported object that is to be unexported.
    */
@@ -139,9 +179,9 @@ public class Hub {
    * instances (that correspond to the given classloader) are receiving remote
    * method calls. To stop the servers that have been started by the
    * <code>Hub</code>, call the latter's {@link #shutdown} method.
-   * 
+   *
    * @see #shutdown(long)
-   * 
+   *
    * @param loader
    */
   public static void unexport(ClassLoader loader) {
@@ -152,7 +192,7 @@ public class Hub {
   /**
    * This method allows connecting to a RMI server listening to the given host
    * and port.
-   * 
+   *
    * @throws RemoteException
    *           if a problem occurs performing the connection.
    */
@@ -164,11 +204,11 @@ public class Hub {
   /**
    * This method allows connecting to a RMI server listening on the given
    * address.
-   * 
+   *
    * @param address
    *          the {@link ServerAddress} corresponding to the target server's
    *          physical endpoint.
-   * 
+   *
    * @throws RemoteException
    *           if a problem occurs performing the connection.
    */
@@ -220,7 +260,7 @@ public class Hub {
   /**
    * Forces the clearing of the connection pool corresponding to the given
    * address.
-   * 
+   *
    * @see Connections#clear()
    * @param address
    *          a {@link ServerAddress}
@@ -236,7 +276,7 @@ public class Hub {
 
   /**
    * Returns the address of the server for the given transport type.
-   * 
+   *
    * @param transportType
    *          the logical identifier of a "transport type".
    * @return a <code>ServerAddress</code>,
@@ -248,7 +288,7 @@ public class Hub {
 
   /**
    * Returns true if the Hub is shut down.
-   * 
+   *
    * @return <code>true</code> if the Hub is shut down.
    */
   public static synchronized boolean isShutdown() {
@@ -264,6 +304,7 @@ public class Hub {
       shutdown(DEFAULT_SHUTDOWN_TIMEOUT);
     } catch (InterruptedException e) {
       log.warning("Thread interrupted during shutdown");
+      throw new ThreadInterruptedException();
     }
   }
 
@@ -271,7 +312,7 @@ public class Hub {
    * Shuts down this instance; some part of the shutdown can be asynchronous. A
    * timeout must be given in order not to risk the shutdown to last for too
    * long.
-   * 
+   *
    * @param timeout
    *          a shutdown "timeout", in millis.
    * @throws InterruptedException
@@ -281,6 +322,7 @@ public class Hub {
       return;
     }
     log.info("Shutting down...");
+    lookups.clear();
     container.stop();
     log.info("Shutdown completed");
     shutdown.set(true);
