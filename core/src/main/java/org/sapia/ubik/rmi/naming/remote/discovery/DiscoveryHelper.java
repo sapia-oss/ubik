@@ -18,6 +18,7 @@ import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.AsyncEventListener;
 import org.sapia.ubik.mcast.EventChannel;
+import org.sapia.ubik.mcast.EventChannelRef;
 import org.sapia.ubik.mcast.RemoteEvent;
 import org.sapia.ubik.net.TCPAddress;
 import org.sapia.ubik.rmi.naming.ServiceLocator;
@@ -33,13 +34,13 @@ import org.sapia.ubik.util.Props;
  * An instance of this class can be used by applications to listen for the
  * appearance of a) appearing JNDI servers; b) existing JNDI servers; and c)
  * appearing service bindings.
- * 
+ *
  * @author Yanick Duchesne
  */
 public class DiscoveryHelper implements AsyncEventListener {
 
   protected Category log = Log.createCategory(this.getClass());
-  protected EventChannel channel;
+  protected EventChannelRef channelRef;
   private List<ServiceDiscoListener> svclisteners = new CopyOnWriteArrayList<ServiceDiscoListener>();
   private List<JndiDiscoListener> jndiListeners = new CopyOnWriteArrayList<JndiDiscoListener>();
   private ContextResolver resolver = new DefaultContextResolver();
@@ -47,27 +48,27 @@ public class DiscoveryHelper implements AsyncEventListener {
   /**
    * Constructor for DiscoveryHelper.
    */
-  public DiscoveryHelper(EventChannel ec) throws IOException {
-    channel = ec;
+  public DiscoveryHelper(EventChannelRef ec) throws IOException {
+    channelRef = ec;
     initChannel();
   }
 
   /**
    * Creates an instance of this class that will listen for new JNDI servers and
    * for the binding of new services on the given domain.
-   * 
+   *
    * @param domain
    *          the name of a domain.
    */
   public DiscoveryHelper(String domain) throws IOException {
-    channel = new EventChannel(domain, Props.getSystemProperties());
+    channelRef = new EventChannel(domain, Props.getSystemProperties()).getReference();
     initChannel();
   }
 
   /**
    * Creates an instance of this class that will listen for new JNDI servers and
    * for the binding of new services on the given domain.
-   * 
+   *
    * @param domain
    *          the name of a domain.
    * @param mcastAddr
@@ -79,7 +80,7 @@ public class DiscoveryHelper implements AsyncEventListener {
     Properties props = new Properties();
     props.setProperty(JNDIConsts.MCAST_ADDR_KEY, mcastAddr);
     props.setProperty(JNDIConsts.MCAST_PORT_KEY, Integer.toString(mcastPort));
-    channel = new EventChannel(domain, new Props().addProperties(props).addSystemProperties());
+    channelRef = new EventChannel(domain, new Props().addProperties(props).addSystemProperties()).getReference();
     initChannel();
   }
 
@@ -94,7 +95,7 @@ public class DiscoveryHelper implements AsyncEventListener {
 
   /**
    * Adds a service discovery listener to this instance.
-   * 
+   *
    * @param listener
    *          a {@link ServiceDiscoListener}.
    */
@@ -106,7 +107,7 @@ public class DiscoveryHelper implements AsyncEventListener {
 
   /**
    * Removes the given service discovery listener from this instance.
-   * 
+   *
    * @param listener
    *          a {@link ServiceDiscoListener}.
    */
@@ -116,7 +117,7 @@ public class DiscoveryHelper implements AsyncEventListener {
 
   /**
    * Adds a JNDI discovery listener to this instance.
-   * 
+   *
    * @param listener
    *          a {@link JndiDiscoListener}.
    */
@@ -124,7 +125,7 @@ public class DiscoveryHelper implements AsyncEventListener {
     if (!jndiListeners.contains(listener)) {
       jndiListeners.add(listener);
       try {
-        channel.dispatch(JNDIConsts.JNDI_CLIENT_PUBLISH, "");
+        channelRef.get().dispatch(JNDIConsts.JNDI_CLIENT_PUBLISH, "");
       } catch (IOException e) {
       }
     }
@@ -132,7 +133,7 @@ public class DiscoveryHelper implements AsyncEventListener {
 
   /**
    * Removes the given JNDI discovery listener from this instance.
-   * 
+   *
    * @param listener
    *          {@link JndiDiscoListener}.
    */
@@ -140,34 +141,11 @@ public class DiscoveryHelper implements AsyncEventListener {
     jndiListeners.remove(listener);
   }
 
-  /**
-   * @see org.sapia.ubik.mcast.AsyncEventListener#onAsyncEvent(RemoteEvent)
-   */
+  @Override
   public void onAsyncEvent(RemoteEvent evt) {
-    TCPAddress tcp;
-
     try {
       if (evt.getType().equals(JNDIConsts.JNDI_SERVER_PUBLISH) || evt.getType().equals(JNDIConsts.JNDI_SERVER_DISCO)) {
-        tcp = (TCPAddress) evt.getData();
-
-        Context remoteCtx = (Context) resolver.resolve(tcp);
-
-        List<JndiDiscoListener> listeners = new ArrayList<JndiDiscoListener>(jndiListeners);
-
-        /*
-         * TODO: this code is a hack and a refactoring will be necessary
-         */
-        if (remoteCtx instanceof RemoteContext) {
-          try {
-            remoteCtx = new LocalContext(getJndiURI(tcp), (RemoteContext) remoteCtx);
-          } catch (NamingException e) {
-            Log.warning(getClass(), "Could not create local context", e);
-            return;
-          }
-        }
-        for (int i = 0; i < listeners.size(); i++) {
-          listeners.get(i).onJndiDiscovered(remoteCtx);
-        }
+        processJndiServerEvent(evt);
       } else if (evt.getType().equals(SyncPutEvent.class.getName())) {
         SyncPutEvent bevt = (SyncPutEvent) evt.getData();
 
@@ -189,7 +167,7 @@ public class DiscoveryHelper implements AsyncEventListener {
 
           List<ServiceDiscoListener> listeners = new ArrayList<ServiceDiscoListener>(svclisteners);
           for (int i = 0; i < listeners.size(); i++) {
-            listener = (ServiceDiscoListener) listeners.get(i);
+            listener = listeners.get(i);
             listener.onServiceDiscovered(sevt);
           }
         } catch (IOException e) {
@@ -205,27 +183,54 @@ public class DiscoveryHelper implements AsyncEventListener {
     }
   }
 
+  private void processJndiServerEvent(RemoteEvent evt) {
+    try {
+      TCPAddress tcp = (TCPAddress) evt.getData();
+
+      Context remoteCtx = resolver.resolve(tcp);
+
+      List<JndiDiscoListener> listeners = new ArrayList<JndiDiscoListener>(jndiListeners);
+
+      /*
+       * TODO: this code is a hack and a refactoring will be necessary
+       */
+      if (remoteCtx instanceof RemoteContext) {
+        try {
+          remoteCtx = new LocalContext(getJndiURI(tcp), (RemoteContext) remoteCtx);
+        } catch (NamingException e) {
+          log.warning("Could not create local context", e);
+        }
+      }
+      for (int i = 0; i < listeners.size(); i++) {
+        listeners.get(i).onJndiDiscovered(remoteCtx);
+      }
+
+    } catch (Exception e) {
+      log.error("Could not process remote event: %s", e, evt.getType());
+    }
+  }
+
   /**
    * Closes this instance - should thereafter be discarded.
    */
   public void close() {
-    channel.close();
+    channelRef.get().close();
   }
 
   /**
-   * Returns this instance's event channel.
+   * Returns this instance's {@link EventChannelRef}.
    */
-  public EventChannel getChannel() {
-    return channel;
+  public EventChannelRef getChannel() {
+    return channelRef;
   }
 
   void initChannel() throws IOException {
-    channel.registerAsyncListener(JNDIConsts.JNDI_SERVER_PUBLISH, this);
-    channel.registerAsyncListener(JNDIConsts.JNDI_SERVER_DISCO, this);
-    channel.registerAsyncListener(SyncPutEvent.class.getName(), this);
+    channelRef.get().registerAsyncListener(JNDIConsts.JNDI_SERVER_PUBLISH, this);
+    channelRef.get().registerAsyncListener(JNDIConsts.JNDI_SERVER_DISCO, this);
+    channelRef.get().registerAsyncListener(SyncPutEvent.class.getName(), this);
 
-    if (!channel.isStarted()) {
-      channel.start();
+    if (!channelRef.get().isStarted()) {
+      channelRef.get().start();
     }
   }
 

@@ -2,7 +2,7 @@ package org.sapia.ubik.rmi.naming.remote;
 
 /**
  * Holds constants pertaining to JNDI.
- * 
+ *
  * @author Yanick Duchesne
  */
 public interface JNDIConsts extends org.sapia.ubik.rmi.Consts {
@@ -29,4 +29,5 @@ public interface JNDIConsts extends org.sapia.ubik.rmi.Consts {
    * appears on the network.
    */
   public static final String JNDI_CLIENT_PUBLISH = "ubik/rmi/naming/client/publish";
+
 }

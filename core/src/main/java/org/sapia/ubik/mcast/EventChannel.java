@@ -2,6 +2,7 @@ package org.sapia.ubik.mcast;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
@@ -31,6 +32,9 @@ import org.sapia.ubik.net.ConnectionStateListenerList;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.util.Clock;
+import org.sapia.ubik.util.Collections2;
+import org.sapia.ubik.util.Condition;
+import org.sapia.ubik.util.Function;
 import org.sapia.ubik.util.Props;
 import org.sapia.ubik.util.SoftReferenceList;
 
@@ -42,10 +46,10 @@ import org.sapia.ubik.util.SoftReferenceList;
  * <p>
  * An instance of this class will only send/received events to/from other
  * instances of the same domain.
- * 
+ *
  * @see org.sapia.ubik.mcast.DomainName
  * @see org.sapia.ubik.mcast.RemoteEvent
- * 
+ *
  * @author Yanick Duchesne
  */
 public class EventChannel {
@@ -66,6 +70,42 @@ public class EventChannel {
   /** Internal state */
   private enum State {
     CREATED, STARTED, CLOSED;
+  }
+
+  private static class EventChannelRefImpl implements EventChannelRef {
+
+    private EventChannel owner;
+    private boolean shouldClose;
+
+    private EventChannelRefImpl(EventChannel owner, boolean shouldClose) {
+      this.owner = owner;
+      this.shouldClose = shouldClose;
+    }
+
+    @Override
+    public void close() {
+      if (shouldClose) {
+        owner.close();
+      }
+    }
+
+    @Override
+    public EventChannel get() {
+      return owner;
+    }
+
+    @Override
+    public int hashCode() {
+      return owner.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (obj instanceof EventChannelRef) {
+        return ((EventChannelRef) obj).equals(owner);
+      }
+      return false;
+    }
   }
 
   // ==========================================================================
@@ -117,6 +157,8 @@ public class EventChannel {
   private static final long MIN_PUB_INTERVAL = 2000;
   private static final int MIN_PUB_OFFSET = 5000;
 
+  private static Set<EventChannel> CHANNELS_BY_DOMAIN = Collections.synchronizedSet(new HashSet<EventChannel>());
+
   private Category log = Log.createCategory(getClass());
   private Timer heartbeatTimer = new Timer("Ubik.EventChannel.Timer", true);
   private BroadcastDispatcher broadcast;
@@ -134,11 +176,11 @@ public class EventChannel {
   private ConnectionStateListenerList stateListeners = new ConnectionStateListenerList();
   private ExecutorService publishExecutor = Executors.newSingleThreadExecutor(NamedThreadFactory.createWith("Ubik.EventChannel.Publish").setDaemon(
       true));
-  
+
   /**
    * Creates an instance of this class that will use IP multicast and UDP
    * unicast.
-   * 
+   *
    * @param domain
    *          the domain name of this instance.
    * @param mcastHost
@@ -160,26 +202,36 @@ public class EventChannel {
     unicast = new UDPUnicastDispatcher(consumer, props.getIntProperty(Consts.MCAST_HANDLER_COUNT, Defaults.DEFAULT_HANDLER_COUNT));
     init(props);
   }
-  
+
+  /**
+   * Returns an {@link EventChannelRef} that will effectively close this instance
+   * upon its {@link EventChannelRef#close()} method being invoked.
+   *
+   * @return an {@link EventChannelRef} pointing to this instance.
+   */
+  public EventChannelRef getReference() {
+    return new EventChannelRefImpl(this, true);
+  }
+
   /**
    * @param listener adds the given {@link ConnectionStateListener}.
    */
   public void addConnectionStateListener(ConnectionStateListener listener) {
     stateListeners.add(listener);
   }
-  
+
   /**
    * @param listener removes the given {@link ConnectionStateListener} from this instance.
    */
   public void removeConnectionStateListener(ConnectionStateListener listener) {
-    stateListeners.add(listener);    
-  }  
+    stateListeners.add(listener);
+  }
 
   /**
    * Creates an instance of this class that uses a
    * {@link UDPBroadcastDispatcher} and a {@link UDPUnicastDispatcher}. The
    * broadcast dispatcher will use the default multicast address and port.
-   * 
+   *
    * @param domain
    *          this instance's domain.
    * @throws IOException
@@ -195,7 +247,7 @@ public class EventChannel {
   /**
    * Creates an instance of this class that will use the given properties to
    * configures its internal unicast and broadcast dispatchers.
-   * 
+   *
    * @param domain
    *          the domain name of this instance.
    * @param config
@@ -238,7 +290,7 @@ public class EventChannel {
 
   /**
    * Returns this instance's domain name.
-   * 
+   *
    * @return a {@link DomainName}.
    */
   public DomainName getDomainName() {
@@ -262,32 +314,32 @@ public class EventChannel {
   /**
    * Starts this instances. This method should be called after instantiating
    * this instance, prior to start receiving/sending remote events.
-   * 
+   *
    * @throws IOException
    *           if an IO problem occurs starting this instance.
    */
   public synchronized void start() throws IOException {
     if (state == State.CREATED) {
-      
+
       broadcast.addConnectionStateListener(new ConnectionStateListener() {
-        
+
         private int resyncAttempts = 0;
-        
+
         @Override
         public void onReconnected() {
           if (doResync()) stateListeners.notifyReconnected();
         }
-        
+
         @Override
         public void onDisconnected() {
-          stateListeners.notifyDisconnected();          
+          stateListeners.notifyDisconnected();
         }
-        
+
         @Override
         public void onConnected() {
-          if (doResync()) stateListeners.notifyConnected();          
+          if (doResync()) stateListeners.notifyConnected();
         }
-        
+
         private boolean doResync() {
           try {
             resync();
@@ -301,10 +353,11 @@ public class EventChannel {
           }
         }
       });
-      
+
       broadcast.start();
       unicast.start();
       address = unicast.getAddress();
+      CHANNELS_BY_DOMAIN.add(this);
       state = State.STARTED;
     }
   }
@@ -364,6 +417,7 @@ public class EventChannel {
    */
   public synchronized void close() {
     if (state == State.STARTED) {
+      CHANNELS_BY_DOMAIN.remove(this);
       try {
         this.broadcast.dispatch(unicast.getAddress(), this.getDomainName().toString(), SHUTDOWN_EVT, "SHUTDOWN");
       } catch (IOException e) {
@@ -378,9 +432,36 @@ public class EventChannel {
   }
 
   /**
+   * @return the unmodifiable {@link Set} of {@link EventChannelRef} instances corresponding to currently active
+   * {@link EventChannel}s.
+   */
+  public static synchronized Set<EventChannelRef> getActiveChannels() {
+    return Collections2.convertAsSet(CHANNELS_BY_DOMAIN, new Function<EventChannelRef, EventChannel>() {
+      @Override
+      public EventChannelRef call(EventChannel c) {
+        return new EventChannelRefImpl(c, false);
+      }
+    });
+  }
+
+  /**
+   * @param condition a {@link Condition}.
+   * @return the {@link EventChannelRef} matching the given condition, or <code>null</code>
+   * if <code>null</code> if no such match occurs.
+   */
+  public static synchronized EventChannelRef selectActiveChannel(Condition<EventChannel> condition) {
+    for (EventChannel c : CHANNELS_BY_DOMAIN) {
+      if (condition.apply(c)) {
+        return new EventChannelRefImpl(c, false);
+      }
+    }
+    return null;
+  }
+
+  /**
    * @return <code>true</code> if the {@link #start()} method was called on this
    *         instance.
-   * 
+   *
    * @see #start()
    */
   public boolean isStarted() {
@@ -390,7 +471,7 @@ public class EventChannel {
   /**
    * @return <code>true</code> if the {@link #close()} method was called on this
    *         instance.
-   * 
+   *
    * @see #close()
    */
   public boolean isClosed() {
@@ -415,7 +496,7 @@ public class EventChannel {
 
   /**
    * Dispatches the given data to all nodes in this instance's domain.
-   * 
+   *
    * @see org.sapia.ubik.mcast.BroadcastDispatcher#dispatch(String, String,
    *      Object)
    */
@@ -427,7 +508,7 @@ public class EventChannel {
   /**
    * Synchronously sends a remote event to the node corresponding to the given
    * {@link ServerAddress}, and returns the corresponding response.
-   * 
+   *
    * @param addr
    *          the {@link ServerAddress} of the node to which to send the remote
    *          event.
@@ -435,9 +516,9 @@ public class EventChannel {
    *          the "logical type" of the remote event.
    * @param data
    *          the data to encapsulate in the remote event.
-   * 
+   *
    * @return the {@link Response} corresponding to this call.
-   * 
+   *
    * @see RemoteEvent
    */
   public Response send(ServerAddress addr, String type, Object data) throws IOException, TimeoutException {
@@ -454,7 +535,7 @@ public class EventChannel {
   /**
    * Synchronously sends a remote event to all this instance's nodes and returns
    * the corresponding responses.
-   * 
+   *
    * @see UnicastDispatcher#send(List, String, Object)
    */
   public RespList send(String type, Object data) throws IOException, InterruptedException {
@@ -463,7 +544,7 @@ public class EventChannel {
 
   /**
    * Registers a listener of asynchronous remote events of the given type.
-   * 
+   *
    * @param type
    *          the logical type of the remote events to listen for.
    * @param listener
@@ -475,12 +556,12 @@ public class EventChannel {
 
   /**
    * Registers a listener of synchronous remote events of the given type.
-   * 
+   *
    * @param type
    *          the logical type of the remote events to listen for.
    * @param listener
    *          a {@link SyncEventListener}.
-   * 
+   *
    * @throws ListenerAlreadyRegisteredException
    *           if a listener has already been registered for the given event
    *           type.
@@ -491,7 +572,7 @@ public class EventChannel {
 
   /**
    * Unregisters the given listener from this instance.
-   * 
+   *
    * @param listener
    *          an {@link AsyncEventListener}.
    */
@@ -501,7 +582,7 @@ public class EventChannel {
 
   /**
    * Unregisters the given listener from this instance.
-   * 
+   *
    * @param listener
    *          an {@link SyncEventListener}.
    */
@@ -511,7 +592,7 @@ public class EventChannel {
 
   /**
    * Adds the given listener to this instance.
-   * 
+   *
    * @see View#addEventChannelStateListener(EventChannelStateListener)
    */
   public synchronized void addEventChannelStateListener(EventChannelStateListener listener) {
@@ -520,7 +601,7 @@ public class EventChannel {
 
   /**
    * Removes the given listener from this instance.
-   * 
+   *
    * @see View#removeEventChannelStateListener(EventChannelStateListener)
    */
   public synchronized boolean removeEventChannelStateListener(EventChannelStateListener listener) {
@@ -529,7 +610,7 @@ public class EventChannel {
 
   /**
    * Adds the given discovery listener to this instance.
-   * 
+   *
    * @param listener
    *          a {@link DiscoveryListener}.
    */
@@ -539,7 +620,7 @@ public class EventChannel {
 
   /**
    * Removes the given discovery listener from this instance.
-   * 
+   *
    * @param listener
    *          a {@link DiscoveryListener}.
    * @return <code>true</code> if the removal occurred.
@@ -550,7 +631,7 @@ public class EventChannel {
 
   /**
    * Returns this instance's "view".
-   * 
+   *
    * @return a {@link View}.
    */
   public View getView() {
@@ -613,7 +694,7 @@ public class EventChannel {
   /**
    * This method starts an instance of this class blocks the current thread
    * until the JVM is terminated.
-   * 
+   *
    * @param args
    *          this class' arguments (the only argument taken is the domain
    *          name).
@@ -645,10 +726,26 @@ public class EventChannel {
     }
   }
 
+
+  @Override
+  public boolean equals(Object obj) {
+    if (obj instanceof EventChannel) {
+      EventChannel other = (EventChannel) obj;
+      return consumer.getNode().equals(other.getNode());
+    }
+    return false;
+  }
+
+  @Override
+  public int hashCode() {
+    return consumer.getNode().hashCode();
+  }
+
   // ==========================================================================
 
   private class ChannelCallbackImpl implements ChannelCallback {
 
+    @Override
     public ServerAddress getAddress() {
       return EventChannel.this.getUnicastAddress();
     }

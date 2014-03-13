@@ -11,7 +11,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.sapia.ubik.concurrent.BlockingRef;
-import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.EventChannelTestSupport;
 import org.sapia.ubik.rmi.naming.remote.EmbeddableJNDIServer;
 import org.sapia.ubik.rmi.server.Hub;
@@ -26,7 +25,7 @@ public class DiscoveryHelperTest {
   public void setUp() throws Exception {
     PropertiesUtil.clearUbikSystemProperties();
     jndi = new EmbeddableJNDIServer(EventChannelTestSupport.createEventChannel("test"), 1099);
-    helper = new DiscoveryHelper(EventChannelTestSupport.createEventChannel("test"));
+    helper = new DiscoveryHelper(EventChannelTestSupport.createEventChannel("test").getReference());
     jndi.start(true);
     Thread.sleep(3000);
 

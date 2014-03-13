@@ -4,22 +4,29 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.sapia.ubik.log.Category;
+import org.sapia.ubik.log.Log;
+import org.sapia.ubik.mcast.DomainName;
 import org.sapia.ubik.mcast.EventChannel;
+import org.sapia.ubik.mcast.EventChannelRef;
 import org.sapia.ubik.mcast.MulticastAddress;
 import org.sapia.ubik.module.Module;
 import org.sapia.ubik.module.ModuleContext;
 import org.sapia.ubik.rmi.RemoteRuntimeException;
+import org.sapia.ubik.util.Condition;
 import org.sapia.ubik.util.Props;
 
 /**
  * Keeps event channels on a per-domain basis.
- * 
+ *
  * @author Yanick Duchesne
- * 
+ *
  */
 public class EventChannelTable implements Module, EventChannelTableMBean {
 
-  private Map<ChannelKey, EventChannel> channels = new ConcurrentHashMap<ChannelKey, EventChannel>();
+  private Category log = Log.createCategory(getClass());
+
+  private Map<ChannelKey, EventChannelRef> channels = new ConcurrentHashMap<ChannelKey, EventChannelRef>();
   private Object lock = new Object();
 
   @Override
@@ -34,8 +41,8 @@ public class EventChannelTable implements Module, EventChannelTableMBean {
 
   @Override
   public void stop() {
-    for (EventChannel channel : channels.values()) {
-      channel.close();
+    for (EventChannelRef r : channels.values()) {
+      r.close();
     }
     channels.clear();
   }
@@ -50,7 +57,7 @@ public class EventChannelTable implements Module, EventChannelTableMBean {
 
   /**
    * Returns an event channel corresponding to the given domain.
-   * 
+   *
    * @param domain
    *          a domain name.
    * @param address
@@ -59,28 +66,43 @@ public class EventChannelTable implements Module, EventChannelTableMBean {
    * @throws RemoteRuntimeException
    *           if a channel could not be returned/created.
    */
-  public EventChannel getEventChannelFor(String domain, MulticastAddress address) throws RemoteRuntimeException {
-    EventChannel channel;
-
+  public EventChannel getEventChannelFor(final String domain, final MulticastAddress address) throws RemoteRuntimeException {
+    EventChannelRef ref;
     ChannelKey key = new ChannelKey(domain, address);
 
-    if ((channel = channels.get(key)) == null) {
+    if ((ref = channels.get(key)) == null) {
       synchronized (lock) {
-        if ((channel = channels.get(key)) == null) {
-          try {
-            Props props = new Props().addMap(address.toParameters()).addProperties(System.getProperties());
-            channel = new EventChannel(domain, props);
-            channel.start();
-          } catch (IOException e) {
-            throw new RemoteRuntimeException("Could not create event channel for domain: " + domain, e);
-          }
+        if ((ref = channels.get(key)) == null) {
+          // checking in the static active channels first: we want to avoid creating
+          // a new EventChannel if one already exists in same JVM.
+          ref = EventChannel.selectActiveChannel(new Condition<EventChannel>() {
+            DomainName n = DomainName.parse(domain);
+            @Override
+            public boolean apply(EventChannel item) {
+              return item.getDomainName().equals(n) && item.getMulticastAddress().equals(address);
+            }
+          });
 
-          channels.put(key, channel);
+          if (ref != null) {
+            log.debug("EventChannel already active for domain %s. Returning it", domain);
+            channels.put(key, ref);
+          } else {
+
+            try {
+              log.debug("Creating EventChannel for domain %s", domain);
+              Props props = new Props().addMap(address.toParameters()).addProperties(System.getProperties());
+              ref = new EventChannel(domain, props).getReference();
+              ref.get().start();
+              channels.put(key, ref);
+            } catch (IOException e) {
+              throw new RemoteRuntimeException("Could not create event channel for domain: " + domain, e);
+            }
+          }
         }
       }
     }
 
-    return channel;
+    return ref.get();
   }
 
   // --------------------------------------------------------------------------

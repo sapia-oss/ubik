@@ -7,12 +7,13 @@ import org.sapia.ubik.log.LogOutput;
 import org.sapia.ubik.mcast.BroadcastDispatcher;
 import org.sapia.ubik.mcast.EventChannel;
 import org.sapia.ubik.mcast.UnicastDispatcher;
+import org.sapia.ubik.rmi.server.transport.TransportManager;
 import org.sapia.ubik.rmi.server.transport.TransportProvider;
 
 /**
  * This class conveniently holds constants that correspond to the system
  * properties that can be define to influence Ubik RMI's runtime behavior.
- * 
+ *
  * @author Yanick Duchesne
  */
 public interface Consts {
@@ -29,6 +30,11 @@ public interface Consts {
    * Defaults to "error".
    */
   public static final String LOG_LEVEL = "ubik.rmi.log.level";
+
+  /**
+   * The number of milliseconds to wait for on the client-side when attempting to discover a JNDI server (defaults to 10000).
+   */
+  public static final String UBIK_JNDI_CLIENT_DISCO_TIMEOUT = "ubik.jndi.client.disco.timeout";
 
   /**
    * Defines the {@link LogOutput} to use.
@@ -50,12 +56,14 @@ public interface Consts {
    */
   public static final String DEFAULT_DOMAIN = "default";
 
+  public static final long DEFAULT_JNDI_CLIENT_DISCO_TIMEOUT = 10000;
+
   /**
    * This constant corresponds to the <code>ubik.rmi.address-pattern</code>
    * property key. The property should be used to specify a regular expression
    * based upon which the address of this host is chosen (if this host has more
    * than one network interfaces).
-   * 
+   *
    * @see org.sapia.ubik.util.Localhost
    */
   public static final String IP_PATTERN_KEY = "ubik.rmi.address-pattern";
@@ -162,7 +170,7 @@ public interface Consts {
    * <code>ubik.rmi.naming.mcast.master.broadcast.enabled</code> property key.
    * It is used to determine if the master node should broadcast its presence
    * periocially.
-   * 
+   *
    * @see #MCAST_MASTER_BROADCAST_INTERVAL
    */
   public static final String MCAST_MASTER_BROADCAST_ENABLED = "ubik.rmi.naming.mcast.master.broadcast.enabled";
@@ -172,7 +180,7 @@ public interface Consts {
    * <code>ubik.rmi.naming.mcast.master.broadcast.interval</code> property key.
    * It is used to determine the interval (in millis) at which the master node
    * will broadcast its presence (defaults to 120000).
-   * 
+   *
    * @see #MCAST_MASTER_BROADCAST_ENABLED
    */
   public static final String MCAST_MASTER_BROADCAST_INTERVAL = "ubik.rmi.naming.mcast.master.broadcast.interval";
@@ -242,7 +250,7 @@ public interface Consts {
    */
   public static final String MCAST_MAX_CLIENT_CONNECTIONS = "ubik.rmi.naming.mcast.tcp.client.max-connections";
 
-  
+
   /**
    * Corresponds to the
    * <code>ubik.rmi.naming.mcast.broadcast.monitor.interval</code> property key.
@@ -250,7 +258,7 @@ public interface Consts {
    * on the broadcast dispatcher (defaults to 30000 millis).
    */
   public static final String MCAST_BROADCAST_MONITOR_INTERVAL = "ubik.rmi.naming.mcast.broadcast.monitor.interval";
-  
+
   /**
    * Identifies the unicast provider to use as part of {@link EventChannel}s.
    */
@@ -290,17 +298,17 @@ public interface Consts {
    * Identifies the Avis URL.
    */
   public static final String BROADCAST_AVIS_URL = "ubik.rmi.naming.broadcast.avis.url";
-  
+
   /**
    * Identifies the Hazelcast broadcast provider.
    */
   public static final String BROADCAST_PROVIDER_HAZELCAST = "ubik.rmi.naming.broadcast.hazelcast";
-  
+
   /**
    * Identifies the Halzecast topic name.
    */
   public static final String BROADCAST_HAZELCAST_TOPIC = "ubik.rmi.naming.broadcast.hazelcast.topic";
-  
+
   /**
    * Identifies the in-memory broadcast provider.
    */
@@ -375,7 +383,7 @@ public interface Consts {
   /**
    * Specifies the size of task processing queue for worker threads:
    * <code>ubik.rmi.server.threads.queue-size</code>. Defaults to 50.
-   * 
+   *
    * @see #CORE_MAX_THREADS
    * @see #SERVER_MAX_THREADS
    */
@@ -465,7 +473,7 @@ public interface Consts {
   /**
    * Specifies the "transport type" to use. Property name:
    * <code>ubik.rmi.transport.type</code>
-   * 
+   *
    * @see org.sapia.ubik.rmi.server.Hub#exportObject(Object,
    *      java.util.Properties)
    */
@@ -513,7 +521,7 @@ public interface Consts {
    * At initialization, the {@link TransportManager} will dynamically
    * instantiate all providers that have been thus defined and register them
    * internally.
-   * 
+   *
    * @see org.sapia.ubik.rmi.server.transport.TransportProvider#getTransportType()
    * @see org.sapia.ubik.rmi.server.transport.TransportManager
    * @see org.sapia.ubik.rmi.server.transport.TransportProvider
@@ -530,7 +538,7 @@ public interface Consts {
    * By default, unless the <code>jdk</code> provider is specified or the JBoss
    * serialization implementation cannot be found in the classpath, the JBoss
    * implementation will be used.
-   * 
+   *
    */
   public static final String SERIALIZATION_PROVIDER = "ubik.rmi.transport.serialization.provider";
 

@@ -11,9 +11,11 @@ import javax.naming.Context;
 import javax.naming.Name;
 import javax.naming.NamingException;
 
+import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.AsyncEventListener;
 import org.sapia.ubik.mcast.EventChannel;
+import org.sapia.ubik.mcast.EventChannelRef;
 import org.sapia.ubik.mcast.RemoteEvent;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.TCPAddress;
@@ -29,17 +31,19 @@ import org.sapia.ubik.rmi.naming.remote.discovery.ServiceDiscoveryEvent;
  * An instance of this class is created by a {@link RemoteInitialContextFactory}
  * . It allows clients to register ServiceDiscoveryListener that are notified
  * when new services are bound to the JNDI servers on the network.
- * 
+ *
  * @see RemoteInitialContextFactory
  * @see ServiceDiscoListener
  * @see ServiceDiscoveryEvent
- * 
+ *
  * @author Yanick Duchesne
  */
 @SuppressWarnings(value = "unchecked")
 public class ReliableLocalContext extends LocalContext implements AsyncEventListener {
+
   private static ThreadLocal<Context> currentContext = new ThreadLocal<Context>();
   private static String PING = "ubik/rmi/naming/ping/test";
+  private Category log = Log.createCategory(getClass());
   private BindingCache bindings = new BindingCache();
   private DiscoveryHelper helper;
   private List<Context> servers = Collections.synchronizedList(new ArrayList<Context>());
@@ -48,116 +52,88 @@ public class ReliableLocalContext extends LocalContext implements AsyncEventList
   /**
    * Constructor for ReliableLocalContext.
    */
-  public ReliableLocalContext(EventChannel channel, String url, RemoteContext ctx, boolean publish, ContextResolver resolver) throws NamingException,
+  public ReliableLocalContext(EventChannelRef channel, String url, RemoteContext ctx, boolean publish, ContextResolver resolver) throws NamingException,
       IOException {
     super(url, ctx);
     helper = new DiscoveryHelper(channel);
     this.resolver = resolver;
-    channel.registerAsyncListener(JNDIConsts.JNDI_SERVER_DISCO, this);
-    channel.registerAsyncListener(JNDIConsts.JNDI_SERVER_PUBLISH, this);
+    channel.get().registerAsyncListener(JNDIConsts.JNDI_SERVER_DISCO, this);
+    channel.get().registerAsyncListener(JNDIConsts.JNDI_SERVER_PUBLISH, this);
 
     if (publish) {
-      if (!channel.isClosed()) {
-        channel.dispatch(JNDIConsts.JNDI_CLIENT_PUBLISH, "");
+      if (!channel.get().isClosed()) {
+        channel.get().dispatch(JNDIConsts.JNDI_CLIENT_PUBLISH, "");
       }
     }
 
     currentContext.set(this);
   }
 
-  /**
-   * @see org.sapia.ubik.rmi.naming.remote.proxy.LocalContext#bind(Name, Object)
-   */
+  @Override
   public void bind(Name n, Object o) throws NamingException {
     rebind(n, o);
   }
 
-  /**
-   * @see org.sapia.ubik.rmi.naming.remote.proxy.LocalContext#bind(String,
-   *      Object)
-   */
+  @Override
   public void bind(String n, Object o) throws NamingException {
     rebind(n, o);
   }
 
-  /**
-   * @see org.sapia.ubik.rmi.naming.remote.proxy.LocalContext#rebind(Name,
-   *      Object)
-   */
+  @Override
   public void rebind(Name n, Object o) throws NamingException {
     super.rebind(n, o);
-
-    if (!helper.getChannel().isClosed()) {
-      bindings.add(helper.getChannel().getDomainName().toString(), n, o);
+    if (!helper.getChannel().get().isClosed()) {
+      bindings.add(helper.getChannel().get().getDomainName().toString(), n, o);
     }
   }
 
-  /**
-   * @see org.sapia.ubik.rmi.naming.remote.proxy.LocalContext#rebind(String,
-   *      Object)
-   */
+  @Override
   public void rebind(String n, Object o) throws NamingException {
     super.rebind(n, o);
 
-    if (!helper.getChannel().isClosed()) {
-      bindings.add(helper.getChannel().getDomainName().toString(), super.getNameParser().parse(n), o);
+    if (!helper.getChannel().get().isClosed()) {
+      bindings.add(helper.getChannel().get().getDomainName().toString(), super.getNameParser().parse(n), o);
     }
   }
 
-  /**
-   * Adds a service discovery listener to this instance.
-   * 
-   * @param listener
-   *          a {@link ServiceDiscoListener}.
-   */
   public void addServiceDiscoListener(ServiceDiscoListener listener) {
-    if (!helper.getChannel().isClosed()) {
+    if (!helper.getChannel().get().isClosed()) {
       helper.addServiceDiscoListener(listener);
     }
   }
 
-  /**
-   * Adds a JNDI discovery listener to this instance.
-   * 
-   * @param listener
-   *          a {@link JndiDiscoListener}.
-   */
   public void addJndiDiscoListener(JndiDiscoListener listener) {
-    if (!helper.getChannel().isClosed()) {
+    if (!helper.getChannel().get().isClosed()) {
       helper.addJndiDiscoListener(new JndiListenerWrapper(listener));
     }
   }
 
-  /**
-   * @see org.sapia.ubik.mcast.AsyncEventListener#onAsyncEvent(RemoteEvent)
-   */
+  @Override
   public void onAsyncEvent(RemoteEvent evt) {
     try {
       ServerAddress serverAddress;
       if (evt.getType().equals(JNDIConsts.JNDI_SERVER_DISCO)) {
         serverAddress = (TCPAddress) evt.getData();
-        Context remoteCtx = (Context) resolver.resolve(serverAddress);
+        Context remoteCtx = resolver.resolve(serverAddress);
         servers.add(remoteCtx);
-        bindings.copyTo(remoteCtx, domainInfo.getDomainName(), super.url, helper.getChannel().getMulticastAddress());
+        bindings.copyTo(remoteCtx, domainInfo.getDomainName(), super.url, helper.getChannel().get().getMulticastAddress());
 
       } else if (evt.getType().equals(JNDIConsts.JNDI_SERVER_PUBLISH) && (getInternalContext() != null)) {
-        Log.info(getClass(), "Discovered naming service; binding cached stubs...");
+        log.info("Discovered naming service; binding cached stubs...");
         serverAddress = (TCPAddress) evt.getData();
 
-        Context remoteCtx = (Context) resolver.resolve(serverAddress);
+        Context remoteCtx = resolver.resolve(serverAddress);
         servers.add(remoteCtx);
-        bindings.copyTo(remoteCtx, domainInfo.getDomainName(), super.url, helper.getChannel().getMulticastAddress());
+        bindings.copyTo(remoteCtx, domainInfo.getDomainName(), super.url, helper.getChannel().get().getMulticastAddress());
       }
     } catch (RemoteException e) {
-      Log.warning(getClass(), "Could not connect to naming service; JNDI server probably down");
+      log.warning("Could not connect to naming service; JNDI server probably down", e);
     } catch (IOException e) {
-      Log.error(getClass(), "IO problem trying to bind services", e);
+      log.error("IO problem trying to bind services", e);
     }
   }
 
-  /**
-   * @see org.sapia.ubik.rmi.naming.remote.proxy.LocalContext#doFailOver(UndeclaredThrowableException)
-   */
+  @Override
   protected void doFailOver(UndeclaredThrowableException e) throws NamingException {
     if (!(e.getUndeclaredThrowable() instanceof RemoteException)) {
       super.doFailOver(e);
@@ -189,9 +165,7 @@ public class ReliableLocalContext extends LocalContext implements AsyncEventList
     super.doFailOver(e);
   }
 
-  /**
-   * @see org.sapia.ubik.rmi.naming.remote.proxy.LocalContext#close()
-   */
+  @Override
   public void close() throws NamingException {
     super.close();
     helper.close();
@@ -200,7 +174,7 @@ public class ReliableLocalContext extends LocalContext implements AsyncEventList
   /**
    * Returns the instance of this class that is currently registered with the
    * calling thread.
-   * 
+   *
    * @throws IllegalStateException
    *           if no instance of this class is currently registered.
    */
@@ -215,35 +189,29 @@ public class ReliableLocalContext extends LocalContext implements AsyncEventList
   }
 
   /**
-   * @return the <code>EventChannel</code> used by this instance to perform
-   *         discovery.
+   * @return the {@link EventChannelRef} pointing to the {@link EventChannel}
+   * used by this instance to perform discovery.
    */
-  public EventChannel getEventChannel() {
+  public EventChannelRef getEventChannel() {
     return helper.getChannel();
   }
 
-  /*
-   * //////////////////////////////////////////////////////////////////// INNER
-   * CLASSES
-   * ////////////////////////////////////////////////////////////////////
-   */
-
+  // ==========================================================================
+  // Inner classes
   class JndiListenerWrapper implements JndiDiscoListener {
-    private JndiDiscoListener _wrapped;
+    private JndiDiscoListener wrapped;
 
     JndiListenerWrapper(JndiDiscoListener toWrap) {
-      _wrapped = toWrap;
+      wrapped = toWrap;
     }
 
-    /**
-     * @see org.sapia.ubik.rmi.naming.remote.discovery.JndiDiscoListener#onJndiDiscovered(Context)
-     */
+    @Override
     public void onJndiDiscovered(Context ctx) {
       synchronized (servers) {
         servers.add(ctx);
       }
 
-      _wrapped.onJndiDiscovered(ctx);
+      wrapped.onJndiDiscovered(ctx);
     }
   }
 }
