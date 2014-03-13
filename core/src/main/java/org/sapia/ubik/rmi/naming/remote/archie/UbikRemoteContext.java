@@ -13,7 +13,7 @@ import javax.naming.NamingException;
 import org.sapia.archie.Node;
 import org.sapia.archie.ProcessingException;
 import org.sapia.archie.jndi.JndiContext;
-import org.sapia.ubik.mcast.EventChannel;
+import org.sapia.ubik.mcast.EventChannelRef;
 import org.sapia.ubik.rmi.naming.remote.DomainInfo;
 import org.sapia.ubik.rmi.naming.remote.RemoteContext;
 
@@ -53,8 +53,8 @@ public class UbikRemoteContext extends JndiContext implements RemoteContext {
 
   protected UbikRemoteContext(UbikSyncNode node) {
     super(node);
-    EventChannel channel = ((UbikSynchronizer) node.getSynchronizer()).getEventChannel();
-    this.domain = new DomainInfo(channel.getDomainName(), channel.getMulticastAddress());
+    EventChannelRef channel = ((UbikSynchronizer) node.getSynchronizer()).getEventChannel();
+    this.domain = new DomainInfo(channel.get().getDomainName(), channel.get().getMulticastAddress());
   }
 
   /**
@@ -124,7 +124,7 @@ public class UbikRemoteContext extends JndiContext implements RemoteContext {
     return new UbikNamingEnum(entries, childNodes, listType);
   }
 
-  public static UbikRemoteContext newInstance(EventChannel channel) throws NamingException {
+  public static UbikRemoteContext newInstance(EventChannelRef channel) throws NamingException {
     UbikSynchronizer sync = new UbikSynchronizer(channel);
     UbikNodeFactory fac = new UbikNodeFactory(sync);
 
@@ -133,7 +133,10 @@ public class UbikRemoteContext extends JndiContext implements RemoteContext {
       root.setSynchronizer(sync);
       sync.setRoot(root);
 
-      return new UbikRemoteContext(new DomainInfo(channel.getDomainName(), channel.getMulticastAddress()), root);
+      return new UbikRemoteContext(
+          new DomainInfo(channel.get().getDomainName(), channel.get().getMulticastAddress()),
+          root
+      );
     } catch (ProcessingException e) {
       NamingException ne = new NamingException("Could not create remote context");
       ne.setRootCause(e);

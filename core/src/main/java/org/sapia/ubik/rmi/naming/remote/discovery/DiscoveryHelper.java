@@ -45,9 +45,6 @@ public class DiscoveryHelper implements AsyncEventListener {
   private List<JndiDiscoListener> jndiListeners = new CopyOnWriteArrayList<JndiDiscoListener>();
   private ContextResolver resolver = new DefaultContextResolver();
 
-  /**
-   * Constructor for DiscoveryHelper.
-   */
   public DiscoveryHelper(EventChannelRef ec) throws IOException {
     channelRef = ec;
     initChannel();

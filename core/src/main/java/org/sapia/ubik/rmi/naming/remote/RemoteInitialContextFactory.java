@@ -155,7 +155,7 @@ public class RemoteInitialContextFactory implements InitialContextFactory, JNDIC
 
     RemoteContext ctx = null;
     ContextResolver resolver = doGetResolver();
-    EventChannelRef channel = getEventChannel(allProps);
+    EventChannelRef channel  = getEventChannel(allProps);
 
     try {
       ctx = resolver.resolve(uri.getHost(), uri.getPort());

@@ -13,12 +13,8 @@ import javax.naming.NamingException;
 
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
-import org.sapia.ubik.mcast.AsyncEventListener;
 import org.sapia.ubik.mcast.EventChannel;
 import org.sapia.ubik.mcast.EventChannelRef;
-import org.sapia.ubik.mcast.RemoteEvent;
-import org.sapia.ubik.net.ServerAddress;
-import org.sapia.ubik.net.TCPAddress;
 import org.sapia.ubik.rmi.naming.remote.JNDIConsts;
 import org.sapia.ubik.rmi.naming.remote.RemoteContext;
 import org.sapia.ubik.rmi.naming.remote.RemoteInitialContextFactory;
@@ -39,7 +35,7 @@ import org.sapia.ubik.rmi.naming.remote.discovery.ServiceDiscoveryEvent;
  * @author Yanick Duchesne
  */
 @SuppressWarnings(value = "unchecked")
-public class ReliableLocalContext extends LocalContext implements AsyncEventListener {
+public class ReliableLocalContext extends LocalContext implements JndiDiscoListener {
 
   private static ThreadLocal<Context> currentContext = new ThreadLocal<Context>();
   private static String PING = "ubik/rmi/naming/ping/test";
@@ -47,7 +43,6 @@ public class ReliableLocalContext extends LocalContext implements AsyncEventList
   private BindingCache bindings = new BindingCache();
   private DiscoveryHelper helper;
   private List<Context> servers = Collections.synchronizedList(new ArrayList<Context>());
-  private ContextResolver resolver;
 
   /**
    * Constructor for ReliableLocalContext.
@@ -56,9 +51,8 @@ public class ReliableLocalContext extends LocalContext implements AsyncEventList
       IOException {
     super(url, ctx);
     helper = new DiscoveryHelper(channel);
-    this.resolver = resolver;
-    channel.get().registerAsyncListener(JNDIConsts.JNDI_SERVER_DISCO, this);
-    channel.get().registerAsyncListener(JNDIConsts.JNDI_SERVER_PUBLISH, this);
+    helper.addJndiDiscoListener(this);
+    helper.setContextResolver(resolver);
 
     if (publish) {
       if (!channel.get().isClosed()) {
@@ -109,6 +103,14 @@ public class ReliableLocalContext extends LocalContext implements AsyncEventList
   }
 
   @Override
+  public void onJndiDiscovered(Context ctx) {
+    log.info("Discovered naming service; binding cached stubs...");
+    servers.add(ctx);
+    bindings.copyTo(ctx, domainInfo.getDomainName(), super.url, helper.getChannel().get().getMulticastAddress());
+  }
+
+  /*
+  @Override
   public void onAsyncEvent(RemoteEvent evt) {
     try {
       ServerAddress serverAddress;
@@ -119,19 +121,13 @@ public class ReliableLocalContext extends LocalContext implements AsyncEventList
         bindings.copyTo(remoteCtx, domainInfo.getDomainName(), super.url, helper.getChannel().get().getMulticastAddress());
 
       } else if (evt.getType().equals(JNDIConsts.JNDI_SERVER_PUBLISH) && (getInternalContext() != null)) {
-        log.info("Discovered naming service; binding cached stubs...");
-        serverAddress = (TCPAddress) evt.getData();
-
-        Context remoteCtx = resolver.resolve(serverAddress);
-        servers.add(remoteCtx);
-        bindings.copyTo(remoteCtx, domainInfo.getDomainName(), super.url, helper.getChannel().get().getMulticastAddress());
       }
     } catch (RemoteException e) {
       log.warning("Could not connect to naming service; JNDI server probably down", e);
     } catch (IOException e) {
       log.error("IO problem trying to bind services", e);
     }
-  }
+  }*/
 
   @Override
   protected void doFailOver(UndeclaredThrowableException e) throws NamingException {

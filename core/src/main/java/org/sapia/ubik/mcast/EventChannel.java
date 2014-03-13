@@ -75,16 +75,23 @@ public class EventChannel {
   private static class EventChannelRefImpl implements EventChannelRef {
 
     private EventChannel owner;
-    private boolean shouldClose;
+    private boolean shouldCloseAndStart;
 
-    private EventChannelRefImpl(EventChannel owner, boolean shouldClose) {
+    private EventChannelRefImpl(EventChannel owner, boolean shouldCloseAndStart) {
       this.owner = owner;
-      this.shouldClose = shouldClose;
+      this.shouldCloseAndStart = shouldCloseAndStart;
+    }
+
+    @Override
+    public void start() throws IOException {
+      if (shouldCloseAndStart && !owner.isStarted() && !owner.isClosed()) {
+        owner.start();
+      }
     }
 
     @Override
     public void close() {
-      if (shouldClose) {
+      if (shouldCloseAndStart && !owner.isClosed()) {
         owner.close();
       }
     }
@@ -204,13 +211,22 @@ public class EventChannel {
   }
 
   /**
-   * Returns an {@link EventChannelRef} that will effectively close this instance
-   * upon its {@link EventChannelRef#close()} method being invoked.
+   * Returns an {@link EventChannelRef} which will effectively start/close this instance
+   * upon its {@link #start()} or {@link EventChannelRef#close()} method being invoked.
    *
    * @return an {@link EventChannelRef} pointing to this instance.
    */
   public EventChannelRef getReference() {
     return new EventChannelRefImpl(this, true);
+  }
+
+  /**
+   * Returns an {@link EventChannelRef} which will NOT start/close this instance
+   * upon its {@link #start()} or {@link EventChannelRef#close()} method being invoked.
+   * @return an {@link EventChannelRef} pointing to this instance.
+   */
+  public EventChannelRef getManagedReference() {
+    return new EventChannelRefImpl(this, false);
   }
 
   /**

@@ -13,8 +13,8 @@ public class UbikRemoteContextTest {
 
   @Before
   public void setUp() throws Exception {
-    src = UbikRemoteContext.newInstance(EventChannelTestSupport.createEventChannel("ubik.test"));
-    target = UbikRemoteContext.newInstance(EventChannelTestSupport.createEventChannel("ubik.test"));
+    src = UbikRemoteContext.newInstance(EventChannelTestSupport.createEventChannel("ubik.test").getReference());
+    target = UbikRemoteContext.newInstance(EventChannelTestSupport.createEventChannel("ubik.test").getReference());
   }
 
   @After
@@ -40,7 +40,7 @@ public class UbikRemoteContextTest {
   @Test
   public void testReplicatedLookup() throws Exception {
     src.rebind("service", new SerializableObj());
-    UbikRemoteContext lateContext = UbikRemoteContext.newInstance(EventChannelTestSupport.createEventChannel("ubik.test"));
+    UbikRemoteContext lateContext = UbikRemoteContext.newInstance(EventChannelTestSupport.createEventChannel("ubik.test").getReference());
     Thread.sleep(2000);
     try {
       lateContext.lookup("service");
