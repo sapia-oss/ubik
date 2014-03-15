@@ -31,7 +31,7 @@ public class TimeClient {
 
       Properties props = new Properties();
 
-      props.setProperty(InitialContext.PROVIDER_URL, "ubik://" + Localhost.getAnyLocalAddress().getHostAddress() + ":1099/");
+      props.setProperty(InitialContext.PROVIDER_URL, "ubik://" + Localhost.getPreferredLocalAddress().getHostAddress() + ":1099/");
       props.setProperty(InitialContext.INITIAL_CONTEXT_FACTORY,
         RemoteInitialContextFactory.class.getName());
       props.setProperty(Consts.UBIK_DOMAIN_NAME,

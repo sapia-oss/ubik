@@ -1,8 +1,10 @@
 package org.sapia.ubik.rmi.server;
 
 import java.rmi.RemoteException;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.javasimon.Split;
@@ -33,7 +35,7 @@ import org.sapia.ubik.util.TypeCache;
  * <p>
  * This class holds methods pertaining to stub creations, etc.
  * <p>
- * 
+ *
  * @author Yanick Duchesne
  */
 public class ServerTable implements Module {
@@ -75,7 +77,7 @@ public class ServerTable implements Module {
   /**
    * Returns the address of the server corresponding to the given transport
    * type.
-   * 
+   *
    * @param transportType
    *          the identifier of a transport type.
    * @return a {@link ServerAddress}.
@@ -93,7 +95,7 @@ public class ServerTable implements Module {
 
   /**
    * Returns the unique object identifier of this instance.
-   * 
+   *
    * @return an {@link DefaultOID}.
    */
   public OID getOID(String transportType) {
@@ -119,6 +121,20 @@ public class ServerTable implements Module {
       throw new IllegalArgumentException("No server for type: " + transportType);
     }
     return ref.getServer();
+  }
+
+  /**
+   * @return the number of servers currently active and registered with this instance.
+   */
+  public int getServerCount() {
+    return serversByType.size();
+  }
+
+  /**
+   * @return the {@link Set} of transport types for which a server exists within this instance.
+   */
+  public Set<String> getServerTypes() {
+    return Collections.unmodifiableSet(serversByType.keySet());
   }
 
   // --------------------------------------------------------------------------
@@ -209,7 +225,7 @@ public class ServerTable implements Module {
   /**
    * Returns a stub for the given object. This method is usually not called by
    * client applications. It is meant for use by the different transport layers.
-   * 
+   *
    * @param toRemote
    *          an object.
    * @param caller
@@ -219,7 +235,7 @@ public class ServerTable implements Module {
    *          the "transport type" for which to return a remote reference.
    * @return a stub.
    * @throws RemoteException
-   * 
+   *
    * @see #asRemoteRef(Object, VmId, String)
    */
   public Object createRemoteObject(Object toRemote, VmId caller, String transportType) throws RemoteException {
@@ -276,7 +292,7 @@ public class ServerTable implements Module {
   }
 
   ServerRef getServerRef(String transportType) throws IllegalArgumentException {
-    ServerRef ref = (ServerRef) serversByType.get(transportType);
+    ServerRef ref = serversByType.get(transportType);
     Assertions.illegalState(ref == null, "No server for type: %s", transportType);
     return ref;
   }

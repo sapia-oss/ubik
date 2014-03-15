@@ -78,7 +78,7 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
     InetAddress inetAddr = sock.getLocalAddress();
     if (inetAddr == null) {
       try {
-        inetAddr = Localhost.getAnyLocalAddress();
+        inetAddr = Localhost.getPreferredLocalAddress();
       } catch (UnknownHostException e) {
         throw new IllegalStateException(e);
       }

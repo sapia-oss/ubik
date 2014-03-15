@@ -4,6 +4,8 @@ import java.lang.reflect.Proxy;
 import java.rmi.RemoteException;
 import java.util.Properties;
 
+import org.sapia.ubik.log.Category;
+import org.sapia.ubik.log.Log;
 import org.sapia.ubik.module.ModuleContext;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.Hub;
@@ -17,12 +19,13 @@ import org.sapia.ubik.rmi.server.stub.Stubs;
 
 /**
  * Converts a stub to a stateless one (see {@link RemoteRefStateless}).
- * 
+ *
  * @author yduchesne
- * 
+ *
  */
 public class StatelessStubEnrichmentStrategy implements StubEnrichmentStrategy {
 
+  private Category log = Log.createCategory(getClass());
   private ServerTable serverTable;
   private ObjectTable objectTable;
 
@@ -34,6 +37,9 @@ public class StatelessStubEnrichmentStrategy implements StubEnrichmentStrategy {
 
   @Override
   public boolean apply(Object stub, JndiBindingInfo info) {
+    if (log.isDebug()) {
+      log.debug("Object %s implements Stateless interface: %s", stub, stub instanceof Stateless);
+    }
     return stub instanceof Stateless;
   }
 
@@ -43,7 +49,7 @@ public class StatelessStubEnrichmentStrategy implements StubEnrichmentStrategy {
    * {@link StubInvocationHandler} of the {@link RemoteRefStateless} class.
    * <p>
    * If the passed in object is already a stub, then it is simply converted.
-   * 
+   *
    * @param name
    *          the name of the object for which a stateless stub should be
    *          returned.
@@ -52,13 +58,13 @@ public class StatelessStubEnrichmentStrategy implements StubEnrichmentStrategy {
    * @param obj
    *          the {@link Object} for which a stateless stub will be created.
    * @return a stateless stub.
-   * 
+   *
    * @param stub
    *          the {@link Object} to convert to a reliable stub.
    * @param info
    *          the {@link JndiBindingInfo} holding the JNDI parameters used to
    *          bind the stub to Ubik's JNDI.
-   * 
+   *
    * @see Stateless
    * @see RemoteRefStateless
    */

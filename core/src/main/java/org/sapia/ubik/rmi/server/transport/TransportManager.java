@@ -21,7 +21,7 @@ import org.sapia.ubik.util.Assertions;
  * provide transport implementations on top of different network protocols.
  * <p>
  * This class registers the following transport providers automatically:
- * 
+ *
  * <ul>
  * <li> {@link SocketTransportProvider}.
  * <li> {@link MinaTransportProvider}.
@@ -29,7 +29,7 @@ import org.sapia.ubik.util.Assertions;
  * <li> {@link InMemoryTransportProvider}.
  * <li> {@link HttpTransportProvider}.
  * </ul>
- * 
+ *
  * @author Yanick Duchesne
  */
 public class TransportManager implements Module {
@@ -44,12 +44,12 @@ public class TransportManager implements Module {
     registerProvider(new InMemoryTransportProvider());
     registerProvider(new HttpTransportProvider());
 
-    String[] propNames = (String[]) System.getProperties().keySet().toArray(new String[System.getProperties().size()]);
+    String[] propNames = System.getProperties().keySet().toArray(new String[System.getProperties().size()]);
     String propName;
     String className;
 
     for (int i = 0; i < propNames.length; i++) {
-      propName = (String) propNames[i];
+      propName = propNames[i];
 
       if (propName.startsWith(Consts.TRANSPORT_PROVIDER)) {
         className = System.getProperty(propName);
@@ -82,7 +82,7 @@ public class TransportManager implements Module {
   /**
    * Registers the transport provider of the given type with the transport
    * manager. The provider is internally mapped to its "transport type".
-   * 
+   *
    * @see TransportProvider#getTransportType()
    * @param provider
    *          a {@link TransportProvider} instance.
@@ -99,7 +99,7 @@ public class TransportManager implements Module {
 
   /**
    * Returns the transport provider corresponding to the given type.
-   * 
+   *
    * @param type
    *          the logical type of the desired transport provider.
    * @return a {@link TransportProvider}.
@@ -119,7 +119,7 @@ public class TransportManager implements Module {
   /***
    * Gets a connection pool that holds connections to a server, given the
    * server's address.
-   * 
+   *
    * @return a {@link Connections} instance.
    * @param address
    *          a {@link ServerAddress}.
@@ -132,11 +132,11 @@ public class TransportManager implements Module {
 
   /**
    * Returns the default transport provider.
-   * 
+   *
    * @return the {@link SocketTransportProvider}.
    */
-  public SocketTransportProvider getDefaultProvider() {
-    return (SocketTransportProvider) providers.get(MinaTransportProvider.TRANSPORT_TYPE);
+  public MinaTransportProvider getDefaultProvider() {
+    return (MinaTransportProvider) providers.get(MinaTransportProvider.TRANSPORT_TYPE);
   }
 
   /**

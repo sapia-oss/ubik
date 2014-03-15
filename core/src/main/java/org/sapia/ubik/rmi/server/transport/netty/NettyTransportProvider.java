@@ -87,7 +87,7 @@ public class NettyTransportProvider implements TransportProvider, NettyConsts {
       if (bindAddress != null) {
         addr = new InetSocketAddress(bindAddress, port == 0 ? new TcpPortSelector().select(bindAddress) : port);
       } else {
-        bindAddress = Localhost.getAnyLocalAddress().getHostAddress();
+        bindAddress = Localhost.getPreferredLocalAddress().getHostAddress();
         addr = new InetSocketAddress(bindAddress, port == 0 ? new TcpPortSelector().select(bindAddress) : port);
       }
     } catch (UnknownHostException e) {

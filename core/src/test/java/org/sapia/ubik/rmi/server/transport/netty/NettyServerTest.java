@@ -33,7 +33,7 @@ public class NettyServerTest implements NettyService {
     props.setProperty(NettyConsts.SERVER_PORT_KEY, "8000");
     Hub.exportObject(this, props);
 
-    Hub.connect(new NettyAddress(Localhost.getAnyLocalAddress().getHostAddress(), 8000));
+    Hub.connect(new NettyAddress(Localhost.getPreferredLocalAddress().getHostAddress(), 8000));
     Hub.shutdown();
   }
 

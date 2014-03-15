@@ -16,6 +16,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.rmi.Consts;
 
@@ -23,64 +24,71 @@ import org.sapia.ubik.rmi.Consts;
  * This class provides a utility method that can be used to retrieve the IP
  * address of this host.
  * <p>
- * This class internaly uses the <code>NetworkInterface</code> class to retrieve
+ * This class internally uses the <code>NetworkInterface</code> class to retrieve
  * that address. If an address can't be found that way, the following code is
  * used:
- * 
+ *
  * <pre>
- * InetAddress.getLocalHost()
+ * InetAddress.getPreferredLocalAddress()
  * </pre>
- * 
+ *
  * The above code is know to return 0.0.0.0 or the loopback address under some
  * Linux distributions, which is what this class first attempts to use the
  * <code>NetworkInterface</code>.
- * 
+ *
  * @author yduchesne
  */
 public final class Localhost {
 
+  private static Category LOG = Log.createCategory(Localhost.class);
   private static String LOCALHOST = "0.0.0.0";
   private static String LOCALHOST_IPV6 = "0:0:0:0:0:0:0:1";
   private static String LOOPBACK = "127.0";
   private static Pattern IPV4_PATTERN = Pattern.compile("\\d+\\.\\d+\\.\\d+\\.\\d+");
-  private static Pattern _pattern;
+  private static Pattern pattern;
 
   static {
     String patternStr = System.getProperty(Consts.IP_PATTERN_KEY);
     if (patternStr != null) {
-      if (Log.isDebug()) {
-        Log.debug(Localhost.class, "Got local network address pattern: " + patternStr);
-      }
-      _pattern = Pattern.compile(patternStr);
+      LOG.info("Got local network address pattern: %s", patternStr);
+      pattern = Pattern.compile(patternStr);
+    } else {
+      LOG.debug("Local network address pattern not set. Will fall back to default address selection");
     }
+
   }
 
   private Localhost() {
   }
 
-  static void setAddressPattern(String pattern) {
-    _pattern = Pattern.compile(pattern);
+  static void setAddressPattern(String aPattern) {
+    pattern = Pattern.compile(aPattern);
   }
 
   static void unsetAddressPattern() {
-    _pattern = null;
+    pattern = null;
   }
 
   public static boolean isIpPatternDefined() {
-    return (_pattern != null);
+    return (pattern != null);
   }
 
   /**
-   * 
+   *
    * @return an InetAddress
    * @throws UnknownHostException
-   * @deprecated Should method {@link #getAnyLocalAddress()} instead.
+   * @deprecated Should method {@link #getPreferredLocalAddress()} instead.
    */
+  @Deprecated
   public static InetAddress getLocalAddress() throws UnknownHostException {
-    return getAnyLocalAddress();
+    return getPreferredLocalAddress();
   }
 
-  public static InetAddress getAnyLocalAddress() throws UnknownHostException {
+  /**
+   * @return the preferred {@link InetAddress}.
+   * @throws UnknownHostException if the local host could not be resolved.
+   */
+  public static InetAddress getPreferredLocalAddress() throws UnknownHostException {
 
     Set<InetAddress> netAddresses = new HashSet<InetAddress>();
     try {
@@ -106,8 +114,9 @@ public final class Localhost {
       Set<InetAddress> nonLocalAddresses = Collections2.filterAsSet(netAddresses, new Condition<InetAddress>() {
         @Override
         public boolean apply(InetAddress addr) {
-          return !(addr.getHostAddress().startsWith(LOCALHOST) || addr.getHostAddress().startsWith(LOOPBACK) || addr.getHostAddress().startsWith(
-              LOCALHOST_IPV6));
+          return !(addr.getHostAddress().startsWith(LOCALHOST)
+              || addr.getHostAddress().startsWith(LOOPBACK)
+              || addr.getHostAddress().startsWith(LOCALHOST_IPV6));
         }
       });
 
@@ -135,23 +144,22 @@ public final class Localhost {
     Set<InetAddress> nonLocalAddresses = Collections2.filterAsSet(netAddresses, new Condition<InetAddress>() {
       @Override
       public boolean apply(InetAddress addr) {
-        return !(addr.getHostAddress().startsWith(LOCALHOST) || addr.getHostAddress().startsWith(LOOPBACK) || addr.getHostAddress().startsWith(
-            LOCALHOST_IPV6));
+        return !(addr.getHostAddress().startsWith(LOCALHOST)
+            || addr.getHostAddress().startsWith(LOOPBACK)
+            || addr.getHostAddress().startsWith(LOCALHOST_IPV6));
       }
     });
 
     Set<InetAddress> matchedAddresses = Collections2.filterAsSet(nonLocalAddresses, new Condition<InetAddress>() {
       @Override
       public boolean apply(InetAddress addr) {
-        return isLocalAddress(_pattern, addr.getHostAddress());
+        return isLocalAddress(pattern, addr.getHostAddress());
       }
     });
 
     if (!matchedAddresses.isEmpty()) {
       InetAddress addr = matchedAddresses.iterator().next();
-      if (Log.isInfo()) {
-        Log.info(Localhost.class, "Address " + addr + " matches: " + _pattern.toString());
-      }
+      LOG.info("Address %s matches %s", addr, pattern.toString());
       return addr;
     }
     return InetAddress.getLocalHost();

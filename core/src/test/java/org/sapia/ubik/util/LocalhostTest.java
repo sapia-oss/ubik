@@ -18,7 +18,7 @@ public class LocalhostTest {
 
   @Test
   public void testGetLocalAddress() throws Exception {
-    String addr = Localhost.getAnyLocalAddress().getHostAddress();
+    String addr = Localhost.getPreferredLocalAddress().getHostAddress();
     assertTrue(!addr.equals("localhost"));
     assertTrue(!addr.equals("127.0.0.1"));
     assertTrue(!addr.equals("0.0.0.0"));

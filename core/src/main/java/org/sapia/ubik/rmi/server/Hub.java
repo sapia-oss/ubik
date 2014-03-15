@@ -291,7 +291,7 @@ public class Hub {
    *
    * @return <code>true</code> if the Hub is shut down.
    */
-  public static synchronized boolean isShutdown() {
+  public static boolean isShutdown() {
     return shutdown.get();
   }
 

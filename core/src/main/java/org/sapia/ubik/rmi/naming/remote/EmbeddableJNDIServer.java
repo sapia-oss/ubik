@@ -155,7 +155,7 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
         channel.get().dispatch(
             evt.getUnicastAddress(),
             JNDIConsts.JNDI_SERVER_DISCO,
-            new MinaAddress(Localhost.getAnyLocalAddress().getHostAddress(), port)
+            new MinaAddress(Localhost.getPreferredLocalAddress().getHostAddress(), port)
         );
       } catch (Exception e) {
         log.warning("Could not dispatch JNDI server publishing event", e);
@@ -169,7 +169,7 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
       channel.get().dispatch(
           event.getAddress(),
           JNDIConsts.JNDI_SERVER_DISCO,
-          new MinaAddress(Localhost.getAnyLocalAddress().getHostAddress(), port)
+          new MinaAddress(Localhost.getPreferredLocalAddress().getHostAddress(), port)
       );
     } catch (Exception e) {
       log.warning("Could not dispatch JNDI server publishing event", e);
@@ -227,23 +227,6 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
   }
 
   /**
-   * Starts this instance and returns immediately.
-   *
-   * @param daemon
-   *          if <code>true</code>, this instance will be started as a daemon
-   *          thread.
-   */
-  public void startNonBlocking(boolean daemon) throws Exception {
-    serverThread = NamedThreadFactory.createWith("ubik.jndi.server@" + domain).setDaemon(true).newThread(new Runnable() {
-      @Override
-      public void run() {
-        doRun();
-      }
-    });
-    serverThread.start();
-  }
-
-  /**
    *  This method insures that objects bound to the JNDI tree are indeed stubs (it performs the conversion
    *  to stub if required). This allows using this instance in-JVM without having to do stub conversion
    *  calling {@link Hub#exportObject(Object)} with the object intended for binding to the JNDI beforehand.
@@ -253,30 +236,36 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
 
     // Object is already in storable form.
     if (toBind instanceof StubContainer) {
+      log.debug("Object %s already transformed to StubContainer, so not making stub", name);
       return toBind;
     }
 
     // Object not already a stub, do stubbing
     if (!Stubs.isStub(toBind)) {
+      log.debug("Making stub for object %s", name);
       remote = Hub.exportObject(toBind);
 
     // Object is a stub,  using as is.
     } else {
+      log.debug("Object %s already a stub", name);
       remote = toBind;
     }
 
     // performing stub enrichment
-    String          baseUrl = "ubik://" + Localhost.getAnyLocalAddress().getHostAddress() + ":" + port + "/";
+    log.debug("Performing stub enrichment for object %s", name);
+    String          baseUrl = "ubik://" + Localhost.getPreferredLocalAddress().getHostAddress() + ":" + port + "/";
     JndiBindingInfo info    = new JndiBindingInfo(baseUrl, name, channel.get().getDomainName(), channel.get().getMulticastAddress());
     remote                  = Hub.getModules().getStubProcessor().enrichForJndiBinding(remote, info);
 
     // converting to StubContainer for storage in JNDI
     if (Stubs.isStub(remote)) {
       StubInvocationHandler handler = Stubs.getStubInvocationHandler(remote);
-
+      log.debug("Got stub invocation handler %s for %s", handler, name);
       // stateless stub: register so that it is updated with new
       // endpoints appearing on the network
+
       if (handler instanceof RemoteRefStateless) {
+        log.debug("Registering %s named %s with stateless stub table", handler, name);
         RemoteRefStateless ref = (RemoteRefStateless) handler;
         Hub.getModules().getStatelessStubTable().registerStatelessRef(ref, ref.getContexts());
       }
@@ -292,7 +281,7 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
       channel.get().registerAsyncListener(JNDIConsts.JNDI_CLIENT_PUBLISH, this);
       channel.start();
 
-      TCPAddress address = new MinaAddress(Localhost.getAnyLocalAddress().getHostAddress(), port);
+      TCPAddress address = new MinaAddress(Localhost.getPreferredLocalAddress().getHostAddress(), port);
 
       UbikRemoteContext context = UbikRemoteContext.newInstance(channel);
       context.addBindListener(new BindListener() {

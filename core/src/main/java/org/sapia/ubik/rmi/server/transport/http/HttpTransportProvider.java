@@ -119,7 +119,7 @@ public class HttpTransportProvider implements TransportProvider, HttpConsts {
     int port = configProps.getIntProperty(HTTP_PORT_KEY, DEFAULT_HTTP_PORT);
 
     try {
-      String bindAddress = configProps.getProperty(HTTP_BIND_ADDRESS_KEY, Localhost.getAnyLocalAddress().getHostAddress());
+      String bindAddress = configProps.getProperty(HTTP_BIND_ADDRESS_KEY, Localhost.getPreferredLocalAddress().getHostAddress());
       serverUrl = Uri.parse("http://" + bindAddress + ":" + port + CONTEXT_PATH);
     } catch (UriSyntaxException e) {
       throw new RemoteException("Could not parse server URL", e);

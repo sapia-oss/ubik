@@ -49,7 +49,7 @@ public abstract class UDPServer extends Thread {
   }
 
   private static DatagramSocket createSocket(int port) throws UnknownHostException, SocketException {
-    DatagramSocket socket = new DatagramSocket(port, Localhost.getAnyLocalAddress());
+    DatagramSocket socket = new DatagramSocket(port, Localhost.getPreferredLocalAddress());
     return socket;
   }
 

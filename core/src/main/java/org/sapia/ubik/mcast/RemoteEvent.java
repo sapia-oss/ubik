@@ -1,15 +1,13 @@
 package org.sapia.ubik.mcast;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
-import java.io.ObjectOutputStream;
 
 import org.sapia.ubik.net.ServerAddress;
+import org.sapia.ubik.rmi.server.transport.MarshalHelper;
 
 /**
  * Models a multicast event. An instance of this class strictly encapsulates its
@@ -23,8 +21,8 @@ import org.sapia.ubik.net.ServerAddress;
  * logical type.
  * <p>
  * Finally, data can also be passed.
- * 
- * 
+ *
+ *
  * @author Yanick Duchesne
  */
 public class RemoteEvent implements Externalizable {
@@ -54,7 +52,7 @@ public class RemoteEvent implements Externalizable {
 
   /**
    * Creates an instance of this class.
-   * 
+   *
    * @param domain
    *          the name of the domain to which this instance is targeted.
    * @param type
@@ -71,18 +69,14 @@ public class RemoteEvent implements Externalizable {
       this.data = (byte[]) data;
     } else {
       ByteArrayOutputStream bos = new ByteArrayOutputStream(BUFSZ);
-      ObjectOutputStream ous = new ObjectOutputStream(bos);
-
-      ous.writeObject(data);
-      ous.flush();
-      ous.close();
+      MarshalHelper.serialize(data, bos);
       this.data = bos.toByteArray();
     }
   }
 
   /**
    * Creates an instance of this class that is targeted at all domains.
-   * 
+   *
    * @param type
    *          the event's type, which in fact is its logical type.
    * @param data
@@ -93,7 +87,7 @@ public class RemoteEvent implements Externalizable {
   }
 
   /**
-   * 
+   *
    * @return the unicast {@link ServerAddress} of the node from which this event
    *         originates, or <code>null</code> if no such address has been set
    *         (or most likely if the node cannot be connected to directly).
@@ -104,7 +98,7 @@ public class RemoteEvent implements Externalizable {
 
   /**
    * Sets the unicast addresss of the node from which this event originates.
-   * 
+   *
    * @param addr
    *          a {@link ServerAddress}.
    */
@@ -114,7 +108,7 @@ public class RemoteEvent implements Externalizable {
 
   /**
    * Returns this instance's domain name.
-   * 
+   *
    * @return a domain name, or <code>null</code> if this instance is not
    *         targeted at a single domain.
    */
@@ -124,7 +118,7 @@ public class RemoteEvent implements Externalizable {
 
   /**
    * Returns this instance's logical type identifier.
-   * 
+   *
    * @return a logical type identifier.
    */
   public String getType() {
@@ -133,7 +127,7 @@ public class RemoteEvent implements Externalizable {
 
   /**
    * Returns this event's unique identifier.
-   * 
+   *
    * @return a unique ID, as a string.
    */
   public long getId() {
@@ -142,25 +136,19 @@ public class RemoteEvent implements Externalizable {
 
   /**
    * Returns this instance's data.
-   * 
+   *
    * @return this event's data, or <code>null</code> if this instance has no
    *         data.
    */
   public Object getData() throws IOException {
     if (data != null) {
       if (wasBytes) {
-        return (byte[]) data;
+        return data;
       } else {
-        ByteArrayInputStream bis = new ByteArrayInputStream((byte[]) data);
-        ObjectInputStream ois = new ObjectInputStream(bis);
-
         try {
-          Object obj = ois.readObject();
-          return obj;
+          return MarshalHelper.deserialize(data);
         } catch (ClassNotFoundException e) {
-          throw new IOException(e.getClass().getName() + " caught: " + e.getMessage());
-        } finally {
-          ois.close();
+          throw new IOException("ClassNotFoundException caught while performing deserialization", e);
         }
       }
     }
@@ -171,7 +159,7 @@ public class RemoteEvent implements Externalizable {
   /**
    * Returns <code>true</code> if this instance was created with a domain name -
    * meaning that it was targeted at a single domain.
-   * 
+   *
    * @return <code>true</code> if this instance has a domain name.
    */
   public boolean hasDomainName() {
@@ -198,7 +186,7 @@ public class RemoteEvent implements Externalizable {
 
   /**
    * Returns the identifier of the node that sent this event.
-   * 
+   *
    * @return a node identifier,
    */
   public String getNode() {

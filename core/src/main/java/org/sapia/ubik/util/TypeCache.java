@@ -7,24 +7,28 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.sapia.ubik.log.Category;
+import org.sapia.ubik.log.Log;
 import org.sapia.ubik.rmi.Remote;
+import org.sapia.ubik.rmi.server.Stateless;
 import org.sapia.ubik.rmi.server.stub.Stub;
 
 /**
  * An instance of this class caches interfaces and annotations for given
  * classes/interfaces.
- * 
+ *
  * @author yduchesne
- * 
+ *
  */
 public class TypeCache {
 
+  private Category log = Log.createCategory(getClass());
   private Map<Class<?>, Set<Class<?>>> interfaceCache = new ConcurrentHashMap<Class<?>, Set<Class<?>>>();
   private Map<Class<?>, Set<Class<?>>> annotationCache = new ConcurrentHashMap<Class<?>, Set<Class<?>>>();
 
   /**
    * Clears this instance's entries.
-   * 
+   *
    */
   public void clear() {
     interfaceCache.clear();
@@ -34,11 +38,12 @@ public class TypeCache {
   /**
    * Clears the entries whose class has the given {@link ClassLoader} in its
    * hierarchy.
-   * 
+   *
    * @param loader
    */
   public void clearFor(final ClassLoader loader) {
     Collections2.forEach(interfaceCache.keySet(), new Condition<Class<?>>() {
+      @Override
       public boolean apply(java.lang.Class<?> item) {
         if (hasClassloader(item, loader)) {
           interfaceCache.remove(item);
@@ -47,6 +52,7 @@ public class TypeCache {
       }
     });
     Collections2.forEach(annotationCache.keySet(), new Condition<Class<?>>() {
+      @Override
       public boolean apply(java.lang.Class<?> item) {
         if (hasClassloader(item, loader)) {
           annotationCache.remove(item);
@@ -62,7 +68,7 @@ public class TypeCache {
   /**
    * Returns the interfaces that the given class/interface implements/extends.
    * Caches the resulting set, using the given class as a key.
-   * 
+   *
    * @param clazz
    *          the {@link Class} instance corresponding to the class or interface
    *          whose implemented/inherited interfaces should be returned.
@@ -70,22 +76,38 @@ public class TypeCache {
    *         interfaces.
    */
   public Set<Class<?>> getInterfacesFor(Class<?> clazz) {
+    log.trace("Getting interfaces for class %s", clazz);
     Set<Class<?>> cachedInterfaces = interfaceCache.get(clazz);
 
     if (cachedInterfaces == null) {
+      log.trace("No cached interfaces for class %s. Processing...", clazz);
+
       Remote remoteAnno = clazz.getAnnotation(Remote.class);
       if (remoteAnno != null) {
+        log.trace("@Remote specicied for class %s", clazz);
         Class<?>[] remoteInterfaces = remoteAnno.interfaces();
         HashSet<Class<?>> set = new HashSet<Class<?>>();
-        set.add(Stub.class);
         for (Class<?> remoteInterface : remoteInterfaces) {
           set.add(remoteInterface);
         }
+        log.trace("Specified remote interfaces for class %s: %s", clazz, set);
+        set.add(Stub.class);
+        if (Stateless.class.isAssignableFrom(clazz)) {
+          log.trace("Class %s implements Stateless", clazz);
+          set.add(Stateless.class);
+        }
         cachedInterfaces = Collections.unmodifiableSet(set);
       } else {
+        log.trace("@Remote not specicied for class %s. Collecting interfaces through reflection", clazz);
+
         HashSet<Class<?>> set = new HashSet<Class<?>>();
         collectInterfaces(clazz, set);
+        log.trace("Collected class %s interfaces: %s", clazz, set);
         set.add(Stub.class);
+        if (Stateless.class.isAssignableFrom(clazz)) {
+          log.trace("Class %s implements Stateless", clazz);
+          set.add(Stateless.class);
+        }
         cachedInterfaces = Collections.unmodifiableSet(set);
       }
       interfaceCache.put(clazz, cachedInterfaces);
@@ -104,7 +126,7 @@ public class TypeCache {
 
   /**
    * This method collects the interfaces for the given class or interface.
-   * 
+   *
    * @param current
    *          the class whose interfaces should be collected.
    * @param collector
@@ -131,7 +153,7 @@ public class TypeCache {
   /**
    * This method collects the interfaces for the given class or interface, and
    * caches the resulting set, using the given class as a key.
-   * 
+   *
    * @param current
    *          the class/interface whose annotations should be collected.
    * @param collector
@@ -150,7 +172,7 @@ public class TypeCache {
   /**
    * Returns the annotations that the given class/interface implements/extends.
    * Caches the resulting set, using the given class as a key.
-   * 
+   *
    * @param clazz
    *          the {@link Class} instance corresponding to the class or interface
    *          whose annotations should be returned.

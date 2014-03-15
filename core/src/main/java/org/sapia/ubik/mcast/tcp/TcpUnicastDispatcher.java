@@ -43,7 +43,7 @@ public class TcpUnicastDispatcher extends BaseTcpUnicastDispatcher {
    */
   public TcpUnicastDispatcher(EventConsumer consumer, ConfigurableExecutor.ThreadingConfiguration conf) throws IOException {
     super(consumer);
-    this.socketServer = new TCPUnicastSocketServer(Localhost.getAnyLocalAddress().getHostAddress(), consumer, conf);
+    this.socketServer = new TCPUnicastSocketServer(Localhost.getPreferredLocalAddress().getHostAddress(), consumer, conf);
   }
 
   // --------------------------------------------------------------------------

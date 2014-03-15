@@ -211,42 +211,13 @@ public class EventChannel {
   }
 
   /**
-   * Returns an {@link EventChannelRef} which will effectively start/close this instance
-   * upon its {@link #start()} or {@link EventChannelRef#close()} method being invoked.
-   *
-   * @return an {@link EventChannelRef} pointing to this instance.
-   */
-  public EventChannelRef getReference() {
-    return new EventChannelRefImpl(this, true);
-  }
-
-  /**
-   * Returns an {@link EventChannelRef} which will NOT start/close this instance
-   * upon its {@link #start()} or {@link EventChannelRef#close()} method being invoked.
-   * @return an {@link EventChannelRef} pointing to this instance.
-   */
-  public EventChannelRef getManagedReference() {
-    return new EventChannelRefImpl(this, false);
-  }
-
-  /**
-   * @param listener adds the given {@link ConnectionStateListener}.
-   */
-  public void addConnectionStateListener(ConnectionStateListener listener) {
-    stateListeners.add(listener);
-  }
-
-  /**
-   * @param listener removes the given {@link ConnectionStateListener} from this instance.
-   */
-  public void removeConnectionStateListener(ConnectionStateListener listener) {
-    stateListeners.add(listener);
-  }
-
-  /**
-   * Creates an instance of this class that uses a
+   * Creates an instance of this class which by default uses a
    * {@link UDPBroadcastDispatcher} and a {@link UDPUnicastDispatcher}. The
    * broadcast dispatcher will use the default multicast address and port.
+   * <p>
+   * The {@link BroadcastDispatcher}  and {@link UnicastDispatcher} to use
+   * may be specified by system properties corresponding to {@link Consts#BROADCAST_PROVIDER}
+   * and {@link Consts#UNICAST_PROVIDER}, respectively.
    *
    * @param domain
    *          this instance's domain.
@@ -257,7 +228,7 @@ public class EventChannel {
    * @see UDPUnicastDispatcher
    */
   public EventChannel(String domain) throws IOException {
-    this(domain, Consts.DEFAULT_MCAST_ADDR, Consts.DEFAULT_MCAST_PORT);
+    this(domain, new Props());
   }
 
   /**
@@ -273,6 +244,8 @@ public class EventChannel {
    *           if a problem occurs creating this instance.
    * @see UnicastDispatcher
    * @see BroadcastDispatcher
+   * @see Consts#BROADCAST_PROVIDER
+   * @see Consts#UNICAST_PROVIDER
    */
   public EventChannel(String domain, Props config) throws IOException {
     config.addSystemProperties();
@@ -325,6 +298,39 @@ public class EventChannel {
    */
   public ServerAddress getUnicastAddress() {
     return unicast.getAddress();
+  }
+
+  /**
+   * Returns an {@link EventChannelRef} which will effectively start/close this instance
+   * upon its {@link #start()} or {@link EventChannelRef#close()} method being invoked.
+   *
+   * @return an {@link EventChannelRef} pointing to this instance.
+   */
+  public EventChannelRef getReference() {
+    return new EventChannelRefImpl(this, true);
+  }
+
+  /**
+   * Returns an {@link EventChannelRef} which will NOT start/close this instance
+   * upon its {@link #start()} or {@link EventChannelRef#close()} method being invoked.
+   * @return an {@link EventChannelRef} pointing to this instance.
+   */
+  public EventChannelRef getManagedReference() {
+    return new EventChannelRefImpl(this, false);
+  }
+
+  /**
+   * @param listener adds the given {@link ConnectionStateListener}.
+   */
+  public void addConnectionStateListener(ConnectionStateListener listener) {
+    stateListeners.add(listener);
+  }
+
+  /**
+   * @param listener removes the given {@link ConnectionStateListener} from this instance.
+   */
+  public void removeConnectionStateListener(ConnectionStateListener listener) {
+    stateListeners.add(listener);
   }
 
   /**

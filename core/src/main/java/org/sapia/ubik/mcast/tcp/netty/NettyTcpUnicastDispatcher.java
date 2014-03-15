@@ -39,7 +39,7 @@ public class NettyTcpUnicastDispatcher extends BaseTcpUnicastDispatcher implemen
 
     try {
       log.info("Acquiring network address");
-      String host = Localhost.getAnyLocalAddress().getHostAddress();
+      String host = Localhost.getPreferredLocalAddress().getHostAddress();
       this.address = new NettyTcpUnicastAddress(host, new TcpPortSelector().select(host));
     } catch (Exception e) {
       throw new IllegalStateException("Could not acquire server address", e);

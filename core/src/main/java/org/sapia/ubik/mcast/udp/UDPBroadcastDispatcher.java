@@ -24,7 +24,7 @@ import org.sapia.ubik.util.Assertions;
 
 /**
  * Dispatches objects using a multicast channel.
- * 
+ *
  * @author Yanick Duchesne
  */
 public class UDPBroadcastDispatcher implements BroadcastDispatcher {
@@ -50,7 +50,7 @@ public class UDPBroadcastDispatcher implements BroadcastDispatcher {
    * that store the data of incoming UDP datagrams.
    * <p>
    * The size should be large enough to hold the data of incoming datagrams.
-   * 
+   *
    * @param size
    *          a buffer size - corresponding to the size of expected UDP
    *          datagrams.
@@ -62,9 +62,10 @@ public class UDPBroadcastDispatcher implements BroadcastDispatcher {
 
   /**
    * Returns the node identifier of this instance.
-   * 
+   *
    * @return this instance's node identifier.
    */
+  @Override
   public String getNode() {
     return node;
   }
@@ -72,16 +73,18 @@ public class UDPBroadcastDispatcher implements BroadcastDispatcher {
   /**
    * Starts this instance.
    */
+  @Override
   public void start() {
     Assertions.illegalState(server == null, "Instance was closed; cannot be started again");
     stateListeners.onConnected();
     server.start();
-    
+
   }
 
   /**
    * Closes this instance, which should thereafter not be used.
    */
+  @Override
   public synchronized void close() {
     if (server != null) {
       server.close();
@@ -92,6 +95,7 @@ public class UDPBroadcastDispatcher implements BroadcastDispatcher {
   /**
    * @see BroadcastDispatcher#dispatch(ServerAddress, boolean, String, Object)
    */
+  @Override
   public void dispatch(ServerAddress unicastAddr, boolean alldomains, String evtType, Object data) throws IOException {
     RemoteEvent evt;
 
@@ -110,6 +114,7 @@ public class UDPBroadcastDispatcher implements BroadcastDispatcher {
   /**
    * @see BroadcastDispatcher#dispatch(ServerAddress, String, String, Object)
    */
+  @Override
   public void dispatch(ServerAddress unicastAddr, String domain, String evtType, Object data) throws IOException {
     RemoteEvent evt;
 
@@ -129,7 +134,7 @@ public class UDPBroadcastDispatcher implements BroadcastDispatcher {
   public MulticastAddress getMulticastAddress() {
     return address;
   }
-  
+
   @Override
   public void addConnectionStateListener(ConnectionStateListener listener) {
     stateListeners.add(listener);
@@ -138,7 +143,7 @@ public class UDPBroadcastDispatcher implements BroadcastDispatcher {
   @Override
   public void removeConnectionStateListener(ConnectionStateListener listener) {
     stateListeners.remove(listener);
-  }  
+  }
 
   public static class UDPMulticastAddress implements MulticastAddress {
 
@@ -191,6 +196,7 @@ public class UDPBroadcastDispatcher implements BroadcastDispatcher {
       this.consumer = consumer;
     }
 
+    @Override
     protected void handle(DatagramPacket pack, MulticastSocket sock) {
       try {
         consumer.onAsyncEvent((RemoteEvent) McastUtil.fromDatagram(pack));

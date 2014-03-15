@@ -9,7 +9,6 @@ import org.sapia.ubik.mcast.BroadcastDispatcher;
 import org.sapia.ubik.mcast.EventConsumer;
 import org.sapia.ubik.mcast.MulticastAddress;
 import org.sapia.ubik.mcast.RemoteEvent;
-import org.sapia.ubik.mcast.udp.UDPBroadcastDispatcher;
 import org.sapia.ubik.net.ConnectionStateListener;
 import org.sapia.ubik.net.ConnectionStateListenerList;
 import org.sapia.ubik.net.ServerAddress;
@@ -35,7 +34,7 @@ import com.hazelcast.core.MessageListener;
  */
 public class HazelcastBroadcastDispatcher implements BroadcastDispatcher {
 
-  private static Category log = Log.createCategory(UDPBroadcastDispatcher.class);
+  private static Category log = Log.createCategory(HazelcastBroadcastDispatcher.class);
   private EventConsumer consumer;
   private String domain;
   private ITopic<MessagePayload> topic;

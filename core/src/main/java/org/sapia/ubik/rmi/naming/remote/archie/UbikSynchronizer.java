@@ -138,6 +138,7 @@ public class UbikSynchronizer implements Synchronizer, AsyncEventListener, SyncE
     if (evt.getType().equals(SyncPutEvent.class.getName())) {
       try {
         SyncPutEvent put = (SyncPutEvent) evt.getData();
+        log.debug("Received SyncPutEvent: %s", put.getNodePath());
         SynchronizedNode node = (SynchronizedNode) root().lookupNode(put.getNodePath(), true);
         node.synchronizePut(put.getName(), put.getValue(), true);
       } catch (NotFoundException e) {
@@ -156,6 +157,7 @@ public class UbikSynchronizer implements Synchronizer, AsyncEventListener, SyncE
     if (evt.getType().equals(SyncGetEvent.class.getName())) {
       try {
         SyncGetEvent get = (SyncGetEvent) evt.getData();
+        log.debug("Received SyncGetEvent: %s", get.getNodePath());
         SynchronizedNode node = (SynchronizedNode) root().lookupNode(get.getNodePath(), true);
 
         return node.synchronizeGet(get.getName());

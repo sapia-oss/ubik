@@ -105,7 +105,7 @@ public class MultiplexSocketTransportProvider extends SocketTransportProvider {
     try {
       bindAddress = props.getProperty(BIND_ADDRESS);
       if (bindAddress == null && Localhost.isIpPatternDefined()) {
-        bindAddress = Localhost.getAnyLocalAddress().getHostAddress();
+        bindAddress = Localhost.getPreferredLocalAddress().getHostAddress();
       }
     } catch (IOException e) {
       throw new RemoteException("Invalid bind address", e);

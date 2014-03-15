@@ -65,7 +65,7 @@ public abstract class MulticastServer {
     groupStr = mcastAddress;
     sock = new MulticastSocket(mcastPort);
     if (Localhost.isIpPatternDefined()) {
-      sock.setNetworkInterface(NetworkInterface.getByInetAddress(Localhost.getAnyLocalAddress()));
+      sock.setNetworkInterface(NetworkInterface.getByInetAddress(Localhost.getPreferredLocalAddress()));
     }
     sock.setTimeToLive(ttl);
     sock.joinGroup(group);

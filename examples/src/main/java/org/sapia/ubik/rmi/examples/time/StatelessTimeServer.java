@@ -30,7 +30,7 @@ public class StatelessTimeServer {
       });      
       Log.setTrace();
       // Parse the input arguments
-      String aJndiUrlProvider    = "ubik://" + Localhost.getAnyLocalAddress().getHostAddress() + ":1099/";
+      String aJndiUrlProvider    = "ubik://" + Localhost.getPreferredLocalAddress().getHostAddress() + ":1099/";
       String aJndiInitialContext = "org.sapia.ubik.rmi.naming.remote.RemoteInitialContextFactory";
 
       if (args.length > 0) {

@@ -52,7 +52,7 @@ public class MinaTcpUnicastDispatcher extends BaseTcpUnicastDispatcher {
     this.handler = new MinaTcpUnicastHandler(consumer);
     this.maxThreads = maxThreads;
     this.marshallingBufferSize = marshallingBufferSize;
-    String host = Localhost.getAnyLocalAddress().getHostAddress();
+    String host = Localhost.getPreferredLocalAddress().getHostAddress();
     socketAddress = new InetSocketAddress(host, new TcpPortSelector().select(host));
   }
 

@@ -32,17 +32,17 @@ import org.sapia.ubik.util.Assertions;
  * For example, given the following service handler:
  * <code>com.acme.MyServiceHandler</code>, the configuration could be created
  * has follows:
- * 
+ *
  * <pre>
  * System.setProperty(&quot;ubik.rmi.naming.service.handler.acme&quot;, &quot;com.acme.MyServiceHandler&quot;);
  * </pre>
- * 
+ *
  * Then, latter on, a lookup can be performed using this class:
- * 
+ *
  * <pre>
  * Object remote = ServiceLocator.lookup(&quot;acme://localhost:7070&quot;);
  * </pre>
- * 
+ *
  * As shown above, the "acme" uri that was used to register the handler is then
  * used in the lookup. Using the scheme of the passed in URI, the
  * <code>lookup(...)</code> method delegates the operation to the proper
@@ -53,7 +53,7 @@ import org.sapia.ubik.util.Assertions;
  * in any way: the latter retrieves the configured handlers in a static
  * initializer, which would prevent the handlers from being discovered if
  * configured after the ServiceLocator class' initialization.
- * 
+ *
  * @author Yanick Duchesne
  */
 public class ServiceLocator {
@@ -70,14 +70,14 @@ public class ServiceLocator {
 
   /**
    * The URI scheme for the default service handler: ubik.
-   * 
+   *
    * @see JNDIHandler
    */
   public static final String UBIK_SCHEME = "ubik";
 
   /**
    * The URI scheme for ubik's reliable jndi handler: ubik.reliable.jndi.
-   * 
+   *
    * @see JNDIHandler
    */
   private static Map<String, ServiceHandler> handlers = new ConcurrentHashMap<String, ServiceHandler>();
@@ -86,13 +86,13 @@ public class ServiceLocator {
     registerHandler(UBIK_SCHEME, new JNDIHandler());
 
     ServiceHandler handler;
-    String[] propNames = (String[]) System.getProperties().keySet().toArray(new String[System.getProperties().size()]);
+    String[] propNames = System.getProperties().keySet().toArray(new String[System.getProperties().size()]);
     String propName;
     String className;
     String scheme;
 
     for (int i = 0; i < propNames.length; i++) {
-      propName = (String) propNames[i];
+      propName = propNames[i];
 
       if (propName.startsWith(HANDLER_PATTERN)) {
         scheme = propName.substring(HANDLER_PATTERN.length() + 1);
@@ -113,10 +113,10 @@ public class ServiceLocator {
 
   /**
    * Performs the lookup for the given path.
-   * 
+   *
    * @param url
    *          the url of the object to look up.
-   * 
+   *
    * @return an <code>Object</code>
    * @throws NameNotFoundException
    *           if no object could be found for the given url.
@@ -134,7 +134,7 @@ public class ServiceLocator {
       throw exc;
     }
 
-    ServiceHandler handler = (ServiceHandler) handlers.get(uri.getScheme());
+    ServiceHandler handler = handlers.get(uri.getScheme());
 
     if (handler == null) {
       throw new NamingException("no handler found for: " + uri.getScheme());
@@ -153,14 +153,15 @@ public class ServiceLocator {
 
       return obj;
     } catch (Throwable t) {
-      t.printStackTrace();
-      throw new NamingException("Could not lookup");
+      NamingException ne = new NamingException("Could not lookup");
+      ne.setRootCause(t);
+      throw ne;
     }
   }
 
   /**
    * Registers the given handler with the passed in scheme.
-   * 
+   *
    * @param scheme
    *          a URI scheme.
    * @param handler
@@ -175,7 +176,7 @@ public class ServiceLocator {
 
   /**
    * Removes the handler associated to the given URI scheme.
-   * 
+   *
    * @param scheme
    *          the URI scheme of the handler to remove from the
    *          {@link ServiceLocator}.

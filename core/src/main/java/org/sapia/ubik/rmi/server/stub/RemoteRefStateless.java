@@ -42,7 +42,7 @@ import org.sapia.ubik.util.Strings;
  * <p>
  * This design might be reviewed eventually, to provide a more consistent class
  * hierarchy.
- * 
+ *
  */
 public class RemoteRefStateless implements StubInvocationHandler, Externalizable, HealthCheck {
 
@@ -106,6 +106,7 @@ public class RemoteRefStateless implements StubInvocationHandler, Externalizable
   /**
    * @see java.lang.reflect.InvocationHandler#invoke(Object, Method, Object[])
    */
+  @Override
   public Object invoke(Object obj, Method toCall, Object[] params) throws Throwable {
     Object toReturn = null;
 
@@ -130,6 +131,7 @@ public class RemoteRefStateless implements StubInvocationHandler, Externalizable
   /**
    * @see org.sapia.ubik.rmi.server.stub.HealthCheck#isValid()
    */
+  @Override
   public boolean isValid() {
     try {
       return clean();
@@ -142,6 +144,7 @@ public class RemoteRefStateless implements StubInvocationHandler, Externalizable
   /**
    * @see StubInvocationHandler#toStubContainer(Object)
    */
+  @Override
   public StubContainer toStubContainer(Object proxy) {
     Set<Class<?>> interfaces = new HashSet<Class<?>>();
     Hub.getModules().getServerTable().getTypeCache().collectInterfaces(proxy.getClass(), interfaces);
@@ -157,6 +160,7 @@ public class RemoteRefStateless implements StubInvocationHandler, Externalizable
   /**
    * @see java.io.Externalizable#readExternal(ObjectInput)
    */
+  @Override
   @SuppressWarnings(value = "unchecked")
   public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
     name = (Name) in.readObject();
@@ -174,6 +178,7 @@ public class RemoteRefStateless implements StubInvocationHandler, Externalizable
   /**
    * @see java.io.Externalizable#writeExternal(ObjectOutput)
    */
+  @Override
   public void writeExternal(ObjectOutput out) throws IOException {
     out.writeObject(name);
     out.writeUTF(domain);
@@ -184,7 +189,7 @@ public class RemoteRefStateless implements StubInvocationHandler, Externalizable
 
   /**
    * Returns this instance's underlying connection information.
-   * 
+   *
    * @return this instance's {@link Contexts}.
    */
   ContextList getContextList() {
@@ -273,10 +278,12 @@ public class RemoteRefStateless implements StubInvocationHandler, Externalizable
     return dispatcher;
   }
 
+  @Override
   public int hashCode() {
     return oid.hashCode();
   }
 
+  @Override
   public boolean equals(Object o) {
     if (o instanceof RemoteRefStateless) {
       RemoteRefStateless other = (RemoteRefStateless) o;
@@ -285,6 +292,7 @@ public class RemoteRefStateless implements StubInvocationHandler, Externalizable
     return false;
   }
 
+  @Override
   public String toString() {
     return Strings.toString("name", name, "domain", domain, "multicastAddress", multicastAddress, "contexts", contexts);
   }

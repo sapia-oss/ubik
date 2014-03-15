@@ -109,7 +109,7 @@ public class MinaTransportProvider implements TransportProvider {
     } else {
       try {
         if (Localhost.isIpPatternDefined()) {
-          addr = new InetSocketAddress(Localhost.getAnyLocalAddress().getHostAddress(), port);
+          addr = new InetSocketAddress(Localhost.getPreferredLocalAddress().getHostAddress(), port);
         } else {
           addr = new InetSocketAddress(port);
         }

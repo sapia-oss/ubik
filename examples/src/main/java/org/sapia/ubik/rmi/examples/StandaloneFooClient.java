@@ -19,7 +19,7 @@ public class StandaloneFooClient{
     
     List<Worker> workers = new ArrayList<Worker>();
     for(int i = 0; i < 50; i++){
-      Foo f = (Foo)Hub.connect(Localhost.getAnyLocalAddress().getHostAddress(), 
+      Foo f = (Foo)Hub.connect(Localhost.getPreferredLocalAddress().getHostAddress(), 
           9090);
       
       Worker w = new Worker(i, f, 1000);

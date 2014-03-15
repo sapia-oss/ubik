@@ -179,7 +179,7 @@ public class SocketTransportProvider implements TransportProvider {
     UbikServerSocketFactory serverSocketFactory = null;
 
     try {
-      bindAddress = props.getProperty(BIND_ADDRESS, Localhost.getAnyLocalAddress().getHostAddress());
+      bindAddress = props.getProperty(BIND_ADDRESS, Localhost.getPreferredLocalAddress().getHostAddress());
     } catch (IOException e) {
       throw new RemoteException("Invalid bind address", e);
     }

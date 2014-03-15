@@ -51,7 +51,7 @@ public class JNDIServerFailoverTest {
   public void testFailover() throws Exception {
 
     Hashtable props = new Hashtable();
-    props.put(InitialContext.PROVIDER_URL, "ubik://" + Localhost.getAnyLocalAddress().getHostAddress() + ":1099/");
+    props.put(InitialContext.PROVIDER_URL, "ubik://" + Localhost.getPreferredLocalAddress().getHostAddress() + ":1099/");
     props.put(InitialContext.INITIAL_CONTEXT_FACTORY, RemoteInitialContextFactory.class.getName());
     InitialContext context = new InitialContext(props);
 
