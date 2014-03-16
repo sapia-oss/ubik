@@ -198,8 +198,7 @@ public class StatelessStubTable implements Module {
       }
 
       // this synchronizes the ContextList kept at the stub level with the
-      // shared
-      // Contexts instance (using anonymous class to avoid circular dependency
+      // shared Contexts instance (using anonymous class to avoid circular dependency
       // between Contexts and ContextList)
       final Contexts toSynchronize = contexts;
       ref.getContextList().addRemovalListener(new ContextList.RemovalListener() {
