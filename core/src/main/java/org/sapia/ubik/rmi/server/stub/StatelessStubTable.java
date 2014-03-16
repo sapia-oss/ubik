@@ -1,9 +1,6 @@
 package org.sapia.ubik.rmi.server.stub;
 
-import java.io.Externalizable;
 import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -12,8 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-
-import javax.naming.Name;
 
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
@@ -36,8 +31,6 @@ import org.sapia.ubik.util.Condition;
  * @author yduchesne
  */
 public class StatelessStubTable implements Module {
-
-  private static final String SYNC_STATELESS_REF_EVENT_TYPE = "org.sapia.ubik.rmi.server.stub.sync.event";
 
   private Category log = Log.createCategory(getClass());
   private List<DomainContexts> domainContexts = new ArrayList<DomainContexts>();
@@ -101,7 +94,7 @@ public class StatelessStubTable implements Module {
       this.multicastAddress = address;
     }
 
-    synchronized void synchronizeStatelessRef(final StatelessRefData ref) {
+    synchronized void synchronizeStatelessRef(final StatelessRefSyncEvent ref) {
       if (log.isTrace() && !contextsByObjectName.isEmpty()) {
         log.trace("Got contexts for names:");
         Collections2.forEach(contextsByObjectName.entrySet(), new Condition<Map.Entry<String, Contexts>>() {
@@ -112,15 +105,15 @@ public class StatelessStubTable implements Module {
           }
         });
       }
-      String name = ref.name.toString();
+      String name = ref.getName().toString();
       Contexts contexts = contextsByObjectName.get(name);
       if (contexts == null) {
         contexts = new Contexts();
         contextsByObjectName.put(name, contexts);
       }
 
-      log.debug("Synchronizing %s new stub endpoints %s for name %s", ref.contexts.size(), ref.contexts, ref.name);
-      contexts.addAll(ref.contexts);
+      log.debug("Synchronizing %s new stub endpoints %s for name %s", ref.getContexts().size(), ref.getContexts(), ref.getName());
+      contexts.addAll(ref.getContexts());
       if (log.isTrace()) {
         log.trace("Now got %s endpoints under %s", contexts.getContexts().size(), name);
         Collections2.forEach(contexts.getContexts(), new Condition<RemoteRefContext>() {
@@ -159,12 +152,12 @@ public class StatelessStubTable implements Module {
       }
       // if this new ref comes from a remote event (a SyncPutEvent), make sure we synchronize the new node
       // with this instance's remote refs.
-      if (event != null && !event.getType().equals(SYNC_STATELESS_REF_EVENT_TYPE)) {
+      if (event != null && !event.getType().equals(StatelessRefSyncEvent.class.getName())) {
         log.debug("Synching stateless references with remote node: %s", event.getNode());
         EventChannel channel = eventChannelTable.getEventChannelFor(ref.getDomain(), ref.getMulticastAddress());
         Set<RemoteRefContext> contextsToSync = new HashSet<>(contexts.getContexts());
-        log.trace("Got current statless ref endpoints: %s", contextsToSync);
-        log.trace("Got incoming statless ref endpoints: %s", newContexts);
+        log.trace("Got current stateless ref endpoints: %s", contextsToSync);
+        log.trace("Got incoming stateless ref endpoints: %s", newContexts);
         contextsToSync.removeAll(newContexts);
         if (!contextsToSync.isEmpty()) {
           if (log.isTrace()) {
@@ -178,8 +171,8 @@ public class StatelessStubTable implements Module {
             });
           }
           try {
-            StatelessRefData statelessRef = new StatelessRefData(ref.getName(), ref.getDomain(), ref.getMulticastAddress(), contextsToSync);
-            channel.dispatch(event.getUnicastAddress(), SYNC_STATELESS_REF_EVENT_TYPE, statelessRef);
+            StatelessRefSyncEvent statelessRef = new StatelessRefSyncEvent(ref.getName(), ref.getDomain(), ref.getMulticastAddress(), contextsToSync);
+            channel.dispatch(event.getUnicastAddress(), StatelessRefSyncEvent.class.getName(), statelessRef);
           } catch (IOException e) {
             log.warning("Could not send stateless stub update to %s", event.getNode());
           }
@@ -219,8 +212,7 @@ public class StatelessStubTable implements Module {
 
     void registerWithEventChannel() {
       eventChannelTable.getEventChannelFor(domainName.toString(), multicastAddress).registerAsyncListener(SyncPutEvent.class.getName(), this);
-      eventChannelTable.getEventChannelFor(domainName.toString(), multicastAddress).registerAsyncListener(SYNC_STATELESS_REF_EVENT_TYPE, this);
-
+      eventChannelTable.getEventChannelFor(domainName.toString(), multicastAddress).registerAsyncListener(StatelessRefSyncEvent.class.getName(), this);
     }
 
     @Override
@@ -233,9 +225,9 @@ public class StatelessStubTable implements Module {
           attachedRemoteEvent.set(evt);
           SyncPutEvent bEvt = (SyncPutEvent) evt.getData();
           log.debug("Got object %s", bEvt.getValue());
-        } else if (evt.getType().equals(SYNC_STATELESS_REF_EVENT_TYPE)) {
+        } else if (evt.getType().equals(StatelessRefSyncEvent.class.getName())) {
           log.debug("Remote sync event received: %s", evt.getType());
-          StatelessRefData refData = (StatelessRefData) evt.getData();
+          StatelessRefSyncEvent refData = (StatelessRefSyncEvent) evt.getData();
           synchronizeStatelessRef(refData);
         }
       } catch (IOException e) {
@@ -247,41 +239,6 @@ public class StatelessStubTable implements Module {
       }
     }
 
-  }
-
-
-
-  public static class StatelessRefData implements Externalizable {
-    private Name name;
-    private String domain;
-    private MulticastAddress multicastAddress;
-    private Set<RemoteRefContext> contexts;
-
-    public StatelessRefData() {
-    }
-
-    public StatelessRefData(Name name, String domain, MulticastAddress address, Set<RemoteRefContext> contexts) {
-      this.name = name;
-      this.domain = domain;
-      this.multicastAddress = address;
-      this.contexts = contexts;
-    }
-
-    @Override
-    public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-      name = (Name) in.readObject();
-      domain = in.readUTF();
-      multicastAddress = (MulticastAddress) in.readObject();
-      contexts = (Set<RemoteRefContext>) in.readObject();
-    }
-
-    @Override
-    public void writeExternal(ObjectOutput out) throws IOException {
-      out.writeObject(name);
-      out.writeUTF(domain);
-      out.writeObject(multicastAddress);
-      out.writeObject(contexts);
-    }
   }
 
 }
