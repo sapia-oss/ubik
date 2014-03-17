@@ -70,9 +70,6 @@ public class ObjectTable implements ObjectTableMBean, Module {
    *          the object whose stub will be sent to the client.
    */
   public synchronized void register(OID oid, Object o) {
-    Assertions.illegalState(o instanceof StubContainer, "Cannot register StubContainer instances as remote objects");
-    Assertions.illegalState(o instanceof Stub, "Cannot register Stub instances as remote objects");
-
     Ref ref = (Ref) refs.get(oid);
     if (ref == null) {
       ref = new Ref(oid, o);
