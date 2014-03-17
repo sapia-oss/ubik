@@ -8,9 +8,9 @@ import java.util.Properties;
 /**
  * This class provides utility methods over a list of {@link Properties} or
  * {@link Map} objects that are sequentially looked up for given values.
- * 
+ *
  * @author Yanick Duchesne
- * 
+ *
  */
 public class Conf {
 
@@ -41,7 +41,7 @@ public class Conf {
 
   /**
    * Adds the system properties to this instance.
-   * 
+   *
    * @return this instance.
    */
   public Conf addSystemProperties() {
@@ -262,6 +262,13 @@ public class Conf {
    */
   public static Conf getSystemProperties() {
     return new Conf().addProperties(System.getProperties());
+  }
+
+  /**
+   * @return a new instance of this class.
+   */
+  public static Conf newInstance() {
+    return new Conf();
   }
 
   private String lookup(String key, boolean throwExcIfNotFound) {
