@@ -26,7 +26,6 @@ public class RemoteRefReliableTest {
 
   @Before
   public void setUp() throws Exception {
-    Log.setDebug();
     transport = new TestSocketServerTransportSetup();
     transport.setUp();
   }
