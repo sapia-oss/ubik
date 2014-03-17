@@ -5,27 +5,28 @@ import org.sapia.ubik.rmi.naming.remote.EmbeddableJNDIServer;
 
 public class BasicEventChannel {
 
-	
+
 	public static void main(String[] args) {
 	  try {
-	  	
-	  	EventChannel channel = new EventChannel("mydomain");
+
+	  	final EventChannel channel = new EventChannel("mydomain");
 	  	channel.start();
-	  	
-	  	final EmbeddableJNDIServer jndiServer    = new EmbeddableJNDIServer(channel, 1099);
+
+	  	final EmbeddableJNDIServer jndiServer    = new EmbeddableJNDIServer(channel.getManagedReference(), 1099);
 	  	jndiServer.start(true);
-	  	
+
 	  	Runtime.getRuntime().addShutdownHook(new Thread() {
-	  		
+
 	  		@Override
 	  		public void run() {
+	  		  channel.close();
 	  		  jndiServer.stop();
 	  		}
 	  	});
-	  	
+
 	  } catch (Exception e) {
 	  	e.printStackTrace();
 	  }
-		
+
   }
 }
