@@ -4,17 +4,17 @@ import static org.junit.Assert.*;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.sapia.ubik.util.Clock.MutableClock;
+import org.sapia.ubik.util.SysClock.MutableClock;
 
-public class DelayTest {
+public class PauseTest {
 
   private MutableClock clock;
-  private Delay delay;
+  private Pause delay;
 
   @Before
   public void setUp() {
     clock = new MutableClock();
-    delay = new Delay(clock, 1000);
+    delay = new Pause(clock, 1000);
   }
 
   @Test

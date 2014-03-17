@@ -6,7 +6,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-import org.sapia.ubik.util.Collections2;
+import org.sapia.ubik.util.Collects;
 import org.sapia.ubik.util.Function;
 import org.sapia.ubik.util.Strings;
 
@@ -56,7 +56,7 @@ class Contexts {
    */
   synchronized void addAll(Collection<RemoteRefContext> toAdd) {
 
-    Set<RemoteRefContext> currentSet = Collections2.convertAsSet(contexts, new Function<RemoteRefContext, WeakReference<RemoteRefContext>>() {
+    Set<RemoteRefContext> currentSet = Collects.convertAsSet(contexts, new Function<RemoteRefContext, WeakReference<RemoteRefContext>>() {
       @Override
       public RemoteRefContext call(WeakReference<RemoteRefContext> ref) {
         return ref.get();
@@ -67,7 +67,7 @@ class Contexts {
       currentSet.add(c);
     }
 
-    contexts = Collections2.convertAsList(currentSet, new Function<WeakReference<RemoteRefContext>, RemoteRefContext>() {
+    contexts = Collects.convertAsList(currentSet, new Function<WeakReference<RemoteRefContext>, RemoteRefContext>() {
       @Override
       public java.lang.ref.WeakReference<RemoteRefContext> call(RemoteRefContext ctx) {
         return new WeakReference<RemoteRefContext>(ctx);
@@ -81,7 +81,7 @@ class Contexts {
    * @return this instance's collection of {@link RemoteRefContext}s.
    */
   synchronized Collection<RemoteRefContext> getContexts() {
-    return Collections2.convertAsList(contexts, new Function<RemoteRefContext, WeakReference<RemoteRefContext>>() {
+    return Collects.convertAsList(contexts, new Function<RemoteRefContext, WeakReference<RemoteRefContext>>() {
       @Override
       public RemoteRefContext call(WeakReference<RemoteRefContext> ref) {
         return ref.get();

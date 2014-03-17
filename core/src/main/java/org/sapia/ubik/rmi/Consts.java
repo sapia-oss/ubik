@@ -250,7 +250,6 @@ public interface Consts {
    */
   public static final String MCAST_MAX_CLIENT_CONNECTIONS = "ubik.rmi.naming.mcast.tcp.client.max-connections";
 
-
   /**
    * Corresponds to the
    * <code>ubik.rmi.naming.mcast.broadcast.monitor.interval</code> property key.
@@ -258,6 +257,14 @@ public interface Consts {
    * on the broadcast dispatcher (defaults to 30000 millis).
    */
   public static final String MCAST_BROADCAST_MONITOR_INTERVAL = "ubik.rmi.naming.mcast.broadcast.monitor.interval";
+  
+  /**
+   * This constant corresponds to the <code>ubik.rmi.naming.mcast.event.channel.reuse</code>
+   * property key. It is used in test to indicate if {@link EventChannel} instance reuse should be enabled.
+   * <p>
+   * When testing event channel behavior in-memory, this property should be set to false.
+   */
+  public static final String MCAST_REUSE_EXISTINC_CHANNELS = "ubik.rmi.naming.mcast.event.channel.reuse";
 
   /**
    * Identifies the unicast provider to use as part of {@link EventChannel}s.

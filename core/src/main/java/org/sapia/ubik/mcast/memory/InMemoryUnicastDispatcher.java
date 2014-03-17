@@ -3,6 +3,7 @@ package org.sapia.ubik.mcast.memory;
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
@@ -21,7 +22,10 @@ import org.sapia.ubik.net.ServerAddress;
  */
 public class InMemoryUnicastDispatcher implements UnicastDispatcher {
 
-  private Category log = Log.createCategory(getClass());
+  private static final AtomicInteger INSTANCE_COUNTER = new AtomicInteger();
+  
+  private int instanceId = INSTANCE_COUNTER.incrementAndGet();
+  private Category log = Log.createCategory(getClass().getName() + "#" + instanceId);
   private InMemoryDispatchChannel channel = InMemoryDispatchChannel.getInstance();
   private InMemoryUnicastAddress address = new InMemoryUnicastAddress();
   private EventConsumer consumer;

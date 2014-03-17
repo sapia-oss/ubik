@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
@@ -26,7 +27,10 @@ import org.sapia.ubik.rmi.Consts;
  */
 public class InMemoryBroadcastDispatcher implements BroadcastDispatcher {
 
-  private Category log = Log.createCategory(getClass());
+  private static final AtomicInteger INSTANCE_COUNTER = new AtomicInteger();
+  
+  private int instanceId = INSTANCE_COUNTER.incrementAndGet();
+  private Category log = Log.createCategory(getClass().getName() + "#" + instanceId);
   private InMemoryDispatchChannel channel = InMemoryDispatchChannel.getInstance();
   private EventConsumer consumer;
   private String domain;

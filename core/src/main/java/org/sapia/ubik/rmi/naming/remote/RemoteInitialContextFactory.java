@@ -26,8 +26,8 @@ import org.sapia.ubik.rmi.naming.remote.proxy.ContextResolver;
 import org.sapia.ubik.rmi.naming.remote.proxy.DefaultContextResolver;
 import org.sapia.ubik.rmi.naming.remote.proxy.ReliableLocalContext;
 import org.sapia.ubik.util.Condition;
-import org.sapia.ubik.util.Delay;
-import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.Pause;
+import org.sapia.ubik.util.Conf;
 
 /**
  * Implements a factory that allows to register {@link ServiceDiscoListener}s
@@ -134,7 +134,7 @@ public class RemoteInitialContextFactory implements InitialContextFactory, JNDIC
   @SuppressWarnings("rawtypes")
   public Context getInitialContext(Hashtable props) throws NamingException {
 
-    Props allProps = new Props().addMap(props).addSystemProperties();
+    Conf allProps = new Conf().addMap(props).addSystemProperties();
 
     String url = (String) props.get(InitialContext.PROVIDER_URL);
 
@@ -201,7 +201,7 @@ public class RemoteInitialContextFactory implements InitialContextFactory, JNDIC
 
   }
 
-  private EventChannelRef getEventChannel(Props props) throws NamingException {
+  private EventChannelRef getEventChannel(Conf props) throws NamingException {
     final String domain = props.getProperty(UBIK_DOMAIN_NAME, JNDIConsts.DEFAULT_DOMAIN);
 
     EventChannelRef ref = EventChannel.selectActiveChannel(new Condition<EventChannel>() {
@@ -223,6 +223,8 @@ public class RemoteInitialContextFactory implements InitialContextFactory, JNDIC
         ne.setRootCause(e);
         throw ne;
       }
+    } else {
+      log.debug("Reusing existing event channel");
     }
     return ref;
   }
@@ -246,7 +248,7 @@ public class RemoteInitialContextFactory implements InitialContextFactory, JNDIC
     }
 
     public synchronized RemoteEvent waitForEvent(long timeout) {
-      Delay delay = new Delay(timeout);
+      Pause delay = new Pause(timeout);
       try {
         while (!delay.isOver() && event == null) {
           wait(delay.remainingNotZero());

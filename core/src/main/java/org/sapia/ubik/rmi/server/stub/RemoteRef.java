@@ -16,7 +16,7 @@ import org.sapia.ubik.rmi.server.CommandPing;
 import org.sapia.ubik.rmi.server.Hub;
 import org.sapia.ubik.rmi.server.VmId;
 import org.sapia.ubik.rmi.server.invocation.InvocationDispatcher;
-import org.sapia.ubik.util.Collections2;
+import org.sapia.ubik.util.Collects;
 import org.sapia.ubik.util.Function;
 
 /**
@@ -87,7 +87,7 @@ public abstract class RemoteRef implements StubInvocationHandler, Externalizable
   public StubContainer toStubContainer(Object proxy) {
     Set<Class<?>> interfaces = new HashSet<Class<?>>();
     Hub.getModules().getServerTable().getTypeCache().collectInterfaces(proxy.getClass(), interfaces);
-    String[] names = Collections2.convertAsArray(interfaces, String.class, new Function<String, Class<?>>() {
+    String[] names = Collects.convertAsArray(interfaces, String.class, new Function<String, Class<?>>() {
       @Override
       public String call(Class<?> interf) {
         return interf.getName();

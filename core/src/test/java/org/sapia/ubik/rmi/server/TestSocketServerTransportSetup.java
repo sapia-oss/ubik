@@ -5,6 +5,8 @@ import java.util.Properties;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 
+import org.sapia.ubik.log.Log;
+import org.sapia.ubik.mcast.EventChannel;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.naming.remote.EmbeddableJNDIServer;
 import org.sapia.ubik.rmi.naming.remote.RemoteInitialContextFactory;
@@ -15,6 +17,7 @@ public class TestSocketServerTransportSetup {
   Context context;
 
   public void setUp() throws Exception {
+    EventChannel.disableReuse();
     System.setProperty(Consts.COLOCATED_CALLS_ENABLED, "false");
     jndi = new EmbeddableJNDIServer("testDomain", 1099);
     jndi.start(true);
@@ -28,6 +31,7 @@ public class TestSocketServerTransportSetup {
   }
 
   public void tearDown() {
+    EventChannel.enableReuse();
     System.clearProperty(Consts.COLOCATED_CALLS_ENABLED);
     if (jndi != null) {
       jndi.stop();

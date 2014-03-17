@@ -10,10 +10,11 @@ import javax.naming.NameNotFoundException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.EventChannel;
 import org.sapia.ubik.rmi.Consts;
-import org.sapia.ubik.util.PropertiesUtil;
-import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.PropUtil;
+import org.sapia.ubik.util.Conf;
 
 public class RemoteInitialContextFactoryTest {
 
@@ -21,18 +22,20 @@ public class RemoteInitialContextFactoryTest {
 
   @Before
   public void setUp() throws Exception {
-    PropertiesUtil.clearUbikSystemProperties();
+    EventChannel.disableReuse();
+    PropUtil.clearUbikSystemProperties();
     System.setProperty(Consts.UBIK_DOMAIN_NAME, "test");
     System.setProperty(Consts.BROADCAST_PROVIDER, Consts.BROADCAST_PROVIDER_MEMORY);
     System.setProperty(Consts.BROADCAST_MEMORY_NODE, "test");
-    EventChannel ec = new EventChannel("test", Props.getSystemProperties());
+    EventChannel ec = new EventChannel("test", Conf.getSystemProperties());
     server = new EmbeddableJNDIServer(ec, 1099);
     server.start(false);
   }
 
   @After
   public void tearDown() {
-    PropertiesUtil.clearUbikSystemProperties();
+    EventChannel.enableReuse();
+    PropUtil.clearUbikSystemProperties();
     server.stop();
   }
 

@@ -3,7 +3,7 @@ package org.sapia.ubik.rmi.server.command;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.VmId;
 import org.sapia.ubik.rmi.server.transport.TransportManager;
-import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.Conf;
 
 /**
  * A factory of {@link ResponseSender}s.
@@ -18,7 +18,7 @@ class ResponseSenderFactoryImpl implements ResponseSenderFactory {
 
   private ResponseSender remote;
   private ResponseSender local;
-  private boolean supportsColocatedCalls = Props.getSystemProperties().getBooleanProperty(Consts.COLOCATED_CALLS_ENABLED, false);
+  private boolean supportsColocatedCalls = Conf.getSystemProperties().getBooleanProperty(Consts.COLOCATED_CALLS_ENABLED, false);
 
   /**
    * @param transports

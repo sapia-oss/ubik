@@ -9,7 +9,7 @@ import java.rmi.RemoteException;
 import org.sapia.ubik.net.Connection;
 import org.sapia.ubik.net.SocketConnectionFactory;
 import org.sapia.ubik.rmi.Consts;
-import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.Conf;
 
 /**
  * Implements a factory of {@link SocketRmiConnection} instances.
@@ -18,7 +18,7 @@ import org.sapia.ubik.util.Props;
  */
 public class SocketRmiConnectionFactory extends SocketConnectionFactory {
 
-  private int bufsize = Props.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE);
+  private int bufsize = Conf.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE);
 
   private long resetInterval;
 

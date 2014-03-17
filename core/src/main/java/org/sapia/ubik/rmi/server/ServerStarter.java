@@ -6,7 +6,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Properties;
 
-import org.sapia.ubik.util.PropertiesUtil;
+import org.sapia.ubik.util.PropUtil;
 import org.sapia.ubik.util.cli.Cmd;
 import org.sapia.ubik.util.cli.Opt;
 import org.sapia.ubik.util.cli.Cmd.OptionFilter;
@@ -32,7 +32,7 @@ public class ServerStarter {
     });
 
     Properties props = cmd.removeJvmOpts();
-    PropertiesUtil.copy(props, System.getProperties());
+    PropUtil.copy(props, System.getProperties());
 
     if (cmd.getOpts().isEmpty()) {
       out.println("Missing class with main() method");

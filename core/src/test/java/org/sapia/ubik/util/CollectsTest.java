@@ -10,12 +10,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Test;
 
-public class Collections2Test {
+public class CollectsTest {
 
   @Test
   public void testIterableForEach() {
     final AtomicInteger counter = new AtomicInteger();
-    Collections2.forEach(Collections2.arrayToList("1", "2", "3"), new Condition<String>() {
+    Collects.forEach(Collects.arrayToList("1", "2", "3"), new Condition<String>() {
       public boolean apply(String item) {
         counter.incrementAndGet();
         return true;
@@ -28,7 +28,7 @@ public class Collections2Test {
   @Test
   public void testArrayForEach() {
     final AtomicInteger counter = new AtomicInteger();
-    Collections2.forEach(new String[] { "1", "2", "3" }, new Condition<String>() {
+    Collects.forEach(new String[] { "1", "2", "3" }, new Condition<String>() {
       public boolean apply(String item) {
         counter.incrementAndGet();
         return true;
@@ -39,8 +39,8 @@ public class Collections2Test {
 
   @Test
   public void testFilterAsTest() {
-    List<String> toFilter = Collections2.arrayToList("1", "2", "3");
-    Set<String> filtered = Collections2.filterAsSet(toFilter, new Condition<String>() {
+    List<String> toFilter = Collects.arrayToList("1", "2", "3");
+    Set<String> filtered = Collects.filterAsSet(toFilter, new Condition<String>() {
       @Override
       public boolean apply(String item) {
         return item.equals("1");
@@ -53,7 +53,7 @@ public class Collections2Test {
 
   @Test
   public void testConvertAsList() {
-    List<Integer> integers = Collections2.convertAsList(Collections2.arrayToList("1", "2", "3"), new Function<Integer, String>() {
+    List<Integer> integers = Collects.convertAsList(Collects.arrayToList("1", "2", "3"), new Function<Integer, String>() {
       @Override
       public Integer call(String arg) {
         return Integer.parseInt(arg);
@@ -64,7 +64,7 @@ public class Collections2Test {
 
   @Test
   public void testConvertAsSet() {
-    Set<Integer> integers = Collections2.convertAsSet(Collections2.arrayToList("1", "2", "3"), new Function<Integer, String>() {
+    Set<Integer> integers = Collects.convertAsSet(Collects.arrayToList("1", "2", "3"), new Function<Integer, String>() {
       @Override
       public Integer call(String arg) {
         return Integer.parseInt(arg);
@@ -78,7 +78,7 @@ public class Collections2Test {
 
   @Test
   public void testConvertAsArray() {
-    Integer[] integers = Collections2.convertAsArray(Collections2.arrayToList("1", "2", "3"), Integer.class, new Function<Integer, String>() {
+    Integer[] integers = Collects.convertAsArray(Collects.arrayToList("1", "2", "3"), Integer.class, new Function<Integer, String>() {
       @Override
       public Integer call(String arg) {
         return Integer.parseInt(arg);
@@ -93,7 +93,7 @@ public class Collections2Test {
     for (int i = 0; i < 100; i++) {
       toSplit.add(i);
     }
-    List<Set<Integer>> sets = Collections2.splitAsSets(toSplit, 5);
+    List<Set<Integer>> sets = Collects.splitAsSets(toSplit, 5);
     assertEquals(20, sets.size());
     for (Set<Integer> s : sets) {
       assertEquals(5, s.size());
@@ -106,7 +106,7 @@ public class Collections2Test {
     for (int i = 0; i < 23; i++) {
       toSplit.add(i);
     }
-    List<Set<Integer>> sets = Collections2.splitAsSets(toSplit, 5);
+    List<Set<Integer>> sets = Collects.splitAsSets(toSplit, 5);
     assertEquals(5, sets.size());
     int count = 0;
     for (Set<Integer> s : sets) {
@@ -125,7 +125,7 @@ public class Collections2Test {
     for (int i = 0; i < 100; i++) {
       toSplit.add(i);
     }
-    List<List<Integer>> lists = Collections2.splitAsLists(toSplit, 5);
+    List<List<Integer>> lists = Collects.splitAsLists(toSplit, 5);
     assertEquals(20, lists.size());
     for (List<Integer> lst : lists) {
       assertEquals(5, lst.size());
@@ -138,7 +138,7 @@ public class Collections2Test {
     for (int i = 0; i < 23; i++) {
       toSplit.add(i);
     }
-    List<List<Integer>> lists = Collections2.splitAsLists(toSplit, 5);
+    List<List<Integer>> lists = Collects.splitAsLists(toSplit, 5);
     assertEquals(5, lists.size());
     int count = 0;
     for (List<Integer> s : lists) {
@@ -153,8 +153,8 @@ public class Collections2Test {
 
   @Test
   public void testDivideAsSets() {
-    Set<String> toSplit = Collections2.arrayToSet("1", "2", "3", "4", "5", "6");
-    List<Set<String>> splits = Collections2.divideAsSets(toSplit, 3);
+    Set<String> toSplit = Collects.arrayToSet("1", "2", "3", "4", "5", "6");
+    List<Set<String>> splits = Collects.divideAsSets(toSplit, 3);
     assertEquals(3, splits.size());
     assertEquals(2, splits.get(0).size());
     assertEquals(2, splits.get(1).size());
@@ -164,24 +164,24 @@ public class Collections2Test {
 
   @Test
   public void testDivideAsSetsWithZeroDivisor() {
-    Set<String> toSplit = Collections2.arrayToSet("1", "2", "3", "4", "5", "6");
-    List<Set<String>> splits = Collections2.divideAsSets(toSplit, 0);
+    Set<String> toSplit = Collects.arrayToSet("1", "2", "3", "4", "5", "6");
+    List<Set<String>> splits = Collects.divideAsSets(toSplit, 0);
     assertEquals(1, splits.size());
     assertEquals(6, splits.get(0).size());
   }
 
   @Test
   public void testDivideAsSetsDivisorSameAsSize() {
-    Set<String> toSplit = Collections2.arrayToSet("1", "2", "3", "4", "5", "6");
-    List<Set<String>> splits = Collections2.divideAsSets(toSplit, 6);
+    Set<String> toSplit = Collects.arrayToSet("1", "2", "3", "4", "5", "6");
+    List<Set<String>> splits = Collects.divideAsSets(toSplit, 6);
     assertEquals(6, splits.size());
     assertEquals(1, splits.get(0).size());
   }
 
   @Test
   public void testDivideAsLists() {
-    List<String> toSplit = Collections2.arrayToList("1", "2", "3", "4", "5", "6");
-    List<List<String>> splits = Collections2.divideAsLists(toSplit, 3);
+    List<String> toSplit = Collects.arrayToList("1", "2", "3", "4", "5", "6");
+    List<List<String>> splits = Collects.divideAsLists(toSplit, 3);
     assertEquals(3, splits.size());
     assertEquals(2, splits.get(0).size());
     assertEquals(2, splits.get(1).size());
@@ -190,16 +190,16 @@ public class Collections2Test {
 
   @Test
   public void testDivideAsListsWithZeroDivisor() {
-    List<String> toSplit = Collections2.arrayToList("1", "2", "3", "4", "5", "6");
-    List<List<String>> splits = Collections2.divideAsLists(toSplit, 0);
+    List<String> toSplit = Collects.arrayToList("1", "2", "3", "4", "5", "6");
+    List<List<String>> splits = Collects.divideAsLists(toSplit, 0);
     assertEquals(1, splits.size());
     assertEquals(6, splits.get(0).size());
   }
 
   @Test
   public void testDivideAsListsDivisorSameAsSize() {
-    List<String> toSplit = Collections2.arrayToList("1", "2", "3", "4", "5", "6");
-    List<List<String>> splits = Collections2.divideAsLists(toSplit, 6);
+    List<String> toSplit = Collects.arrayToList("1", "2", "3", "4", "5", "6");
+    List<List<String>> splits = Collects.divideAsLists(toSplit, 6);
     assertEquals(6, splits.size());
     assertEquals(1, splits.get(0).size());
   }

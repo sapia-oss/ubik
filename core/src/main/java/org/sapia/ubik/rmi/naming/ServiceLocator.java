@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.naming.NameNotFoundException;
 import javax.naming.NamingException;
 
+import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.Uri;
 import org.sapia.ubik.net.UriSyntaxException;
@@ -57,6 +58,7 @@ import org.sapia.ubik.util.Assertions;
  * @author Yanick Duchesne
  */
 public class ServiceLocator {
+  
   /**
    * This constant identifies an unidentified port.
    */
@@ -74,6 +76,8 @@ public class ServiceLocator {
    * @see JNDIHandler
    */
   public static final String UBIK_SCHEME = "ubik";
+  
+  private static Category LOG = Log.createCategory(ServiceLocator.class);
 
   /**
    * The URI scheme for ubik's reliable jndi handler: ubik.reliable.jndi.
@@ -81,7 +85,7 @@ public class ServiceLocator {
    * @see JNDIHandler
    */
   private static Map<String, ServiceHandler> handlers = new ConcurrentHashMap<String, ServiceHandler>();
-
+  
   static {
     registerHandler(UBIK_SCHEME, new JNDIHandler());
 
@@ -140,16 +144,12 @@ public class ServiceLocator {
       throw new NamingException("no handler found for: " + uri.getScheme());
     }
 
-    if (Log.isDebug()) {
-      Log.debug(ServiceLocator.class, "Delegating lookup to handler: " + handler);
-    }
+    LOG.debug("Delegating lookup to handler: %s", handler);
 
     try {
       Object obj = handler.handleLookup(uri.getHost(), uri.getPort(), uri.getQueryString().getPath(), uri.getQueryString().getParameters());
 
-      if (Log.isDebug()) {
-        Log.debug(ServiceLocator.class, "Lookup finished");
-      }
+      LOG.debug("Lookup finished");
 
       return obj;
     } catch (Throwable t) {

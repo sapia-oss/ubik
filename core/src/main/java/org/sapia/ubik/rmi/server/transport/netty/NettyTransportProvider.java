@@ -20,7 +20,7 @@ import org.sapia.ubik.rmi.server.Server;
 import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.TransportProvider;
 import org.sapia.ubik.util.Localhost;
-import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.Time;
 
 /**
@@ -41,7 +41,7 @@ public class NettyTransportProvider implements TransportProvider, NettyConsts {
 
   private Map<ServerAddress, NettyClientConnectionPool> pools = new ConcurrentHashMap<ServerAddress, NettyClientConnectionPool>();
 
-  private int bufsize = Props.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE);
+  private int bufsize = Conf.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE);
 
   /**
    * @see org.sapia.ubik.rmi.server.transport.TransportProvider#getPoolFor(org.sapia.ubik.net.ServerAddress)
@@ -71,7 +71,7 @@ public class NettyTransportProvider implements TransportProvider, NettyConsts {
 
   @Override
   public Server newServer(Properties props) throws RemoteException {
-    Props config = new Props().addProperties(props).addProperties(System.getProperties());
+    Conf config = new Conf().addProperties(props).addProperties(System.getProperties());
     int port = 0;
     if (config.getProperty(SERVER_PORT_KEY) != null) {
       try {

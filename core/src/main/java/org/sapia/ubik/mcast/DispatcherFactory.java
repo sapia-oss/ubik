@@ -16,7 +16,7 @@ import org.sapia.ubik.mcast.tcp.mina.MinaTcpUnicastDispatcher;
 import org.sapia.ubik.mcast.udp.UDPBroadcastDispatcher;
 import org.sapia.ubik.mcast.udp.UDPUnicastDispatcher;
 import org.sapia.ubik.rmi.Consts;
-import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.Conf;
 
 /**
  * This class implements a factory of {@link UnicastDispatcher}s and
@@ -54,13 +54,13 @@ public final class DispatcherFactory {
    * @param consumer
    *          an {@link EventConsumer}.
    * @param props
-   *          the {@link Props} containing configuration values.
+   *          the {@link Conf} containing configuration values.
    * @return the {@link BroadcastDispatcher} corresponding to the given
    *         properties.
    * @throws IOException
    *           if a problem occurs creating the dispatcher.
    */
-  public static UnicastDispatcher createUnicastDispatcher(EventConsumer consumer, Props props) throws IOException {
+  public static UnicastDispatcher createUnicastDispatcher(EventConsumer consumer, Conf props) throws IOException {
     String provider = props.getProperty(Consts.UNICAST_PROVIDER, Consts.UNICAST_PROVIDER_TCP);
 
     if (provider.equals(Consts.UNICAST_PROVIDER_MEMORY)) {
@@ -103,13 +103,13 @@ public final class DispatcherFactory {
    * @param consumer
    *          an {@link EventConsumer}.
    * @param props
-   *          the {@link Props} containing configuration values.
+   *          the {@link Conf} containing configuration values.
    * @return the {@link BroadcastDispatcher} corresponding to the given
    *         properties.
    * @throws IOException
    *           if a problem occurs creating the dispatcher.
    */
-  public static BroadcastDispatcher createBroadcastDispatcher(EventConsumer consumer, Props props) throws IOException {
+  public static BroadcastDispatcher createBroadcastDispatcher(EventConsumer consumer, Conf props) throws IOException {
     String provider = props.getProperty(Consts.BROADCAST_PROVIDER, Consts.BROADCAST_PROVIDER_UDP);
     if (provider.equals(Consts.BROADCAST_PROVIDER_MEMORY)) {
       log.info("Creating in-memory broadcast provider");
@@ -142,7 +142,7 @@ public final class DispatcherFactory {
    *         {@link Properties}.
    */
   public static MulticastAddress getMulticastAddress(Properties from) {
-    Props props = new Props().addProperties(from);
+    Conf props = new Conf().addProperties(from);
     String provider = props.getProperty(Consts.BROADCAST_PROVIDER, Consts.BROADCAST_PROVIDER_UDP);
     if (provider.equals(Consts.BROADCAST_PROVIDER_MEMORY)) {
       return new InMemoryBroadcastDispatcher.InMemoryMulticastAddress(props.getNotNullProperty(Consts.BROADCAST_MEMORY_NODE));

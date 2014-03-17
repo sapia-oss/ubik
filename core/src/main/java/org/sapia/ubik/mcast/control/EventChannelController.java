@@ -24,9 +24,9 @@ import org.sapia.ubik.mcast.control.heartbeat.HeartbeatRequest;
 import org.sapia.ubik.mcast.control.heartbeat.HeartbeatRequestHandler;
 import org.sapia.ubik.mcast.control.heartbeat.PingRequest;
 import org.sapia.ubik.mcast.control.heartbeat.PingRequestHandler;
-import org.sapia.ubik.util.Clock;
-import org.sapia.ubik.util.Collections2;
-import org.sapia.ubik.util.Delay;
+import org.sapia.ubik.util.SysClock;
+import org.sapia.ubik.util.Collects;
+import org.sapia.ubik.util.Pause;
 import org.sapia.ubik.util.Function;
 
 /**
@@ -77,13 +77,13 @@ public class EventChannelController {
   private Map<String, ControlRequestHandler> requestHandlers = new HashMap<String, ControlRequestHandler>();
   private Map<String, ControlNotificationHandler> notificationHandlers = new HashMap<String, ControlNotificationHandler>();
   private Map<String, SynchronousControlRequestHandler> syncRequestHandlers = new HashMap<String, SynchronousControlRequestHandler>();
-  private Delay autoResyncInterval, masterBroadcastInterval;
+  private Pause autoResyncInterval, masterBroadcastInterval;
 
   public EventChannelController(ControllerConfiguration config, ChannelCallback callback) {
-    this(Clock.SystemClock.getInstance(), config, callback);
+    this(SysClock.RealtimeClock.getInstance(), config, callback);
   }
 
-  public EventChannelController(Clock clock, ControllerConfiguration config, ChannelCallback callback) {
+  public EventChannelController(SysClock clock, ControllerConfiguration config, ChannelCallback callback) {
     this.config = config;
     context = new ControllerContext(this, callback, clock);
     requestHandlers.put(ChallengeRequest.class.getName(), new ChallengeRequestHandler(context));
@@ -92,8 +92,8 @@ public class EventChannelController {
     notificationHandlers.put(DownNotification.class.getName(), new DownNotificationHandler(context));
     notificationHandlers.put(ChallengeCompletionNotification.class.getName(), new ChallengeCompletionNotificationHandler(context));
 
-    autoResyncInterval      = new Delay(clock, config.getResyncInterval());
-    masterBroadcastInterval = new Delay(clock, config.getMasterBroadcastInterval());
+    autoResyncInterval      = new Pause(clock, config.getResyncInterval());
+    masterBroadcastInterval = new Pause(clock, config.getMasterBroadcastInterval());
   }
 
   ControllerConfiguration getConfig() {
@@ -234,9 +234,9 @@ public class EventChannelController {
         // broadcast "force resync" events to all nodes in the purgatory
         if (context.getPurgatory().size() > 0) {
           log.info("Got %s nodes in purgatory", context.getPurgatory().size());
-          List<Set<DownNode>> batches = Collections2.splitAsSets(context.getPurgatory().getDownNodes(), config.getForceResyncBatchSize());
+          List<Set<DownNode>> batches = Collects.splitAsSets(context.getPurgatory().getDownNodes(), config.getForceResyncBatchSize());
           for (Set<DownNode> batch : batches) {
-            context.getChannelCallback().forceResyncOf(Collections2.convertAsSet(batch, new Function<String, DownNode>() {
+            context.getChannelCallback().forceResyncOf(Collects.convertAsSet(batch, new Function<String, DownNode>() {
               @Override
               public String call(DownNode arg) {
                 log.debug("Forcing resync for node in purgatory: %s", arg.getNode());
@@ -298,7 +298,7 @@ public class EventChannelController {
     if (masterNode != null) {
       challengeRq.getTargetedNodes().remove(context.getMasterNode());
       ControlRequest challengeRqCopy = ControlRequestFactory.createChallengeRequestCopy(context, challengeRq,
-          Collections2.arrayToSet(context.getMasterNode()));
+          Collects.arrayToSet(context.getMasterNode()));
       context.getChannelCallback().sendRequest(challengeRqCopy);
       context.getChannelCallback().sendRequest(challengeRq);
     } else {

@@ -18,6 +18,7 @@ import org.sapia.ubik.rmi.server.invocation.ServerPostInvokeEvent;
 import org.sapia.ubik.rmi.server.invocation.ServerPreInvokeEvent;
 import org.sapia.ubik.rmi.server.oid.DefaultOID;
 import org.sapia.ubik.rmi.server.oid.OID;
+import org.sapia.ubik.rmi.server.stub.StubContainer;
 import org.sapia.ubik.rmi.server.transport.ClassDescriptor;
 import org.sapia.ubik.rmi.server.transport.MarshalledObject;
 import org.sapia.ubik.util.Strings;

@@ -14,7 +14,7 @@ import java.util.Set;
  * @author yduchesne
  * 
  */
-public final class PropertiesUtil {
+public final class PropUtil {
 
   /**
    * Holds a property name and value.
@@ -54,7 +54,7 @@ public final class PropertiesUtil {
 
   // --------------------------------------------------------------------------
 
-  private PropertiesUtil() {
+  private PropUtil() {
   }
 
   /**
@@ -148,7 +148,7 @@ public final class PropertiesUtil {
    * Clears Ubik-specific properties from the system properties.
    */
   public static void clearUbikSystemProperties() {
-    clearProperties(System.getProperties(), new Condition<PropertiesUtil.Property>() {
+    clearProperties(System.getProperties(), new Condition<PropUtil.Property>() {
       @Override
       public boolean apply(Property item) {
         return item.getName().startsWith("ubik");

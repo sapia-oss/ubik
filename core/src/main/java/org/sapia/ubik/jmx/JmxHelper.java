@@ -8,7 +8,7 @@ import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 
 import org.sapia.ubik.rmi.Consts;
-import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.Conf;
 
 /**
  * Helper class providing static methods pertaining to JMX manipulations.
@@ -23,7 +23,7 @@ public class JmxHelper {
    * @see Consts#JMX_ENABLED
    */
   public static boolean isJmxEnabled() {
-    return new Props().addProperties(System.getProperties()).getBooleanProperty(Consts.JMX_ENABLED, false);
+    return new Conf().addProperties(System.getProperties()).getBooleanProperty(Consts.JMX_ENABLED, false);
   }
 
   /**

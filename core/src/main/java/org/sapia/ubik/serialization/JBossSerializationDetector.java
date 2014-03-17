@@ -3,7 +3,7 @@ package org.sapia.ubik.serialization;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.transport.MarshalStreamFactory;
-import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.Conf;
 
 /**
  * Detects if the JBoss serialization implementation be used, based on the
@@ -22,7 +22,7 @@ public final class JBossSerializationDetector {
   }
 
   static {
-    Props props = Props.getSystemProperties();
+    Conf props = Conf.getSystemProperties();
     String serializationProvider = props.getProperty(Consts.SERIALIZATION_PROVIDER_JDK, Consts.SERIALIZATION_PROVIDER_JBOSS);
     if (serializationProvider.equals(Consts.SERIALIZATION_PROVIDER_JBOSS)) {
       try {

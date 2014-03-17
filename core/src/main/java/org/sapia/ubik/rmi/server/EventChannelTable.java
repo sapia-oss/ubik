@@ -14,7 +14,7 @@ import org.sapia.ubik.module.Module;
 import org.sapia.ubik.module.ModuleContext;
 import org.sapia.ubik.rmi.RemoteRuntimeException;
 import org.sapia.ubik.util.Condition;
-import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.Conf;
 
 /**
  * Keeps event channels on a per-domain basis.
@@ -90,7 +90,7 @@ public class EventChannelTable implements Module, EventChannelTableMBean {
 
             try {
               log.debug("Creating EventChannel for domain %s", domain);
-              Props props = new Props().addMap(address.toParameters()).addProperties(System.getProperties());
+              Conf props = new Conf().addMap(address.toParameters()).addProperties(System.getProperties());
               ref = new EventChannel(domain, props).getReference();
               ref.get().start();
               channels.put(key, ref);

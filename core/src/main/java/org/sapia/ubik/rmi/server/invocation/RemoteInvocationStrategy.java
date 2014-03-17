@@ -20,7 +20,7 @@ import org.sapia.ubik.rmi.server.invocation.InvocationDispatcher.InvocationStats
 import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.MarshalledObject;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
-import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.Conf;
 
 /**
  * An instance of this class sends a RMI method command (see
@@ -47,7 +47,7 @@ public class RemoteInvocationStrategy implements InvocationStrategy {
 
   @Override
   public void init(ModuleContext context) {
-    timeout = Props.getSystemProperties().getLongProperty(Consts.CLIENT_CALLBACK_TIMEOUT, DEFAULT_CALLBACK_TIMEOUT);
+    timeout = Conf.getSystemProperties().getLongProperty(Consts.CLIENT_CALLBACK_TIMEOUT, DEFAULT_CALLBACK_TIMEOUT);
     clientRuntime = context.lookup(ClientRuntime.class);
     responses = context.lookup(CommandModule.class).getCallbackResponseQueue();
   }

@@ -11,7 +11,7 @@ import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.transport.MarshalStreamFactory;
 import org.sapia.ubik.rmi.server.transport.RmiObjectOutput;
 import org.sapia.ubik.util.MinaByteBufferOutputStream;
-import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.Conf;
 
 /**
  * An encoder of Ubik server responses.
@@ -21,7 +21,7 @@ import org.sapia.ubik.util.Props;
  */
 public class MinaResponseEncoder implements ProtocolEncoder {
 
-  private static final int BUFSIZE = Props.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE);
+  private static final int BUFSIZE = Conf.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE);
 
   private static final String ENCODER_STATE = "ENCODER_STATE";
 

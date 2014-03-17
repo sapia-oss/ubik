@@ -7,20 +7,20 @@ import org.junit.Before;
 import org.junit.Test;
 import org.sapia.ubik.concurrent.Counter;
 import org.sapia.ubik.rmi.server.Hub;
-import org.sapia.ubik.util.PropertiesUtil;
+import org.sapia.ubik.util.PropUtil;
 
 public class NettyServerExporterTest {
 
   @Before
   public void setUp() {
     Hub.shutdown();
-    PropertiesUtil.clearUbikSystemProperties();
+    PropUtil.clearUbikSystemProperties();
   }
 
   @After
   public void tearDown() {
     Hub.shutdown();
-    PropertiesUtil.clearUbikSystemProperties();
+    PropUtil.clearUbikSystemProperties();
   }
 
   @Test

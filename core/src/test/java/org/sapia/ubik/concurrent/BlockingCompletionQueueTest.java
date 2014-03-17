@@ -11,8 +11,8 @@ import java.util.concurrent.ExecutorService;
 import org.junit.Before;
 import org.junit.Test;
 import org.sapia.ubik.util.Chrono;
-import org.sapia.ubik.util.Delay;
-import org.sapia.ubik.util.Clock.MutableClock;
+import org.sapia.ubik.util.Pause;
+import org.sapia.ubik.util.SysClock.MutableClock;
 
 public class BlockingCompletionQueueTest {
 
@@ -73,7 +73,7 @@ public class BlockingCompletionQueueTest {
   @Test
   public void testAwaitWithTimeoutEmptyItems() throws Exception {
     MutableClock clock = new MutableClock();
-    Delay delay = new Delay(clock, 2000);
+    Pause delay = new Pause(clock, 2000);
     Chrono chrono = new Chrono(clock);
     List<Integer> items = queue.await(delay.remaining());
     clock.increaseCurrentTimeMillis(2000);

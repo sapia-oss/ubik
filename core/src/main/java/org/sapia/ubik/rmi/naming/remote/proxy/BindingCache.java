@@ -21,6 +21,7 @@ import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.DomainName;
 import org.sapia.ubik.mcast.MulticastAddress;
 import org.sapia.ubik.rmi.server.Hub;
+import org.sapia.ubik.rmi.server.stub.StubContainer;
 import org.sapia.ubik.rmi.server.stub.StubInvocationHandler;
 import org.sapia.ubik.rmi.server.stub.Stubs;
 import org.sapia.ubik.rmi.server.stub.enrichment.StubEnrichmentStrategy.JndiBindingInfo;
@@ -71,6 +72,8 @@ public class BindingCache implements Externalizable {
               toBind = Hub.getModules().getStubProcessor().enrichForJndiBinding(toBind, info);
               if (Stubs.isStub(toBind)) {
                 ctx.rebind(ref.name, Stubs.getStubInvocationHandler(toBind).toStubContainer(toBind));
+              } else if (toBind instanceof StubContainer) {
+                ctx.rebind(ref.name, toBind);
               } else {
                 ctx.rebind(ref.name, toBind);
               }

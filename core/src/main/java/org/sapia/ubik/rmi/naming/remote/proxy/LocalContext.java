@@ -395,11 +395,11 @@ public class LocalContext extends ContextProxy implements java.rmi.Remote {
    * @see ContextProxy#onBind(javax.naming.Name, java.lang.Object)
    */
   protected Object onBind(Name n, Object toBind) throws NamingException {
-    JndiBindingInfo info = new JndiBindingInfo(url, n, domainInfo.getDomainName(), domainInfo.getMulticastAddress());
     try {
-      StubProcessor processor = Hub.getModules().getStubProcessor();
-      toBind = processor.enrichForJndiBinding(toBind, info);
-      if (Stubs.isStub(toBind)) {
+      if (Stubs.isStub(toBind) && !(toBind instanceof StubContainer)) {
+        JndiBindingInfo info = new JndiBindingInfo(url, n, domainInfo.getDomainName(), domainInfo.getMulticastAddress());
+        StubProcessor processor = Hub.getModules().getStubProcessor();
+        toBind = processor.enrichForJndiBinding(toBind, info);
         return Stubs.getStubInvocationHandler(toBind).toStubContainer(toBind);
       }
       return toBind;

@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.sapia.ubik.util.Clock.MutableClock;
+import org.sapia.ubik.util.SysClock.MutableClock;
 
 public class ChronoTest {
 

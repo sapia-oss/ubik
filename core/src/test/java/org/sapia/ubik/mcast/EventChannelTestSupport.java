@@ -3,7 +3,7 @@ package org.sapia.ubik.mcast;
 import java.util.Properties;
 
 import org.sapia.ubik.rmi.Consts;
-import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.Conf;
 
 public class EventChannelTestSupport {
 
@@ -14,13 +14,13 @@ public class EventChannelTestSupport {
     properties.setProperty(Consts.MCAST_CONTROL_RESPONSE_TIMEOUT, Long.toString(heartBeatInterval));
     properties.setProperty(Consts.BROADCAST_PROVIDER, Consts.BROADCAST_PROVIDER_MEMORY);
     properties.setProperty(Consts.UNICAST_PROVIDER, Consts.UNICAST_PROVIDER_MEMORY);
-    return new EventChannel(domainName, new Props().addProperties(properties));
+    return new EventChannel(domainName, new Conf().addProperties(properties));
   }
 
   public static EventChannel createEventChannel(String domainName) throws Exception {
     Properties properties = new Properties();
     properties.setProperty(Consts.BROADCAST_PROVIDER, Consts.BROADCAST_PROVIDER_MEMORY);
     properties.setProperty(Consts.UNICAST_PROVIDER, Consts.UNICAST_PROVIDER_MEMORY);
-    return new EventChannel(domainName, new Props().addProperties(properties));
+    return new EventChannel(domainName, new Conf().addProperties(properties));
   }
 }

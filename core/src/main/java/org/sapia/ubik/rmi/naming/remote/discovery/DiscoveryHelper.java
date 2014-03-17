@@ -28,7 +28,7 @@ import org.sapia.ubik.rmi.naming.remote.archie.SyncPutEvent;
 import org.sapia.ubik.rmi.naming.remote.proxy.ContextResolver;
 import org.sapia.ubik.rmi.naming.remote.proxy.DefaultContextResolver;
 import org.sapia.ubik.rmi.naming.remote.proxy.LocalContext;
-import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.Conf;
 
 /**
  * An instance of this class can be used by applications to listen for the
@@ -58,7 +58,7 @@ public class DiscoveryHelper implements AsyncEventListener {
    *          the name of a domain.
    */
   public DiscoveryHelper(String domain) throws IOException {
-    channelRef = new EventChannel(domain, Props.getSystemProperties()).getReference();
+    channelRef = new EventChannel(domain, Conf.getSystemProperties()).getReference();
     initChannel();
   }
 
@@ -77,7 +77,7 @@ public class DiscoveryHelper implements AsyncEventListener {
     Properties props = new Properties();
     props.setProperty(JNDIConsts.MCAST_ADDR_KEY, mcastAddr);
     props.setProperty(JNDIConsts.MCAST_PORT_KEY, Integer.toString(mcastPort));
-    channelRef = new EventChannel(domain, new Props().addProperties(props).addSystemProperties()).getReference();
+    channelRef = new EventChannel(domain, new Conf().addProperties(props).addSystemProperties()).getReference();
     initChannel();
   }
 

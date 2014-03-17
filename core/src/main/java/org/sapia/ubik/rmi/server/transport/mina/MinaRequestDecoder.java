@@ -10,7 +10,7 @@ import org.apache.mina.filter.codec.ProtocolDecoderOutput;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.transport.MarshalStreamFactory;
 import org.sapia.ubik.util.MinaByteBufferInputStream;
-import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.Conf;
 
 /**
  * A decoder for incoming Ubik client requests.
@@ -70,7 +70,7 @@ public class MinaRequestDecoder extends CumulativeProtocolDecoder {
   // ==========================================================================
   // class variables
 
-  private static int BUFSIZE = Props.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE);
+  private static int BUFSIZE = Conf.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE);
 
   private static final String DECODER_STATE = "DECODER_STATE";
 

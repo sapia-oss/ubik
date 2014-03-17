@@ -5,7 +5,7 @@ import java.net.Socket;
 import java.rmi.server.RMIClientSocketFactory;
 
 import org.sapia.ubik.rmi.Consts;
-import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.Conf;
 
 /**
  * Implements a factory of {@link SocketConnection} instances. An instance of
@@ -18,7 +18,7 @@ public class SocketConnectionFactory implements ConnectionFactory {
 
   private static final int NO_SO_TIMEOUT = 0;
 
-  private int bufsize = Props.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE);
+  private int bufsize = Conf.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE);
 
   protected String transportType;
   protected ClassLoader loader;

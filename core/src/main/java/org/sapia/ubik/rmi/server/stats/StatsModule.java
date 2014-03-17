@@ -18,7 +18,7 @@ import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.taskman.Task;
 import org.sapia.ubik.taskman.TaskContext;
 import org.sapia.ubik.taskman.TaskManager;
-import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.Conf;
 
 /**
  * Clears all statistics at startup and shutdown. Also creates a task that dumps
@@ -46,7 +46,7 @@ public class StatsModule implements Module {
   public void start(ModuleContext context) {
     TaskManager taskManager = context.lookup(TaskManager.class);
     if (SimonManager.isEnabled()) {
-      Props props = new Props().addProperties(System.getProperties());
+      Conf props = new Conf().addProperties(System.getProperties());
       long dumpInterval = props.getLongProperty(Consts.STATS_DUMP_INTERVAL, 0);
       if (dumpInterval > 0) {
         log.info("Stats dump interval set to %s seconds. Stats will be collected", dumpInterval);

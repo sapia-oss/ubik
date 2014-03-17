@@ -28,7 +28,7 @@ import org.sapia.ubik.rmi.server.transport.TransportManager;
 import org.sapia.ubik.taskman.Task;
 import org.sapia.ubik.taskman.TaskContext;
 import org.sapia.ubik.taskman.TaskManager;
-import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.Conf;
 
 /**
  * This class implements a the client-side distributed garbage collection
@@ -63,7 +63,7 @@ public class ClientGC implements Module, Task, ClientGCMBean {
 
   @Override
   public void init(ModuleContext context) {
-    Props props = new Props().addProperties(System.getProperties());
+    Conf props = new Conf().addProperties(System.getProperties());
 
     this.gcInterval = props.getLongProperty(Consts.CLIENT_GC_INTERVAL, GC_CLEAN_INTERVAL);
     this.gcBatchSize = props.getIntProperty(Consts.CLIENT_GC_BATCHSIZE, GC_CLEAN_SIZE);

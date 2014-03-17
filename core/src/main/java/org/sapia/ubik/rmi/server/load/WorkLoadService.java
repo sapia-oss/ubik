@@ -2,7 +2,7 @@ package org.sapia.ubik.rmi.server.load;
 
 import java.util.Random;
 
-import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.Conf;
 
 public class WorkLoadService implements LoadService {
 
@@ -18,7 +18,7 @@ public class WorkLoadService implements LoadService {
   private int numberOfLoops;
 
   public WorkLoadService() {
-    Props props = Props.getSystemProperties();
+    Conf props = Conf.getSystemProperties();
     minPause = props.getIntProperty(MIN_PAUSE, DEFAULT_MIN_PAUSE);
     maxPause = props.getIntProperty(MAX_PAUSE, DEFAULT_MAX_PAUSE);
     numberOfLoops = props.getIntProperty(NUMBER_OF_LOOPS, DEFAULT_NUMBER_OF_LOOPS);

@@ -16,7 +16,7 @@ import org.sapia.ubik.rmi.server.Server;
 import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.TransportProvider;
 import org.sapia.ubik.util.Localhost;
-import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.Time;
 
 /**
@@ -57,7 +57,7 @@ public class MinaTransportProvider implements TransportProvider {
    */
   public static final String PORT = "ubik.rmi.transport.nio.mina.port";
 
-  private int bufsize = Props.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE);
+  private int bufsize = Conf.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE);
 
   private Map<ServerAddress, MinaRmiClientConnectionPool> pools = new ConcurrentHashMap<ServerAddress, MinaRmiClientConnectionPool>();
 
@@ -93,7 +93,7 @@ public class MinaTransportProvider implements TransportProvider {
    * @see org.sapia.ubik.rmi.server.transport.TransportProvider#newServer(java.util.Properties)
    */
   public Server newServer(Properties props) throws RemoteException {
-    Props pu = new Props().addProperties(props).addProperties(System.getProperties());
+    Conf fullProps = new Conf().addProperties(props).addProperties(System.getProperties());
     int port = 0;
     if (props.getProperty(PORT) != null) {
       try {
@@ -118,18 +118,19 @@ public class MinaTransportProvider implements TransportProvider {
       }
     }
 
-    int specificBufsize = pu.getIntProperty(Consts.MARSHALLING_BUFSIZE, this.bufsize);
+    int specificBufsize = fullProps.getIntProperty(Consts.MARSHALLING_BUFSIZE, this.bufsize);
 
-    int coreThreads = pu.getIntProperty(Consts.SERVER_CORE_THREADS, ThreadingConfiguration.DEFAULT_CORE_POOL_SIZE);
-    int maxThreads = pu.getIntProperty(Consts.SERVER_MAX_THREADS, ThreadingConfiguration.DEFAULT_MAX_POOL_SIZE);
-    int queueSize = pu.getIntProperty(Consts.SERVER_THREADS_QUEUE_SIZE, ThreadingConfiguration.DEFAULT_QUEUE_SIZE);
-    long keepAlive = pu.getLongProperty(Consts.SERVER_THREADS_KEEP_ALIVE, ThreadingConfiguration.DEFAULT_KEEP_ALIVE.getValueInSeconds());
+    int coreThreads = fullProps.getIntProperty(Consts.SERVER_CORE_THREADS, ThreadingConfiguration.DEFAULT_CORE_POOL_SIZE);
+    int maxThreads = fullProps.getIntProperty(Consts.SERVER_MAX_THREADS, ThreadingConfiguration.DEFAULT_MAX_POOL_SIZE);
+    int queueSize = fullProps.getIntProperty(Consts.SERVER_THREADS_QUEUE_SIZE, ThreadingConfiguration.DEFAULT_QUEUE_SIZE);
+    long keepAlive = fullProps.getLongProperty(Consts.SERVER_THREADS_KEEP_ALIVE, ThreadingConfiguration.DEFAULT_KEEP_ALIVE.getValueInSeconds());
+    int selectorThreads = fullProps.getIntProperty(MinaConsts.SERVER_IO_CORE_THREADS_KEY, Runtime.getRuntime().availableProcessors() + 1);
 
     ThreadingConfiguration threadConf = ThreadingConfiguration.newInstance().setCorePoolSize(coreThreads).setMaxPoolSize(maxThreads)
         .setQueueSize(queueSize).setKeepAlive(Time.createSeconds(keepAlive));
 
     try {
-      MinaServer server = new MinaServer(addr, specificBufsize, threadConf);
+      MinaServer server = new MinaServer(addr, specificBufsize, selectorThreads, threadConf);
       return server;
     } catch (IOException e) {
       throw new RemoteException("Could not create server", e);

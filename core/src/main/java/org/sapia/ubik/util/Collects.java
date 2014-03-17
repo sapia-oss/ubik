@@ -14,9 +14,9 @@ import java.util.Set;
  * @author yduchesne
  * 
  */
-public final class Collections2 {
+public final class Collects {
 
-  private Collections2() {
+  private Collects() {
   }
 
   /**

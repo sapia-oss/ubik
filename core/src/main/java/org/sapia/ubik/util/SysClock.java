@@ -9,18 +9,18 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author yduchesne
  * 
  */
-public interface Clock {
+public interface SysClock {
 
   /**
-   * Implements the {@link Clock} interface over the {@link System} class.
+   * Implements the {@link SysClock} interface over the {@link System} class.
    * 
    * @see System#currentTimeMillis()
    */
-  public static class SystemClock implements Clock {
+  public static class RealtimeClock implements SysClock {
 
-    private static SystemClock instance = new SystemClock();
+    private static RealtimeClock instance = new RealtimeClock();
 
-    private SystemClock() {
+    private RealtimeClock() {
     }
 
     /**
@@ -37,9 +37,9 @@ public interface Clock {
     }
 
     /**
-     * @return the {@link SystemClock} singleton.
+     * @return the {@link RealtimeClock} singleton.
      */
-    public static SystemClock getInstance() {
+    public static RealtimeClock getInstance() {
       return instance;
     }
 
@@ -48,11 +48,11 @@ public interface Clock {
   // ---------------------------------------------------------------------------
 
   /**
-   * A mutable {@link Clock} class: an instance of this class can have its time
+   * A mutable {@link SysClock} class: an instance of this class can have its time
    * explicitely set. Use this class for testing purposes only.
    * 
    */
-  public static class MutableClock implements Clock {
+  public static class MutableClock implements SysClock {
 
     private AtomicLong currentTime = new AtomicLong();
 

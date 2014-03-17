@@ -10,6 +10,7 @@ import static org.mockito.Mockito.mock;
 import java.util.Properties;
 
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -20,9 +21,17 @@ import org.sapia.ubik.rmi.server.transport.memory.InMemoryAddress;
 import org.sapia.ubik.rmi.server.transport.memory.InMemoryTransportProvider;
 
 public class HubTest {
+  
+  private BeanLookup testLookup;
+  
+  @Before
+  public void setUp() {
+    testLookup = new TestBeanLookup();
+  }
 
   @After
   public void tearDown() {
+    Hub.removeBeanLookup(testLookup);
     Hub.shutdown();
   }
 
@@ -36,28 +45,14 @@ public class HubTest {
 
   @Test
   public void testGetBean() {
-    Hub.addBeanLookup(new BeanLookup() {
-
-      @Override
-      public <T> T getBean(Class<T> typeOf) {
-        return typeOf.cast(new Bean());
-      }
-    });
-
+    Hub.addBeanLookup(testLookup);
     assertNotNull(Hub.getBean(Bean.class));
   }
 
   @Test
   public void testRemoveBeanLookup() {
-    BeanLookup b = new BeanLookup() {
-
-      @Override
-      public <T> T getBean(Class<T> typeOf) {
-        return typeOf.cast(new Bean());
-      }
-    };
-    Hub.addBeanLookup(b);
-    Hub.removeBeanLookup(b);
+    Hub.addBeanLookup(testLookup);
+    Hub.removeBeanLookup(testLookup);
     assertNull(Hub.getBean(Bean.class));
   }
 
@@ -88,6 +83,19 @@ public class HubTest {
 
   public static class Bean {
 
+  }
+  
+  public static class TestBeanLookup implements BeanLookup {
+    @Override
+    public <T> T getBean(Class<T> typeOf) {
+      return typeOf.cast(new Bean());
+    }
+    
+    @Override
+    public boolean equals(Object obj) {
+      return obj == this;
+    }
+   
   }
 
 }

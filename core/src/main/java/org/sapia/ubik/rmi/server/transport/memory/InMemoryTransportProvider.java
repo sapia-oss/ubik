@@ -10,7 +10,7 @@ import org.sapia.ubik.rmi.server.Hub;
 import org.sapia.ubik.rmi.server.Server;
 import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.TransportProvider;
-import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.Conf;
 
 /**
  * This {@link TransportProvider} creates {@link InMemoryServer} instances, and
@@ -37,7 +37,7 @@ public class InMemoryTransportProvider implements TransportProvider {
 
   private Map<String, InMemoryServer> servers = new ConcurrentHashMap<String, InMemoryServer>();
 
-  private boolean useMarshalling = Props.getSystemProperties().getBooleanProperty(MARSHALLING, false);
+  private boolean useMarshalling = Conf.getSystemProperties().getBooleanProperty(MARSHALLING, false);
 
   public Connections getPoolFor(ServerAddress address) throws RemoteException {
     if (!(address instanceof ServerAddress)) {
@@ -62,7 +62,7 @@ public class InMemoryTransportProvider implements TransportProvider {
   }
 
   public synchronized Server newServer(Properties props) throws RemoteException {
-    Props wrapper = new Props().addProperties(props);
+    Conf wrapper = new Conf().addProperties(props);
     String name = wrapper.getProperty(SERVER_NAME, DEFAULT_SERVER_NAME);
     InMemoryServer server = servers.get(name);
     if (server == null) {

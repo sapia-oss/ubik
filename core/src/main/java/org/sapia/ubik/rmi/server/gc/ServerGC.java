@@ -19,9 +19,9 @@ import org.sapia.ubik.rmi.server.stats.Stats;
 import org.sapia.ubik.taskman.Task;
 import org.sapia.ubik.taskman.TaskContext;
 import org.sapia.ubik.taskman.TaskManager;
-import org.sapia.ubik.util.Collections2;
+import org.sapia.ubik.util.Collects;
 import org.sapia.ubik.util.Condition;
-import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.Strings;
 
 /**
@@ -58,7 +58,7 @@ public class ServerGC implements Module, Task, ServerGCMBean {
     objectTable = context.lookup(ObjectTable.class);
     TaskManager taskman = context.lookup(TaskManager.class);
 
-    Props props = new Props().addProperties(System.getProperties());
+    Conf props = new Conf().addProperties(System.getProperties());
     gcInterval = props.getLongProperty(Consts.SERVER_GC_INTERVAL, GC_INTERVAL);
     gcTimeout = props.getLongProperty(Consts.SERVER_GC_TIMEOUT, GC_TIMEOUT);
     if (gcInterval > 0) {
@@ -250,7 +250,7 @@ public class ServerGC implements Module, Task, ServerGCMBean {
     synchronized (clientTable) {
       final ClientInfo[] infos = clientTable.values().toArray(new ClientInfo[clientTable.size()]);
 
-      Collections2.forEach(infos, new Condition<ClientInfo>() {
+      Collects.forEach(infos, new Condition<ClientInfo>() {
         @Override
         public boolean apply(ClientInfo item) {
           if (!item.isValid(gcTimeout)) {
@@ -336,7 +336,7 @@ public class ServerGC implements Module, Task, ServerGCMBean {
       synchronized (oids) {
         OID[] oidsArray = this.oids.keySet().toArray(new OID[this.oids.size()]);
 
-        Collections2.forEach(oidsArray, new Condition<OID>() {
+        Collects.forEach(oidsArray, new Condition<OID>() {
           @Override
           public boolean apply(OID oid) {
             log.debug("Dereferencing: %s", oid);

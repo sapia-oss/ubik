@@ -1,6 +1,6 @@
 package org.sapia.ubik.concurrent;
 
-import org.sapia.ubik.util.Delay;
+import org.sapia.ubik.util.Pause;
 
 /**
  * An instance of this class is used to synchronize threads at startup.
@@ -43,7 +43,7 @@ public class ThreadStartup {
    *           {@link #failed(Exception)} method was called.
    */
   public synchronized void await(long timeout) throws InterruptedException, Exception {
-    Delay delay = new Delay(timeout);
+    Pause delay = new Pause(timeout);
     while (!started && !delay.isOver()) {
       wait(delay.remainingNotZero());
     }

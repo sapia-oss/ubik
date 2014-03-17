@@ -15,10 +15,10 @@ import org.sapia.ubik.mcast.EventChannel.Role;
 import org.sapia.ubik.mcast.control.ControllerContext;
 import org.sapia.ubik.mcast.control.EventChannelControllerListener;
 import org.sapia.ubik.rmi.Consts;
-import org.sapia.ubik.util.Clock;
-import org.sapia.ubik.util.Clock.MutableClock;
-import org.sapia.ubik.util.Delay;
-import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.SysClock;
+import org.sapia.ubik.util.SysClock.MutableClock;
+import org.sapia.ubik.util.Pause;
+import org.sapia.ubik.util.Conf;
 
 public class EventChannelControlAlgoTest {
 
@@ -29,7 +29,7 @@ public class EventChannelControlAlgoTest {
   @Before
   public void setUp() throws Exception {
     //Log.setDebug();
-    clock = Clock.MutableClock.getInstance();
+    clock = SysClock.MutableClock.getInstance();
     channels = new ArrayList<EventChannel>();
     listener = new TestControllerListener();
 
@@ -99,7 +99,7 @@ public class EventChannelControlAlgoTest {
     properties.setProperty(Consts.MCAST_CONTROL_SPLIT_SIZE, Integer.toString(3));
     properties.setProperty(Consts.BROADCAST_PROVIDER, Consts.BROADCAST_PROVIDER_MEMORY);
     properties.setProperty(Consts.UNICAST_PROVIDER, Consts.UNICAST_PROVIDER_MEMORY);
-    EventChannel channel = new TestEventChannel("test", new Props().addProperties(properties));
+    EventChannel channel = new TestEventChannel("test", new Conf().addProperties(properties));
     return channel;
   }
 
@@ -107,7 +107,7 @@ public class EventChannelControlAlgoTest {
 
   public class TestEventChannel extends EventChannel {
 
-    public TestEventChannel(String domain, Props props) throws IOException {
+    public TestEventChannel(String domain, Conf props) throws IOException {
       super(domain, props);
     }
 
@@ -116,7 +116,7 @@ public class EventChannelControlAlgoTest {
     }
 
     @Override
-    protected Clock createClock() {
+    protected SysClock createClock() {
       return clock;
     }
 
@@ -147,7 +147,7 @@ public class EventChannelControlAlgoTest {
     }
 
     synchronized boolean waitHeartbeatCompleted(long timeout) throws InterruptedException {
-      Delay delay = new Delay(timeout);
+      Pause delay = new Pause(timeout);
       while (!heartbeatCompleted && !delay.isOver()) {
         wait(delay.remainingNotZero());
       }

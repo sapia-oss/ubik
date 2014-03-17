@@ -2,8 +2,8 @@ package org.sapia.ubik.mcast.control;
 
 import static org.junit.Assert.*;
 
-import org.sapia.ubik.util.Clock.MutableClock;
-import org.sapia.ubik.util.Collections2;
+import org.sapia.ubik.util.SysClock.MutableClock;
+import org.sapia.ubik.util.Collects;
 
 public abstract class EventChannelControllerTestSupport {
 
@@ -21,11 +21,11 @@ public abstract class EventChannelControllerTestSupport {
     slave1 = new TestChannelCallback("DB", clock, config);
     slave2 = new TestChannelCallback("DC", clock, config);
     master.addSibling(slave1).addSibling(slave2);
-    assertTrue("Expected DB,DC nodes. Got: " + master.getNodes(), master.getNodes().containsAll(Collections2.arrayToSet(new String[] { "DB", "DC" })));
+    assertTrue("Expected DB,DC nodes. Got: " + master.getNodes(), master.getNodes().containsAll(Collects.arrayToSet(new String[] { "DB", "DC" })));
     slave1.addSibling(master).addSibling(slave2);
-    assertTrue("Expected DA,DC nodes. Got: " + slave1.getNodes(), slave1.getNodes().containsAll(Collections2.arrayToSet(new String[] { "DA", "DC" })));
+    assertTrue("Expected DA,DC nodes. Got: " + slave1.getNodes(), slave1.getNodes().containsAll(Collects.arrayToSet(new String[] { "DA", "DC" })));
     slave2.addSibling(master).addSibling(slave1);
-    assertTrue("Expected DA,DB nodes. Got: " + slave2.getNodes(), slave2.getNodes().containsAll(Collections2.arrayToSet(new String[] { "DA", "DB" })));
+    assertTrue("Expected DA,DB nodes. Got: " + slave2.getNodes(), slave2.getNodes().containsAll(Collects.arrayToSet(new String[] { "DA", "DB" })));
 
   }
 

@@ -4,7 +4,7 @@ import org.sapia.ubik.module.Module;
 import org.sapia.ubik.module.ModuleContext;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.transport.TransportManager;
-import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.Conf;
 
 /**
  * Encapsulates components pertaining to command execution logic - including the
@@ -28,11 +28,11 @@ public class CommandModule implements Module {
   public void init(ModuleContext context) {
     callbackResponseQueue = new CallbackResponseQueue();
 
-    int maxOutQueueThreads = Props.getSystemProperties().getIntProperty(Consts.SERVER_CALLBACK_OUTQUEUE_THREADS,
+    int maxOutQueueThreads = Conf.getSystemProperties().getIntProperty(Consts.SERVER_CALLBACK_OUTQUEUE_THREADS,
         OutqueueManager.DEFAULT_OUTQUEUE_THREADS);
     outqueues = new OutqueueManager(context.lookup(TransportManager.class), callbackResponseQueue, maxOutQueueThreads);
 
-    Props props = Props.getSystemProperties();
+    Conf props = Conf.getSystemProperties();
     commandProcessor = new CommandProcessor(props.getIntProperty(Consts.SERVER_CALLBACK_MAX_THREADS, DEFAULT_CALLBACK_THREADS), outqueues);
     shutdownTimeout = props.getLongProperty(COMMAND_MODULE_SHUTDOWN_TIMEOUT, DEFAULT_SHUTDOWN_TIMEOUT);
   }

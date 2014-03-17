@@ -3,7 +3,7 @@ package org.sapia.ubik.rmi.server.stats;
 import java.io.File;
 
 import org.sapia.ubik.log.BaseFileLogOutput;
-import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.Conf;
 
 /**
  * This class inherits from {@link BaseFileLogOutput}: it specifies a default
@@ -46,7 +46,7 @@ public class StatsLogOutput extends BaseFileLogOutput {
    */
   public static final String PROP_FILE_DIR = "ubik.rmi.stats.log.file.dir";
 
-  private static final Props PROPS = Props.getSystemProperties();
+  private static final Conf PROPS = Conf.getSystemProperties();
 
   public static final String DEFAULT_FILE_NAME = "ubik-stats";
 

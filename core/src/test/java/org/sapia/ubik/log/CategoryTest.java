@@ -10,7 +10,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.sapia.ubik.rmi.server.Hub;
-import org.sapia.ubik.util.PropertiesUtil;
+import org.sapia.ubik.util.PropUtil;
 
 public class CategoryTest {
 
@@ -19,7 +19,7 @@ public class CategoryTest {
 
   @Before
   public void setUp() {
-    PropertiesUtil.clearUbikSystemProperties();
+    PropUtil.clearUbikSystemProperties();
     // making sure components are shutdown
     Hub.shutdown();
     output = mock(LogOutput.class);
@@ -29,7 +29,7 @@ public class CategoryTest {
 
   @After
   public void tearDown() throws Exception {
-    PropertiesUtil.clearUbikSystemProperties();
+    PropUtil.clearUbikSystemProperties();
     Log.setDefaultLogLevel();
     Log.setDefaultLogOutput();
   }

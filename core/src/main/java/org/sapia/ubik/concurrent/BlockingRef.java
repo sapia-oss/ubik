@@ -1,6 +1,6 @@
 package org.sapia.ubik.concurrent;
 
-import org.sapia.ubik.util.Delay;
+import org.sapia.ubik.util.Pause;
 
 /**
  * An instance of this class can be used to synchronize two threads on the
@@ -47,7 +47,7 @@ public class BlockingRef<T> {
    * @see #set(Object)
    */
   public synchronized T await(long timeout) throws InterruptedException {
-    Delay delay = new Delay(timeout);
+    Pause delay = new Pause(timeout);
     while (!available && !delay.isOver()) {
       wait(delay.remainingNotZero());
     }

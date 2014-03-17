@@ -10,7 +10,7 @@ import org.sapia.ubik.mcast.tcp.TcpUnicastDispatcher;
 import org.sapia.ubik.mcast.udp.UDPBroadcastDispatcher;
 import org.sapia.ubik.mcast.udp.UDPUnicastDispatcher;
 import org.sapia.ubik.rmi.Consts;
-import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.Conf;
 
 /**
  * A convenient factory of {@link EventChannel}s.
@@ -67,7 +67,7 @@ public class EventChannels {
   public static EventChannel createTcpEventChannel(String domain, String mcastAddr, int mcastPort) throws IOException {
     Properties properties = new Properties();
     properties.setProperty(Consts.UNICAST_PROVIDER, Consts.UNICAST_PROVIDER_TCP);
-    return new EventChannel(domain, new Props().addProperties(properties));
+    return new EventChannel(domain, new Conf().addProperties(properties));
   }
 
   /**
@@ -87,7 +87,7 @@ public class EventChannels {
     properties.setProperty(Consts.UNICAST_PROVIDER, Consts.UNICAST_PROVIDER_TCP);
     properties.setProperty(Consts.BROADCAST_PROVIDER, Consts.BROADCAST_PROVIDER_AVIS);
     properties.setProperty(Consts.BROADCAST_AVIS_URL, avisUrl);
-    return new EventChannel(domain, new Props().addProperties(properties));
+    return new EventChannel(domain, new Conf().addProperties(properties));
   }
 
   /**
@@ -106,7 +106,7 @@ public class EventChannels {
     Properties properties = new Properties();
     properties.setProperty(Consts.BROADCAST_PROVIDER, Consts.BROADCAST_PROVIDER_MEMORY);
     properties.setProperty(Consts.UNICAST_PROVIDER, Consts.UNICAST_PROVIDER_MEMORY);
-    return new EventChannel(domain, new Props().addProperties(properties));
+    return new EventChannel(domain, new Conf().addProperties(properties));
   }
 
 }

@@ -14,7 +14,7 @@ import org.sapia.ubik.rmi.server.VmId;
 import org.sapia.ubik.rmi.server.transport.MarshalStreamFactory;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
 import org.sapia.ubik.rmi.server.transport.RmiObjectOutput;
-import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.Conf;
 import org.simpleframework.http.Request;
 import org.simpleframework.http.Response;
 
@@ -30,7 +30,7 @@ import org.simpleframework.http.Response;
  */
 class HttpRmiServerConnection implements RmiConnection {
 
-  private int bufsz = Props.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE);
+  private int bufsz = Conf.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE);
   private Request req;
   private Response res;
   private HttpAddress address;

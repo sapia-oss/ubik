@@ -7,7 +7,7 @@ import org.sapia.ubik.mcast.control.ControlRequest;
 import org.sapia.ubik.mcast.control.ControlRequestHandler;
 import org.sapia.ubik.mcast.control.ControlResponseFactory;
 import org.sapia.ubik.mcast.control.ControllerContext;
-import org.sapia.ubik.util.PropertiesUtil;
+import org.sapia.ubik.util.PropUtil;
 
 /**
  * This class encapsulates the logic for handling {@link HeartbeatRequest}s.
@@ -33,7 +33,7 @@ public class HeartbeatRequestHandler implements ControlRequestHandler {
    */
   public HeartbeatRequestHandler(ControllerContext context) {
     this.context = context;
-    ignoreHeartbeatRequest = PropertiesUtil.isSystemPropertyTrue(IGNORE_HEARTBEAT_REQUEST);
+    ignoreHeartbeatRequest = PropUtil.isSystemPropertyTrue(IGNORE_HEARTBEAT_REQUEST);
   }
 
   /**

@@ -25,7 +25,7 @@ import org.sapia.ubik.rmi.server.stub.Stub;
 import org.sapia.ubik.rmi.server.stub.StubInvocationHandler;
 import org.sapia.ubik.rmi.server.transport.TransportManager;
 import org.sapia.ubik.util.Assertions;
-import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.TypeCache;
 
 /**
@@ -54,7 +54,7 @@ public class ServerTable implements Module {
 
   @Override
   public void init(ModuleContext context) {
-    callbackEnabled = Props.getSystemProperties().getBooleanProperty(Consts.CALLBACK_ENABLED, true);
+    callbackEnabled = Conf.getSystemProperties().getBooleanProperty(Consts.CALLBACK_ENABLED, true);
   }
 
   @Override
@@ -151,6 +151,7 @@ public class ServerTable implements Module {
    */
   public Object exportObject(Object toExport, Properties properties) throws RemoteException {
     if (toExport instanceof Stub) {
+      log.debug("Object %s already stub, not exporting", toExport);
       return toExport;
     }
 
@@ -196,9 +197,7 @@ public class ServerTable implements Module {
   }
 
   private Object doExportObject(Object toExport, String transportType, ServerAddress address) throws RemoteException {
-
     log.info("Server already bound for transport %s, exporting object %s", transportType, toExport);
-
     OID oid = stubProcessor.createOID(toExport);
     RemoteRefContext refContext = new RemoteRefContext(oid, address);
     refContext.setCallback(callbackEnabled && typeCache.getAnnotationsFor(toExport.getClass()).contains(Callback.class));

@@ -10,7 +10,7 @@ import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.VmId;
 import org.sapia.ubik.rmi.server.transport.MarshalStreamFactory;
 import org.sapia.ubik.rmi.server.transport.RmiObjectOutput;
-import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.Conf;
 
 /**
  * Models an in-memory request.
@@ -20,7 +20,7 @@ import org.sapia.ubik.util.Props;
  */
 class InMemoryRequest {
 
-  private int bufsz = Props.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE);
+  private int bufsz = Conf.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE);
   private boolean useMarshalling;
   private Object data;
   private volatile InMemoryResponse response;

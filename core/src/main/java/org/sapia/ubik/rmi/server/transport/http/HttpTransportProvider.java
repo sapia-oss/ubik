@@ -15,7 +15,7 @@ import org.sapia.ubik.rmi.server.Server;
 import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.TransportProvider;
 import org.sapia.ubik.util.Localhost;
-import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.Time;
 
 /**
@@ -81,7 +81,7 @@ public class HttpTransportProvider implements TransportProvider, HttpConsts {
     if ((conns = pools.get(address)) == null) {
       try {
         if (usesJakarta) {
-          int maxConnections = Props.getSystemProperties().getIntProperty(HTTP_CLIENT_MAX_CONNECTIONS_KEY, DEFAULT_MAX_CLIENT_CONNECTIONS);
+          int maxConnections = Conf.getSystemProperties().getIntProperty(HTTP_CLIENT_MAX_CONNECTIONS_KEY, DEFAULT_MAX_CLIENT_CONNECTIONS);
           conns = new HttpClientConnectionPool((HttpAddress) address, maxConnections);
         } else {
           conns = new JdkClientConnectionPool((HttpAddress) address);
@@ -114,7 +114,7 @@ public class HttpTransportProvider implements TransportProvider, HttpConsts {
    * @see org.sapia.ubik.rmi.server.transport.TransportProvider#newServer(java.util.Properties)
    */
   public Server newServer(Properties props) throws RemoteException {
-    Props configProps = new Props().addProperties(props).addSystemProperties();
+    Conf configProps = new Conf().addProperties(props).addSystemProperties();
     Uri serverUrl;
     int port = configProps.getIntProperty(HTTP_PORT_KEY, DEFAULT_HTTP_PORT);
 

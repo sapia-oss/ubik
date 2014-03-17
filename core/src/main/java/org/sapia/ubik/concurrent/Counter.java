@@ -2,7 +2,7 @@ package org.sapia.ubik.concurrent;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.sapia.ubik.util.Delay;
+import org.sapia.ubik.util.Pause;
 
 public class Counter {
 
@@ -26,7 +26,7 @@ public class Counter {
   }
 
   public void await(long timeout) throws InterruptedException {
-    Delay delay = new Delay(timeout);
+    Pause delay = new Pause(timeout);
     while (count.get() < limit && !delay.isOver()) {
       wait(delay.remainingNotZero());
     }

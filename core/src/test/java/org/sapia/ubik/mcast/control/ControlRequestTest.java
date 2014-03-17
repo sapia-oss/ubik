@@ -10,8 +10,8 @@ import java.util.UUID;
 import org.junit.Test;
 import org.sapia.ubik.mcast.McastUtil;
 import org.sapia.ubik.rmi.server.transport.socket.MultiplexSocketAddress;
-import org.sapia.ubik.util.Clock;
-import org.sapia.ubik.util.Collections2;
+import org.sapia.ubik.util.SysClock;
+import org.sapia.ubik.util.Collects;
 
 public class ControlRequestTest {
 
@@ -35,7 +35,7 @@ public class ControlRequestTest {
 
   @Test
   public void testBatchSizeLargerSplit() {
-    Set<String> targetedNodes = Collections2.arrayToSet("1", "2");
+    Set<String> targetedNodes = Collects.arrayToSet("1", "2");
     TestControlRequest req = new TestControlRequest(targetedNodes);
     assertEquals(2, req.split(3).size());
   }
@@ -84,7 +84,7 @@ public class ControlRequestTest {
     }
 
     public TestControlRequest(long requestId, Set<String> targetedNodes) {
-      super(Clock.SystemClock.getInstance(), requestId, "master", new MultiplexSocketAddress("test", 1), targetedNodes);
+      super(SysClock.RealtimeClock.getInstance(), requestId, "master", new MultiplexSocketAddress("test", 1), targetedNodes);
     }
 
     public TestControlRequest(Set<String> targetedNodes) {

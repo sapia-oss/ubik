@@ -8,20 +8,20 @@ import org.junit.Test;
 import org.sapia.ubik.concurrent.Counter;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.Hub;
-import org.sapia.ubik.util.PropertiesUtil;
+import org.sapia.ubik.util.PropUtil;
 
 public class MinaServerExporterTest {
 
   @Before
   public void setUp() {
-    PropertiesUtil.clearUbikSystemProperties();
+    PropUtil.clearUbikSystemProperties();
     Hub.shutdown();
     System.setProperty(Consts.COLOCATED_CALLS_ENABLED, "false");
   }
 
   @After
   public void tearDown() {
-    PropertiesUtil.clearUbikSystemProperties();
+    PropUtil.clearUbikSystemProperties();
     Hub.shutdown();
   }
 

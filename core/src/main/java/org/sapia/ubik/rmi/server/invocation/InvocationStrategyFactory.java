@@ -6,7 +6,7 @@ import org.sapia.ubik.module.ModuleContext;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.VmId;
 import org.sapia.ubik.rmi.server.invocation.InvocationDispatcher.InvocationStrategy;
-import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.Conf;
 
 class InvocationStrategyFactory {
 
@@ -21,7 +21,7 @@ class InvocationStrategyFactory {
     colocated.init(modules);
     remote.init(modules);
 
-    supportsColocatedCalls = Props.getSystemProperties().getBooleanProperty(Consts.COLOCATED_CALLS_ENABLED, true);
+    supportsColocatedCalls = Conf.getSystemProperties().getBooleanProperty(Consts.COLOCATED_CALLS_ENABLED, true);
     log.debug("Supports colocated calls: %s", Boolean.toString(supportsColocatedCalls));
   }
 

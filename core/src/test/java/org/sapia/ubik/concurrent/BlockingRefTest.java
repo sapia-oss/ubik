@@ -4,7 +4,7 @@ import static org.junit.Assert.*;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.sapia.ubik.util.Delay;
+import org.sapia.ubik.util.Pause;
 
 public class BlockingRefTest {
 
@@ -65,7 +65,7 @@ public class BlockingRefTest {
 
   @Test
   public void testAwaitWithTimeoutReached() throws Exception {
-    Delay delay = new Delay(2000);
+    Pause delay = new Pause(2000);
     ref.await(delay.remaining());
     assertEquals(0, delay.remaining());
   }

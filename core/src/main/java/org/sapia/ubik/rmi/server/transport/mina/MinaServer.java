@@ -49,14 +49,16 @@ class MinaServer implements Server {
    *          the {@link InetSocketAddress} on which the server should listen.
    * @param bufsize
    *          the size of buffers created internally to process data.
+   * @param numAcceptorThreads 
+   *          the number of acceptor threads (I/O selector threads).
    * @param conf
    *          a {@link ThreadingConfiguration}.
    * 
    * @throws IOException
    *           if a problem occurs while creating this instance.
    */
-  MinaServer(InetSocketAddress inetAddr, int bufsize, ThreadingConfiguration conf) throws IOException {
-    this.acceptor = new SocketAcceptor(Runtime.getRuntime().availableProcessors() + 1, Executors.newCachedThreadPool());
+  MinaServer(InetSocketAddress inetAddr, int bufsize, int numAcceptorThreads, ThreadingConfiguration conf) throws IOException {
+    this.acceptor = new SocketAcceptor(numAcceptorThreads, Executors.newCachedThreadPool());
     executor = new ConfigurableExecutor(conf, NamedThreadFactory.createWith("Ubik.NioServer").setDaemon(true));
     acceptor.getFilterChain().addLast("protocol", new ProtocolCodecFilter(new MinaCodecFactory()));
     acceptor.getFilterChain().addLast("threads", new ExecutorFilter(executor));

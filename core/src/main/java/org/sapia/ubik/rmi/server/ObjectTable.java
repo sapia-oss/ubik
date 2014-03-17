@@ -15,7 +15,10 @@ import org.sapia.ubik.rmi.NoSuchObjectException;
 import org.sapia.ubik.rmi.server.oid.DefaultOID;
 import org.sapia.ubik.rmi.server.oid.OID;
 import org.sapia.ubik.rmi.server.stats.Stats;
-import org.sapia.ubik.util.Props;
+import org.sapia.ubik.rmi.server.stub.Stub;
+import org.sapia.ubik.rmi.server.stub.StubContainer;
+import org.sapia.ubik.util.Assertions;
+import org.sapia.ubik.util.Conf;
 
 /**
  * A server-side class that performs reference counting and that is used in
@@ -42,7 +45,7 @@ public class ObjectTable implements ObjectTableMBean, Module {
 
   @Override
   public void init(ModuleContext context) {
-    Props pu = new Props().addProperties(System.getProperties());
+    Conf pu = new Conf().addProperties(System.getProperties());
     float loadFactor = pu.getFloatProperty(Consts.OBJECT_TABLE_LOAD_FACTOR, DEFAULT_LOAD_FACTOR);
     int initCapacity = pu.getIntProperty(Consts.OBJECT_TABLE_INITCAPACITY, DEFAULT_INIT_CAPACITY);
     refs = new ConcurrentHashMap<OID, Ref>(initCapacity, loadFactor);
@@ -67,6 +70,9 @@ public class ObjectTable implements ObjectTableMBean, Module {
    *          the object whose stub will be sent to the client.
    */
   public synchronized void register(OID oid, Object o) {
+    Assertions.illegalState(o instanceof StubContainer, "Cannot register StubContainer instances as remote objects");
+    Assertions.illegalState(o instanceof Stub, "Cannot register Stub instances as remote objects");
+
     Ref ref = (Ref) refs.get(oid);
     if (ref == null) {
       ref = new Ref(oid, o);

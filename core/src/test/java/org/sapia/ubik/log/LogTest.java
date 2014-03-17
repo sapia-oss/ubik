@@ -8,7 +8,7 @@ import org.junit.After;
 import org.junit.Test;
 import org.sapia.ubik.log.Log.Level;
 import org.sapia.ubik.rmi.Consts;
-import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.Conf;
 
 public class LogTest {
 
@@ -23,7 +23,7 @@ public class LogTest {
     for (Level lvl : Level.values()) {
       Properties props = new Properties();
       props.setProperty(Consts.LOG_LEVEL, lvl.name().toLowerCase());
-      assertTrue("Could not determine log level", Log.determineLogLevel(new Props().addProperties(props)));
+      assertTrue("Could not determine log level", Log.determineLogLevel(new Conf().addProperties(props)));
       assertEquals(lvl, Log.getLevel());
     }
   }
@@ -32,7 +32,7 @@ public class LogTest {
   public void testDetermineLogOutput() {
     Properties props = new Properties();
     props.setProperty(Consts.LOG_OUTPUT_CLASS, TestLogOutput.class.getName());
-    assertTrue(Log.determineLogOutput(new Props().addProperties(props)));
+    assertTrue(Log.determineLogOutput(new Conf().addProperties(props)));
   }
 
   @Test

@@ -13,6 +13,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+import org.sapia.ubik.log.Log;
 import org.sapia.ubik.rmi.server.TestRemoteInterface;
 import org.sapia.ubik.rmi.server.TestSocketServerTransportSetup;
 import org.sapia.ubik.rmi.server.oid.DefaultOID;
@@ -25,6 +26,7 @@ public class RemoteRefReliableTest {
 
   @Before
   public void setUp() throws Exception {
+    Log.setDebug();
     transport = new TestSocketServerTransportSetup();
     transport.setUp();
   }
@@ -79,7 +81,8 @@ public class RemoteRefReliableTest {
 
   @Test
   public void testNoFailOver() throws Exception {
-
+    Log.setTrace();
+    
     TestRemoteInterface faultedRemoteObject = mock(TestRemoteInterface.class);
     doAnswer(new Answer<Void>() {
       @Override
@@ -95,6 +98,7 @@ public class RemoteRefReliableTest {
       remoteProxy.perform();
       fail("Failover should not have occurred");
     } catch (RemoteException e) {
+      e.printStackTrace();
       // noop
     }
   }

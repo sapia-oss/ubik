@@ -21,8 +21,8 @@ import org.sapia.ubik.mcast.EventChannel;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.Hub;
 import org.sapia.ubik.util.Localhost;
-import org.sapia.ubik.util.PropertiesUtil;
-import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.PropUtil;
+import org.sapia.ubik.util.Conf;
 
 public class JNDIServerFailoverTest {
 
@@ -31,18 +31,18 @@ public class JNDIServerFailoverTest {
 
   @Before
   public void setUp() throws Exception {
-    PropertiesUtil.clearUbikSystemProperties();
+    PropUtil.clearUbikSystemProperties();
     System.setProperty(Consts.UBIK_DOMAIN_NAME, "ubik.test");
     System.setProperty(Consts.COLOCATED_CALLS_ENABLED, "false");
     System.setProperty(Consts.BROADCAST_PROVIDER, Consts.BROADCAST_PROVIDER_MEMORY);
     System.setProperty(Consts.BROADCAST_MEMORY_NODE, "test");
-    server = new EmbeddableJNDIServer(new EventChannel("ubik.test", Props.getSystemProperties()), 1099);
+    server = new EmbeddableJNDIServer(new EventChannel("ubik.test", Conf.getSystemProperties()), 1099);
     server.start(true);
   }
 
   @After
   public void tearDown() throws Exception {
-    PropertiesUtil.clearUbikSystemProperties();
+    PropUtil.clearUbikSystemProperties();
     server.stop();
     Hub.shutdown();
   }

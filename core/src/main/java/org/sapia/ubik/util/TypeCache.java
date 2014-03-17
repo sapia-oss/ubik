@@ -42,7 +42,7 @@ public class TypeCache {
    * @param loader
    */
   public void clearFor(final ClassLoader loader) {
-    Collections2.forEach(interfaceCache.keySet(), new Condition<Class<?>>() {
+    Collects.forEach(interfaceCache.keySet(), new Condition<Class<?>>() {
       @Override
       public boolean apply(java.lang.Class<?> item) {
         if (hasClassloader(item, loader)) {
@@ -51,7 +51,7 @@ public class TypeCache {
         return true;
       }
     });
-    Collections2.forEach(annotationCache.keySet(), new Condition<Class<?>>() {
+    Collects.forEach(annotationCache.keySet(), new Condition<Class<?>>() {
       @Override
       public boolean apply(java.lang.Class<?> item) {
         if (hasClassloader(item, loader)) {
@@ -76,21 +76,21 @@ public class TypeCache {
    *         interfaces.
    */
   public Set<Class<?>> getInterfacesFor(Class<?> clazz) {
-    log.trace("Getting interfaces for class %s", clazz);
+    log.trace("Getting interfaces for %s", clazz);
     Set<Class<?>> cachedInterfaces = interfaceCache.get(clazz);
 
     if (cachedInterfaces == null) {
-      log.trace("No cached interfaces for class %s. Processing...", clazz);
+      log.trace("No cached interfaces for %s. Processing...", clazz);
 
       Remote remoteAnno = clazz.getAnnotation(Remote.class);
       if (remoteAnno != null) {
-        log.trace("@Remote specicied for class %s", clazz);
+        log.trace("@Remote specicied for %s", clazz);
         Class<?>[] remoteInterfaces = remoteAnno.interfaces();
         HashSet<Class<?>> set = new HashSet<Class<?>>();
         for (Class<?> remoteInterface : remoteInterfaces) {
           set.add(remoteInterface);
         }
-        log.trace("Specified remote interfaces for class %s: %s", clazz, set);
+        log.trace("Specified remote interfaces for %s: %s", clazz, set);
         set.add(Stub.class);
         if (Stateless.class.isAssignableFrom(clazz)) {
           log.trace("Class %s implements Stateless", clazz);
@@ -98,21 +98,21 @@ public class TypeCache {
         }
         cachedInterfaces = Collections.unmodifiableSet(set);
       } else {
-        log.trace("@Remote not specicied for class %s. Collecting interfaces through reflection", clazz);
+        log.trace("@Remote not specicied for %s. Collecting interfaces through reflection", clazz);
 
         HashSet<Class<?>> set = new HashSet<Class<?>>();
         collectInterfaces(clazz, set);
         log.trace("Collected class %s interfaces: %s", clazz, set);
         set.add(Stub.class);
         if (Stateless.class.isAssignableFrom(clazz)) {
-          log.trace("Class %s implements Stateless", clazz);
+          log.trace("%s implements Stateless", clazz);
           set.add(Stateless.class);
         }
         cachedInterfaces = Collections.unmodifiableSet(set);
       }
       interfaceCache.put(clazz, cachedInterfaces);
     }
-
+    log.trace("Got interfaces for %s: %s", clazz, cachedInterfaces);
     return cachedInterfaces;
   }
 

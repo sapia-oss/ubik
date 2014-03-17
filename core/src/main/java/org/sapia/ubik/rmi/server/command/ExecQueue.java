@@ -7,7 +7,7 @@ import java.util.List;
 import org.javasimon.Counter;
 import org.sapia.ubik.rmi.server.ShutdownException;
 import org.sapia.ubik.rmi.server.stats.Stats;
-import org.sapia.ubik.util.Delay;
+import org.sapia.ubik.util.Pause;
 
 /**
  * Models a queue of {@link Executable} instances.
@@ -87,7 +87,7 @@ public class ExecQueue<T extends Executable> {
   public synchronized void shutdown(long timeout) throws InterruptedException {
     shutdown = true;
     notify();
-    Delay timer = new Delay(timeout);
+    Pause timer = new Pause(timeout);
     while (queue.size() > 0 && !timer.isOver()) {
       wait(timer.remainingNotZero());
     }

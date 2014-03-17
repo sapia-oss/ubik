@@ -11,8 +11,11 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -40,37 +43,52 @@ import org.sapia.ubik.rmi.Consts;
  */
 public final class Localhost {
 
-  private static Category LOG = Log.createCategory(Localhost.class);
-  private static String LOCALHOST = "0.0.0.0";
-  private static String LOCALHOST_IPV6 = "0:0:0:0:0:0:0:1";
-  private static String LOOPBACK = "127.0";
-  private static Pattern IPV4_PATTERN = Pattern.compile("\\d+\\.\\d+\\.\\d+\\.\\d+");
-  private static Pattern pattern;
+  private static final Category LOG = Log.createCategory(Localhost.class);
+  private static final String LOCALHOST = "0.0.0.0";
+  private static final String LOCALHOST_IPV6 = "0:0:0:0:0:0:0:1";
+  private static final String LOOPBACK = "127.0";
+  private static final Pattern IPV4_PATTERN = Pattern.compile("\\d+\\.\\d+\\.\\d+\\.\\d+");
+  private static final List<Pattern> PATTERNS = new ArrayList<>();
 
   static {
-    String patternStr = System.getProperty(Consts.IP_PATTERN_KEY);
-    if (patternStr != null) {
-      LOG.info("Got local network address pattern: %s", patternStr);
-      pattern = Pattern.compile(patternStr);
-    } else {
+    
+    List<String> patternKeys = new ArrayList<>();
+    for (String n : System.getProperties().stringPropertyNames()) {
+      if (n.startsWith(Consts.IP_PATTERN_KEY)) {
+        patternKeys.add(n);
+      }
+    }
+    
+    Collections.sort(patternKeys);
+    for (String k : patternKeys) {
+      String patternStr = System.getProperty(k);
+      if (patternStr != null) {
+        LOG.info("Got local network address pattern: %s", patternStr);
+        PATTERNS.add(Pattern.compile(patternStr));
+      }
+    }
+    
+    if (PATTERNS.isEmpty()) {
       LOG.debug("Local network address pattern not set. Will fall back to default address selection");
     }
-
   }
 
   private Localhost() {
   }
 
   static void setAddressPattern(String aPattern) {
-    pattern = Pattern.compile(aPattern);
+    PATTERNS.add(Pattern.compile(aPattern));
   }
 
   static void unsetAddressPattern() {
-    pattern = null;
+    PATTERNS.clear();
   }
 
+  /**
+   * @return <code>true</code> if one or more IP address pattern(s) has/have been defined.
+   */
   public static boolean isIpPatternDefined() {
-    return (pattern != null);
+    return !PATTERNS.isEmpty();
   }
 
   /**
@@ -107,11 +125,14 @@ public final class Localhost {
 
   }
 
+  // --------------------------------------------------------------------------
+  /// Restricted methods
+  
   static InetAddress doGetAnyLocalAddress(Set<InetAddress> netAddresses) throws UnknownHostException {
     if (isIpPatternDefined()) {
       return doSelectAddress(netAddresses);
     } else {
-      Set<InetAddress> nonLocalAddresses = Collections2.filterAsSet(netAddresses, new Condition<InetAddress>() {
+      Set<InetAddress> nonLocalAddresses = Collects.filterAsSet(netAddresses, new Condition<InetAddress>() {
         @Override
         public boolean apply(InetAddress addr) {
           return !(addr.getHostAddress().startsWith(LOCALHOST)
@@ -124,7 +145,7 @@ public final class Localhost {
         return nonLocalAddresses.iterator().next();
       }
 
-      Set<InetAddress> ipV4Addresses = Collections2.filterAsSet(nonLocalAddresses, new Condition<InetAddress>() {
+      Set<InetAddress> ipV4Addresses = Collects.filterAsSet(nonLocalAddresses, new Condition<InetAddress>() {
         @Override
         public boolean apply(InetAddress addr) {
           return IPV4_PATTERN.matcher(addr.getHostAddress()).matches();
@@ -141,7 +162,7 @@ public final class Localhost {
 
   private static InetAddress doSelectAddress(Set<InetAddress> netAddresses) throws UnknownHostException {
 
-    Set<InetAddress> nonLocalAddresses = Collections2.filterAsSet(netAddresses, new Condition<InetAddress>() {
+    Set<InetAddress> nonLocalAddresses = Collects.filterAsSet(netAddresses, new Condition<InetAddress>() {
       @Override
       public boolean apply(InetAddress addr) {
         return !(addr.getHostAddress().startsWith(LOCALHOST)
@@ -150,23 +171,28 @@ public final class Localhost {
       }
     });
 
-    Set<InetAddress> matchedAddresses = Collections2.filterAsSet(nonLocalAddresses, new Condition<InetAddress>() {
+    Set<InetAddress> matchedAddresses = Collects.filterAsSet(nonLocalAddresses, new Condition<InetAddress>() {
       @Override
       public boolean apply(InetAddress addr) {
-        return isLocalAddress(pattern, addr.getHostAddress());
+        return isLocalAddress(PATTERNS, addr.getHostAddress());
       }
     });
 
     if (!matchedAddresses.isEmpty()) {
       InetAddress addr = matchedAddresses.iterator().next();
-      LOG.info("Address %s matches %s", addr, pattern.toString());
+      LOG.debug("Address %s matches address pattern", addr);
       return addr;
     }
     return InetAddress.getLocalHost();
   }
 
-  static boolean isLocalAddress(Pattern pattern, String addr) {
-    return pattern.matcher(addr).matches();
+  static boolean isLocalAddress(List<Pattern> patterns, String addr) {
+    for (Pattern p : patterns) {
+      if(p.matcher(addr).matches()) {
+        return true;
+      }
+    }
+    return false;
   }
 
 }

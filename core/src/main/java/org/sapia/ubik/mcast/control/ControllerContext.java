@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.sapia.ubik.mcast.EventChannel;
 import org.sapia.ubik.mcast.EventChannel.Role;
-import org.sapia.ubik.util.Clock;
+import org.sapia.ubik.util.SysClock;
 
 /**
  * An instance of this class holds an {@link EventChannelController} contextual
@@ -23,7 +23,7 @@ public class ControllerContext {
   private Purgatory purgatory = new Purgatory();
   private EventChannelController controller;
   private ChannelCallback channelCallback;
-  private Clock clock;
+  private SysClock clock;
   private AtomicLong lastHeartbeatReqRcvTime = new AtomicLong();
   private AtomicLong lastHeartbeatReqSentTime = new AtomicLong();
   private AtomicLong lastChallengeReqRcvTime = new AtomicLong();
@@ -40,9 +40,9 @@ public class ControllerContext {
    *          {@link EventChannel} in the context of which this instance is
    *          created.
    * @param clock
-   *          the {@link Clock} instance to use.
+   *          the {@link SysClock} instance to use.
    */
-  ControllerContext(EventChannelController controller, ChannelCallback callback, Clock clock) {
+  ControllerContext(EventChannelController controller, ChannelCallback callback, SysClock clock) {
     this.controller = controller;
     this.role = Role.UNDEFINED;
     this.channelCallback = callback;
@@ -92,9 +92,9 @@ public class ControllerContext {
   }
 
   /**
-   * @return the {@link Clock} that this instance uses.
+   * @return the {@link SysClock} that this instance uses.
    */
-  public Clock getClock() {
+  public SysClock getClock() {
     return clock;
   }
 

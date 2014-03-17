@@ -4,7 +4,7 @@ import java.util.Set;
 
 import org.sapia.ubik.mcast.control.ControlRequest;
 import org.sapia.ubik.net.ServerAddress;
-import org.sapia.ubik.util.Clock;
+import org.sapia.ubik.util.SysClock;
 
 /**
  * An instance of this class is cascaded from the master node to its slaves in
@@ -30,7 +30,7 @@ public class HeartbeatRequest extends ControlRequest {
 
   /**
    * @param clock
-   *          the {@link Clock} to use.
+   *          the {@link SysClock} to use.
    * @param requestId
    *          the identifier to assign to this request.
    * @param masterNode
@@ -40,7 +40,7 @@ public class HeartbeatRequest extends ControlRequest {
    * @param targetedNodes
    *          the slave nodes that are targeted.
    */
-  public HeartbeatRequest(Clock clock, long requestId, String masterNode, ServerAddress masterAddress, Set<String> targetedNodes) {
+  public HeartbeatRequest(SysClock clock, long requestId, String masterNode, ServerAddress masterAddress, Set<String> targetedNodes) {
     super(clock, requestId, masterNode, masterAddress, targetedNodes);
   }
 

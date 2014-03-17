@@ -23,7 +23,7 @@ import org.sapia.ubik.rmi.server.transport.TransportProvider;
 import org.sapia.ubik.taskman.Task;
 import org.sapia.ubik.taskman.TaskContext;
 import org.sapia.ubik.util.Localhost;
-import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.Time;
 
 /**
@@ -95,7 +95,7 @@ public class SocketTransportProvider implements TransportProvider {
    * @see org.sapia.ubik.rmi.server.transport.TransportProvider#getPoolFor(ServerAddress)
    */
   public synchronized Connections getPoolFor(ServerAddress address) throws RemoteException {
-    Props props = Props.getSystemProperties();
+    Conf props = Conf.getSystemProperties();
     long resetInterval = props.getLongProperty(Consts.SERVER_RESET_INTERVAL, DEFAULT_RESET_INTERVAL);
 
     if (!poolCleanerStarted) {
@@ -141,7 +141,7 @@ public class SocketTransportProvider implements TransportProvider {
    * @see org.sapia.ubik.rmi.server.transport.TransportProvider#newServer(Properties)
    */
   public Server newServer(Properties props) throws RemoteException {
-    Props pu = new Props().addProperties(props).addProperties(System.getProperties());
+    Conf pu = new Conf().addProperties(props).addProperties(System.getProperties());
     return doNewServer(pu.getIntProperty(PORT, 0), pu);
   }
 
@@ -149,7 +149,7 @@ public class SocketTransportProvider implements TransportProvider {
    * @see org.sapia.ubik.rmi.server.transport.TransportProvider#newDefaultServer()
    */
   public Server newDefaultServer() throws RemoteException {
-    Props pu = new Props().addProperties(System.getProperties());
+    Conf pu = new Conf().addProperties(System.getProperties());
     return doNewServer(pu.getIntProperty(PORT, 0), pu);
   }
 
@@ -160,11 +160,11 @@ public class SocketTransportProvider implements TransportProvider {
    * @throws RemoteException
    */
   public Server newServer(int port) throws RemoteException {
-    Props pu = new Props().addProperties(System.getProperties());
+    Conf pu = new Conf().addProperties(System.getProperties());
     return doNewServer(port, pu);
   }
 
-  protected Server doNewServer(int port, Props props) throws RemoteException {
+  protected Server doNewServer(int port, Conf props) throws RemoteException {
     int coreThreads = props.getIntProperty(Consts.SERVER_CORE_THREADS, ThreadingConfiguration.DEFAULT_CORE_POOL_SIZE);
     int maxThreads = props.getIntProperty(Consts.SERVER_MAX_THREADS, ThreadingConfiguration.DEFAULT_MAX_POOL_SIZE);
     int queueSize = props.getIntProperty(Consts.SERVER_THREADS_QUEUE_SIZE, ThreadingConfiguration.DEFAULT_QUEUE_SIZE);

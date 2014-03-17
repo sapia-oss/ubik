@@ -22,7 +22,7 @@ import org.sapia.ubik.net.ConnectionStateListenerList;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.util.Base64;
-import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.Conf;
 
 /**
  * Implements a {@link BroadcastDispatcher} on top of the Avis group
@@ -177,7 +177,7 @@ public class AvisBroadcastDispatcher implements BroadcastDispatcher {
         }
       }, 
       this.listeners,
-      Props.getSystemProperties().getLongProperty(Consts.MCAST_BROADCAST_MONITOR_INTERVAL, Defaults.DEFAULT_BROADCAST_MONITOR_INTERVAL));
+      Conf.getSystemProperties().getLongProperty(Consts.MCAST_BROADCAST_MONITOR_INTERVAL, Defaults.DEFAULT_BROADCAST_MONITOR_INTERVAL));
       state = ConnectionState.DOWN;
     } 
   }  

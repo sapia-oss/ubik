@@ -1,26 +1,26 @@
 package org.sapia.ubik.util;
 
-import org.sapia.ubik.util.Clock.SystemClock;
+import org.sapia.ubik.util.SysClock.RealtimeClock;
 
 /**
- * Models a delay.
+ * Models a pause.
  * 
  * @author yduchesne
  * 
  */
-public class Delay {
+public class Pause {
 
-  private Clock clock = SystemClock.getInstance();
+  private SysClock clock = RealtimeClock.getInstance();
   private long start;
   private long duration;
 
   /**
    * @param clock
-   *          the {@link Clock} to use.
+   *          the {@link SysClock} to use.
    * @param duration
    *          the duration of this delay, in millis.
    */
-  public Delay(Clock clock, long duration) {
+  public Pause(SysClock clock, long duration) {
     this.clock = clock;
     this.duration = duration;
     this.start = clock.currentTimeMillis();
@@ -30,7 +30,7 @@ public class Delay {
    * @param duration
    *          the duration of this delay, in millis.
    */
-  public Delay(long duration) {
+  public Pause(long duration) {
     this.duration = duration;
     this.start = clock.currentTimeMillis();
   }

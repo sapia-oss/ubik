@@ -2,7 +2,7 @@ package org.sapia.ubik.rmi.server.command;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.sapia.ubik.util.Delay;
+import org.sapia.ubik.util.Pause;
 
 /**
  * A client-side lock on which the caller of an asynchronous call-back waits for
@@ -58,7 +58,7 @@ public class ResponseLock {
    * @return a response, as an {@link Object}.
    */
   public synchronized Object await(long timeout) throws InterruptedException, ResponseTimeOutException {
-    Delay timer = new Delay(timeout);
+    Pause timer = new Pause(timeout);
 
     while (!ready) {
       wait(timer.remainingNotZero());

@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import org.sapia.ubik.util.Collections2;
+import org.sapia.ubik.util.Collects;
 
 /**
  * A control notification is sent to nodes in order to notify them of certain
@@ -52,7 +52,7 @@ public abstract class ControlNotification implements Externalizable, SplittableM
    * @return a {@link List} of {@link ControlNotification}s.
    */
   public List<SplittableMessage> split(int batchSize) {
-    List<Set<String>> batches = Collections2.divideAsSets(targetedNodes, batchSize);
+    List<Set<String>> batches = Collects.divideAsSets(targetedNodes, batchSize);
     List<SplittableMessage> notifications = new ArrayList<SplittableMessage>();
     for (Set<String> batch : batches) {
       notifications.add(getCopy(batch));

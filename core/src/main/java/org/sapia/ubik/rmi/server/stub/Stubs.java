@@ -1,5 +1,6 @@
 package org.sapia.ubik.rmi.server.stub;
 
+import java.lang.reflect.Proxy;
 import java.rmi.RemoteException;
 
 import javax.naming.Name;
@@ -45,8 +46,7 @@ public class Stubs {
     if (!(object instanceof Stub)) {
       throw new IllegalArgumentException(String.format("Instance of %s not recognized as a Ubik stub", object.getClass().getName()));
     }
-    Stub stub = (Stub) object;
-    return stub.getStubInvocationHandler();
+    return (StubInvocationHandler) Proxy.getInvocationHandler(object);
   }
 
   /**

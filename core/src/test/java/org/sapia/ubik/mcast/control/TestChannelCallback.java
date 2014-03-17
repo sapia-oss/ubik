@@ -9,7 +9,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.sapia.ubik.net.ServerAddress;
-import org.sapia.ubik.util.Clock;
+import org.sapia.ubik.util.SysClock;
 
 public class TestChannelCallback implements ChannelCallback {
 
@@ -30,7 +30,7 @@ public class TestChannelCallback implements ChannelCallback {
   private volatile boolean down;
   private volatile Set<String> forceResync;
 
-  public TestChannelCallback(String node, Clock clock, ControllerConfiguration config) {
+  public TestChannelCallback(String node, SysClock clock, ControllerConfiguration config) {
     this.node = node;
     this.controller = new EventChannelController(clock, config, this);
   }

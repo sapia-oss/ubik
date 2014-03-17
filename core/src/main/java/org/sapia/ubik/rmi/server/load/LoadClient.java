@@ -16,7 +16,7 @@ import org.sapia.ubik.rmi.naming.remote.JNDIContextBuilder;
 import org.sapia.ubik.rmi.naming.remote.Lookup;
 import org.sapia.ubik.rmi.server.Hub;
 import org.sapia.ubik.rmi.server.stats.Stats;
-import org.sapia.ubik.util.PropertiesUtil;
+import org.sapia.ubik.util.PropUtil;
 import org.sapia.ubik.util.cli.Cmd;
 import org.sapia.ubik.util.cli.Cmd.OptionFilter;
 import org.sapia.ubik.util.cli.Opt;
@@ -86,9 +86,9 @@ public class LoadClient {
     Properties props = new Properties(System.getProperties());
     if (cmd.hasSwitch("f")) {
       File f = new File(cmd.getOptWithValue("f").getTrimmedValueOrBlank());
-      PropertiesUtil.loadIntoPropertiesFrom(props, f);
+      PropUtil.loadIntoPropertiesFrom(props, f);
     }
-    PropertiesUtil.copy(props, System.getProperties());
+    PropUtil.copy(props, System.getProperties());
 
     final Context context = JNDIContextBuilder.newInstance().properties(props)
         .port(cmd.hasSwitch("p") ? cmd.getOptWithValue("p").getIntValue() : JNDIConsts.DEFAULT_PORT)

@@ -5,7 +5,7 @@ import java.text.SimpleDateFormat;
 
 import org.sapia.ubik.log.LogOutput.DefaultLogOutput;
 import org.sapia.ubik.rmi.Consts;
-import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.Conf;
 
 /**
  * Logs to System.out, used by the RMI runtime.
@@ -39,7 +39,7 @@ public class Log {
   private static Level lvl = Level.ERROR;
 
   static {
-    Props props = Props.getSystemProperties();
+    Conf props = Conf.getSystemProperties();
     determineLogLevel(props);
     determineLogOutput(props);
   }
@@ -47,7 +47,7 @@ public class Log {
   /**
    * Assigns log level (package visibility for unit testing purposes)
    */
-  static final boolean determineLogLevel(Props props) {
+  static final boolean determineLogLevel(Conf props) {
     // log level
     String label = props.getProperty(Consts.LOG_LEVEL);
 
@@ -76,7 +76,7 @@ public class Log {
    * 
    * @return <code>true</code> if the log output could be determined.
    */
-  static final boolean determineLogOutput(Props props) {
+  static final boolean determineLogOutput(Conf props) {
     try {
       Class<LogOutput> logOutputClass = (Class<LogOutput>) props.getClass(Consts.LOG_OUTPUT_CLASS, DefaultLogOutput.class);
       output = logOutputClass.newInstance();

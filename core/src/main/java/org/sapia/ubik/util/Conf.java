@@ -12,7 +12,7 @@ import java.util.Properties;
  * @author Yanick Duchesne
  * 
  */
-public class Props {
+public class Conf {
 
   /**
    * The {@link List} of {@link PropertyLookup} instances to look up.
@@ -24,7 +24,7 @@ public class Props {
    *          some {@link Properties} to look up.
    * @return this instance.
    */
-  public Props addProperties(Properties props) {
+  public Conf addProperties(Properties props) {
     this.props.add(new PropertiesPropertyLookup(props));
     return this;
   }
@@ -34,7 +34,7 @@ public class Props {
    *          some property {@link Map} to look up.
    * @return this instance.
    */
-  public Props addMap(Map<String, String> props) {
+  public Conf addMap(Map<String, String> props) {
     this.props.add(new MapPropertyLookup(props));
     return this;
   }
@@ -44,7 +44,7 @@ public class Props {
    * 
    * @return this instance.
    */
-  public Props addSystemProperties() {
+  public Conf addSystemProperties() {
     return addProperties(System.getProperties());
   }
 
@@ -53,7 +53,7 @@ public class Props {
    *          a {@link PropertyLookup} instance.
    * @return this instance.
    */
-  public Props addPropertyLookup(PropertyLookup lookup) {
+  public Conf addPropertyLookup(PropertyLookup lookup) {
     props.add(lookup);
     return this;
   }
@@ -260,8 +260,8 @@ public class Props {
   /**
    * @return an instance of this class encapsulating system {@link Properties}.
    */
-  public static Props getSystemProperties() {
-    return new Props().addProperties(System.getProperties());
+  public static Conf getSystemProperties() {
+    return new Conf().addProperties(System.getProperties());
   }
 
   private String lookup(String key, boolean throwExcIfNotFound) {

@@ -5,7 +5,7 @@ import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.sapia.ubik.mcast.control.Purgatory.DownNode;
-import org.sapia.ubik.util.Collections2;
+import org.sapia.ubik.util.Collects;
 
 public class PurgatoryTest {
 
@@ -33,7 +33,7 @@ public class PurgatoryTest {
 
   @Test
   public void testAddAll() {
-    purgatory.addAll(Collections2.arrayToSet("n1", "n2"));
+    purgatory.addAll(Collects.arrayToSet("n1", "n2"));
     assertTrue("Node should have been added", purgatory.contains("n1"));
     assertTrue("Node should have been added", purgatory.contains("n2"));
   }

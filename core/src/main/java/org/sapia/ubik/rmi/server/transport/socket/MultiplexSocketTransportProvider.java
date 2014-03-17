@@ -16,7 +16,7 @@ import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.Server;
 import org.sapia.ubik.rmi.server.transport.TransportProvider;
 import org.sapia.ubik.util.Localhost;
-import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.Time;
 
 /**
@@ -72,17 +72,17 @@ public class MultiplexSocketTransportProvider extends SocketTransportProvider {
 
   @Override
   public Server newServer(Properties properties) throws RemoteException {
-    Props props = new Props().addProperties(properties).addProperties(System.getProperties());
+    Conf props = new Conf().addProperties(properties).addProperties(System.getProperties());
     return doNewServer(props.getIntProperty(PORT, 0), props);
   }
 
   @Override
   public Server newServer(int port) throws RemoteException {
-    Props props = Props.getSystemProperties();
+    Conf props = Conf.getSystemProperties();
     return doNewServer(port, props);
   }
 
-  protected Server doNewServer(int port, Props props) throws RemoteException {
+  protected Server doNewServer(int port, Conf props) throws RemoteException {
     int coreThreads = props.getIntProperty(Consts.SERVER_CORE_THREADS, ThreadingConfiguration.DEFAULT_CORE_POOL_SIZE);
     int maxThreads = props.getIntProperty(Consts.SERVER_MAX_THREADS, ThreadingConfiguration.DEFAULT_MAX_POOL_SIZE);
     int queueSize = props.getIntProperty(Consts.SERVER_THREADS_QUEUE_SIZE, ThreadingConfiguration.DEFAULT_QUEUE_SIZE);

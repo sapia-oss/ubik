@@ -9,7 +9,7 @@ import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.rmi.server.stats.Stats;
 import org.sapia.ubik.util.Assertions;
-import org.sapia.ubik.util.Delay;
+import org.sapia.ubik.util.Pause;
 
 /**
  * This class implements a client-side response queue that internally keeps
@@ -34,7 +34,7 @@ public class CallbackResponseQueue {
     }
     shutdown = true;
 
-    Delay timer = new Delay(timeout);
+    Pause timer = new Pause(timeout);
 
     while (responseLocks.size() > 0 && !timer.isOver()) {
       try {

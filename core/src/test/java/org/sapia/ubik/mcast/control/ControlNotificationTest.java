@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.junit.Test;
-import org.sapia.ubik.util.Collections2;
+import org.sapia.ubik.util.Collects;
 
 public class ControlNotificationTest {
 
@@ -31,21 +31,21 @@ public class ControlNotificationTest {
 
   @Test
   public void testBatchSizeLargerDividor() {
-    Set<String> targetedNodes = Collections2.arrayToSet("1", "2");
+    Set<String> targetedNodes = Collects.arrayToSet("1", "2");
     TestControlNotification notif = new TestControlNotification(targetedNodes);
     assertEquals(2, notif.split(3).size());
   }
 
   @Test
   public void testBatchSizeSmallerAndEvenDivisor() {
-    Set<String> targetedNodes = Collections2.arrayToSet("1", "2", "3", "4");
+    Set<String> targetedNodes = Collects.arrayToSet("1", "2", "3", "4");
     TestControlNotification notif = new TestControlNotification(targetedNodes);
     assertEquals(2, notif.split(2).size());
   }
 
   @Test
   public void testBatchSizeOddLargerSplitOddDivisor() {
-    Set<String> targetedNodes = Collections2.arrayToSet("1", "2", "3", "4", "5");
+    Set<String> targetedNodes = Collects.arrayToSet("1", "2", "3", "4", "5");
     TestControlNotification notif = new TestControlNotification(targetedNodes);
     assertEquals(3, notif.split(3).size());
   }

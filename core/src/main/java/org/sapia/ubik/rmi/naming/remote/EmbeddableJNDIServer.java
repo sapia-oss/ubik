@@ -32,7 +32,7 @@ import org.sapia.ubik.rmi.server.transport.mina.MinaAddress;
 import org.sapia.ubik.rmi.server.transport.mina.MinaTransportProvider;
 import org.sapia.ubik.util.Assertions;
 import org.sapia.ubik.util.Localhost;
-import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.Conf;
 
 /**
  * This class implements an embeddable JNDI server.
@@ -116,7 +116,7 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
     props.setProperty(JNDIConsts.MCAST_ADDR_KEY, mcastAddress);
     props.setProperty(JNDIConsts.MCAST_PORT_KEY, Integer.toString(mcastPort));
     try {
-      channel = new EventChannel(domain, new Props().addProperties(props).addSystemProperties()).getReference();
+      channel = new EventChannel(domain, new Conf().addProperties(props).addSystemProperties()).getReference();
     } catch (IOException e) {
       throw new IllegalStateException("Could not build event channel", e);
     }

@@ -4,7 +4,7 @@ import java.util.Set;
 
 import org.sapia.ubik.mcast.control.ControlRequest;
 import org.sapia.ubik.net.ServerAddress;
-import org.sapia.ubik.util.Clock;
+import org.sapia.ubik.util.SysClock;
 
 /**
  * This request is sent by a node that attempts becoming the master.
@@ -25,7 +25,7 @@ public class ChallengeRequest extends ControlRequest {
 
   /**
    * @param clock
-   *          the {@link Clock} to use.
+   *          the {@link SysClock} to use.
    * @param requestId
    *          the identifier to assign to this request.
    * @param masterNode
@@ -35,7 +35,7 @@ public class ChallengeRequest extends ControlRequest {
    * @param targetedNodes
    *          the slave nodes that are targeted.
    */
-  public ChallengeRequest(Clock clock, long requestId, String masterNode, ServerAddress masterAddress, Set<String> targetedNodes) {
+  public ChallengeRequest(SysClock clock, long requestId, String masterNode, ServerAddress masterAddress, Set<String> targetedNodes) {
     super(clock, requestId, masterNode, masterAddress, targetedNodes);
   }
 

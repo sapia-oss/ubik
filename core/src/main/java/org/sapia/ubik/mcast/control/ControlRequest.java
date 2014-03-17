@@ -9,8 +9,8 @@ import java.util.List;
 import java.util.Set;
 
 import org.sapia.ubik.net.ServerAddress;
-import org.sapia.ubik.util.Clock;
-import org.sapia.ubik.util.Collections2;
+import org.sapia.ubik.util.SysClock;
+import org.sapia.ubik.util.Collects;
 
 /**
  * The base class for control requests.
@@ -46,7 +46,7 @@ public abstract class ControlRequest implements Externalizable, SplittableMessag
 
   /**
    * @param clock
-   *          the {@link Clock} that should be used to internally set this
+   *          the {@link SysClock} that should be used to internally set this
    *          instance's creation time.
    * @param the
    *          unique identifier that should be assigned to this request.
@@ -59,7 +59,7 @@ public abstract class ControlRequest implements Externalizable, SplittableMessag
    *          the {@link Set} of identifiers of the nodes to which this request
    *          should be sent.
    */
-  protected ControlRequest(Clock clock, long requestId, String masterNode, ServerAddress masterAddress, Set<String> targetedNodes) {
+  protected ControlRequest(SysClock clock, long requestId, String masterNode, ServerAddress masterAddress, Set<String> targetedNodes) {
     this.creationTime = clock.currentTimeMillis();
     this.masterNode = masterNode;
     this.masterAddress = masterAddress;
@@ -109,7 +109,7 @@ public abstract class ControlRequest implements Externalizable, SplittableMessag
    */
 
   public List<SplittableMessage> split(int batchSize) {
-    List<Set<String>> batches = Collections2.divideAsSets(targetedNodes, batchSize);
+    List<Set<String>> batches = Collects.divideAsSets(targetedNodes, batchSize);
     List<SplittableMessage> requests = new ArrayList<SplittableMessage>();
     for (Set<String> batch : batches) {
       ControlRequest copy = getCopy(batch);

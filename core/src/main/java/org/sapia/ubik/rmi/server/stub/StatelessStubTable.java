@@ -21,7 +21,7 @@ import org.sapia.ubik.module.Module;
 import org.sapia.ubik.module.ModuleContext;
 import org.sapia.ubik.rmi.naming.remote.archie.SyncPutEvent;
 import org.sapia.ubik.rmi.server.EventChannelTable;
-import org.sapia.ubik.util.Collections2;
+import org.sapia.ubik.util.Collects;
 import org.sapia.ubik.util.Condition;
 
 /**
@@ -97,7 +97,7 @@ public class StatelessStubTable implements Module {
     synchronized void synchronizeStatelessRef(final StatelessRefSyncEvent ref) {
       if (log.isTrace() && !contextsByObjectName.isEmpty()) {
         log.trace("Got contexts for names:");
-        Collections2.forEach(contextsByObjectName.entrySet(), new Condition<Map.Entry<String, Contexts>>() {
+        Collects.forEach(contextsByObjectName.entrySet(), new Condition<Map.Entry<String, Contexts>>() {
           @Override
           public boolean apply(Entry<String, Contexts> item) {
             log.trace("  => %s : %s", item.getKey(), item.getValue());
@@ -116,7 +116,7 @@ public class StatelessStubTable implements Module {
       contexts.addAll(ref.getContexts());
       if (log.isTrace()) {
         log.trace("Now got %s endpoints under %s", contexts.getContexts().size(), name);
-        Collections2.forEach(contexts.getContexts(), new Condition<RemoteRefContext>() {
+        Collects.forEach(contexts.getContexts(), new Condition<RemoteRefContext>() {
           @Override
           public boolean apply(RemoteRefContext item) {
             log.trace("  => %s", item);
@@ -129,7 +129,7 @@ public class StatelessStubTable implements Module {
     synchronized void registerStatelessRef(final RemoteRefStateless ref, Collection<RemoteRefContext> newContexts) {
       if (log.isTrace() && !contextsByObjectName.isEmpty()) {
         log.trace("Got contexts for names:");
-        Collections2.forEach(contextsByObjectName.entrySet(), new Condition<Map.Entry<String, Contexts>>() {
+        Collects.forEach(contextsByObjectName.entrySet(), new Condition<Map.Entry<String, Contexts>>() {
           @Override
           public boolean apply(Entry<String, Contexts> item) {
             log.trace("  => %s : %s", item.getKey(), item.getValue());
@@ -162,7 +162,7 @@ public class StatelessStubTable implements Module {
         if (!contextsToSync.isEmpty()) {
           if (log.isTrace()) {
             log.trace("Sending stateless ref endpoints:");
-            Collections2.forEach(contextsToSync, new Condition<RemoteRefContext>() {
+            Collects.forEach(contextsToSync, new Condition<RemoteRefContext>() {
               @Override
               public boolean apply(RemoteRefContext item) {
                 log.trace("  => %s", item.toString());
@@ -188,7 +188,7 @@ public class StatelessStubTable implements Module {
         log.trace("Incoming ref updated with %s endpoints: %s", ref.getContextList().count(), ref.getContextList());
         Collection<RemoteRefContext> contextsForObjectName = contexts.getContexts();
         log.trace("Got %s shared endpoints registered under name: %s", contextsForObjectName.size(), ref.getName());
-        Collections2.forEach(contextsForObjectName, new org.sapia.ubik.util.Condition<RemoteRefContext>() {
+        Collects.forEach(contextsForObjectName, new org.sapia.ubik.util.Condition<RemoteRefContext>() {
           @Override
           public boolean apply(RemoteRefContext item) {
             log.trace("  => %s", item.toString());

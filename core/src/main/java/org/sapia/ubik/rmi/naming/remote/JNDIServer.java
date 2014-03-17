@@ -10,8 +10,8 @@ import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.EventChannel;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.Hub;
-import org.sapia.ubik.util.PropertiesUtil;
-import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.PropUtil;
+import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.cli.Cmd;
 
 /**
@@ -65,9 +65,9 @@ public class JNDIServer {
     Logger.getRootLogger().setLevel(Level.OFF);
 
     Args argsObj = parseArgs(args, true);
-    Props props = new Props();
+    Conf props = new Conf();
     props.addProperties(argsObj.properties);
-    PropertiesUtil.copy(argsObj.properties, System.getProperties());
+    PropUtil.copy(argsObj.properties, System.getProperties());
 
     EventChannel channel = new EventChannel(props.getProperty(Consts.UBIK_DOMAIN_NAME, Consts.DEFAULT_DOMAIN), props);
     EmbeddableJNDIServer server = new EmbeddableJNDIServer(channel, argsObj.port);
@@ -133,7 +133,7 @@ public class JNDIServer {
             help(doExitOnHelp);
           }
           try {
-            PropertiesUtil.loadIntoPropertiesFrom(props, configFile);
+            PropUtil.loadIntoPropertiesFrom(props, configFile);
             System.out.println();
             System.out.println("Found properties (" + configFile.getName() + "):");
             for (String name : props.stringPropertyNames()) {

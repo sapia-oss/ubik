@@ -9,13 +9,13 @@ import java.util.Properties;
 import org.junit.Before;
 import org.junit.Test;
 
-public class PropsTest {
+public class ConfTest {
 
-  private Props props;
+  private Conf props;
 
   @Before
   public void setUp() {
-    props = new Props();
+    props = new Conf();
   }
 
   @Test
@@ -42,7 +42,7 @@ public class PropsTest {
 
   @Test
   public void testAddPropertyLookup() {
-    props.addPropertyLookup(new Props.PropertyLookup() {
+    props.addPropertyLookup(new Conf.PropertyLookup() {
       @Override
       public String getProperty(String name) {
         return System.getProperty(name);
@@ -139,7 +139,7 @@ public class PropsTest {
 
   @Test
   public void testGetSystemProperties() {
-    assertEquals(System.getProperty("user.name"), Props.getSystemProperties().getProperty("user.name"));
+    assertEquals(System.getProperty("user.name"), Conf.getSystemProperties().getProperty("user.name"));
   }
 
 }

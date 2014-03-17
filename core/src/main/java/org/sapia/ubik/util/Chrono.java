@@ -2,7 +2,7 @@ package org.sapia.ubik.util;
 
 import java.util.concurrent.TimeUnit;
 
-import org.sapia.ubik.util.Clock.SystemClock;
+import org.sapia.ubik.util.SysClock.RealtimeClock;
 
 /**
  * Measures a duration.
@@ -12,10 +12,10 @@ import org.sapia.ubik.util.Clock.SystemClock;
  */
 public class Chrono {
 
-  private Clock clock = SystemClock.getInstance();
+  private SysClock clock = RealtimeClock.getInstance();
   private long start;
 
-  public Chrono(Clock clock) {
+  public Chrono(SysClock clock) {
     this.clock = clock;
     this.start = clock.currentTimeMillis();
   }

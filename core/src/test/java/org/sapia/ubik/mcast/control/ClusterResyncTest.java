@@ -9,21 +9,21 @@ import org.junit.Before;
 import org.junit.Test;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.ServerAddress;
-import org.sapia.ubik.util.Clock;
-import org.sapia.ubik.util.Collections2;
+import org.sapia.ubik.util.SysClock;
+import org.sapia.ubik.util.Collects;
 
 public class ClusterResyncTest {
 
   private EventChannelController controller;
   private ChannelCallback callback;
-  private Clock.MutableClock clock;
+  private SysClock.MutableClock clock;
   private ServerAddress serverAddress;
   private ControllerConfiguration config;
 
   @Before
   public void setUp() throws IOException, InterruptedException {
     callback = mock(ChannelCallback.class);
-    clock = Clock.MutableClock.getInstance();
+    clock = SysClock.MutableClock.getInstance();
     config = new ControllerConfiguration();
     config.setResyncInterval(1000);
     config.setHeartbeatInterval(1000);
@@ -50,7 +50,7 @@ public class ClusterResyncTest {
   public void testResyncNodeCountThresholdReached() {
     controller.checkStatus();
     config.setResyncNodeCount(1);
-    when(callback.getNodes()).thenReturn(Collections2.arrayToSet("test"));
+    when(callback.getNodes()).thenReturn(Collects.arrayToSet("test"));
     clock.increaseCurrentTimeMillis(1001);
     controller.checkStatus();
     verify(callback).resync();

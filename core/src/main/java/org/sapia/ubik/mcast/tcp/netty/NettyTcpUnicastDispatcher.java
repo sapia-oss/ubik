@@ -10,7 +10,7 @@ import org.sapia.ubik.net.ConnectionFactory;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.TcpPortSelector;
 import org.sapia.ubik.util.Localhost;
-import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.Time;
 
 /**
@@ -57,7 +57,7 @@ public class NettyTcpUnicastDispatcher extends BaseTcpUnicastDispatcher implemen
   protected void doStart() {
     log.info("Starting...");
 
-    Props config = Props.getSystemProperties();
+    Conf config = Conf.getSystemProperties();
 
     ThreadingConfiguration ioConf = ThreadingConfiguration.newInstance()
         .setCorePoolSize(config.getIntProperty(SERVER_IO_CORE_THREADS_KEY, DEFAULT_SERVER_IO_CORE_THREADS))

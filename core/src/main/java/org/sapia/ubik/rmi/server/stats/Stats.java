@@ -8,7 +8,7 @@ import org.javasimon.Simon;
 import org.javasimon.SimonManager;
 import org.javasimon.Stopwatch;
 import org.sapia.ubik.rmi.Consts;
-import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.Conf;
 
 /**
  * A factory class to create {@link Stopwatch} and {@link Counter} instances.
@@ -23,7 +23,7 @@ public class Stats {
   private static final String UBIK_PREFIX = "Ubik.";
 
   static {
-    if (Props.getSystemProperties().getBooleanProperty(Consts.STATS_ENABLED, false)) {
+    if (Conf.getSystemProperties().getBooleanProperty(Consts.STATS_ENABLED, false)) {
       SimonManager.enable();
     }
   }

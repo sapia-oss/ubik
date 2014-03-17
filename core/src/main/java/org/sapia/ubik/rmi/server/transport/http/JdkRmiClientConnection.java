@@ -20,7 +20,7 @@ import org.sapia.ubik.rmi.server.transport.MarshalStreamFactory;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
 import org.sapia.ubik.rmi.server.transport.RmiObjectOutput;
 import org.sapia.ubik.util.Assertions;
-import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.Conf;
 
 /**
  * Implements the {@link RmiConnection} over the JDK's {@link URL} class.
@@ -41,7 +41,7 @@ public class JdkRmiClientConnection implements RmiConnection {
   private URL url;
   private volatile boolean closed;
   private HttpURLConnection conn;
-  private int bufsz = Props.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE);
+  private int bufsz = Conf.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE);
 
   public JdkRmiClientConnection() {
   }

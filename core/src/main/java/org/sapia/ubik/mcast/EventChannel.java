@@ -31,11 +31,11 @@ import org.sapia.ubik.net.ConnectionStateListener;
 import org.sapia.ubik.net.ConnectionStateListenerList;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
-import org.sapia.ubik.util.Clock;
-import org.sapia.ubik.util.Collections2;
+import org.sapia.ubik.util.SysClock;
+import org.sapia.ubik.util.Collects;
 import org.sapia.ubik.util.Condition;
 import org.sapia.ubik.util.Function;
-import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.SoftReferenceList;
 
 /**
@@ -167,6 +167,7 @@ public class EventChannel {
   private static Set<EventChannel> CHANNELS_BY_DOMAIN = Collections.synchronizedSet(new HashSet<EventChannel>());
 
   private Category log = Log.createCategory(getClass());
+  private static boolean eventChannelReuse = Conf.getSystemProperties().getBooleanProperty(Consts.MCAST_REUSE_EXISTINC_CHANNELS, true);
   private Timer heartbeatTimer = new Timer("Ubik.EventChannel.Timer", true);
   private BroadcastDispatcher broadcast;
   private UnicastDispatcher unicast;
@@ -203,7 +204,7 @@ public class EventChannel {
    * @see UDPUnicastDispatcher
    */
   public EventChannel(String domain, String mcastHost, int mcastPort) throws IOException {
-    Props props = new Props().addSystemProperties();
+    Conf props = new Conf().addSystemProperties();
     consumer = new EventConsumer(domain);
     broadcast = new UDPBroadcastDispatcher(consumer, mcastHost, mcastPort, props.getIntProperty(Consts.MCAST_TTL, Defaults.DEFAULT_TTL));
     unicast = new UDPUnicastDispatcher(consumer, props.getIntProperty(Consts.MCAST_HANDLER_COUNT, Defaults.DEFAULT_HANDLER_COUNT));
@@ -228,7 +229,7 @@ public class EventChannel {
    * @see UDPUnicastDispatcher
    */
   public EventChannel(String domain) throws IOException {
-    this(domain, new Props());
+    this(domain, new Conf());
   }
 
   /**
@@ -247,7 +248,7 @@ public class EventChannel {
    * @see Consts#BROADCAST_PROVIDER
    * @see Consts#UNICAST_PROVIDER
    */
-  public EventChannel(String domain, Props config) throws IOException {
+  public EventChannel(String domain, Conf config) throws IOException {
     config.addSystemProperties();
     consumer  = new EventConsumer(domain);
     unicast   = DispatcherFactory.createUnicastDispatcher(consumer, config);
@@ -267,7 +268,7 @@ public class EventChannel {
     this.consumer = consumer;
     this.unicast = unicast;
     this.broadcast = broadcast;
-    init(new Props().addSystemProperties());
+    init(new Conf().addSystemProperties());
   }
 
   /**
@@ -458,7 +459,7 @@ public class EventChannel {
    * {@link EventChannel}s.
    */
   public static synchronized Set<EventChannelRef> getActiveChannels() {
-    return Collections2.convertAsSet(CHANNELS_BY_DOMAIN, new Function<EventChannelRef, EventChannel>() {
+    return Collects.convertAsSet(CHANNELS_BY_DOMAIN, new Function<EventChannelRef, EventChannel>() {
       @Override
       public EventChannelRef call(EventChannel c) {
         return new EventChannelRefImpl(c, false);
@@ -472,9 +473,11 @@ public class EventChannel {
    * if <code>null</code> if no such match occurs.
    */
   public static synchronized EventChannelRef selectActiveChannel(Condition<EventChannel> condition) {
-    for (EventChannel c : CHANNELS_BY_DOMAIN) {
-      if (condition.apply(c)) {
-        return new EventChannelRefImpl(c, false);
+    if (eventChannelReuse) {
+      for (EventChannel c : CHANNELS_BY_DOMAIN) {
+        if (condition.apply(c)) {
+          return new EventChannelRefImpl(c, false);
+        }
       }
     }
     return null;
@@ -673,12 +676,26 @@ public class EventChannel {
   public synchronized boolean containsSyncListener(SyncEventListener listener) {
     return consumer.containsSyncListener(listener);
   }
-
+  
   /**
    * @see BroadcastDispatcher#getNode()
    */
   public String getNode() {
     return broadcast.getNode();
+  }
+  
+  /**
+   * Used when testing to disable active instance reuse.
+   */
+  public static void disableReuse() {
+    eventChannelReuse = false;
+  }
+  
+  /**
+   * Used when testing to re-enable instance reuse.
+   */
+  public static void enableReuse() {
+    eventChannelReuse = true;
   }
 
   EventChannelController getController() {
@@ -731,7 +748,7 @@ public class EventChannel {
     }
     System.out.println("Starting event channel on domain: " + domain + ". Type CTRL-C to terminate.");
 
-    final EventChannel channel = new EventChannel(domain, Props.getSystemProperties());
+    final EventChannel channel = new EventChannel(domain, Conf.getSystemProperties());
     channel.start();
 
     Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -1027,7 +1044,7 @@ public class EventChannel {
     }
   }
 
-  private void init(Props props) {
+  private void init(Conf props) {
     listener = new ChannelEventListener();
     consumer.registerAsyncListener(PUBLISH_EVT, listener);
     consumer.registerAsyncListener(FORCE_RESYNC_EVT, listener);
@@ -1084,8 +1101,8 @@ public class EventChannel {
     }, firstTaskStartupDelay, heartbeatInterval);
   }
 
-  protected Clock createClock() {
-    return Clock.SystemClock.getInstance();
+  protected SysClock createClock() {
+    return SysClock.RealtimeClock.getInstance();
   }
 
 }

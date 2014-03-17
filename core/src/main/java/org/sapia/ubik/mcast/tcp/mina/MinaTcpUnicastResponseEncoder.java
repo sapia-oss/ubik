@@ -10,7 +10,7 @@ import org.apache.mina.filter.codec.ProtocolEncoderOutput;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.serialization.SerializationStreams;
 import org.sapia.ubik.util.MinaByteBufferOutputStream;
-import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.Conf;
 
 /**
  * An encoder of unicast responses.
@@ -20,7 +20,7 @@ import org.sapia.ubik.util.Props;
  */
 public class MinaTcpUnicastResponseEncoder implements ProtocolEncoder {
 
-  private static final int BUFSIZE = Props.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE);
+  private static final int BUFSIZE = Conf.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE);
 
   private static final String ENCODER_STATE = "ENCODER_STATE";
 

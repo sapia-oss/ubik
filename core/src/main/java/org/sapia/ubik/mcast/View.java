@@ -10,7 +10,7 @@ import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.EventChannelStateListener.EventChannelEvent;
 import org.sapia.ubik.net.ServerAddress;
-import org.sapia.ubik.util.Collections2;
+import org.sapia.ubik.util.Collects;
 import org.sapia.ubik.util.Function;
 import org.sapia.ubik.util.SoftReferenceList;
 
@@ -56,7 +56,7 @@ public class View {
    * @return a {@link List} of {@link ServerAddress}es.
    */
   public List<ServerAddress> getNodeAddresses() {
-    return Collections2.convertAsList(nodeToNodeInfo.values(), new Function<ServerAddress, NodeInfo>() {
+    return Collects.convertAsList(nodeToNodeInfo.values(), new Function<ServerAddress, NodeInfo>() {
       public ServerAddress call(NodeInfo arg) {
         return arg.addr;
       }
@@ -69,7 +69,7 @@ public class View {
    * @return a {@link List} of nodes.
    */
   public List<String> getNodes() {
-    return Collections2.convertAsList(nodeToNodeInfo.values(), new Function<String, NodeInfo>() {
+    return Collects.convertAsList(nodeToNodeInfo.values(), new Function<String, NodeInfo>() {
       public String call(NodeInfo arg) {
         return arg.node;
       }
@@ -82,7 +82,7 @@ public class View {
    * @return a {@link Set} of nodes.
    */
   public Set<String> getNodesAsSet() {
-    return Collections2.convertAsSet(nodeToNodeInfo.values(), new Function<String, NodeInfo>() {
+    return Collects.convertAsSet(nodeToNodeInfo.values(), new Function<String, NodeInfo>() {
       public String call(NodeInfo arg) {
         return arg.node;
       }

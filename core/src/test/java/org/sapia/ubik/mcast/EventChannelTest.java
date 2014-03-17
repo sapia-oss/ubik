@@ -14,8 +14,8 @@ import org.junit.Test;
 import org.sapia.ubik.concurrent.BlockingRef;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
-import org.sapia.ubik.util.PropertiesUtil;
-import org.sapia.ubik.util.Props;
+import org.sapia.ubik.util.PropUtil;
+import org.sapia.ubik.util.Conf;
 
 public class EventChannelTest {
 
@@ -23,7 +23,7 @@ public class EventChannelTest {
 
   @Before
   public void setUp() {
-    PropertiesUtil.clearUbikSystemProperties();
+    PropUtil.clearUbikSystemProperties();
   }
 
   @After
@@ -369,7 +369,7 @@ public class EventChannelTest {
     properties.setProperty(Consts.MCAST_CONTROL_RESPONSE_TIMEOUT, Long.toString(heartBeatInterval));
     properties.setProperty(Consts.BROADCAST_PROVIDER, Consts.BROADCAST_PROVIDER_MEMORY);
     properties.setProperty(Consts.UNICAST_PROVIDER, Consts.UNICAST_PROVIDER_MEMORY);
-    return new EventChannel("test", new Props().addProperties(properties));
+    return new EventChannel("test", new Conf().addProperties(properties));
   }
 
   private EventChannel createEventChannel(String domain, long heartBeatInterval, long heartBeatTimeout) throws Exception {
@@ -380,7 +380,7 @@ public class EventChannelTest {
     properties.setProperty(Consts.MCAST_CONTROL_RESPONSE_TIMEOUT, Long.toString(heartBeatInterval));
     properties.setProperty(Consts.BROADCAST_PROVIDER, Consts.BROADCAST_PROVIDER_MEMORY);
     properties.setProperty(Consts.UNICAST_PROVIDER, Consts.UNICAST_PROVIDER_MEMORY);
-    return new EventChannel(domain, new Props().addProperties(properties));
+    return new EventChannel(domain, new Conf().addProperties(properties));
   }
 
 }
