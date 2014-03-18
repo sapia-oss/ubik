@@ -80,8 +80,6 @@ public class RemoteRefReliableTest {
 
   @Test
   public void testNoFailOver() throws Exception {
-    Log.setTrace();
-    
     TestRemoteInterface faultedRemoteObject = mock(TestRemoteInterface.class);
     doAnswer(new Answer<Void>() {
       @Override
