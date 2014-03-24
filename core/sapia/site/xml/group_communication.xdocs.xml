@@ -187,7 +187,7 @@ EventChannel channel = new EventChannel("myDomain", new Props().addProperties(pr
       </p>
     
    	  <p>To activate the <sapia:class link="maven/api/org/sapia/ubik/mcast/udp/UDPUnicastDispatcher.html">UDPUnicastDispatcher</sapia:class>, you have to set the 
-   	  <sapia:command>ubik.rmi.naming.unicast.provider</sapia:command> to <sapia:command>ubik.rmi.naming.unicast.tcp</sapia:command>
+   	  <sapia:command>ubik.rmi.naming.unicast.provider</sapia:command> to <sapia:command>ubik.rmi.naming.unicast.udp</sapia:command>
    	  </p>
    		
    		<p>Programmatically, you would do it as follows:</p>

@@ -1,4 +1,4 @@
-<sapia:page title="Ubik Tutorial" xmlns:sapia="http://www.sapia-oss.org/2003/XSL/Transform">
+<sapia:page title="Ubik Cookbook" xmlns:sapia="http://www.sapia-oss.org/2003/XSL/Transform">
   <sapia:vmenu>
     <sapia:vsection name="Project Home" href="home.html"/>
     <sapia:vsection name="Wiki" href="http://code.google.com/p/sapia/wiki/Ubik"/>
@@ -81,7 +81,16 @@
 
 		<p>Note the double backslashes: in Java the backslash is an escape character, therefore it must be doubled in 
 		order to be treated as a normal character.</p>      
-      
+		
+		<p>
+		  Also, note that you can specify multiple such patterns, by using suffixes, as follows:
+		</p>
+      <sapia:code>ubik.rmi.address-pattern.01=10\\.10\\.\\d+\\.\\d+
+ubik.rmi.address-pattern.02=192\\.168\\.\\d+\\.\\d+</sapia:code>
+		
+		<p>
+		  In the above case, attempt will be made to find the appropriate interface in the order in which the patterns are specified.
+		</p>
       
     </sapia:sect2>
     <sapia:sect2 title="Interception" alias="interception">

@@ -45,6 +45,24 @@
 				</configuration>
 			</plugin>
 		</plugins>
+		
+		<pluginManagement>
+		  <plugins>
+        <plugin>
+          <groupId>org.sapia</groupId>
+          <artifactId>sapia_site_doc_plugin</artifactId>
+          <version>1.23-SNAPSHOT</version>
+          <executions>
+            <execution>
+              <phase>site</phase>
+              <goals>
+                <goal>generate</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+      </plugins>
+    </pluginManagement>
 	</build>
 
 	<dependencyManagement>

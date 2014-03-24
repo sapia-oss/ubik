@@ -1,0 +1,89 @@
+<sapia:page title="Ubik Cookbook" xmlns:sapia="http://www.sapia-oss.org/2003/XSL/Transform">
+  <sapia:vmenu>
+    <sapia:vsection name="Project Home" href="home.html"/>
+    <sapia:vsection name="Wiki" href="http://code.google.com/p/sapia/wiki/Ubik"/>
+    <sapia:vsection name="RMI" href="rmi.html">
+      <sapia:vitem name="For Dummies" href="rmi.html#dummies" />
+      <sapia:vitem name="Believing" href="rmi.html#believing" />
+      <sapia:vitem name="Architecture" href="architecture.html" />
+      <sapia:vitem name="Tutorial" href="tutorial.html" />    
+    </sapia:vsection>
+    
+    <sapia:vsection name="Naming" href="naming.html">
+      <sapia:vitem name="Robust Naming" href="naming.html#robust" />
+      <sapia:vitem name="Usage" href="naming.html#usage" />
+      <sapia:vitem name="Advanced" href="naming.html#advanced" />    
+    </sapia:vsection>
+    
+    <sapia:vsection name="Transports">
+      <sapia:vitem name="NIO/TCP" href="transport/nio_tcp.html" />
+      <sapia:vitem name="HTTP" href="transport/http.html" />
+	  <sapia:vitem name="Standard/TCP" href="transport/standard_tcp.html" />
+    </sapia:vsection>  
+    
+    <sapia:vsection name="Group Comm" href="group_communication.html">
+      <sapia:vitem name="Event Channel" href="group_communication.html#eventchannel" />
+      <sapia:vitem name="Protocol" href="group_communication.html#control_protocol" />    
+      <sapia:vitem name="Avis" href="group_communication.html#using_avis" />
+      <sapia:vitem name="UDP Unicast" href="group_communication.html#udp_unicast" />
+    </sapia:vsection>
+          
+    <sapia:vsection name="Customization" href="customization.html">
+      <sapia:vitem name="Logging" href="customization.html#logging" />    
+      <sapia:vitem name="Stats" href="customization.html#stats" />
+      <!--sapia:vitem name="JMX" href="customization.html#jmx" /-->
+      <sapia:vitem name="Stubs" href="customization.html#stubs" />
+      <sapia:vitem name="Callbacks" href="customization.html#callbacks" />    
+    </sapia:vsection>                   
+    
+    <sapia:vsection name="FAQ" href="faq.html">
+      <sapia:vitem name="Licensing" href="faq.html#licensing" />    
+      <sapia:vitem name="Networking" href="faq.html#networking" />
+    </sapia:vsection>
+    
+    <sapia:vsection name="Javadoc" href="maven/api/index.html"/>
+    <sapia:vsection name="Download" href="download.html"/>
+    <sapia:vsection name="Mailing List" href="list.html"/>
+  </sapia:vmenu>
+
+  <sapia:sect1 title="Cookbook" alias="cookbook">
+    <sapia:section>
+      <sapia:path name="home" href="../../home.html" />
+      <sapia:path name="projects" />
+      <sapia:path name="ubik" href="home.html" />
+      <sapia:path name="rmi" href="rmi.html" />
+      <sapia:path name="tutorial" href="tutorial.html" />      
+      <sapia:path name="cookbook" />      
+    </sapia:section>  
+  
+    <toc/>
+    <sapia:sect-desc>
+    <p>KKKSKSKSKSKSKSK.</p>
+    </sapia:sect-desc>
+    
+    <sapia:sect2 title="Configuration" alias="config"> 
+      <p>
+      Ubik is configured with system properties, and allows overriding, for certain components of the system, at the instance level.
+      The framework is meant to provide remoting support for a whole JVM, and it therefore made sense to support configuration through system properties.
+      </p>   
+      <p>
+      Most properties are defined as part of the <sapia:classlink>org.sapia.ubik.rmi.Consts</sapia:classlink> 
+      interface, except for specific parts of the framework that represent implementation-specific sub-components (in such case, the properties are defined 
+      in interfaces for those sub-components).
+      </p>
+    </sapia:sect2>
+        
+    <sapia:sect2 title="Setting up Group Communication" alias="groupcomm"> 
+      <p>
+        Ubik's robustness characteristics rely on group communication. Such group communication is based on the <sapia:classlink>org.sapia.ubik.mcast.EventChannel</sapia:classlink> class.
+        As explained in the relevant <a href="group_communication.html#eventchannel">documentation</a>, the class supports unicast and broadcast communication. An <sapia:class>EventChannel</sapia:class>
+        is used behind the scenes to coordinate communications between distributed JNDI nodes and smart stubs.
+      </p> 
+      <p>
+        Therefore, the first thing that you must do when using Ubik is to set up the configuration of the event channel.
+      </p>
+
+    </sapia:sect2>    
+  </sapia:sect1>
+
+</sapia:page>
