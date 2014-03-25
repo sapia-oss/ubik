@@ -1,9 +1,6 @@
 package org.sapia.ubik.rmi.naming.remote.archie;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
-import java.util.List;
 
 import javax.naming.Context;
 import javax.naming.Name;
@@ -25,27 +22,8 @@ import org.sapia.ubik.rmi.naming.remote.RemoteContext;
 @SuppressWarnings(value = "unchecked")
 public class UbikRemoteContext extends JndiContext implements RemoteContext {
 
-  /**
-   * Notified upon bind/rebind operations. The {@link #onBind(Name, Object)} method
-   * must return the object that must be exported. It allows performing substitution and
-   * replacing the original object, passed as a parameter.
-   */
-  public interface BindListener {
-
-    /**
-     * @param name the name of the object to export.
-     * @param toExport the object to import.
-     * @return the object that will finally be exported.
-     * @throws NamingException if a problem occurred while performing this operation.
-     */
-    public Object onBind(Name name, Object toExport) throws NamingException;
-  }
-
-  // --------------------------------------------------------------------------
-
-  private DomainInfo         domain;
-  private List<BindListener> listeners = Collections.synchronizedList(new ArrayList<BindListener>());
-
+  private DomainInfo           domain;
+  
   protected UbikRemoteContext(DomainInfo domain, Node root) {
     super(root);
     this.domain = domain;
@@ -65,38 +43,34 @@ public class UbikRemoteContext extends JndiContext implements RemoteContext {
     return domain;
   }
 
-  /**
-   * @param listener adds the given {@link BindListener} to this instance.
-   */
-  public void addBindListener(BindListener listener) {
-    listeners.add(listener);
-  }
-
-  /**
-   * @param listener removes the given {@link BindListener} from this instance.
-   */
-  public void removeBindListener(BindListener listener) {
-    listeners.remove(listener);
-  }
-
   @Override
   public void bind(Name name, Object obj) throws NamingException {
-    super.rebind(name, notifyBind(name, obj));
+    rebind(name, obj);
   }
 
   @Override
   public void bind(String name, Object obj) throws NamingException {
-    super.rebind(name, notifyBind(getNameParser(name).parse(name), obj));
+    rebind(getNameParser(name).parse(name), obj);
   }
 
   @Override
   public synchronized void rebind(Name name, Object obj) throws NamingException {
-    super.rebind(name, notifyBind(name, obj));
+    super.rebind(name, obj);
   }
 
   @Override
   public synchronized void rebind(String name, Object obj) throws NamingException {
-    super.rebind(name, notifyBind(getNameParser(name).parse(name), obj));
+    super.rebind(name, obj);
+  }
+  
+  @Override
+  public synchronized Object lookup(Name name) throws NamingException {
+    return super.lookup(name);
+  }
+  
+  @Override
+  public synchronized Object lookup(String name) throws NamingException {
+    return super.lookup(name);
   }
 
   @Override
@@ -104,18 +78,6 @@ public class UbikRemoteContext extends JndiContext implements RemoteContext {
     UbikSyncNode sync = (UbikSyncNode) node;
 
     return new UbikRemoteContext(sync);
-  }
-
-  private Object notifyBind(Name name, Object toBind) throws NamingException {
-    Object remote = toBind;
-    synchronized (listeners) {
-      if (!listeners.isEmpty()) {
-        for (BindListener l : listeners) {
-          remote = l.onBind(name, remote);
-        }
-      }
-    }
-    return remote;
   }
 
   @Override

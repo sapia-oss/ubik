@@ -58,10 +58,11 @@
   
     <toc/>
     <sapia:sect-desc>
-    <p>KKKSKSKSKSKSKSK.</p>
+    <p>This page provides a few recipes that should help developers get started with Ubik.</p>
+
     </sapia:sect-desc>
     
-    <sapia:sect2 title="Configuration" alias="config"> 
+    <sapia:sect2 title="A Note on Configuration" alias="config"> 
       <p>
       Ubik is configured with system properties, and allows overriding, for certain components of the system, at the instance level.
       The framework is meant to provide remoting support for a whole JVM, and it therefore made sense to support configuration through system properties.
@@ -71,19 +72,180 @@
       interface, except for specific parts of the framework that represent implementation-specific sub-components (in such case, the properties are defined 
       in interfaces for those sub-components).
       </p>
+      <sapia:note>
+      You will see certain constructors taking a <sapia:classlink>org.sapia.ubik.util.Conf</sapia:classlink> instance as an argument: this allows passing properties
+      which override system properties. In most cases though it is recommended to configure Ubik through properties defined for the whole JVM (that is, through
+      system properties).
+      </sapia:note>
     </sapia:sect2>
         
-    <sapia:sect2 title="Setting up Group Communication" alias="groupcomm"> 
+    <sapia:sect2 title="Group Communication" alias="groupcomm"> 
       <p>
         Ubik's robustness characteristics rely on group communication. Such group communication is based on the <sapia:classlink>org.sapia.ubik.mcast.EventChannel</sapia:classlink> class.
         As explained in the relevant <a href="group_communication.html#eventchannel">documentation</a>, the class supports unicast and broadcast communication. An <sapia:class>EventChannel</sapia:class>
         is used behind the scenes to coordinate communications between distributed JNDI nodes and smart stubs.
       </p> 
       <p>
-        Therefore, the first thing that you must do when using Ubik is to set up the configuration of the event channel.
+        Therefore, the first thing that you must do when using Ubik is to set up the configuration of the event channel. The examples below show you how.
       </p>
+		  <sapia:sect3 title="Default Setup: IP Multicast and TCP unicast">
+			<p>
+			  When creating an <sapia:channel>EventChannel</sapia:channel> with the constructor that takes only the domain name as argument, the channel will IP multicast for broadcast, and the
+			  TCP <sapia:classlink>org.sapia.ubik.mcast.UnicastDispatcher</sapia:classlink> based on Apache Mina. The code below creates such an <sapia:class>EventChannel</sapia:class>:
+			</p> 
+			<sapia:code>
+	EventChannel channel = new EventChannel("myDomain");
+	channel.start();
+			</sapia:code> 
+		  </sapia:sect3>
+	
+		  <sapia:sect3 title="Customized EventChannel Setup">
+			<p>
+			  Of course, the setup can be customized. To use the <sapia:classlink>org.sapia.ubik.mcast.avis.AvisBroadcastDispatcher</sapia:classlink> 
+			  (which depends on the Avis router and allows deploying broadcast over TCP), define the following system property:
+			</p> 
+			<sapia:code>
+	ubik.rmi.naming.broadcast.provider=ubik.rmi.naming.broadcast.avis
+			</sapia:code> 
+			<p>
+			  Then, instantiate the <sapia:class>EventChannel</sapia:class> as previously done:
+			</p>
+			<sapia:code>
+	EventChannel channel = new EventChannel("myDomain");
+	channel.start();
+			</sapia:code> 
+		  </sapia:sect3>
+	
+		  <sapia:sect3 title="Terminating an EventChannel">
+			<p>
+			  If your code has created an <sapia:class>EventChannel</sapia:class>, then it should also terminate it, as follows:
+			</p> 
+			<sapia:code>
+	channel.close();
+			</sapia:code> 
+		  </sapia:sect3>
+	 
+	   	<sapia:sect3 title="Synchronous Remote Events">
+		   	<p>
+		   	  The <code>send</code> methods allow sending <sapia:class>RemoteEvent</sapia:class>s to one or more nodes, and expect a response from each of these
+		   	  nodes in return. Events received in such a manner at the target nodes are thus dispatched to the <sapia:class>SyncEventListener</sapia:class> that is
+		   	  listening to such events, at that node. The response is synchronously sent back to the <sapia:class>EventChannel</sapia:class> from which the 
+		   	  <sapia:class>RemoteEvent</sapia:class> originated. That <sapia:class>EventChannel</sapia:class> is thus responsible for performing aggregation of the 
+		   	  different responses, returning these to application code (i.e.: the code that initially invoked the <code>send</code> method).
+		   	</p>
+		   	<p>
+		   	  The following snippets illustrate how to implement a <sapia:class>SyncEventListener</sapia:class>, and how to send <sapia:class>RemoteEvent</sapia:class>s
+		   	  to it:
+		   	</p>
+		   	<sapia:code>
+import org.sapia.ubik.mcast.*;
 
-    </sapia:sect2>    
+// firt implement the listener
+
+public class MySyncEventListener implements SyncEventListener {
+  public Object onSyncEvent(RemoteEvent evt) {
+    return "WORLD";
+  }
+}
+
+// register the listener with its EventChannel
+// you must keep a reference on the listener, for the channel keeps
+// those in weak references
+
+listener = new MySyncEventListener();
+recevingChannel.registerSyncListener("ubik.example.sync.event", listener);  
+
+// now, on the other end, send the remote event and handle the response:
+
+Response res = sendingChannel.send(remoteAddress, "ubik.example.sync.event", "HELLO");
+if (res.isError()) {
+  // handle error
+} else if (res.getStatus() == Status.SUSPECT) {
+  // remote node did not reply: probably down
+} else {
+  System.out.println(res.getData());
+}
+		   	</sapia:code>
+	   
+	      <sapia:note>Response timeout is managed globally, through the <tt>ubik.rmi.naming.mcast.response.timeout</tt> property.</sapia:note>	  
+	   	</sapia:sect3>
+	   	
+      <sapia:sect3 title="Asynchronous Remote Events">
+        <p>
+          The <code>dispatch</code> methods in turn allow sending <sapia:class>RemoteEvent</sapia:class>s to all, one, or many nodes, asynchronously (no
+          response is expected on this case). 
+        </p>
+        <p>
+          Here's how  <sapia:class>AsyncEventListener</sapia:class>s are dealt with:
+        </p>
+        <sapia:code>
+import org.sapia.ubik.mcast.*;
+
+// firt implement the listener
+
+public class MyAsyncEventListener implements AsyncEventListener {
+  public void onAsyncEvent(RemoteEvent evt) {
+    try {
+      System.out.println("Received a remote event " + evt.getType() + ": " + evt.getData());      
+    } catch (Exception e) {
+      // deserialization of remote event data may throw IOExceptions and ClassNotFoundExceptions
+      e.printStackTrace();
+    }
+  }
+}
+ 
+// register the listener with its EventChannel
+listener = new MyAsyncEventListener();
+recevingChannel.registerAsyncListener("ubik.example.async.event", listener);  
+ 
+// on the other end, send the event
+sendingChannel.dispatch("ubik.example.async.event", "HELLO");
+        </sapia:code>
+     
+        <sapia:note><sapia:class>RemoteEvent</sapia:class>s received in the <tt>onAsyncEvent</tt> method should
+        be handled in a separated thread, if processing risks blocking for too long.</sapia:note>    
+      </sapia:sect3>
+	    
+	  </sapia:sect2>
+	  
+		<sapia:sect2 title="Distributed JNDI">
+		  <p>To expose the smart stubs created by Ubik as remote services, you must use Ubik's distributed JNDI. 
+		  The <sapia:classlink>org.sapia.ubik.rmi.naming.remote.EmbeddableJNDIServer</sapia:classlink>, as its name implies,
+		  can be embedded in your application. An <sapia:class>EmbeddableJNDIServer</sapia:class> uses an 
+		  <sapia:class>EventChannel</sapia:class> to discover other JNDI server nodes on the network. Alltogether, they form a distributed
+		  JNDI tree across which smart stubs are replicated.
+		  </p>
+		  <sapia:sect3 title="Creating an Starting a JNDI Server">
+		    <sapia:code>
+EventChannel channel = new EventChannel(); 
+channel.start();
+EmbeddableJNDIServer jndi = new EmbeddableJndiServer(channel.getReference());
+jndi.start(true); // true: server will start as daemon
+
+// when done:
+jndi.stop();
+channel.close();
+		    </sapia:code>
+		  </sapia:sect3>
+      <sapia:sect3 title="Binding a Remote Object">
+        <p>If you use an <sapia:class>EmbeddableJNDIServer</sapia:class> directly in your application, you can bind a remote object to it as such:</p>
+        <sapia:code>
+MyService stub = Hub.export(myService);
+jndi.getRootContext().bind("services/myService", stub);
+        </sapia:code>
+        <p>If you connect to an <sapia:class>EmbeddableJNDIServer</sapia:class> remotely, do as follows (of course use the appropriate port):</p>
+        <sapia:code>
+Properties props = new Properties();
+props.setProperty(InitialContext.PROVIDER_URL, "ubik://localhost:1099/");
+props.setProperty(InitialContext.INITIAL_CONTEXT_FACTORY, RemoteInitialContextFactory.class.getName());
+InitialContext ctx = new InitialContext(props);
+MyService stub = Hub.export(myService);
+ctx.bind("services/myService", stub);
+        </sapia:code>
+      </sapia:sect3>		  
+		  
+		</sapia:sect2>
+
   </sapia:sect1>
 
 </sapia:page>

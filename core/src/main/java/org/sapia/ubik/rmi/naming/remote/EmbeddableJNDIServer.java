@@ -1,12 +1,9 @@
 package org.sapia.ubik.rmi.naming.remote;
 
 import java.io.IOException;
-import java.rmi.RemoteException;
 import java.util.Properties;
 
 import javax.naming.Context;
-import javax.naming.Name;
-import javax.naming.NamingException;
 
 import org.sapia.ubik.concurrent.NamedThreadFactory;
 import org.sapia.ubik.concurrent.ThreadShutdown;
@@ -20,19 +17,16 @@ import org.sapia.ubik.mcast.EventChannelStateListener;
 import org.sapia.ubik.mcast.RemoteEvent;
 import org.sapia.ubik.net.TCPAddress;
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.naming.UrlMaker;
 import org.sapia.ubik.rmi.naming.remote.archie.UbikRemoteContext;
-import org.sapia.ubik.rmi.naming.remote.archie.UbikRemoteContext.BindListener;
+import org.sapia.ubik.rmi.naming.remote.proxy.LocalContext;
 import org.sapia.ubik.rmi.server.Hub;
-import org.sapia.ubik.rmi.server.stub.RemoteRefStateless;
 import org.sapia.ubik.rmi.server.stub.StubContainer;
-import org.sapia.ubik.rmi.server.stub.StubInvocationHandler;
-import org.sapia.ubik.rmi.server.stub.Stubs;
-import org.sapia.ubik.rmi.server.stub.enrichment.StubEnrichmentStrategy.JndiBindingInfo;
 import org.sapia.ubik.rmi.server.transport.mina.MinaAddress;
 import org.sapia.ubik.rmi.server.transport.mina.MinaTransportProvider;
 import org.sapia.ubik.util.Assertions;
-import org.sapia.ubik.util.Localhost;
 import org.sapia.ubik.util.Conf;
+import org.sapia.ubik.util.Localhost;
 
 /**
  * This class implements an embeddable JNDI server.
@@ -58,7 +52,7 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
   private int port;
   private Thread serverThread;
   private EventChannelRef channel;
-  private Context root;
+  private Context root, local;
   private ThreadStartup startBarrier = new ThreadStartup();
 
   /**
@@ -196,6 +190,21 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
     Assertions.illegalState(root == null, "Context not initialized");
     return (RemoteContext) root;
   }
+  
+  /**
+   * @return a {@link LocalContext}, which will internally convert {@link StubContainer}s bound to this instance to their stubs.
+   */
+  public Context getLocalContext() {
+    Assertions.illegalState(root == null, "Context not initialized");
+    if (local == null) {
+      try {
+        local = new EmbeddedLocalContext(channel, UrlMaker.makeLookupBaseUrl(port), getRemoteContext());
+      } catch (Exception e) {
+        throw new IllegalStateException("Could not create local context", e);
+      }
+    }
+    return local;
+  }
 
   /**
    * Stops this instance (this internally closes the <code>EventChannel</code>
@@ -226,54 +235,6 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
     startBarrier.await();
   }
 
-  /**
-   *  This method insures that objects bound to the JNDI tree are indeed stubs (it performs the conversion
-   *  to stub if required). This allows using this instance in-JVM without having to do stub conversion
-   *  calling {@link Hub#exportObject(Object)} with the object intended for binding to the JNDI beforehand.
-   */
-  private Object makeStub(Name name, Object toBind) throws RemoteException, IOException {
-    Object remote;
-
-    // Object is already in storable form.
-    if (toBind instanceof StubContainer) {
-      log.debug("Object %s already transformed to StubContainer, so not making stub", name);
-      return toBind;
-    }
-
-    // Object not already a stub, do stubbing
-    if (!Stubs.isStub(toBind)) {
-      log.debug("Making stub for object %s", name);
-      remote = Hub.exportObject(toBind);
-
-    // Object is a stub,  using as is.
-    } else {
-      log.debug("Object %s already a stub", name);
-      remote = toBind;
-    }
-
-    // performing stub enrichment
-    log.debug("Performing stub enrichment for object %s", name);
-    String          baseUrl = "ubik://" + Localhost.getPreferredLocalAddress().getHostAddress() + ":" + port + "/";
-    JndiBindingInfo info    = new JndiBindingInfo(baseUrl, name, channel.get().getDomainName(), channel.get().getMulticastAddress());
-    remote                  = Hub.getModules().getStubProcessor().enrichForJndiBinding(remote, info);
-
-    // converting to StubContainer for storage in JNDI
-    if (Stubs.isStub(remote)) {
-      StubInvocationHandler handler = Stubs.getStubInvocationHandler(remote);
-      log.debug("Got stub invocation handler %s for %s", handler, name);
-      // stateless stub: register so that it is updated with new
-      // endpoints appearing on the network
-
-      if (handler instanceof RemoteRefStateless) {
-        log.debug("Registering %s named %s with stateless stub table", handler, name);
-        RemoteRefStateless ref = (RemoteRefStateless) handler;
-        Hub.getModules().getStatelessStubTable().registerStatelessRef(ref, ref.getContexts());
-      }
-      return handler.toStubContainer(remote);
-    }
-    return remote;
-  }
-
   private final void doRun() {
     try {
       log.warning("Starting JNDI server on port %s, domain %s", port, domain);
@@ -284,19 +245,6 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
       TCPAddress address = new MinaAddress(Localhost.getPreferredLocalAddress().getHostAddress(), port);
 
       UbikRemoteContext context = UbikRemoteContext.newInstance(channel);
-      context.addBindListener(new BindListener() {
-        @Override
-        public Object onBind(Name name, Object toExport) throws NamingException {
-          try {
-            return makeStub(name, toExport);
-          } catch (Exception e) {
-            log.error("Could not make stub for object %s (name: %s)", e, toExport, name.toString());
-            NamingException nae = new NamingException("Could not make stub for object " + name);
-            nae.setRootCause(e);
-            throw nae;
-          }
-        }
-      });
       root = context;
 
       Properties props = new Properties();

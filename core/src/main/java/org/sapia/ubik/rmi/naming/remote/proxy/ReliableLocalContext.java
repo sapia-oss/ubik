@@ -24,8 +24,8 @@ import org.sapia.ubik.rmi.naming.remote.discovery.ServiceDiscoListener;
 import org.sapia.ubik.rmi.naming.remote.discovery.ServiceDiscoveryEvent;
 
 /**
- * An instance of this class is created by a {@link RemoteInitialContextFactory}
- * . It allows clients to register ServiceDiscoveryListener that are notified
+ * An instance of this class is created by a {@link RemoteInitialContextFactory}. 
+ * It allows clients to register {@link ServiceDiscoListener}s that are notified
  * when new services are bound to the JNDI servers on the network.
  *
  * @see RemoteInitialContextFactory
