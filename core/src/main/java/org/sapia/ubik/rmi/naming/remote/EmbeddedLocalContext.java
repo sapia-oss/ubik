@@ -36,6 +36,7 @@ class EmbeddedLocalContext extends ContextProxy {
   
   EmbeddedLocalContext(EventChannelRef channel, String baseUrl, Context delegate) throws NamingException {
     super(delegate);
+    this.channel = channel;
     this.baseUrl = baseUrl;
   }
 

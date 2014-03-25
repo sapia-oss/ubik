@@ -13,7 +13,7 @@ import org.sapia.ubik.rmi.naming.remote.discovery.ServiceDiscoveryEvent;
 public class EmbeddedJndi2 {
 
   public static void main(String[] args) throws Exception {
-    Log.setDebug();
+    //Log.setDebug();
    
     final EventChannel channel = new EventChannel("default");
     final EmbeddableJNDIServer server = new EmbeddableJNDIServer(channel.getReference(), 1099);
@@ -31,12 +31,9 @@ public class EmbeddedJndi2 {
         System.out.println("Discovered service: " + evt);
       }
     });
-   
-    
     
     channel.start();
     server.start(true);
-
     
     Runtime.getRuntime().addShutdownHook(new Thread() {
       @Override
@@ -45,6 +42,9 @@ public class EmbeddedJndi2 {
         channel.close();
       }
     });
+    
+    System.out.println("Started");
+    
     while (true) {
       Thread.sleep(10000);
     }

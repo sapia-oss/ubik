@@ -9,7 +9,7 @@ import org.sapia.ubik.rmi.naming.remote.EmbeddableJNDIServer;
 public class EmbeddedJndi1 {
 
   public static void main(String[] args) throws Exception {
-    Log.setDebug();
+    //Log.setDebug();
     
     final EventChannel channel = new EventChannel("default");
     final EmbeddableJNDIServer server = new EmbeddableJNDIServer(channel.getReference(), 1098);
@@ -26,6 +26,9 @@ public class EmbeddedJndi1 {
         channel.close();
       }
     });
+    
+    System.out.println("Started");
+    
     while (true) {
       Thread.sleep(10000);
     }
