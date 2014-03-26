@@ -155,15 +155,13 @@ public class RemoteInitialContextFactory implements InitialContextFactory, JNDIC
 
     RemoteContext ctx = null;
     ContextResolver resolver = doGetResolver();
-    EventChannelRef channel = null;
+    EventChannelRef channel = getEventChannel(allProps);
     try {
       ctx = resolver.resolve(uri.getHost(), uri.getPort());
     } catch (RemoteException e) {
 
-      log.warning("Could not find JNDI server for : " + uri.toString() + "; trying to discover");
+      log.warning("Could not find JNDI server for  %s; trying to discover ", uri.toString());
 
-      channel = getEventChannel(allProps);
-      
       BlockingEventListener listener = new BlockingEventListener();
       channel.get().registerAsyncListener(JNDI_SERVER_DISCO, listener);
       TCPAddress addr = null;
