@@ -133,7 +133,7 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
    * @return this instance's {@link EventChannel}.
    */
   public EventChannel getEventChannel() {
-    Assertions.illegalState(channel == null, "Event channel not initialized");
+    Assertions.illegalState(channel == null, "Event channel not initialized (server probably not started)");
 
     return channel.get();
   }
@@ -178,7 +178,7 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
    * @return this instance's root JNDI {@link Context}.
    */
   public Context getRootContext() {
-    Assertions.illegalState(root == null, "Context not initialized");
+    Assertions.illegalState(root == null, "Context not initialized (server probably not started)");
     return root;
   }
 
@@ -187,7 +187,7 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
    */
   @Override
   public RemoteContext getRemoteContext() {
-    Assertions.illegalState(root == null, "Context not initialized");
+    Assertions.illegalState(root == null, "Context not initialized (server probably not started)");
     return (RemoteContext) root;
   }
   
@@ -195,7 +195,7 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
    * @return a {@link LocalContext}, which will internally convert {@link StubContainer}s bound to this instance to their stubs.
    */
   public Context getLocalContext() {
-    Assertions.illegalState(root == null, "Context not initialized");
+    Assertions.illegalState(root == null, "Context not initialized (server probably not started)");
     if (local == null) {
       try {
         local = new EmbeddedLocalContext(channel, UrlMaker.makeLookupBaseUrl(port), getRemoteContext());
@@ -253,11 +253,11 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
       props.setProperty(MinaTransportProvider.PORT, Integer.toString(address.getPort()));
       Hub.exportObject(this, props);
 
-      channel.get().dispatch(JNDIConsts.JNDI_SERVER_PUBLISH, address);
-
-      log.warning("JNDI Server started");
+      log.warning("JNDI Server started. Listening on %s:%s", address.getHost(), address.getPort());
 
       startBarrier.started();
+      
+      channel.get().dispatch(JNDIConsts.JNDI_SERVER_PUBLISH, address);
 
       while (true) {
         Thread.sleep(Integer.MAX_VALUE);

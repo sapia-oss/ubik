@@ -155,14 +155,15 @@ public class RemoteInitialContextFactory implements InitialContextFactory, JNDIC
 
     RemoteContext ctx = null;
     ContextResolver resolver = doGetResolver();
-    EventChannelRef channel  = getEventChannel(allProps);
-
+    EventChannelRef channel = null;
     try {
       ctx = resolver.resolve(uri.getHost(), uri.getPort());
     } catch (RemoteException e) {
 
       log.warning("Could not find JNDI server for : " + uri.toString() + "; trying to discover");
 
+      channel = getEventChannel(allProps);
+      
       BlockingEventListener listener = new BlockingEventListener();
       channel.get().registerAsyncListener(JNDI_SERVER_DISCO, listener);
       TCPAddress addr = null;
@@ -194,7 +195,7 @@ public class RemoteInitialContextFactory implements InitialContextFactory, JNDIC
     try {
       return new ReliableLocalContext(channel, uri.toString(), ctx, true, resolver);
     } catch (IOException e) {
-      NamingException ne = new NamingException("Could not instantiate local context");
+       NamingException ne = new NamingException("Could not instantiate local context");
       ne.setRootCause(e);
       throw ne;
     }
@@ -247,16 +248,11 @@ public class RemoteInitialContextFactory implements InitialContextFactory, JNDIC
       notify();
     }
 
-    public synchronized RemoteEvent waitForEvent(long timeout) {
+    public synchronized RemoteEvent waitForEvent(long timeout) throws InterruptedException {
       Pause delay = new Pause(timeout);
-      try {
-        while (!delay.isOver() && event == null) {
+      while (!delay.isOver() && event == null) {
           wait(delay.remainingNotZero());
-        }
-      } catch (InterruptedException e) {
-        return null;
       }
-
       return event;
     }
   }

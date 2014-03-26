@@ -9,6 +9,8 @@ package org.sapia.ubik.rmi.naming.remote.proxy;
 
 import javax.naming.Context;
 
+import org.sapia.ubik.log.Category;
+import org.sapia.ubik.log.Log;
 import org.sapia.ubik.rmi.naming.remote.RemoteContext;
 import org.sapia.ubik.rmi.naming.remote.RemoteContextProvider;
 import org.sapia.ubik.rmi.server.Hub;
@@ -19,12 +21,15 @@ import org.sapia.ubik.rmi.server.Hub;
  * @author yduchesne
  */
 public class DefaultContextResolver implements ContextResolver {
+  
+  private Category log = Log.createCategory(getClass());
 
   /** Creates a new instance of DefaultContextResolver */
   public DefaultContextResolver() {
   }
 
   public RemoteContext resolve(org.sapia.ubik.net.ServerAddress addr) throws java.rmi.RemoteException {
+    log.debug("Attempting to resolve context, connecting to %s", addr);
     Object remote = Hub.connect(addr);
     if (remote instanceof RemoteContextProvider) {
       return ((RemoteContextProvider) remote).getRemoteContext();
