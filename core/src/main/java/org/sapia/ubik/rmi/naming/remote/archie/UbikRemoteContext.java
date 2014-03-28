@@ -140,6 +140,6 @@ public class UbikRemoteContext extends JndiContext implements RemoteContext {
 
   private Object syncLookup(Name name) throws ProcessingException {
     org.sapia.archie.Name archieName = node.getNameParser().parse(name.toString());
-    return node.getSynchronizer().onGetValue(archieName, archieName.get(0));
+    return node.getSynchronizer().onGetValue(archieName.getTo(archieName.count() - 1), archieName.get(archieName.count() - 1));
   }
 }

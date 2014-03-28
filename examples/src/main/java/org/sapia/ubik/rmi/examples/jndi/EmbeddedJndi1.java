@@ -17,7 +17,7 @@ public class EmbeddedJndi1 {
     server.start(true);
 
     Foo service = new ReliableFoo();
-    server.getLocalContext().bind("foo", service);
+    server.getLocalContext().bind("my/services/foo", service);
 
     Runtime.getRuntime().addShutdownHook(new Thread() {
       @Override

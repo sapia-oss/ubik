@@ -82,11 +82,11 @@ public class UbikSynchronizer implements Synchronizer, AsyncEventListener, SyncE
 
     try {
       List<ServerAddress> nodeAddresses = channel.get().getView().getNodeAddresses();
-      log.debug("Getting value for %s. Got %s nodes to look up from", valueName, nodeAddresses.size());
+      log.debug("Getting value for %s. Got %s nodes to look up from", nodeAbsolutePath, nodeAddresses.size());
       for (List<ServerAddress> addr : Collects.splitAsLists(nodeAddresses, SYNC_GET_BATCH_SIZE)) {
         try {
           RespList results = channel.get().send(addr, SyncGetEvent.class.getName(), new SyncGetEvent(nodeAbsolutePath, valueName));
-          log.debug("Got %s results for %s", results.count(), valueName);
+          log.debug("Got %s results for %s", results.count(), nodeAbsolutePath);
           for (int i = 0; i < results.count(); i++) {
              Response res = results.get(i);
              if (!res.isError() && !res.isNone()) {

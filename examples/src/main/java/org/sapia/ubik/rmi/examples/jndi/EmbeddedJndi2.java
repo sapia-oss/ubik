@@ -43,9 +43,9 @@ public class EmbeddedJndi2 {
       }
     });
 
-    Thread.sleep(5000);
+    Thread.sleep(10000);
 
-    server.getLocalContext().lookup("foo");
+    server.getLocalContext().lookup("my/services/foo");
 
     System.out.println("Started");
 
