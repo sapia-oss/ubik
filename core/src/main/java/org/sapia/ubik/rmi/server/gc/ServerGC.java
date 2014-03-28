@@ -27,7 +27,7 @@ import org.sapia.ubik.util.Strings;
 /**
  * This class implements the server-side distributed garbage collection
  * algorithm.
- * 
+ *
  * @author Yanick Duchesne
  */
 public class ServerGC implements Module, Task, ServerGCMBean {
@@ -81,12 +81,12 @@ public class ServerGC implements Module, Task, ServerGCMBean {
 
   /**
    * Returns the total number of references held on the given object identifier.
-   * 
+   *
    * @param id
    *          a {@link VmId}.
    * @param oid
    *          an {@link DefaultOID}.
-   * 
+   *
    * @return a reference count, as an <code>int</code>.
    */
   public int getRefCount(VmId id, OID oid) {
@@ -96,7 +96,7 @@ public class ServerGC implements Module, Task, ServerGCMBean {
   /**
    * Returns the total number of references held on the given object by the
    * client whose host corresponds to the passed in {@link VmId}.
-   * 
+   *
    * @param id
    *          a {@link VmId}
    * @param oid
@@ -108,7 +108,7 @@ public class ServerGC implements Module, Task, ServerGCMBean {
 
   /**
    * Returns true if this instance contains the passed in {@link VmId}.
-   * 
+   *
    * @return <code>true</code> if this instance contains the passed in
    *         {@link VmId}.
    */
@@ -119,7 +119,7 @@ public class ServerGC implements Module, Task, ServerGCMBean {
   /**
    * Increments the reference count of the given object identifier, for the
    * client whose {@link VmId} is given.
-   * 
+   *
    * @param id
    *          the client's {@link VmId}.
    * @param oid
@@ -137,7 +137,7 @@ public class ServerGC implements Module, Task, ServerGCMBean {
   /**
    * Registers a given object internally so that it is not garbage collected
    * before clients themselves garbage collect it.
-   * 
+   *
    * @param id
    *          the {@link VmId} of the client to whom a stub corresponding to the
    *          passed in object is returned (this in fact creates a remote
@@ -158,7 +158,7 @@ public class ServerGC implements Module, Task, ServerGCMBean {
 
   /**
    * Dereferences a given object identifier.
-   * 
+   *
    * @param id
    *          the {@link VmId} of the client from which the dereferencing call
    *          comes.
@@ -178,12 +178,12 @@ public class ServerGC implements Module, Task, ServerGCMBean {
 
   /**
    * Touches the client info of the {@link VmId} passed in.
-   * 
+   *
    * @param id
    *          a {@link VmId}
    */
   public void touch(VmId id) {
-    log.debug("Touching client info of vm id %s", id);
+    log.debug("Touching client info of vm id %s (this vm is %s)", id, VmId.getInstance());
 
     synchronized (clientTable) {
       ClientInfo info = clientTable.get(id);
@@ -196,6 +196,7 @@ public class ServerGC implements Module, Task, ServerGCMBean {
     }
   }
 
+  @Override
   public void exec(TaskContext ctx) {
     log.debug("Runner server GC...");
     removeTimedOutClients();
@@ -223,18 +224,22 @@ public class ServerGC implements Module, Task, ServerGCMBean {
 
   // //// JMX-related
 
+  @Override
   public long getInterval() {
     return gcInterval;
   }
 
+  @Override
   public long getTimeout() {
     return gcTimeout;
   }
 
+  @Override
   public void setTimeout(long timeout) {
     gcTimeout = timeout;
   }
 
+  @Override
   public int getClientCount() {
     return clientTable.size();
   }
@@ -254,7 +259,8 @@ public class ServerGC implements Module, Task, ServerGCMBean {
         @Override
         public boolean apply(ClientInfo item) {
           if (!item.isValid(gcTimeout)) {
-            log.info("Removing timed-out client's references %s", item.vmid());
+            log.info("Removing timed-out client's references %s. Last access was %s millis ago. Timeout set to %s",
+                item.vmid(), System.currentTimeMillis() - item.lastAccess, gcTimeout);
             item.unregisterRefs();
             clientTable.remove(item.vmid());
           }
@@ -366,6 +372,7 @@ public class ServerGC implements Module, Task, ServerGCMBean {
       return objectTable.getRefCount(oid);
     }
 
+    @Override
     public String toString() {
       return Strings.toStringFor(this, "vmId", id, "oidCount", oids.size(), "lastAccess", lastAccess);
     }

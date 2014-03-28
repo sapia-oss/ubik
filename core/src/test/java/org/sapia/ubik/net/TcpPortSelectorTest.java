@@ -1,7 +1,6 @@
 package org.sapia.ubik.net;
 
 import java.io.IOException;
-import java.net.ConnectException;
 import java.net.UnknownHostException;
 
 import org.junit.Test;
@@ -13,18 +12,17 @@ public class TcpPortSelectorTest {
     TcpPortSelector selector = new TcpPortSelector() {
 
       @Override
-      protected boolean isTaken(String host, int port) {
+      protected boolean isTaken(int port) {
         return false;
       }
 
       @Override
-      protected void checkAvailable(String host, int port) throws UnknownHostException, IOException {
-        throw new ConnectException();
+      protected void checkAvailable(int port) throws IOException {
       }
 
     };
 
-    selector.select("test");
+    selector.select();
 
   }
 
@@ -33,17 +31,18 @@ public class TcpPortSelectorTest {
     TcpPortSelector selector = new TcpPortSelector() {
 
       @Override
-      protected boolean isTaken(String host, int port) {
+      protected boolean isTaken(int port) {
         return false;
       }
 
       @Override
-      protected void checkAvailable(String host, int port) throws UnknownHostException, IOException {
+      protected void checkAvailable(int port) throws UnknownHostException, IOException {
+        throw new IOException("test");
       }
 
     };
 
-    selector.select("test");
+    selector.select();
 
   }
 
@@ -52,18 +51,17 @@ public class TcpPortSelectorTest {
     TcpPortSelector selector = new TcpPortSelector() {
 
       @Override
-      protected boolean isTaken(String host, int port) {
+      protected boolean isTaken(int port) {
         return true;
       }
 
       @Override
-      protected void checkAvailable(String host, int port) throws UnknownHostException, IOException {
-        throw new ConnectException();
+      protected void checkAvailable(int port) throws IOException {
       }
 
     };
 
-    selector.select("test");
+    selector.select();
 
   }
 

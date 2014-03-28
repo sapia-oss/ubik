@@ -33,7 +33,7 @@ import org.sapia.ubik.util.Conf;
 /**
  * This class implements a the client-side distributed garbage collection
  * algorithm.
- * 
+ *
  * @author Yanick Duchesne
  */
 public class ClientGC implements Module, Task, ClientGCMBean {
@@ -97,7 +97,7 @@ public class ClientGC implements Module, Task, ClientGCMBean {
    * Registers an object identifier, associated to a stub. These mappings are
    * kept by server(every remote object is kept internally on a per-server
    * basis).
-   * 
+   *
    * @param address
    *          the {@link ServerAddress} representing the server from which the
    *          remote instance comes from.
@@ -114,6 +114,7 @@ public class ClientGC implements Module, Task, ClientGCMBean {
 
   }
 
+  @Override
   public void exec(TaskContext ctx) {
 
     log.debug("Running client GC...");
@@ -129,44 +130,54 @@ public class ClientGC implements Module, Task, ClientGCMBean {
 
   // ///// JMX-Related
 
+  @Override
   public void setBatchSize(int size) {
     gcBatchSize = size;
   }
 
+  @Override
   public int getBatchSize() {
     return gcBatchSize;
   }
 
+  @Override
   public void setThreshold(int t) {
     threshold = t;
   }
 
+  @Override
   public int getThreshold() {
     return threshold;
   }
 
+  @Override
   public long getInterval() {
     return gcInterval;
   }
 
+  @Override
   public int getRemoteObjectCount() {
     return objByHosts.getRemoteObjectCount();
   }
 
+  @Override
   public Date getLastGcTime() {
     Calendar cal = Calendar.getInstance();
     cal.setTimeInMillis(lastGcTime);
     return cal.getTime();
   }
 
+  @Override
   public double getNumGc() {
     return gcDeref.getCounter();
   }
 
+  @Override
   public double getForcedGc() {
     return forcedGc.getCounter();
   }
 
+  @Override
   public int getLastGcCount() {
     return lastGcCount;
   }
@@ -237,7 +248,6 @@ public class ClientGC implements Module, Task, ClientGCMBean {
     int gc() {
 
       log.debug("%s remote objects from %s", remoteReferences.size(), hostAddress);
-
       if (remoteReferences.size() == 0) {
         log.debug("No remote objects associated to host %s", hostAddress);
         owner.removeHostReferenceFor(hostAddress);

@@ -215,11 +215,11 @@ sendingChannel.dispatch("ubik.example.async.event", "HELLO");
 		  <sapia:class>EventChannel</sapia:class> to discover other JNDI server nodes on the network. Alltogether, they form a distributed
 		  JNDI tree across which smart stubs are replicated.
 		  </p>
-		  <sapia:sect3 title="Creating an Starting a JNDI Server">
+		  <sapia:sect3 title="Creating and Starting a JNDI Server">
 		    <sapia:code>
-EventChannel channel = new EventChannel(); 
+EventChannel channel = new EventChannel("myDomain"); 
 channel.start();
-EmbeddableJNDIServer jndi = new EmbeddableJndiServer(channel.getReference());
+EmbeddableJNDIServer jndi = new EmbeddableJndiServer(channel.getReference(), 1099);
 jndi.start(true); // true: server will start as daemon
 
 // when done:
@@ -227,11 +227,12 @@ jndi.stop();
 channel.close();
 		    </sapia:code>
 		  </sapia:sect3>
+		  
       <sapia:sect3 title="Binding a Remote Object">
         <p>If you use an <sapia:class>EmbeddableJNDIServer</sapia:class> directly in your application, you can bind a remote object to it as such:</p>
         <sapia:code>
 MyService stub = Hub.export(myService);
-jndi.getRootContext().bind("services/myService", stub);
+jndi.getLocalContext().bind("services/myService", stub);
         </sapia:code>
         <p>If you connect to an <sapia:class>EmbeddableJNDIServer</sapia:class> remotely, do as follows (of course use the appropriate port):</p>
         <sapia:code>
@@ -243,6 +244,84 @@ MyService stub = Hub.export(myService);
 ctx.bind("services/myService", stub);
         </sapia:code>
       </sapia:sect3>		  
+		  
+      <sapia:sect3 title="Looking up a Remote Object">
+        <p>If you use an <sapia:class>EmbeddableJNDIServer</sapia:class> directly in your application, you can bind a remote object to it as such:</p>
+        <sapia:code>
+MyService stub = (MyService) jndi.getLocalContext().lookup("services/myService");
+        </sapia:code>
+        <p>If you connect to an JNDI server remotely, do as follows (of course use the appropriate port):</p>
+        <sapia:code>
+Properties props = new Properties();
+props.setProperty(InitialContext.PROVIDER_URL, "ubik://10.10.10.11:1099/");
+props.setProperty(InitialContext.INITIAL_CONTEXT_FACTORY, RemoteInitialContextFactory.class.getName());
+InitialContext ctx = new InitialContext(props);
+MyService stub = (MyService) ctx.lookup("services/myService");
+        </sapia:code>
+      </sapia:sect3>  		  
+		  
+      <sapia:sect3 title="Resilient Lookup">
+        <p>
+          When connecting to a JNDI server remotely, the address of the host (and/or its port) may be misconfigured, or the host to which
+          you're attempting to connect may not be up. In this context, it is possible to help the 
+          <sapia:classlink>org.sapia.ubik.rmi.naming.remote.RemoteInitialContextFactory</sapia:classlink> connect to another existing JNDI server.
+          To that end, you must specify the <tt>ubik.jndi.domain</tt> property, either as a system property, or as a property you pass to the
+          <sapia:class>InitialContext</sapia:class>. The above example sets that property (by using the corresponding constant of the 
+          <sapia:class>RemoteInitialContextFactory</sapia:class>):          
+        </p>
+        
+        <sapia:code>
+Properties props = new Properties();
+props.setProperty(RemoteInitialContextFactory.UBIK_DOMAIN_NAME, "default");
+props.setProperty(InitialContext.PROVIDER_URL, "ubik://localhost:1098");
+props.setProperty(InitialContext.INITIAL_CONTEXT_FACTORY, RemoteInitialContextFactory.class.getName()); 
+        </sapia:code>
+        
+        <p>
+          Internally, the <sapia:class>RemoteInitialContextFactory</sapia:class> instance will create an <sapia:class>EventChannel</sapia:class>.
+        </p>
+        
+      </sapia:sect3>  
+		  
+      <sapia:sect3 title="Discovery">
+        <p>It may be that the order in which distributed nodes appear on the network is not necessarily guaranteed. It then may also be
+        that application nodes exporting services on which other nodes depend may not yet be present on the network, as these other nodes themselves
+        start up. This is also true for JNDI server nodes: a client my appear on the network, and attempt connecting on a JNDI server that isn't yet
+        on the network.</p>
+        
+        <p>To work around these situations, use a <sapia:classlink>org.sapia.ubik.rmi.naming.remote.discovery.DiscoveryHelper</sapia:classlink> 
+        instance, to which you can register a <sapia:classlink>org.sapia.ubik.rmi.naming.remote.discovery.ServiceDiscoListener</sapia:classlink>
+        (for discovering services that appear on the network), or a <sapia:classlink>org.sapia.ubik.rmi.naming.remote.discovery.JndiDiscolistener</sapia:classlink>
+        (for discovering JNDI servers).</p>
+        
+        <p>The following snippet illustrates usage of a <sapia:class>DiscoveryHelper</sapia:class> to find appearing JNDI servers, and bind to a discoverd server 
+        a remote object so that it has a copy of the stub, which is then available to clients wishing to use the service:</p>
+        
+        <sapia:code>
+EventChannel    channel     = new EventChannel("myDomain");
+DiscoveryHelper discoHelper = new DiscoveryHelper(channel.getReference());
+discoHelper.addJndiDiscoListener(new JndiDiscoListener() {
+  @Override
+  public void onJndiDiscovered(Context ctx) {
+    ctx.bind("services/myService", remoteObject);
+  }
+});
+        </sapia:code>
+        
+        <p>The following demonstrates how to discover services:</p>
+        
+        <sapia:code>
+EventChannel    channel     = new EventChannel("myDomain");
+DiscoveryHelper discoHelper = new DiscoveryHelper(channel.getReference());
+discoHelper.addServiceDiscoListener(new ServiceDiscoListener() {
+  @Override
+  public void onServiceDiscovered(ServiceDiscoveryEvent evt) {
+    System.out.println("Discovered service: " + evt);
+  }
+});
+        </sapia:code>
+        
+      </sapia:sect3>    
 		  
 		</sapia:sect2>
 

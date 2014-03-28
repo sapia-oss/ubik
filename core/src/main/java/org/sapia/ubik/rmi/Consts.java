@@ -69,6 +69,20 @@ public interface Consts {
   public static final String IP_PATTERN_KEY = "ubik.rmi.address-pattern";
 
   /**
+   * This constant corresponds to the <code>ubik.rmi.naming.sync.lookup.batch-size</code>
+   * property key. It is used to bind a multicast port value in a properties/map
+   * instance.
+   */
+  public static final String JNDI_SYNC_LOOKUP_BATCH_SIZE = "ubik.rmi.naming.sync.lookup.batch-size";
+
+  /**
+   * This constant corresponds to the <code>ubik.rmi.naming.lazy.lookup.interval</code>
+   * property key. It is used to specify the interval (in millis) at which lazy stub invocation handlers
+   * should perform lookups.
+   */
+  public static final String JNDI_LAZY_LOOKUP_INTERVAL = "ubik.rmi.naming.lazy.lookup.interval";
+
+  /**
    * This constant corresponds to the <code>ubik.rmi.naming.mcast.port</code>
    * property key. It is used to bind a multicast port value in a properties/map
    * instance.
@@ -257,7 +271,7 @@ public interface Consts {
    * on the broadcast dispatcher (defaults to 30000 millis).
    */
   public static final String MCAST_BROADCAST_MONITOR_INTERVAL = "ubik.rmi.naming.mcast.broadcast.monitor.interval";
-  
+
   /**
    * This constant corresponds to the <code>ubik.rmi.naming.mcast.event.channel.reuse</code>
    * property key. It is used in test to indicate if {@link EventChannel} instance reuse should be enabled.

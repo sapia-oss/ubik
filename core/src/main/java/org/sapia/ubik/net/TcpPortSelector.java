@@ -1,18 +1,16 @@
 package org.sapia.ubik.net;
 
 import java.io.IOException;
-import java.net.ConnectException;
-import java.net.InetAddress;
-import java.net.Socket;
-import java.net.UnknownHostException;
+import java.net.DatagramSocket;
+import java.net.ServerSocket;
 import java.util.Random;
 
 /**
  * An instance of this class is used to perform random port selection on a given
  * host.
- * 
+ *
  * @author yduchesne
- * 
+ *
  */
 public class TcpPortSelector {
 
@@ -21,82 +19,71 @@ public class TcpPortSelector {
   private static final int MAX_ATTEMPS = 100;
 
   /**
-   * @param addr
-   *          the {@link InetAddress} corresponding to the local address on
-   *          which to acquire a port.
    * @return the port that was selected.
    * @throws IOException
    *           if a problem occurred while acquiring the port.
    */
-  public int select(InetAddress addr) throws IOException {
-    return select(addr.getHostAddress());
-  }
-
-  /**
-   * @param host
-   *          the local host address on which to acquire a port.
-   * @return the port that was selected.
-   * @throws IOException
-   *           if a problem occurred while acquiring the port.
-   */
-  public int select(String host) throws IOException {
-    int port = doSelect(host);
+  public int select() throws IOException {
+    int port = doSelect();
     try {
       Thread.sleep(new Random().nextInt(100));
     } catch (InterruptedException e) {
       throw new IllegalStateException("Thread interrupted");
     }
-    if (isTaken(host, port)) {
-      port = doSelect(host);
+    if (isTaken(port)) {
+      port = doSelect();
     }
-    if (isTaken(host, port)) {
-      throw new IOException("No port could be randomly acquired on : " + host);
+    if (isTaken(port)) {
+      throw new IOException("No port could be randomly acquired");
     }
     return port;
   }
 
-  private int doSelect(String host) throws IOException {
+  private int doSelect() throws IOException {
     Random rand = new Random();
     int attempts = 0;
     while (attempts < MAX_ATTEMPS) {
       int current = MIN_PORT + rand.nextInt(MAX_PORT - MIN_PORT);
       try {
-        checkAvailable(host, current);
-        // port taken ... keep going
-        attempts++;
-      } catch (UnknownHostException e) {
-        throw new IllegalArgumentException("Unknown host");
-      } catch (ConnectException e) {
-        // found an available port
+        checkAvailable(current);
         return current;
       } catch (IOException e) {
-        throw e;
+        attempts++;
       }
+
     }
-    throw new IOException("No port could be randomly acquired on : " + host);
+    throw new IOException("Could not acquire random port");
   }
 
-  protected void checkAvailable(String host, int port) throws UnknownHostException, IOException {
-    Socket sock = new Socket(host, port);
+  protected void checkAvailable(int port) throws IOException {
+    ServerSocket ss = null;
+    DatagramSocket ds = null;
     try {
-      sock.close();
+      ss = new ServerSocket(port);
+      ss.setReuseAddress(true);
+      ds = new DatagramSocket(port);
+      ds.setReuseAddress(true);
+    } finally {
+      if (ds != null) {
+        ds.close();
+      }
+
+      if (ss != null) {
+        try {
+          ss.close();
+        } catch (IOException e) {
+          // noop
+        }
+      }
+    }
+  }
+
+  protected boolean isTaken(int port) {
+    try {
+      checkAvailable(port);
+      return false;
     } catch (IOException e) {
-    }
-
-  }
-
-  protected boolean isTaken(String host, int port) {
-    try {
-      Socket sock = new Socket(host, port);
-      try {
-        sock.close();
-      } catch (IOException e) {
-      }
       return true;
-    } catch (ConnectException e) {
-      return false;
-    } catch (Exception e) {
-      return false;
     }
   }
 }

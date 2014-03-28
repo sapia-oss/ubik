@@ -16,9 +16,9 @@ import org.sapia.ubik.rmi.server.stats.Stats;
 /**
  * Utility class that handles incoming {@link RMICommand} instances on the
  * server-side.
- * 
+ *
  * @author yduchesne
- * 
+ *
  */
 public class CommandHandler {
 
@@ -70,10 +70,11 @@ public class CommandHandler {
         remoteCall.start();
         eventDispatcher.dispatch(new IncomingCommandEvent(cmd));
       }
-
+      log.debug("Executing command: %s from vm %s", cmd.getClass().getName(), cmd.getVmId());
       resp = cmd.execute();
-      if (invokeCommand)
+      if (invokeCommand) {
         invoke.stop();
+      }
 
     } catch (Throwable t) {
       resp = t;

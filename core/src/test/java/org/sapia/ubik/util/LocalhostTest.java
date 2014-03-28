@@ -1,6 +1,7 @@
 package org.sapia.ubik.util;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.net.InetAddress;
@@ -41,7 +42,15 @@ public class LocalhostTest {
     Localhost.setAddressPattern("\\d{2}\\.\\d{2}\\.\\d+\\.\\d+");
     InetAddress addr = Localhost.doGetAnyLocalAddress(Collects.arrayToSet(InetAddress.getByName("127.0.0.1"),
         InetAddress.getByName("192.168.1.1")));
-    assertTrue("Expected loopback address", addr.getHostAddress().startsWith("127.0"));
+    assertFalse("Expected non-loopback address, got:" + addr.getHostAddress(), addr.getHostAddress().startsWith("127.0"));
+  }
+
+  @Test
+  public void testDoSelectForLoopbackPatternMatch() throws Exception {
+    Localhost.setAddressPattern("127\\.\\d+\\.\\d+\\.\\d+");
+    InetAddress addr = Localhost.doGetAnyLocalAddress(Collects.arrayToSet(InetAddress.getByName("127.0.0.1"),
+        InetAddress.getByName("192.168.1.1")));
+    assertTrue("Expected loopback address, got:" + addr.getHostAddress(), addr.getHostAddress().startsWith("127.0"));
   }
 
   @Test
@@ -61,7 +70,7 @@ public class LocalhostTest {
   public void testDoSelectForIpPatternNotSetWithMultiLocalAddress() throws Exception {
     InetAddress addr = Localhost.doGetAnyLocalAddress(Collects.arrayToSet(InetAddress.getByName("192.168.1.1"),
         InetAddress.getByName("192.168.1.2")));
-    assertTrue("Expected loopback address", addr.getHostAddress().startsWith("127.0"));
+    assertFalse("Expected non-loopback address, got: " + addr.getHostAddress(), addr.getHostAddress().startsWith("127.0"));
   }
 
 }

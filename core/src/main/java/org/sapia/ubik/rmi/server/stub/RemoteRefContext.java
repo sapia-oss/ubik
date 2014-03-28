@@ -6,6 +6,7 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.rmi.RemoteException;
 
+import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.RemoteRuntimeException;
@@ -20,13 +21,15 @@ import org.sapia.ubik.util.Strings;
 
 /**
  * Encapsulates the state common to remote references.
- * 
+ *
  * @author yduchesne
- * 
+ *
  */
 public class RemoteRefContext implements Externalizable {
 
   static final long serialVersionUID = 1L;
+
+  private static final Category LOG = Log.createCategory(RemoteRefContext.class);
 
   private OID oid;
   private ServerAddress address;
@@ -68,11 +71,11 @@ public class RemoteRefContext implements Externalizable {
   }
 
   /**
-   * 
+   *
    * @param callback
    *          <code>true</code> if this instance's corresponding stub supports
    *          callback invocations, <code>false</code>
-   * 
+   *
    */
   public void setCallback(boolean callback) {
     this.callback = callback;
@@ -96,7 +99,7 @@ public class RemoteRefContext implements Externalizable {
    * @return <code>true</code> if this is this instance's first hop.
    */
   public boolean isFirstHop() {
-    return hopCount <= 1;
+    return hopCount < 1;
   }
 
   /**
@@ -137,10 +140,12 @@ public class RemoteRefContext implements Externalizable {
     out.writeObject(vmId);
   }
 
+  @Override
   public int hashCode() {
     return oid.hashCode();
   }
 
+  @Override
   public boolean equals(Object other) {
     if (other instanceof RemoteRefContext) {
       RemoteRefContext otherContext = (RemoteRefContext) other;
@@ -205,8 +210,7 @@ public class RemoteRefContext implements Externalizable {
   private void createReference() throws RemoteException {
     ClientRuntime runtime = Hub.getModules().getClientRuntime();
     if (!isFirstHop()) {
-      if (Log.isDebug())
-        Log.debug(getClass(), "Creating remote ref " + oid);
+      LOG.debug("Creating remote reference to OID: %s", oid);
       runtime.createReference(address, oid);
     }
     runtime.getGc().register(address, oid, this);

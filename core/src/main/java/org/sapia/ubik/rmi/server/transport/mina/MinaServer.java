@@ -21,9 +21,9 @@ import org.sapia.ubik.rmi.server.Server;
 /**
  * This class implements the {@link Server} interface on top of a
  * {@link SocketAcceptor}.
- * 
+ *
  * @author Yanick Duchesne
- * 
+ *
  */
 class MinaServer implements Server {
 
@@ -44,16 +44,16 @@ class MinaServer implements Server {
    * href="http://mina.apache.org/configuring-thread-model.html">threading
    * model</a> page on Mina's site for more details (the threading model for
    * this class is based on Mina's {@link ExecutorFilter}).
-   * 
+   *
    * @param inetAddr
    *          the {@link InetSocketAddress} on which the server should listen.
    * @param bufsize
    *          the size of buffers created internally to process data.
-   * @param numAcceptorThreads 
+   * @param numAcceptorThreads
    *          the number of acceptor threads (I/O selector threads).
    * @param conf
    *          a {@link ThreadingConfiguration}.
-   * 
+   *
    * @throws IOException
    *           if a problem occurs while creating this instance.
    */
@@ -67,7 +67,7 @@ class MinaServer implements Server {
       log.info("Using port %s", inetAddr.getPort());
       this.inetAddr = inetAddr;
     } else {
-      int randomPort = new TcpPortSelector().select(inetAddr.getAddress().getHostAddress());
+      int randomPort = new TcpPortSelector().select();
       log.info("Using random port %s", randomPort);
       this.inetAddr = new InetSocketAddress(inetAddr.getAddress().getHostAddress(), randomPort);
     }
@@ -86,6 +86,7 @@ class MinaServer implements Server {
   /**
    * @see org.sapia.ubik.rmi.server.Server#getServerAddress()
    */
+  @Override
   public ServerAddress getServerAddress() {
     return addr;
   }
@@ -93,6 +94,7 @@ class MinaServer implements Server {
   /**
    * @see org.sapia.ubik.rmi.server.Server#start()
    */
+  @Override
   public void start() throws RemoteException {
     try {
       log.info("Starting NIO TCP server on %s", inetAddr);
@@ -105,6 +107,7 @@ class MinaServer implements Server {
   /**
    * @see org.sapia.ubik.rmi.server.Server#close()
    */
+  @Override
   public void close() {
     acceptor.unbind(inetAddr);
     executor.shutdown();

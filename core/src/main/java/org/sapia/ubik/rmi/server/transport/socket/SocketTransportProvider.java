@@ -22,16 +22,16 @@ import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.TransportProvider;
 import org.sapia.ubik.taskman.Task;
 import org.sapia.ubik.taskman.TaskContext;
-import org.sapia.ubik.util.Localhost;
 import org.sapia.ubik.util.Conf;
+import org.sapia.ubik.util.Localhost;
 import org.sapia.ubik.util.Time;
 
 /**
  * Implements the {@link TransportProvider} interface over the standard java
  * {@link Socket} class.
- * 
+ *
  * @see java.net.Socket
- * 
+ *
  * @author Yanick Duchesne
  */
 public class SocketTransportProvider implements TransportProvider {
@@ -59,7 +59,7 @@ public class SocketTransportProvider implements TransportProvider {
    * This constant corresponds to the
    * <code>ubik.rmi.transport.socket.server-factory</code> system property. It
    * identifies the {@link UbikServerSocketFactory} implementation to use.
-   * 
+   *
    */
   public static final String SERVER_FACTORY = "ubik.rmi.transport.socket.server-factory";
 
@@ -94,6 +94,7 @@ public class SocketTransportProvider implements TransportProvider {
   /**
    * @see org.sapia.ubik.rmi.server.transport.TransportProvider#getPoolFor(ServerAddress)
    */
+  @Override
   public synchronized Connections getPoolFor(ServerAddress address) throws RemoteException {
     Conf props = Conf.getSystemProperties();
     long resetInterval = props.getLongProperty(Consts.SERVER_RESET_INTERVAL, DEFAULT_RESET_INTERVAL);
@@ -140,6 +141,7 @@ public class SocketTransportProvider implements TransportProvider {
   /**
    * @see org.sapia.ubik.rmi.server.transport.TransportProvider#newServer(Properties)
    */
+  @Override
   public Server newServer(Properties props) throws RemoteException {
     Conf pu = new Conf().addProperties(props).addProperties(System.getProperties());
     return doNewServer(pu.getIntProperty(PORT, 0), pu);
@@ -148,6 +150,7 @@ public class SocketTransportProvider implements TransportProvider {
   /**
    * @see org.sapia.ubik.rmi.server.transport.TransportProvider#newDefaultServer()
    */
+  @Override
   public Server newDefaultServer() throws RemoteException {
     Conf pu = new Conf().addProperties(System.getProperties());
     return doNewServer(pu.getIntProperty(PORT, 0), pu);
@@ -186,7 +189,7 @@ public class SocketTransportProvider implements TransportProvider {
 
     if (port == 0) {
       try {
-        port = new TcpPortSelector().select(bindAddress);
+        port = new TcpPortSelector().select();
       } catch (IOException e) {
         throw new RemoteException("Could not acquire random port");
       }
@@ -226,6 +229,7 @@ public class SocketTransportProvider implements TransportProvider {
   /**
    * @see org.sapia.ubik.rmi.server.transport.TransportProvider#getTransportType()
    */
+  @Override
   public String getTransportType() {
     return transportType;
   }
@@ -233,6 +237,7 @@ public class SocketTransportProvider implements TransportProvider {
   /**
    * @see org.sapia.ubik.rmi.server.transport.TransportProvider#shutdown()
    */
+  @Override
   public void shutdown() {
     doCleanPools();
   }

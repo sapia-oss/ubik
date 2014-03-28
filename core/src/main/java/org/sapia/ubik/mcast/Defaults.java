@@ -6,11 +6,23 @@ import org.sapia.ubik.rmi.Consts;
  * Holds default values that are shared across different
  * {@link BroadcastDispatcher} and {@link UnicastDispatcher} implementations.
  * Also holds value for an {@link EventChannel}.
- * 
+ *
  * @author yduchesne
- * 
+ *
  */
 public class Defaults {
+
+  /**
+   * The default value for the batch size when looking up synchronously other JNDI nodes, from a
+   * given node missing a stub (see {@link Consts#JNDI_SYNC_LOOKUP_BATCH_SIZE}).
+   */
+  public static final int DEFAULT_JNDI_SYNC_LOOKUP_BATCH_SIZE  = 5;
+
+  /**
+   * The default value for the batch size when looking up synchronously other JNDI nodes, from a
+   * given node missing a stub (see {@link Consts#JNDI_LAZY_LOOKUP_INTERVAL}).
+   */
+  public static final long DEFAULT_LAZY_LOOKUP_INTERVAL = 1000;
 
   /**
    * The default UDP packet size (see {@link Consts#MCAST_BUFSIZE_KEY}).
@@ -29,7 +41,7 @@ public class Defaults {
 
   /**
    * The default number of worker threads for unicast dispatchers.
-   * 
+   *
    * (see {@link Consts#MCAST_HANDLER_COUNT}).
    */
   public static final int DEFAULT_HANDLER_COUNT = 3;
@@ -54,7 +66,7 @@ public class Defaults {
   /**
    * The interval at which a node will resync itself with the cluster by
    * rebroadcasting its presence.
-   * 
+   *
    * @see #DEFAULT_RESYNC_NODE_COUNT
    * @see Consts#MCAST_RESYNC_INTERVAL
    */
@@ -63,7 +75,7 @@ public class Defaults {
   /**
    * The default minimum number of nodes in the cluster before a given node will
    * trigger auto-resync.
-   * 
+   *
    * @see #DEFAULT_RESYNC_INTERVAL
    * @see Consts#MCAST_RESYNC_NODE_COUNT
    */
@@ -71,14 +83,14 @@ public class Defaults {
 
   /**
    * The default number of nodes to send per force-resync event.
-   * 
+   *
    * @see Consts#MCAST_HEARTBEAT_FORCE_RESYNC_BATCH_SIZE
    */
   public static final int DEFAULT_FORCE_RESYNC_BATCH_SIZE = 3;
 
   /**
    * The default number of force-resync attempts.
-   * 
+   *
    * @see Consts#MCAST_HEARTBEAT_FORCE_RESYNC_ATTEMPTS
    */
   public static final int DEFAULT_FORCE_RESYNC_ATTEMPTS = 3;
@@ -95,37 +107,37 @@ public class Defaults {
 
   /**
    * The default number of maximum client connections for each remote peers.
-   * 
+   *
    * @see Consts#MCAST_MAX_CLIENT_CONNECTIONS
    */
   public static final int DEFAULT_MAX_CONNECTIONS_PER_HOST = 3;
 
   /**
    * The default max number of ping attempts.
-   * 
+   *
    * @see Consts#MCAST_MAX_PING_ATTEMPTS
    */
   public static final int DEFAULT_PING_ATTEMPTS = 3;
 
   /**
    * The default ping interval.
-   * 
+   *
    * @see Consts#MCAST_PING_INTERVAL
    */
   public static final long DEFAULT_PING_INTERVAL = 2000L;
 
   /**
    * The default master broadcast interval.
-   * 
+   *
    * @see Consts#MCAST_MASTER_BROADCAST_INTERVAL
    */
   public static final long DEFAULT_MASTER_BROADCAST_INTERVAL = 120000L;
-  
+
   /**
    * The default broadcast monitor reconnection interval.
-   * 
+   *
    * @see Consts#MCAST_BROADCAST_MONITOR_INTERVAL
-   */  
+   */
   public static final long DEFAULT_BROADCAST_MONITOR_INTERVAL = 30000L;
 
   private Defaults() {

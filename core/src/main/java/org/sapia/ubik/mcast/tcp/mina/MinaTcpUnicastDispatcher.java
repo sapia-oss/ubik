@@ -20,9 +20,9 @@ import org.sapia.ubik.util.Localhost;
 
 /**
  * A TCP unicast dispatcher based on Mina.
- * 
+ *
  * @author yduchesne
- * 
+ *
  */
 public class MinaTcpUnicastDispatcher extends BaseTcpUnicastDispatcher {
 
@@ -53,7 +53,8 @@ public class MinaTcpUnicastDispatcher extends BaseTcpUnicastDispatcher {
     this.maxThreads = maxThreads;
     this.marshallingBufferSize = marshallingBufferSize;
     String host = Localhost.getPreferredLocalAddress().getHostAddress();
-    socketAddress = new InetSocketAddress(host, new TcpPortSelector().select(host));
+    log.debug("Will bind server to address: %s", host);
+    socketAddress = new InetSocketAddress(host, new TcpPortSelector().select());
   }
 
   // --------------------------------------------------------------------------

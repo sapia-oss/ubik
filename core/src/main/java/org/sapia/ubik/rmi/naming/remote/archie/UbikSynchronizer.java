@@ -1,6 +1,7 @@
 package org.sapia.ubik.rmi.naming.remote.archie;
 
 import java.io.IOException;
+import java.util.List;
 
 import javax.naming.NamingException;
 
@@ -13,6 +14,7 @@ import org.sapia.archie.sync.Synchronizer;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.AsyncEventListener;
+import org.sapia.ubik.mcast.Defaults;
 import org.sapia.ubik.mcast.EventChannel;
 import org.sapia.ubik.mcast.EventChannelRef;
 import org.sapia.ubik.mcast.ListenerAlreadyRegisteredException;
@@ -20,6 +22,11 @@ import org.sapia.ubik.mcast.RemoteEvent;
 import org.sapia.ubik.mcast.RespList;
 import org.sapia.ubik.mcast.Response;
 import org.sapia.ubik.mcast.SyncEventListener;
+import org.sapia.ubik.mcast.TimeoutException;
+import org.sapia.ubik.net.ServerAddress;
+import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.util.Collects;
+import org.sapia.ubik.util.Conf;
 
 /**
  * Synchronizes distributed JNDI nodes by using an {@link EventChannel}.
@@ -28,12 +35,18 @@ import org.sapia.ubik.mcast.SyncEventListener;
  */
 public class UbikSynchronizer implements Synchronizer, AsyncEventListener, SyncEventListener {
 
-  private Category log = Log.createCategory(getClass());
+  private static final int SYNC_GET_BATCH_SIZE = Conf.getSystemProperties().getIntProperty(
+      Consts.JNDI_SYNC_LOOKUP_BATCH_SIZE,
+      Defaults.DEFAULT_JNDI_SYNC_LOOKUP_BATCH_SIZE
+  );
+
+  private Category        log = Log.createCategory(getClass());
   private EventChannelRef channel;
-  private Archie root;
+  private Archie          root;
 
   UbikSynchronizer(EventChannelRef channel) throws NamingException {
     this.channel = channel;
+
     channel.get().registerAsyncListener(SyncPutEvent.class.getName(), this);
 
     try {
@@ -41,15 +54,6 @@ public class UbikSynchronizer implements Synchronizer, AsyncEventListener, SyncE
     } catch (ListenerAlreadyRegisteredException e) {
       NamingException ne = new NamingException("Could not start event channel");
       ne.setRootCause(e);
-      throw ne;
-    }
-
-    try {
-      channel.start();
-    } catch (java.io.IOException e) {
-      NamingException ne = new NamingException("Could not start event channel");
-      ne.setRootCause(e);
-      ne.fillInStackTrace();
       throw ne;
     }
   }
@@ -75,11 +79,27 @@ public class UbikSynchronizer implements Synchronizer, AsyncEventListener, SyncE
    */
   @Override
   public Object onGetValue(Name nodeAbsolutePath, NamePart valueName) {
-    Response toReturn = null;
-    RespList results;
 
     try {
-      results = channel.get().send(SyncGetEvent.class.getName(), new SyncGetEvent(nodeAbsolutePath, valueName));
+      List<ServerAddress> nodeAddresses = channel.get().getView().getNodeAddresses();
+      log.debug("Getting value for %s. Got %s nodes to look up from", valueName, nodeAddresses.size());
+      for (List<ServerAddress> addr : Collects.splitAsLists(nodeAddresses, SYNC_GET_BATCH_SIZE)) {
+        try {
+          RespList results = channel.get().send(addr, SyncGetEvent.class.getName(), new SyncGetEvent(nodeAbsolutePath, valueName));
+          log.debug("Got %s results for %s", results.count(), valueName);
+          for (int i = 0; i < results.count(); i++) {
+             Response res = results.get(i);
+             if (!res.isError() && !res.isNone()) {
+               Object remote = res.getData();
+               if (remote != null) {
+                 return remote;
+               }
+             }
+          }
+        } catch (TimeoutException e) {
+          // noop
+        }
+      }
     } catch (java.io.IOException ioe) {
       log.error("I/O Error caught dispatching SyncGetEvent", ioe);
       return null;
@@ -87,15 +107,6 @@ public class UbikSynchronizer implements Synchronizer, AsyncEventListener, SyncE
       log.info("Thread interrupted while dispatching SyncGetEvent; returning null");
       return null;
     }
-
-    for (int i = 0; i < results.count(); i++) {
-      toReturn = results.get(i);
-
-      if ((toReturn.getData() != null) && !(toReturn.isError())) {
-        return toReturn.getData();
-      }
-    }
-
     return null;
   }
 
@@ -124,6 +135,7 @@ public class UbikSynchronizer implements Synchronizer, AsyncEventListener, SyncE
     SyncRemoveEvent evt = new SyncRemoveEvent(nodeAbsolutePath, name);
 
     try {
+      log.debug("Dispatching remove  for %s", name);
       channel.get().dispatch(SyncRemoveEvent.class.getName(), evt);
     } catch (IOException e) {
       log.error("I/O error dispatching SyncRemoteEvent", e);

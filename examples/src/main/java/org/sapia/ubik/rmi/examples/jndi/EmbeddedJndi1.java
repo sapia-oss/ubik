@@ -9,16 +9,16 @@ import org.sapia.ubik.rmi.naming.remote.EmbeddableJNDIServer;
 public class EmbeddedJndi1 {
 
   public static void main(String[] args) throws Exception {
-    //Log.setDebug();
-    
+    Log.setDebug();
+
     final EventChannel channel = new EventChannel("default");
     final EmbeddableJNDIServer server = new EmbeddableJNDIServer(channel.getReference(), 1098);
     channel.start();
     server.start(true);
-    
+
     Foo service = new ReliableFoo();
     server.getLocalContext().bind("foo", service);
-    
+
     Runtime.getRuntime().addShutdownHook(new Thread() {
       @Override
       public void run() {
@@ -26,9 +26,9 @@ public class EmbeddedJndi1 {
         channel.close();
       }
     });
-    
+
     System.out.println("Started");
-    
+
     while (true) {
       Thread.sleep(10000);
     }

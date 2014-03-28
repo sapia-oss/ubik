@@ -19,16 +19,16 @@ import org.sapia.ubik.rmi.server.Hub;
 import org.sapia.ubik.rmi.server.Server;
 import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.TransportProvider;
-import org.sapia.ubik.util.Localhost;
 import org.sapia.ubik.util.Conf;
+import org.sapia.ubik.util.Localhost;
 import org.sapia.ubik.util.Time;
 
 /**
  * A {@link TransportProvider} implementation on top of the Netty server
  * framework.
- * 
+ *
  * @author yduchesne
- * 
+ *
  */
 public class NettyTransportProvider implements TransportProvider, NettyConsts {
 
@@ -46,8 +46,9 @@ public class NettyTransportProvider implements TransportProvider, NettyConsts {
   /**
    * @see org.sapia.ubik.rmi.server.transport.TransportProvider#getPoolFor(org.sapia.ubik.net.ServerAddress)
    */
+  @Override
   public synchronized Connections getPoolFor(ServerAddress address) throws RemoteException {
-    NettyClientConnectionPool pool = (NettyClientConnectionPool) pools.get(address);
+    NettyClientConnectionPool pool = pools.get(address);
 
     if (pool == null) {
       NettyAddress nettyAddr = (NettyAddress) address;
@@ -85,10 +86,10 @@ public class NettyTransportProvider implements TransportProvider, NettyConsts {
     String bindAddress = config.getProperty(SERVER_BIND_ADDRESS_KEY);
     try {
       if (bindAddress != null) {
-        addr = new InetSocketAddress(bindAddress, port == 0 ? new TcpPortSelector().select(bindAddress) : port);
+        addr = new InetSocketAddress(bindAddress, port == 0 ? new TcpPortSelector().select() : port);
       } else {
         bindAddress = Localhost.getPreferredLocalAddress().getHostAddress();
-        addr = new InetSocketAddress(bindAddress, port == 0 ? new TcpPortSelector().select(bindAddress) : port);
+        addr = new InetSocketAddress(bindAddress, port == 0 ? new TcpPortSelector().select() : port);
       }
     } catch (UnknownHostException e) {
       throw new RemoteException("Could not determine server bind address", e);
@@ -119,6 +120,7 @@ public class NettyTransportProvider implements TransportProvider, NettyConsts {
   /**
    * @see org.sapia.ubik.rmi.server.transport.TransportProvider#shutdown()
    */
+  @Override
   public synchronized void shutdown() {
     for (NettyClientConnectionPool pool : pools.values()) {
       pool.internalPool().shrinkTo(0);

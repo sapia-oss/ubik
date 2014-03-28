@@ -9,15 +9,15 @@ import org.sapia.ubik.mcast.tcp.BaseTcpUnicastDispatcher;
 import org.sapia.ubik.net.ConnectionFactory;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.TcpPortSelector;
-import org.sapia.ubik.util.Localhost;
 import org.sapia.ubik.util.Conf;
+import org.sapia.ubik.util.Localhost;
 import org.sapia.ubik.util.Time;
 
 /**
  * Netty-based implementationf of the {@link UnicastDispatcher} interface.
- * 
+ *
  * @author yduchesne
- * 
+ *
  */
 public class NettyTcpUnicastDispatcher extends BaseTcpUnicastDispatcher implements NettyMcastConsts {
 
@@ -40,7 +40,7 @@ public class NettyTcpUnicastDispatcher extends BaseTcpUnicastDispatcher implemen
     try {
       log.info("Acquiring network address");
       String host = Localhost.getPreferredLocalAddress().getHostAddress();
-      this.address = new NettyTcpUnicastAddress(host, new TcpPortSelector().select(host));
+      this.address = new NettyTcpUnicastAddress(host, new TcpPortSelector().select());
     } catch (Exception e) {
       throw new IllegalStateException("Could not acquire server address", e);
     }

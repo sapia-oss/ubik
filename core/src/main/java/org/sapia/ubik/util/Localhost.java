@@ -44,21 +44,21 @@ import org.sapia.ubik.rmi.Consts;
 public final class Localhost {
 
   private static final Category LOG = Log.createCategory(Localhost.class);
-  private static final String LOCALHOST = "0.0.0.0";
-  private static final String LOCALHOST_IPV6 = "0:0:0:0:0:0:0:1";
-  private static final String LOOPBACK = "127.0";
-  private static final Pattern IPV4_PATTERN = Pattern.compile("\\d+\\.\\d+\\.\\d+\\.\\d+");
-  private static final List<Pattern> PATTERNS = new ArrayList<>();
+  private static final String   LOCALHOST       = "0.0.0.0";
+  private static final String   LOCALHOST_IPV6  = "0:0:0:0:0:0:0:1";
+  private static final String   LOOPBACK        = "127.0";
+  private static final Pattern  IPV4_PATTERN    = Pattern.compile("\\d+\\.\\d+\\.\\d+\\.\\d+");
+  private static final List<Pattern> PATTERNS   = new ArrayList<>();
 
   static {
-    
+
     List<String> patternKeys = new ArrayList<>();
     for (String n : System.getProperties().stringPropertyNames()) {
       if (n.startsWith(Consts.IP_PATTERN_KEY)) {
         patternKeys.add(n);
       }
     }
-    
+
     Collections.sort(patternKeys);
     for (String k : patternKeys) {
       String patternStr = System.getProperty(k);
@@ -67,7 +67,7 @@ public final class Localhost {
         PATTERNS.add(Pattern.compile(patternStr));
       }
     }
-    
+
     if (PATTERNS.isEmpty()) {
       LOG.debug("Local network address pattern not set. Will fall back to default address selection");
     }
@@ -127,7 +127,7 @@ public final class Localhost {
 
   // --------------------------------------------------------------------------
   /// Restricted methods
-  
+
   static InetAddress doGetAnyLocalAddress(Set<InetAddress> netAddresses) throws UnknownHostException {
     if (isIpPatternDefined()) {
       return doSelectAddress(netAddresses);
@@ -161,17 +161,7 @@ public final class Localhost {
   }
 
   private static InetAddress doSelectAddress(Set<InetAddress> netAddresses) throws UnknownHostException {
-
-    Set<InetAddress> nonLocalAddresses = Collects.filterAsSet(netAddresses, new Condition<InetAddress>() {
-      @Override
-      public boolean apply(InetAddress addr) {
-        return !(addr.getHostAddress().startsWith(LOCALHOST)
-            || addr.getHostAddress().startsWith(LOOPBACK)
-            || addr.getHostAddress().startsWith(LOCALHOST_IPV6));
-      }
-    });
-
-    Set<InetAddress> matchedAddresses = Collects.filterAsSet(nonLocalAddresses, new Condition<InetAddress>() {
+    Set<InetAddress> matchedAddresses = Collects.filterAsSet(netAddresses, new Condition<InetAddress>() {
       @Override
       public boolean apply(InetAddress addr) {
         return isLocalAddress(PATTERNS, addr.getHostAddress());
@@ -187,6 +177,9 @@ public final class Localhost {
   }
 
   static boolean isLocalAddress(List<Pattern> patterns, String addr) {
+    if (addr.startsWith("/")) {
+      addr = addr.substring(1);
+    }
     for (Pattern p : patterns) {
       if(p.matcher(addr).matches()) {
         return true;

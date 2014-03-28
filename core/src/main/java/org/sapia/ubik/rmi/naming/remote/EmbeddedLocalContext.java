@@ -28,12 +28,12 @@ import org.sapia.ubik.rmi.server.stub.enrichment.StubEnrichmentStrategy.JndiBind
  */
 @SuppressWarnings(value = "unchecked")
 class EmbeddedLocalContext extends ContextProxy {
-  
+
   private static final Category LOG = Log.createCategory(EmbeddedLocalContext.class);
- 
+
   private EventChannelRef channel;
   private String          baseUrl;
-  
+
   EmbeddedLocalContext(EventChannelRef channel, String baseUrl, Context delegate) throws NamingException {
     super(delegate);
     this.channel = channel;
@@ -43,6 +43,7 @@ class EmbeddedLocalContext extends ContextProxy {
   /**
    * @see javax.naming.Context#bind(Name, Object)
    */
+  @Override
   public void bind(Name n, Object o) throws NamingException {
     rebind(n, o);
   }
@@ -50,6 +51,7 @@ class EmbeddedLocalContext extends ContextProxy {
   /**
    * @see javax.naming.Context#bind(String, Object)
    */
+  @Override
   public void bind(String n, Object o) throws NamingException {
     rebind(n, o);
   }
@@ -57,12 +59,14 @@ class EmbeddedLocalContext extends ContextProxy {
   /**
    * @see javax.naming.Context#close()
    */
+  @Override
   public void close() throws NamingException {
   }
 
   /**
    * @see javax.naming.Context#composeName(Name, Name)
    */
+  @Override
   public Name composeName(Name n1, Name n2) throws NamingException {
     try {
       return super.composeName(n1, n2);
@@ -76,6 +80,7 @@ class EmbeddedLocalContext extends ContextProxy {
   /**
    * @see javax.naming.Context#composeName(String, String)
    */
+  @Override
   public String composeName(String n1, String n2) throws NamingException {
     try {
       return super.composeName(n1, n2);
@@ -89,6 +94,7 @@ class EmbeddedLocalContext extends ContextProxy {
   /**
    * @see javax.naming.Context#createSubcontext(Name)
    */
+  @Override
   public Context createSubcontext(Name n) throws NamingException {
     try {
       return super.createSubcontext(n);
@@ -102,6 +108,7 @@ class EmbeddedLocalContext extends ContextProxy {
   /**
    * @see javax.naming.Context#createSubcontext(String)
    */
+  @Override
   public Context createSubcontext(String name) throws NamingException {
     try {
       return super.createSubcontext(name);
@@ -115,6 +122,7 @@ class EmbeddedLocalContext extends ContextProxy {
   /**
    * @see javax.naming.Context#destroySubcontext(Name)
    */
+  @Override
   public void destroySubcontext(Name n) throws NamingException {
     try {
       super.destroySubcontext(n);
@@ -127,6 +135,7 @@ class EmbeddedLocalContext extends ContextProxy {
   /**
    * @see javax.naming.Context#destroySubcontext(String)
    */
+  @Override
   public void destroySubcontext(String name) throws NamingException {
     try {
       super.destroySubcontext(name);
@@ -139,6 +148,7 @@ class EmbeddedLocalContext extends ContextProxy {
   /**
    * @see javax.naming.Context#getEnvironment()
    */
+  @Override
   public Hashtable<?, ?> getEnvironment() throws NamingException {
     try {
       return super.getEnvironment();
@@ -152,6 +162,7 @@ class EmbeddedLocalContext extends ContextProxy {
   /**
    * @see javax.naming.Context#getNameInNamespace()
    */
+  @Override
   public String getNameInNamespace() throws NamingException {
     try {
       return super.getNameInNamespace();
@@ -165,6 +176,7 @@ class EmbeddedLocalContext extends ContextProxy {
   /**
    * @see javax.naming.Context#getNameParser(Name)
    */
+  @Override
   public NameParser getNameParser(Name n) throws NamingException {
     try {
       return super.getNameParser(n);
@@ -178,6 +190,7 @@ class EmbeddedLocalContext extends ContextProxy {
   /**
    * @see javax.naming.Context#getNameParser(String)
    */
+  @Override
   public NameParser getNameParser(String name) throws NamingException {
     try {
       return super.getNameParser(name);
@@ -191,6 +204,7 @@ class EmbeddedLocalContext extends ContextProxy {
   /**
    * @see javax.naming.Context#list(Name)
    */
+  @Override
   @SuppressWarnings("rawtypes")
   public NamingEnumeration list(Name n) throws NamingException {
     try {
@@ -205,6 +219,7 @@ class EmbeddedLocalContext extends ContextProxy {
   /**
    * @see javax.naming.Context#list(String)
    */
+  @Override
   @SuppressWarnings("rawtypes")
   public NamingEnumeration list(String name) throws NamingException {
     try {
@@ -219,6 +234,7 @@ class EmbeddedLocalContext extends ContextProxy {
   /**
    * @see javax.naming.Context#listBindings(Name)
    */
+  @Override
   @SuppressWarnings("rawtypes")
   public NamingEnumeration listBindings(Name n) throws NamingException {
     try {
@@ -233,6 +249,7 @@ class EmbeddedLocalContext extends ContextProxy {
   /**
    * @see javax.naming.Context#listBindings(String)
    */
+  @Override
   @SuppressWarnings("rawtypes")
   public NamingEnumeration listBindings(String name) throws NamingException {
     try {
@@ -247,6 +264,7 @@ class EmbeddedLocalContext extends ContextProxy {
   /**
    * @see javax.naming.Context#lookup(Name)
    */
+  @Override
   public Object lookup(Name n) throws NamingException {
     try {
       return super.lookup(n);
@@ -260,6 +278,7 @@ class EmbeddedLocalContext extends ContextProxy {
   /**
    * @see javax.naming.Context#lookup(String)
    */
+  @Override
   public Object lookup(String name) throws NamingException {
     try {
       return super.lookup(name);
@@ -273,6 +292,7 @@ class EmbeddedLocalContext extends ContextProxy {
   /**
    * @see javax.naming.Context#lookupLink(Name)
    */
+  @Override
   public Object lookupLink(Name n) throws NamingException {
     try {
       return super.lookupLink(n);
@@ -286,6 +306,7 @@ class EmbeddedLocalContext extends ContextProxy {
   /**
    * @see javax.naming.Context#lookupLink(String)
    */
+  @Override
   public Object lookupLink(String name) throws NamingException {
     try {
       return super.lookup(name);
@@ -299,6 +320,7 @@ class EmbeddedLocalContext extends ContextProxy {
   /**
    * @see javax.naming.Context#rebind(Name, Object)
    */
+  @Override
   public void rebind(Name n, Object o) throws NamingException {
     try {
       super.rebind(n, o);
@@ -311,6 +333,7 @@ class EmbeddedLocalContext extends ContextProxy {
   /**
    * @see javax.naming.Context#rebind(String, Object)
    */
+  @Override
   public void rebind(String n, Object o) throws NamingException {
     try {
       super.rebind(n, o);
@@ -323,6 +346,7 @@ class EmbeddedLocalContext extends ContextProxy {
   /**
    * @see javax.naming.Context#removeFromEnvironment(String)
    */
+  @Override
   public Object removeFromEnvironment(String name) throws NamingException {
     try {
       return super.removeFromEnvironment(name);
@@ -336,6 +360,7 @@ class EmbeddedLocalContext extends ContextProxy {
   /**
    * @see javax.naming.Context#rename(Name, Name)
    */
+  @Override
   public void rename(Name n1, Name n2) throws NamingException {
     try {
       super.rename(n1, n2);
@@ -348,6 +373,7 @@ class EmbeddedLocalContext extends ContextProxy {
   /**
    * @see javax.naming.Context#rename(String, String)
    */
+  @Override
   public void rename(String n1, String n2) throws NamingException {
     try {
       super.rename(n1, n2);
@@ -360,6 +386,7 @@ class EmbeddedLocalContext extends ContextProxy {
   /**
    * @see javax.naming.Context#unbind(Name)
    */
+  @Override
   public void unbind(Name n) throws NamingException {
     try {
       super.unbind(n);
@@ -372,6 +399,7 @@ class EmbeddedLocalContext extends ContextProxy {
   /**
    * @see javax.naming.Context#unbind(String)
    */
+  @Override
   public void unbind(String name) throws NamingException {
     try {
       super.unbind(name);
@@ -384,6 +412,7 @@ class EmbeddedLocalContext extends ContextProxy {
   /**
    * @see ContextProxy#onLookup(javax.naming.Name, java.lang.Object)
    */
+  @Override
   protected Object onLookup(Name name, Object obj) throws NamingException {
     if (obj instanceof StubContainer) {
       try {
@@ -401,6 +430,7 @@ class EmbeddedLocalContext extends ContextProxy {
   /**
    * @see ContextProxy#onBind(javax.naming.Name, java.lang.Object)
    */
+  @Override
   protected Object onBind(Name n, Object toBind) throws NamingException {
     try {
       return makeStub(n, toBind);
@@ -415,6 +445,7 @@ class EmbeddedLocalContext extends ContextProxy {
   /**
    * @see ContextProxy#onRebind(javax.naming.Name, java.lang.Object)
    */
+  @Override
   protected Object onRebind(Name n, Object toBind) throws NamingException {
     return onBind(n, toBind);
   }
@@ -422,6 +453,7 @@ class EmbeddedLocalContext extends ContextProxy {
   /**
    * @see ContextProxy#onEnum(javax.naming.Name, javax.naming.NamingEnumeration)
    */
+  @Override
   @SuppressWarnings("rawtypes")
   protected NamingEnumeration onEnum(Name n, NamingEnumeration en) {
     return new LocalNamingEnum(baseUrl, n, en);
@@ -430,15 +462,16 @@ class EmbeddedLocalContext extends ContextProxy {
   /**
    * "see ContextProxy#onSubContext(javax.naming.Name, javax.naming.Context)
    */
+  @Override
   protected Context onSubContext(Name name, Context ctx) throws NamingException {
-    return new EmbeddedLocalContext(this.channel, baseUrl, (RemoteContext) ctx);
+    return new EmbeddedLocalContext(channel, baseUrl, ctx);
   }
 
   protected void doFailOver(UndeclaredThrowableException e) throws NamingException {
     NamingException ne = new NamingException("Unavailable naming service for " + baseUrl);
     ne.setRootCause(e.getUndeclaredThrowable());
   }
-  
+
   /**
    *  This method insures that objects bound to the JNDI tree are indeed stubs (it performs the conversion
    *  to stub if required). This allows using this instance in-JVM without having to do stub conversion
