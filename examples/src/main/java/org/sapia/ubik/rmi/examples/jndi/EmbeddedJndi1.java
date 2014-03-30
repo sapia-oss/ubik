@@ -9,15 +9,15 @@ import org.sapia.ubik.rmi.naming.remote.EmbeddableJNDIServer;
 public class EmbeddedJndi1 {
 
   public static void main(String[] args) throws Exception {
-    Log.setDebug();
+    Log.setInfo();
 
     final EventChannel channel = new EventChannel("default");
-    final EmbeddableJNDIServer server = new EmbeddableJNDIServer(channel.getReference(), 1098);
+    final EmbeddableJNDIServer server = new EmbeddableJNDIServer(channel.getReference(), 1097);
     channel.start();
     server.start(true);
 
     Foo service = new ReliableFoo();
-    server.getLocalContext().bind("my/services/foo", service);
+    server.getLocalContext().bind("/my/services/foo", service);
 
     Runtime.getRuntime().addShutdownHook(new Thread() {
       @Override

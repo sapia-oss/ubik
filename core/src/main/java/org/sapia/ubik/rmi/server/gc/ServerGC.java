@@ -149,7 +149,7 @@ public class ServerGC implements Module, Task, ServerGCMBean {
    *          client.
    */
   public void registerRef(VmId id, OID oid, Object o) {
-    log.info("Reference created from: %s on object: %s - %s", id, oid, o.getClass().getName());
+    log.debug("Reference created from: %s on object: %s - %s", id, oid, o.getClass().getName());
 
     gcRef.increase();
     ClientInfo inf = getClientInfo(id);
@@ -191,7 +191,7 @@ public class ServerGC implements Module, Task, ServerGCMBean {
       if (info != null) {
         info.touch();
       } else {
-        log.info("No client info found for vm id %s", id);
+        log.debug("No client info found for vmId %s", id);
       }
     }
   }
@@ -266,7 +266,7 @@ public class ServerGC implements Module, Task, ServerGCMBean {
           }
 
           if (log.isTrace()) {
-            log.trace("Got the following objects for client JVM %s", item.id);
+            log.trace("Got the following objects for client vm %s", item.id);
             for (OID oid : item.oids.keySet()) {
               log.trace("  => OID: %s, Object=%s", oid, objectTable.getObjectFor(oid));
             }
@@ -288,7 +288,7 @@ public class ServerGC implements Module, Task, ServerGCMBean {
 
     ClientInfo(VmId id) {
       this.id = id;
-      log.info("Created a new client info for vmId %s", id);
+      log.debug("Created a new client info for vmId %s (this vmId: %s)", id, VmId.getInstance());
     }
 
     VmId vmid() {

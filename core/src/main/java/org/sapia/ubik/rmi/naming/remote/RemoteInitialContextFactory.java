@@ -12,6 +12,7 @@ import javax.naming.spi.InitialContextFactory;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.AsyncEventListener;
+import org.sapia.ubik.mcast.Defaults;
 import org.sapia.ubik.mcast.DomainName;
 import org.sapia.ubik.mcast.EventChannel;
 import org.sapia.ubik.mcast.EventChannelRef;
@@ -168,7 +169,7 @@ public class RemoteInitialContextFactory implements InitialContextFactory, JNDIC
       try {
         channel.get().dispatch(JNDI_CLIENT_PUBLISH, "");
 
-        long discoTimeout = allProps.getLongProperty(Consts.UBIK_JNDI_CLIENT_DISCO_TIMEOUT, Consts.DEFAULT_JNDI_CLIENT_DISCO_TIMEOUT);
+        long discoTimeout = allProps.getLongProperty(Consts.JNDI_CLIENT_DISCO_TIMEOUT, Defaults.DEFAULT_JNDI_CLIENT_DISCO_TIMEOUT);
         RemoteEvent evt = listener.waitForEvent(discoTimeout);
         channel.get().unregisterAsyncListener(listener);
 

@@ -178,6 +178,12 @@ public class Log {
       display(caller, Level.INFO, msg);
     }
   }
+  
+  public static final void info(String caller, Object msg, Throwable t) {
+    if (lvl.value <= Level.INFO.value) {
+      display(caller, Level.INFO, t);
+    }
+  }
 
   // --------------------------------------------------------------------------
 

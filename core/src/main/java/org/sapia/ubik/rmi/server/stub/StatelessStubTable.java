@@ -137,7 +137,7 @@ public class StatelessStubTable implements Module {
           }
         });
       }
-      String name = ref.getName().toString();
+      String name = ref.getName();
       Contexts contexts = contextsByObjectName.get(name);
       if (contexts == null) {
         contexts = new Contexts();

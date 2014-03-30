@@ -68,10 +68,16 @@ public class Category {
       Log.info(name, String.format(msg.toString(), args));
     }
   }
+  
+  public void info(Object msg, Throwable err) {
+    if (Log.isInfo()) {
+      Log.info(name, msg, err);
+    }
+  }
 
   public void info(Object msg, Throwable err, Object... args) {
     if (Log.isInfo()) {
-      Log.warning(name, String.format(msg.toString(), args), err);
+      Log.info(name, String.format(msg.toString(), args), err);
     }
   }
 

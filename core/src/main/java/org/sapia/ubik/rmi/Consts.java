@@ -32,11 +32,6 @@ public interface Consts {
   public static final String LOG_LEVEL = "ubik.rmi.log.level";
 
   /**
-   * The number of milliseconds to wait for on the client-side when attempting to discover a JNDI server (defaults to 10000).
-   */
-  public static final String UBIK_JNDI_CLIENT_DISCO_TIMEOUT = "ubik.jndi.client.disco.timeout";
-
-  /**
    * Defines the {@link LogOutput} to use.
    */
   public static final String LOG_OUTPUT_CLASS = "ubik.rmi.log.output.class";
@@ -56,8 +51,6 @@ public interface Consts {
    */
   public static final String DEFAULT_DOMAIN = "default";
 
-  public static final long DEFAULT_JNDI_CLIENT_DISCO_TIMEOUT = 10000;
-
   /**
    * This constant corresponds to the <code>ubik.rmi.address-pattern</code>
    * property key. The property should be used to specify a regular expression
@@ -74,6 +67,11 @@ public interface Consts {
    * instance.
    */
   public static final String JNDI_SYNC_LOOKUP_BATCH_SIZE = "ubik.rmi.naming.sync.lookup.batch-size";
+  
+  /**
+   * The number of milliseconds to wait for on the client-side when attempting to discover a JNDI server (defaults to 10000).
+   */
+  public static final String JNDI_CLIENT_DISCO_TIMEOUT = "ubik.rmi.naming.client.disco.timeout";
 
   /**
    * This constant corresponds to the <code>ubik.rmi.naming.lazy.lookup.interval</code>

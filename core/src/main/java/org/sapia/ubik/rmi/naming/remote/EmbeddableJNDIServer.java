@@ -19,7 +19,6 @@ import org.sapia.ubik.net.TCPAddress;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.naming.UrlMaker;
 import org.sapia.ubik.rmi.naming.remote.archie.UbikRemoteContext;
-import org.sapia.ubik.rmi.naming.remote.discovery.DiscoveryHelper;
 import org.sapia.ubik.rmi.naming.remote.proxy.LocalContext;
 import org.sapia.ubik.rmi.server.Hub;
 import org.sapia.ubik.rmi.server.stub.StubContainer;
@@ -55,7 +54,6 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
   private EventChannelRef channel;
   private Context root, local;
   private ThreadStartup startBarrier = new ThreadStartup();
-  private DiscoveryHelper discoHelper;
 
   /**
    * Used this constructor when you want this instance NOT to manage the start/close of the {@link EventChannel}
@@ -69,11 +67,6 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
     this.channel = ref;
     this.domain = ref.get().getDomainName().toString();
     this.port = port;
-    try {
-      this.discoHelper = new DiscoveryHelper(ref);
-    } catch (IOException e) {
-      throw new IllegalStateException("Could not create DiscoveryHelper", e);
-    }
   }
 
   /**

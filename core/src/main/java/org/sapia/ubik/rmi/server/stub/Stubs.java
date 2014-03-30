@@ -43,6 +43,9 @@ public class Stubs {
    *         wraps.
    */
   public static StubInvocationHandler getStubInvocationHandler(Object object) {
+    if (object instanceof StubContainer) {
+      return ((StubContainer) object).getStubInvocationHandler();
+    }
     if (!(object instanceof Stub)) {
       throw new IllegalArgumentException(String.format("Instance of %s not recognized as a Ubik stub", object.getClass().getName()));
     }
@@ -68,7 +71,7 @@ public class Stubs {
       return (RemoteRefStateless) handler;
     }
 
-    RemoteRefStateless ref = new RemoteRefStateless(name, domain, DispatcherFactory.getMulticastAddress(System.getProperties()));
+    RemoteRefStateless ref = new RemoteRefStateless(name.toString(), domain, DispatcherFactory.getMulticastAddress(System.getProperties()));
     ref.getContextList().update(handler.getContexts());
     return ref;
   }

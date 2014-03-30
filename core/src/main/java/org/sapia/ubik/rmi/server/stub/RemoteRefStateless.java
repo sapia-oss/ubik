@@ -52,7 +52,7 @@ public class RemoteRefStateless implements StubInvocationHandler, Externalizable
 
   private static Category log = Log.createCategory(RemoteRefStateless.class);
 
-  private Name name;
+  private String name;
   private String domain;
   private MulticastAddress multicastAddress;
   private OID oid = new DefaultOID(UIDGenerator.createUID());
@@ -70,7 +70,7 @@ public class RemoteRefStateless implements StubInvocationHandler, Externalizable
   /**
    * Creates an instance of this class
    */
-  public RemoteRefStateless(Name name, String domain, MulticastAddress multicastAddress) {
+  public RemoteRefStateless(String name, String domain, MulticastAddress multicastAddress) {
     this.name = name;
     this.domain = domain;
     this.multicastAddress = multicastAddress;
@@ -91,10 +91,10 @@ public class RemoteRefStateless implements StubInvocationHandler, Externalizable
   }
 
   /**
-   * @return the {@link Name} under which this instance's corresponding remote
+   * @return the name under which this instance's corresponding remote
    *         object was bound.
    */
-  public Name getName() {
+  public String getName() {
     return name;
   }
 
@@ -163,7 +163,7 @@ public class RemoteRefStateless implements StubInvocationHandler, Externalizable
   @Override
   @SuppressWarnings(value = "unchecked")
   public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-    name = (Name) in.readObject();
+    name = in.readUTF();
     domain = in.readUTF();
     multicastAddress = (MulticastAddress) in.readObject();
     oid = (OID) in.readObject();
@@ -180,7 +180,7 @@ public class RemoteRefStateless implements StubInvocationHandler, Externalizable
    */
   @Override
   public void writeExternal(ObjectOutput out) throws IOException {
-    out.writeObject(name);
+    out.writeUTF(name);
     out.writeUTF(domain);
     out.writeObject(multicastAddress);
     out.writeObject(oid);

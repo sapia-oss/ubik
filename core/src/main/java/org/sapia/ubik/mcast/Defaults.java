@@ -19,6 +19,12 @@ public class Defaults {
   public static final int DEFAULT_JNDI_SYNC_LOOKUP_BATCH_SIZE  = 5;
 
   /**
+   * The default value of the timeout for client-side JNDI discovery. (see {@link Consts#JNDI_CLIENT_DISCO_TIMEOUT}).
+   */
+
+  public static final long DEFAULT_JNDI_CLIENT_DISCO_TIMEOUT = 5000;
+  
+  /**
    * The default value for the batch size when looking up synchronously other JNDI nodes, from a
    * given node missing a stub (see {@link Consts#JNDI_LAZY_LOOKUP_INTERVAL}).
    */

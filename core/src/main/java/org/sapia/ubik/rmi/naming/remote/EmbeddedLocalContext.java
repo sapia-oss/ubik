@@ -17,6 +17,7 @@ import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.EventChannelRef;
 import org.sapia.ubik.rmi.naming.remote.proxy.LocalNamingEnum;
 import org.sapia.ubik.rmi.server.Hub;
+import org.sapia.ubik.rmi.server.stub.RemoteRefContext;
 import org.sapia.ubik.rmi.server.stub.RemoteRefStateless;
 import org.sapia.ubik.rmi.server.stub.StubContainer;
 import org.sapia.ubik.rmi.server.stub.StubInvocationHandler;
@@ -506,9 +507,16 @@ class EmbeddedLocalContext extends ContextProxy {
     if (Stubs.isStub(remote)) {
       StubInvocationHandler handler = Stubs.getStubInvocationHandler(remote);
       LOG.debug("Got stub invocation handler %s for %s", handler, name);
+
+      // increment reference count: we are in-memory, so stub was not 
+      // deserialized and reference count was not incremented: we have to 
+      // force it.
+      for (RemoteRefContext c : handler.getContexts()) {
+        c.incrementRemoteReferenceCount();
+      }
+
       // stateless stub: register so that it is updated with new
       // endpoints appearing on the network
-
       if (handler instanceof RemoteRefStateless) {
         LOG.debug("Registering %s named %s with stateless stub table", handler, name);
         RemoteRefStateless ref = (RemoteRefStateless) handler;

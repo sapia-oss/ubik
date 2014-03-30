@@ -6,8 +6,6 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Set;
 
-import javax.naming.Name;
-
 import org.sapia.ubik.mcast.MulticastAddress;
 import org.sapia.ubik.util.Strings;
 
@@ -21,7 +19,7 @@ import org.sapia.ubik.util.Strings;
  */
 public class StatelessRefSyncEvent implements Externalizable {
 
-  private Name name;
+  private String name;
   private String domain;
   private MulticastAddress multicastAddress;
   private Set<RemoteRefContext> contexts;
@@ -35,7 +33,7 @@ public class StatelessRefSyncEvent implements Externalizable {
   /**
    * Constructor.
    */
-  public StatelessRefSyncEvent(Name name, String domain, MulticastAddress address, Set<RemoteRefContext> contexts) {
+  public StatelessRefSyncEvent(String name, String domain, MulticastAddress address, Set<RemoteRefContext> contexts) {
     this.name = name;
     this.domain = domain;
     this.multicastAddress = address;
@@ -66,7 +64,7 @@ public class StatelessRefSyncEvent implements Externalizable {
   /**
    * @return the name of the remote reference correspdonding to this instance.
    */
-  public Name getName() {
+  public String getName() {
     return name;
   }
 
@@ -77,7 +75,7 @@ public class StatelessRefSyncEvent implements Externalizable {
 
   @Override
   public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-    name = (Name) in.readObject();
+    name = in.readUTF();
     domain = in.readUTF();
     multicastAddress = (MulticastAddress) in.readObject();
     contexts = (Set<RemoteRefContext>) in.readObject();
@@ -85,7 +83,7 @@ public class StatelessRefSyncEvent implements Externalizable {
 
   @Override
   public void writeExternal(ObjectOutput out) throws IOException {
-    out.writeObject(name);
+    out.writeUTF(name);
     out.writeUTF(domain);
     out.writeObject(multicastAddress);
     out.writeObject(contexts);

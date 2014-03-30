@@ -99,7 +99,7 @@ public class RemoteRefContext implements Externalizable {
    * @return <code>true</code> if this is this instance's first hop.
    */
   public boolean isFirstHop() {
-    return hopCount < 1;
+    return hopCount <= 1;
   }
 
   /**
@@ -118,6 +118,23 @@ public class RemoteRefContext implements Externalizable {
       }
     }
     return pool;
+  }
+  
+  /**
+   * Forces the increment of the remote reference count.
+   */
+  public void incrementRemoteReferenceCount() {
+    try {
+      if (hopCount == 0) {
+        // we want to force a remote reference call
+        hopCount += 2;
+      } else {
+        hopCount++;
+      }
+      createReference();
+    } catch (RemoteException e) {
+      LOG.info("Network error occurred while incrementing remote reference", e);
+    }
   }
 
   @Override
@@ -206,7 +223,7 @@ public class RemoteRefContext implements Externalizable {
       pool = Hub.getModules().getTransportManager().getConnectionsFor(address);
     }
   }
-
+  
   private void createReference() throws RemoteException {
     ClientRuntime runtime = Hub.getModules().getClientRuntime();
     if (!isFirstHop()) {

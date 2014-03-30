@@ -4,7 +4,6 @@ import java.util.Iterator;
 
 import javax.naming.Context;
 import javax.naming.Name;
-import javax.naming.NameNotFoundException;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 
@@ -25,23 +24,21 @@ import org.sapia.ubik.rmi.naming.remote.RemoteContext;
 public class UbikRemoteContext extends JndiContext implements RemoteContext {
 
   private DomainInfo           domain;
-  private UbikSyncNode         node;
 
   protected UbikRemoteContext(DomainInfo domain, UbikSyncNode root) {
     super(root);
+    super.setCreateMissingNodesOnLookup(true);
     this.domain = domain;
-    this.node = root;
   }
 
   public Synchronizer getSynchronizer() {
-    return node.getSynchronizer();
+    return ((UbikSyncNode) super.getArchie().getRoot()).getSynchronizer();
   }
 
   protected UbikRemoteContext(UbikSyncNode node) {
     super(node);
     EventChannelRef channel = ((UbikSynchronizer) node.getSynchronizer()).getEventChannel();
     this.domain = new DomainInfo(channel.get().getDomainName(), channel.get().getMulticastAddress());
-    this.node   = node;
   }
 
   /**
@@ -70,40 +67,6 @@ public class UbikRemoteContext extends JndiContext implements RemoteContext {
   @Override
   public synchronized void rebind(String name, Object obj) throws NamingException {
     super.rebind(name, obj);
-  }
-
-  @Override
-  public synchronized Object lookup(Name name) throws NamingException {
-    try {
-      return super.lookup(name);
-    } catch (NameNotFoundException e) {
-      try {
-        Object found = syncLookup(name);
-        if (found == null) {
-          throw e;
-        }
-        return found;
-      } catch (ProcessingException pe) {
-        throw e;
-      }
-    }
-  }
-
-  @Override
-  public synchronized Object lookup(String name) throws NamingException {
-    try {
-      return super.lookup(name);
-    } catch (NameNotFoundException e) {
-      try {
-        Object found = syncLookup(getNameParser(name).parse(name));
-        if (found == null) {
-          throw e;
-        }
-        return found;
-      } catch (ProcessingException pe) {
-        throw e;
-      }
-    }
   }
 
   @Override
@@ -138,8 +101,4 @@ public class UbikRemoteContext extends JndiContext implements RemoteContext {
     }
   }
 
-  private Object syncLookup(Name name) throws ProcessingException {
-    org.sapia.archie.Name archieName = node.getNameParser().parse(name.toString());
-    return node.getSynchronizer().onGetValue(archieName.getTo(archieName.count() - 1), archieName.get(archieName.count() - 1));
-  }
 }
