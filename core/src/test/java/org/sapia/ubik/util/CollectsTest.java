@@ -53,7 +53,7 @@ public class CollectsTest {
 
   @Test
   public void testConvertAsList() {
-    List<Integer> integers = Collects.convertAsList(Collects.arrayToList("1", "2", "3"), new Function<Integer, String>() {
+    List<Integer> integers = Collects.convertAsList(Collects.arrayToList("1", "2", "3"), new Func<Integer, String>() {
       @Override
       public Integer call(String arg) {
         return Integer.parseInt(arg);
@@ -64,7 +64,7 @@ public class CollectsTest {
 
   @Test
   public void testConvertAsSet() {
-    Set<Integer> integers = Collects.convertAsSet(Collects.arrayToList("1", "2", "3"), new Function<Integer, String>() {
+    Set<Integer> integers = Collects.convertAsSet(Collects.arrayToList("1", "2", "3"), new Func<Integer, String>() {
       @Override
       public Integer call(String arg) {
         return Integer.parseInt(arg);
@@ -78,7 +78,7 @@ public class CollectsTest {
 
   @Test
   public void testConvertAsArray() {
-    Integer[] integers = Collects.convertAsArray(Collects.arrayToList("1", "2", "3"), Integer.class, new Function<Integer, String>() {
+    Integer[] integers = Collects.convertAsArray(Collects.arrayToList("1", "2", "3"), Integer.class, new Func<Integer, String>() {
       @Override
       public Integer call(String arg) {
         return Integer.parseInt(arg);

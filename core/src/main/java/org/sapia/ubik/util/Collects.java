@@ -108,10 +108,10 @@ public final class Collects {
    * @param collection
    *          the {@link Iterable} to filter.
    * @param converter
-   *          the {@link Function} to use as a converter.
+   *          the {@link Func} to use as a converter.
    * @return the {@link List} resulting from the filtering.
    */
-  public static <R, T> List<R> convertAsList(Iterable<T> collection, Function<R, T> converter) {
+  public static <R, T> List<R> convertAsList(Iterable<T> collection, Func<R, T> converter) {
     List<R> converted = new ArrayList<R>();
     for (T element : collection) {
       R val = converter.call(element);
@@ -125,9 +125,9 @@ public final class Collects {
   /**
    * Converts the given collection to a {@link Set}.
    * 
-   * @see #convertAsList(Iterable, Function)
+   * @see #convertAsList(Iterable, Func)
    */
-  public static <R, T> Set<R> convertAsSet(Iterable<T> collection, Function<R, T> converter) {
+  public static <R, T> Set<R> convertAsSet(Iterable<T> collection, Func<R, T> converter) {
     Set<R> converted = new HashSet<R>();
     for (T element : collection) {
       R val = converter.call(element);
@@ -184,12 +184,12 @@ public final class Collects {
    * @param the
    *          type of array.
    * @param the
-   *          converter {@link Function}
+   *          converter {@link Func}
    * 
-   * @see #convertAsList(Iterable, Function)
+   * @see #convertAsList(Iterable, Func)
    */
   @SuppressWarnings(value = "unchecked")
-  public static <R, T> R[] convertAsArray(Collection<T> collection, Class<R> arrayType, Function<R, T> converter) {
+  public static <R, T> R[] convertAsArray(Collection<T> collection, Class<R> arrayType, Func<R, T> converter) {
 
     R[] array = (R[]) Array.newInstance(arrayType, collection.size());
     int i = 0;

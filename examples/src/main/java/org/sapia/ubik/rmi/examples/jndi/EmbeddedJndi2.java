@@ -14,7 +14,7 @@ import org.sapia.ubik.rmi.naming.remote.discovery.DiscoveryHelper;
 import org.sapia.ubik.rmi.naming.remote.discovery.JndiDiscoListener;
 import org.sapia.ubik.rmi.naming.remote.discovery.ServiceDiscoListener;
 import org.sapia.ubik.rmi.naming.remote.discovery.ServiceDiscoveryEvent;
-import org.sapia.ubik.util.Function;
+import org.sapia.ubik.util.Func;
 
 public class EmbeddedJndi2 {
 
@@ -58,7 +58,7 @@ public class EmbeddedJndi2 {
       LazyStubInvocationHandler handler = LazyStubInvocationHandler.Builder.newInstance()
         .context(server.getRemoteContext())
         .name("/my/services/foo")
-        .matchFunction(new Function<Void, LazyStubInvocationHandler>() {
+        .matchFunction(new Func<Void, LazyStubInvocationHandler>() {
           @Override
           public Void call(LazyStubInvocationHandler handler) {
             discoHelper.removeServiceDiscoListener(handler);

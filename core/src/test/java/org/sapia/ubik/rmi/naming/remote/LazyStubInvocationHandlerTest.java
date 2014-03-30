@@ -23,7 +23,7 @@ import org.sapia.ubik.rmi.server.oid.DefaultOID;
 import org.sapia.ubik.rmi.server.stub.RemoteRefContext;
 import org.sapia.ubik.rmi.server.stub.StubContainer;
 import org.sapia.ubik.rmi.server.stub.StubInvocationHandler;
-import org.sapia.ubik.util.Function;
+import org.sapia.ubik.util.Func;
 
 @RunWith(MockitoJUnitRunner.class)
 public class LazyStubInvocationHandlerTest {
@@ -34,7 +34,7 @@ public class LazyStubInvocationHandlerTest {
   private RemoteContext             context;
   private LazyStubInvocationHandler handler;
   @Mock
-  private Function<Void, LazyStubInvocationHandler> function;
+  private Func<Void, LazyStubInvocationHandler> function;
   
   @Before
   public void setUp() throws Exception {

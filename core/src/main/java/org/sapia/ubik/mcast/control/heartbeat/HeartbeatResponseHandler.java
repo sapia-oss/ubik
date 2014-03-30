@@ -150,7 +150,7 @@ public class HeartbeatResponseHandler implements ControlResponseHandler {
 
           responses.addAll(context.getChannelCallback().sendSynchronousRequest(remainingTargets, new PingRequest()));
 
-          Set<String> tmp = Collects.convertAsSet(responses, new org.sapia.ubik.util.Function<String, SynchronousControlResponse>() {
+          Set<String> tmp = Collects.convertAsSet(responses, new org.sapia.ubik.util.Func<String, SynchronousControlResponse>() {
             public String call(SynchronousControlResponse res) {
               return res.getOriginNode();
             }

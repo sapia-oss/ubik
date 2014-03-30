@@ -34,7 +34,7 @@ import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.util.SysClock;
 import org.sapia.ubik.util.Collects;
 import org.sapia.ubik.util.Condition;
-import org.sapia.ubik.util.Function;
+import org.sapia.ubik.util.Func;
 import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.SoftReferenceList;
 
@@ -459,7 +459,7 @@ public class EventChannel {
    * {@link EventChannel}s.
    */
   public static synchronized Set<EventChannelRef> getActiveChannels() {
-    return Collects.convertAsSet(CHANNELS_BY_DOMAIN, new Function<EventChannelRef, EventChannel>() {
+    return Collects.convertAsSet(CHANNELS_BY_DOMAIN, new Func<EventChannelRef, EventChannel>() {
       @Override
       public EventChannelRef call(EventChannel c) {
         return new EventChannelRefImpl(c, false);

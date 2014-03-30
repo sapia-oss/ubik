@@ -27,7 +27,7 @@ import org.sapia.ubik.mcast.control.heartbeat.PingRequestHandler;
 import org.sapia.ubik.util.SysClock;
 import org.sapia.ubik.util.Collects;
 import org.sapia.ubik.util.Pause;
-import org.sapia.ubik.util.Function;
+import org.sapia.ubik.util.Func;
 
 /**
  * Controls the state of an {@link EventChannel} and behaves accordingly. It is
@@ -236,7 +236,7 @@ public class EventChannelController {
           log.info("Got %s nodes in purgatory", context.getPurgatory().size());
           List<Set<DownNode>> batches = Collects.splitAsSets(context.getPurgatory().getDownNodes(), config.getForceResyncBatchSize());
           for (Set<DownNode> batch : batches) {
-            context.getChannelCallback().forceResyncOf(Collects.convertAsSet(batch, new Function<String, DownNode>() {
+            context.getChannelCallback().forceResyncOf(Collects.convertAsSet(batch, new Func<String, DownNode>() {
               @Override
               public String call(DownNode arg) {
                 log.debug("Forcing resync for node in purgatory: %s", arg.getNode());

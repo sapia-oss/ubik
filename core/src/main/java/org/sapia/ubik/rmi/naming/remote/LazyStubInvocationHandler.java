@@ -23,7 +23,7 @@ import org.sapia.ubik.rmi.server.stub.StubInvocationHandler;
 import org.sapia.ubik.rmi.server.stub.Stubs;
 import org.sapia.ubik.util.Assertions;
 import org.sapia.ubik.util.Conf;
-import org.sapia.ubik.util.Function;
+import org.sapia.ubik.util.Func;
 import org.sapia.ubik.util.Strings;
 
 /**
@@ -49,7 +49,7 @@ public class LazyStubInvocationHandler implements StubInvocationHandler, Service
   public static class Builder {
     private String        name;
     private RemoteContext context;
-    private Function<Void, LazyStubInvocationHandler> matchFunction;
+    private Func<Void, LazyStubInvocationHandler> matchFunction;
     
     private Builder() {
     }
@@ -73,10 +73,10 @@ public class LazyStubInvocationHandler implements StubInvocationHandler, Service
     }
   
     /**
-     * @param func the {@link Function} that is invoked when a service corresponding to the
+     * @param func the {@link Func} that is invoked when a service corresponding to the
      * @return this instance.
      */
-    public Builder matchFunction(Function<Void, LazyStubInvocationHandler> func) {
+    public Builder matchFunction(Func<Void, LazyStubInvocationHandler> func) {
       this.matchFunction = func;
       return this;
     }
@@ -107,14 +107,14 @@ public class LazyStubInvocationHandler implements StubInvocationHandler, Service
   private TimeIntervalBarrier            lookupBarrier = TimeIntervalBarrier.forMillis(
       Conf.newInstance().getLongProperty(Consts.JNDI_LAZY_LOOKUP_INTERVAL, Defaults.DEFAULT_LAZY_LOOKUP_INTERVAL)
   );
-  private Function<Void, LazyStubInvocationHandler> discoveryMatchFunction;
+  private Func<Void, LazyStubInvocationHandler> discoveryMatchFunction;
   
   /**
    * @param name the name of the remote object to look up.
    * @param context the {@link Context} to use when performing the lookup.
    */
   public LazyStubInvocationHandler(String name, Context context) {
-    this(name, context, new Function<Void, LazyStubInvocationHandler>() {
+    this(name, context, new Func<Void, LazyStubInvocationHandler>() {
       @Override
       public Void call(LazyStubInvocationHandler arg) {
         return null;
@@ -123,15 +123,15 @@ public class LazyStubInvocationHandler implements StubInvocationHandler, Service
   }
 
   /**
-   * This constructor allows passing a {@link Function} which is invoked when a remote object is found
+   * This constructor allows passing a {@link Func} which is invoked when a remote object is found
    * that matches the name of this instance's intended stub.
    * 
    * @param name the name of the remote object to look up.
    * @param context the {@link Context} to use when performing the lookup.
-   * @param discoveryMatchFunction the {@link Function} that this invoked when the {@link #onServiceDiscovered(ServiceDiscoveryEvent)} 
+   * @param discoveryMatchFunction the {@link Func} that this invoked when the {@link #onServiceDiscovered(ServiceDiscoveryEvent)} 
    * of this instance is called, and the remote object that was found matches this instance's name. 
    */
-  public LazyStubInvocationHandler(String name, Context context, Function<Void, LazyStubInvocationHandler> discoveryMatchFunction) {
+  public LazyStubInvocationHandler(String name, Context context, Func<Void, LazyStubInvocationHandler> discoveryMatchFunction) {
     this.name    = name.startsWith("/") ? name : "/" + name;
     this.context = context;
     this.discoveryMatchFunction = discoveryMatchFunction;

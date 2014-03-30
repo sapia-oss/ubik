@@ -17,7 +17,7 @@ import org.sapia.ubik.rmi.server.Hub;
 import org.sapia.ubik.rmi.server.VmId;
 import org.sapia.ubik.rmi.server.invocation.InvocationDispatcher;
 import org.sapia.ubik.util.Collects;
-import org.sapia.ubik.util.Function;
+import org.sapia.ubik.util.Func;
 
 /**
  * This class implements the basic behavior of dynamic proxies that implement
@@ -87,7 +87,7 @@ public abstract class RemoteRef implements StubInvocationHandler, Externalizable
   public StubContainer toStubContainer(Object proxy) {
     Set<Class<?>> interfaces = new HashSet<Class<?>>();
     Hub.getModules().getServerTable().getTypeCache().collectInterfaces(proxy.getClass(), interfaces);
-    String[] names = Collects.convertAsArray(interfaces, String.class, new Function<String, Class<?>>() {
+    String[] names = Collects.convertAsArray(interfaces, String.class, new Func<String, Class<?>>() {
       @Override
       public String call(Class<?> interf) {
         return interf.getName();

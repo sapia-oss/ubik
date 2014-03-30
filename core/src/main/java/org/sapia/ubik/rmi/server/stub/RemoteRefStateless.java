@@ -26,7 +26,7 @@ import org.sapia.ubik.rmi.server.oid.DefaultOID;
 import org.sapia.ubik.rmi.server.oid.OID;
 import org.sapia.ubik.rmi.server.stub.LocalMethod.LocalMethodMap;
 import org.sapia.ubik.util.Collects;
-import org.sapia.ubik.util.Function;
+import org.sapia.ubik.util.Func;
 import org.sapia.ubik.util.Strings;
 
 /**
@@ -148,7 +148,7 @@ public class RemoteRefStateless implements StubInvocationHandler, Externalizable
   public StubContainer toStubContainer(Object proxy) {
     Set<Class<?>> interfaces = new HashSet<Class<?>>();
     Hub.getModules().getServerTable().getTypeCache().collectInterfaces(proxy.getClass(), interfaces);
-    String[] names = Collects.convertAsArray(interfaces, String.class, new Function<String, Class<?>>() {
+    String[] names = Collects.convertAsArray(interfaces, String.class, new Func<String, Class<?>>() {
       @Override
       public String call(Class<?> interf) {
         return interf.getName();
