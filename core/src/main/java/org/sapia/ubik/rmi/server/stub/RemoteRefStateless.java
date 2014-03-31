@@ -169,7 +169,7 @@ public class RemoteRefStateless implements StubInvocationHandler, Externalizable
     Collection<RemoteRefContext> remoteContexts = (Collection<RemoteRefContext>) in.readObject();
     contexts = new ContextList();
 
-    log.info("Deserializing stateless stub (%s); endpoints: %s", name, remoteContexts);
+    log.debug("Deserializing stateless stub (%s); endpoints: %s", name, remoteContexts);
 
     Hub.getModules().getStatelessStubTable().registerStatelessRef(this, remoteContexts);
   }
