@@ -20,27 +20,9 @@ public class LocalhostTest {
   }
 
   @Test
-  public void testGetLocalAddress() throws Exception {
-    String addr = Localhost.getPreferredLocalAddress().getHostAddress();
-    assertTrue(!addr.equals("localhost"));
-    assertTrue(!addr.equals("127.0.0.1"));
-    assertTrue(!addr.equals("0.0.0.0"));
-  }
-
-  @Test
-  public void testIsLocalAddress() {
-    List<Pattern> p = new ArrayList<>();
-    p.add(Pattern.compile("\\d{3}\\.\\d{3}\\.\\d+\\.\\d+"));
-    assertTrue(!Localhost.isLocalAddress(p, "127.0.0.1"));
-    assertTrue(!Localhost.isLocalAddress(p, "10.10.10.1"));
-    assertTrue(!Localhost.isLocalAddress(p, "localhost"));
-    assertTrue(Localhost.isLocalAddress(p, "192.168.0.10"));
-  }
-
-  @Test
   public void testDoSelectForIpPatternSetNoMatch() throws Exception {
     Localhost.setAddressPattern("\\d{2}\\.\\d{2}\\.\\d+\\.\\d+");
-    InetAddress addr = Localhost.doGetAnyLocalAddress(Collects.arrayToSet(InetAddress.getByName("127.0.0.1"),
+    InetAddress addr = Localhost.doGetPreferredLocalAddress(Collects.arrayToSet(InetAddress.getByName("127.0.0.1"),
         InetAddress.getByName("192.168.1.1")));
     assertFalse("Expected non-loopback address, got:" + addr.getHostAddress(), addr.getHostAddress().startsWith("127.0"));
   }
@@ -48,7 +30,7 @@ public class LocalhostTest {
   @Test
   public void testDoSelectForLoopbackPatternMatch() throws Exception {
     Localhost.setAddressPattern("127\\.\\d+\\.\\d+\\.\\d+");
-    InetAddress addr = Localhost.doGetAnyLocalAddress(Collects.arrayToSet(InetAddress.getByName("127.0.0.1"),
+    InetAddress addr = Localhost.doGetPreferredLocalAddress(Collects.arrayToSet(InetAddress.getByName("127.0.0.1"),
         InetAddress.getByName("192.168.1.1")));
     assertTrue("Expected loopback address, got:" + addr.getHostAddress(), addr.getHostAddress().startsWith("127.0"));
   }
@@ -56,19 +38,19 @@ public class LocalhostTest {
   @Test
   public void testDoSelectForIpPatternSetMatch() throws Exception {
     Localhost.setAddressPattern("\\d{3}\\.\\d{3}\\.\\d+\\.\\d+");
-    InetAddress addr = Localhost.doGetAnyLocalAddress(Collects.arrayToSet(InetAddress.getByName("192.168.1.1")));
+    InetAddress addr = Localhost.doGetPreferredLocalAddress(Collects.arrayToSet(InetAddress.getByName("192.168.1.1")));
     assertEquals("192.168.1.1", addr.getHostAddress());
   }
 
   @Test
   public void testDoSelectForIpPatternNotSetWithSingleLocalAddress() throws Exception {
-    InetAddress addr = Localhost.doGetAnyLocalAddress(Collects.arrayToSet(InetAddress.getByName("192.168.1.1")));
+    InetAddress addr = Localhost.doGetPreferredLocalAddress(Collects.arrayToSet(InetAddress.getByName("192.168.1.1")));
     assertEquals("192.168.1.1", addr.getHostAddress());
   }
 
   @Test
   public void testDoSelectForIpPatternNotSetWithMultiLocalAddress() throws Exception {
-    InetAddress addr = Localhost.doGetAnyLocalAddress(Collects.arrayToSet(InetAddress.getByName("192.168.1.1"),
+    InetAddress addr = Localhost.doGetPreferredLocalAddress(Collects.arrayToSet(InetAddress.getByName("192.168.1.1"),
         InetAddress.getByName("192.168.1.2")));
     assertFalse("Expected non-loopback address, got: " + addr.getHostAddress(), addr.getHostAddress().startsWith("127.0"));
   }

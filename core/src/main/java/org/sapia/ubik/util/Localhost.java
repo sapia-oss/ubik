@@ -43,15 +43,24 @@ import org.sapia.ubik.rmi.Consts;
  */
 public final class Localhost {
 
-  private static final Category LOG = Log.createCategory(Localhost.class);
+  private static final Category LOG             = Log.createCategory(Localhost.class);
+  
   private static final String   LOCALHOST       = "0.0.0.0";
   private static final String   LOCALHOST_IPV6  = "0:0:0:0:0:0:0:1";
   private static final String   LOOPBACK        = "127.0";
-  private static final Pattern  IPV4_PATTERN    = Pattern.compile("\\d+\\.\\d+\\.\\d+\\.\\d+");
-  private static final List<Pattern> PATTERNS   = new ArrayList<>();
+  private static final String   IPV4_PATTERN    =  "\\d+\\.\\d+\\.\\d+\\.\\d+";
 
+  private static final List<Condition<String>> PATTERNS             = new ArrayList<>();
+  private static final List<Condition<String>> DEFAULT_CONDITIONS   = new ArrayList<>();
+  private static final List<Condition<String>> LOCALHOST_CONDITIONS = Collects.arrayToList(
+      startsWith("192.168"), startsWith(LOOPBACK), exact(LOCALHOST), exact(LOCALHOST_IPV6)
+  );
+      
   static {
-
+    
+    DEFAULT_CONDITIONS.add(not(regex(IPV4_PATTERN), LOCALHOST_CONDITIONS));
+    DEFAULT_CONDITIONS.addAll(LOCALHOST_CONDITIONS);
+    
     List<String> patternKeys = new ArrayList<>();
     for (String n : System.getProperties().stringPropertyNames()) {
       if (n.startsWith(Consts.IP_PATTERN_KEY)) {
@@ -64,24 +73,26 @@ public final class Localhost {
       String patternStr = System.getProperty(k);
       if (patternStr != null) {
         LOG.info("Got local network address pattern: %s", patternStr);
-        PATTERNS.add(Pattern.compile(patternStr));
+        PATTERNS.add(regex(patternStr));
       }
     }
 
     if (PATTERNS.isEmpty()) {
       LOG.debug("Local network address pattern not set. Will fall back to default address selection");
     }
+    PATTERNS.addAll(DEFAULT_CONDITIONS);
   }
 
   private Localhost() {
   }
 
   static void setAddressPattern(String aPattern) {
-    PATTERNS.add(Pattern.compile(aPattern));
+    PATTERNS.add(0, regex(aPattern));
   }
 
   static void unsetAddressPattern() {
     PATTERNS.clear();
+    PATTERNS.addAll(DEFAULT_CONDITIONS);
   }
 
   /**
@@ -89,17 +100,6 @@ public final class Localhost {
    */
   public static boolean isIpPatternDefined() {
     return !PATTERNS.isEmpty();
-  }
-
-  /**
-   *
-   * @return an InetAddress
-   * @throws UnknownHostException
-   * @deprecated Should method {@link #getPreferredLocalAddress()} instead.
-   */
-  @Deprecated
-  public static InetAddress getLocalAddress() throws UnknownHostException {
-    return getPreferredLocalAddress();
   }
 
   /**
@@ -121,71 +121,89 @@ public final class Localhost {
       return InetAddress.getLocalHost();
     }
 
-    return doGetAnyLocalAddress(netAddresses);
+    return doGetPreferredLocalAddress(netAddresses);
 
   }
 
   // --------------------------------------------------------------------------
   /// Restricted methods
 
-  static InetAddress doGetAnyLocalAddress(Set<InetAddress> netAddresses) throws UnknownHostException {
-    if (isIpPatternDefined()) {
-      return doSelectAddress(netAddresses);
-    } else {
-      Set<InetAddress> nonLocalAddresses = Collects.filterAsSet(netAddresses, new Condition<InetAddress>() {
-        @Override
-        public boolean apply(InetAddress addr) {
-          return !(addr.getHostAddress().startsWith(LOCALHOST)
-              || addr.getHostAddress().startsWith(LOOPBACK)
-              || addr.getHostAddress().startsWith(LOCALHOST_IPV6));
+  static InetAddress doGetPreferredLocalAddress(Set<InetAddress> netAddresses) throws UnknownHostException {
+    
+    for (Condition<String> c : PATTERNS) {
+      for (InetAddress n : netAddresses) {
+        if(c.apply(n.getHostAddress())) {
+          return n;
         }
-      });
-
-      if (nonLocalAddresses.size() == 1) {
-        return nonLocalAddresses.iterator().next();
       }
-
-      Set<InetAddress> ipV4Addresses = Collects.filterAsSet(nonLocalAddresses, new Condition<InetAddress>() {
-        @Override
-        public boolean apply(InetAddress addr) {
-          return IPV4_PATTERN.matcher(addr.getHostAddress()).matches();
-        }
-      });
-
-      if (ipV4Addresses.size() == 1) {
-        return ipV4Addresses.iterator().next();
-      }
-
-      return InetAddress.getLocalHost();
     }
-  }
 
-  private static InetAddress doSelectAddress(Set<InetAddress> netAddresses) throws UnknownHostException {
-    Set<InetAddress> matchedAddresses = Collects.filterAsSet(netAddresses, new Condition<InetAddress>() {
-      @Override
-      public boolean apply(InetAddress addr) {
-        return isLocalAddress(PATTERNS, addr.getHostAddress());
-      }
-    });
-
-    if (!matchedAddresses.isEmpty()) {
-      InetAddress addr = matchedAddresses.iterator().next();
-      LOG.debug("Address %s matches address pattern", addr);
-      return addr;
-    }
     return InetAddress.getLocalHost();
   }
-
-  static boolean isLocalAddress(List<Pattern> patterns, String addr) {
-    if (addr.startsWith("/")) {
-      addr = addr.substring(1);
-    }
-    for (Pattern p : patterns) {
-      if(p.matcher(addr).matches()) {
-        return true;
+  
+  private static Condition<String> startsWith(final String pattern) {
+    return new Condition<String>() {
+      @Override
+      public boolean apply(String item) {
+        return item.startsWith(pattern);
       }
-    }
-    return false;
+      
+      @Override
+      public String toString() {
+        return pattern;
+      }
+    };
+  }
+  
+  private static Condition<String> exact(final String pattern) {
+    return new Condition<String>() {
+      @Override
+      public boolean apply(String item) {
+        return item.equals(pattern);
+      }
+      
+      @Override
+      public String toString() {
+        return pattern;
+      }
+    };
+  }
+  
+  private static Condition<String> regex(final String pattern) {
+    return new Condition<String>() {
+      
+      private Pattern p =  Pattern.compile(pattern);
+
+      @Override
+      public boolean apply(String item) {
+        return p.matcher(item).matches();
+      }
+      
+      @Override
+      public String toString() {
+        return pattern;
+      }
+    };
+  }
+  
+  private static Condition<String> not(final Condition<String> included, final List<Condition<String>> excluded) {
+    
+    return new Condition<String>() {
+      
+      @Override
+      public boolean apply(String item) {
+        if (included.apply(item)) {
+          for (Condition<String> n : excluded) {
+            if (n.apply(item)) {
+              return false;
+            }
+          }
+          return true;
+        }
+        return false;
+      }
+    };
+    
   }
 
 }
