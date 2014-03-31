@@ -51,12 +51,15 @@ public class UbikRemoteContextTest {
   @Test
   public void testReplicatedLookup() throws Exception {
     src.rebind("service", new SerializableObj());
-    UbikRemoteContext lateContext = UbikRemoteContext.newInstance(EventChannelTestSupport.createEventChannel("ubik.test").getReference());
-    Thread.sleep(2000);
+    EventChannel c3 = EventChannelTestSupport.createEventChannel("ubik.test");
+    c3.start();
     try {
+      UbikRemoteContext lateContext = UbikRemoteContext.newInstance(c3.getReference());
+      Thread.sleep(2000);
+
       lateContext.lookup("service");
     } finally {
-      lateContext.close();
+      c3.close();
     }
   }
 
