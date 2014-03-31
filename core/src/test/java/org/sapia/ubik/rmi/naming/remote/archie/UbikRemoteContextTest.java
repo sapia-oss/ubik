@@ -5,22 +5,33 @@ import java.io.Serializable;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.sapia.ubik.mcast.EventChannel;
 import org.sapia.ubik.mcast.EventChannelTestSupport;
 
 public class UbikRemoteContextTest {
 
   private UbikRemoteContext src, target;
+  private EventChannel c1, c2;
 
   @Before
   public void setUp() throws Exception {
-    src = UbikRemoteContext.newInstance(EventChannelTestSupport.createEventChannel("ubik.test").getReference());
-    target = UbikRemoteContext.newInstance(EventChannelTestSupport.createEventChannel("ubik.test").getReference());
+    EventChannel.disableReuse();
+    c1 = EventChannelTestSupport.createEventChannel("ubik.test");
+    c2 = EventChannelTestSupport.createEventChannel("ubik.test");
+    c1.start();
+    c2.start();
+    src = UbikRemoteContext.newInstance(c1.getReference());
+    target = UbikRemoteContext.newInstance(c2.getReference());
   }
 
   @After
   public void tearDown() throws Exception {
+    EventChannel.disableReuse();
     src.close();
     target.close();
+    
+    c1.close();
+    c2.close();
   }
 
   @Test
