@@ -18,14 +18,13 @@ import org.sapia.ubik.rmi.server.invocation.ServerPostInvokeEvent;
 import org.sapia.ubik.rmi.server.invocation.ServerPreInvokeEvent;
 import org.sapia.ubik.rmi.server.oid.DefaultOID;
 import org.sapia.ubik.rmi.server.oid.OID;
-import org.sapia.ubik.rmi.server.stub.StubContainer;
 import org.sapia.ubik.rmi.server.transport.ClassDescriptor;
 import org.sapia.ubik.rmi.server.transport.MarshalledObject;
 import org.sapia.ubik.util.Strings;
 
 /**
  * This commands performs a remote method invocation.
- * 
+ *
  * @author Yanick Duchesne
  */
 public class InvokeCommand extends RMICommand implements Externalizable {
@@ -76,7 +75,7 @@ public class InvokeCommand extends RMICommand implements Externalizable {
   /**
    * Returns the object identifier of the object on which the invocation will be
    * performed.
-   * 
+   *
    * @return an {@link DefaultOID}.
    */
   public OID getOID() {
@@ -85,7 +84,7 @@ public class InvokeCommand extends RMICommand implements Externalizable {
 
   /**
    * Returns the name of the method to invoke.
-   * 
+   *
    * @return a method name.
    */
   public String getMethodName() {
@@ -95,7 +94,7 @@ public class InvokeCommand extends RMICommand implements Externalizable {
   /**
    * Returns the signature (the types of the method's parameters) of the method
    * to call.
-   * 
+   *
    * @return an array of {@link Class} instances.
    */
   public Class<?>[] getParameterTypes() {
@@ -109,9 +108,9 @@ public class InvokeCommand extends RMICommand implements Externalizable {
   /**
    * Returns true if this instance encapsulates method call parameters and
    * return value in {@link MarshalledObject} instances.
-   * 
+   *
    * @return <code>true</code> if this instance uses {@link MarshalledObject}s.
-   * 
+   *
    * @see MarshalledObject
    */
   public boolean usesMarshalledObjects() {
@@ -128,6 +127,7 @@ public class InvokeCommand extends RMICommand implements Externalizable {
   /**
    * @see org.sapia.ubik.rmi.server.command.RMICommand#execute()
    */
+  @Override
   public Object execute() throws Throwable {
     if (Hub.isShutdown()) {
       throw new ShutdownException();
@@ -195,6 +195,7 @@ public class InvokeCommand extends RMICommand implements Externalizable {
   /**
    * @see java.io.Externalizable#readExternal(ObjectInput)
    */
+  @Override
   public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
     super.readExternal(in);
     oid = (OID) in.readObject();
@@ -207,6 +208,7 @@ public class InvokeCommand extends RMICommand implements Externalizable {
   /**
    * @see java.io.Externalizable#writeExternal(ObjectOutput)
    */
+  @Override
   public void writeExternal(ObjectOutput out) throws IOException {
     super.writeExternal(out);
     out.writeObject(oid);
@@ -229,7 +231,7 @@ public class InvokeCommand extends RMICommand implements Externalizable {
    * Internally converts the parameters of the method to call. Internally
    * unmarshals the parameters if they are instances of {@link MarshalledObject}
    * .
-   * 
+   *
    * @see MarshalledObject
    */
   protected void convertParams(ClassLoader loader) throws IOException, ClassNotFoundException {

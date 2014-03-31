@@ -10,11 +10,10 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.naming.Name;
-
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.MulticastAddress;
+import org.sapia.ubik.rmi.NoSuchObjectException;
 import org.sapia.ubik.rmi.server.CommandPing;
 import org.sapia.ubik.rmi.server.Hub;
 import org.sapia.ubik.rmi.server.ShutdownException;
@@ -121,7 +120,7 @@ public class RemoteRefStateless implements StubInvocationHandler, Externalizable
       toReturn = doInvoke(context, obj, toCall, params);
     } catch (ShutdownException e) {
       toReturn = handleError(context, obj, toCall, params, e);
-    } catch (RemoteException e) {
+    } catch (RemoteException | NoSuchObjectException e) {
       toReturn = handleError(context, obj, toCall, params, e);
     }
 
@@ -184,7 +183,7 @@ public class RemoteRefStateless implements StubInvocationHandler, Externalizable
     out.writeUTF(domain);
     out.writeObject(multicastAddress);
     out.writeObject(oid);
-    out.writeObject(contexts.getAll());
+    out.writeObject(contexts.getAllAsSet());
   }
 
   /**
@@ -232,6 +231,7 @@ public class RemoteRefStateless implements StubInvocationHandler, Externalizable
       return toReturn;
     } else if (toReturn instanceof Throwable) {
       Throwable err = (Throwable) toReturn;
+      err.fillInStackTrace();
       throw err;
     }
 

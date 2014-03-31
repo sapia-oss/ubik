@@ -11,7 +11,7 @@ import org.sapia.ubik.rmi.server.stub.LocalMethod.LocalMethodMap;
 /**
  * This class implements a basic stub handler (no fail over, no load balancing,
  * no replication).
- * 
+ *
  * @author Yanick Duchesne
  */
 public class RemoteRefEx extends RemoteRef {
@@ -28,10 +28,10 @@ public class RemoteRefEx extends RemoteRef {
 
   /**
    * Creates an instance of this class, with the given context.
-   * 
+   *
    * @param context
    *          a {@link RemoteRefContext}.
-   * 
+   *
    */
   public RemoteRefEx(RemoteRefContext context) {
     super(context);
@@ -40,6 +40,7 @@ public class RemoteRefEx extends RemoteRef {
   /**
    * @see java.lang.reflect.InvocationHandler#invoke(Object, Method, Object[])
    */
+  @Override
   public Object invoke(Object proxy, Method toCall, Object[] params) throws Throwable {
     Object toReturn = null;
 
@@ -70,8 +71,9 @@ public class RemoteRefEx extends RemoteRef {
       if (toReturn instanceof ShutdownException) {
         onShutdown(proxy, toCall, params);
       }
-
-      throw (Throwable) toReturn;
+      Throwable err = (Throwable) toReturn;
+      err.fillInStackTrace();
+      throw err;
     }
 
     return toReturn;

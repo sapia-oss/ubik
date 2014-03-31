@@ -119,7 +119,7 @@ public class RemoteRefContext implements Externalizable {
     }
     return pool;
   }
-  
+
   /**
    * Forces the increment of the remote reference count.
    */
@@ -159,14 +159,14 @@ public class RemoteRefContext implements Externalizable {
 
   @Override
   public int hashCode() {
-    return oid.hashCode();
+    return oid.hashCode() * 31 + vmId.hashCode() * 31;
   }
 
   @Override
   public boolean equals(Object other) {
     if (other instanceof RemoteRefContext) {
       RemoteRefContext otherContext = (RemoteRefContext) other;
-      return oid.equals(otherContext.oid);
+      return oid.equals(otherContext.oid) && vmId.equals(otherContext.vmId);
     }
     return false;
   }
@@ -223,7 +223,7 @@ public class RemoteRefContext implements Externalizable {
       pool = Hub.getModules().getTransportManager().getConnectionsFor(address);
     }
   }
-  
+
   private void createReference() throws RemoteException {
     ClientRuntime runtime = Hub.getModules().getClientRuntime();
     if (!isFirstHop()) {

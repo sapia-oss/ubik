@@ -12,9 +12,9 @@ import org.sapia.ubik.util.Strings;
  * An instance of this class is kept within a {@link RemoteRefStateless}
  * instance. It holds the list of {@link RemoteRefContext}s corresponding to the
  * remote objects to which the remote reference connects.
- * 
+ *
  * @author yduchesne
- * 
+ *
  */
 class ContextList implements Contexts.UpdateListener {
 
@@ -31,26 +31,26 @@ class ContextList implements Contexts.UpdateListener {
     public void onRemoval(RemoteRefContext context);
 
   }
-  
+
   /**
    * This interface is meant to isolate a {@link ThreadSpecificContextList} from the {@link ContextList}
    * to which it is associated.
    */
   public interface Callback {
-    
+
     /**
      * @return the timestamp at which the {@link ContextList} behind this
      * instance was last modified.
      */
     public long getTimestamp();
-    
+
     /**
      * @return the currently available {@link RemoteRefContext}s, each corresponding
      * to a remote object.
      */
     public List<RemoteRefContext> getContexts();
   }
-  
+
   // ==========================================================================
 
   private volatile long timestamp = System.nanoTime();
@@ -66,24 +66,24 @@ class ContextList implements Contexts.UpdateListener {
       public long getTimestamp() {
         return timestamp;
       }
-      
+
       @Override
       public List<RemoteRefContext> getContexts() {
         return getAll();
       }
     });
   }
-  
+
   /**
    * @return the time at which this instance was last modified.
    */
   long getTimestamp() {
     return timestamp;
   }
-  
+
   /**
    * Replaces this instance's contexts with the list of given ones.
-   * 
+   *
    * @param otherContexts
    *          the {@link Collection} of {@link RemoteRefContext}s that this
    *          instance should update itself with.
@@ -131,6 +131,14 @@ class ContextList implements Contexts.UpdateListener {
   }
 
   /**
+   * @return the {@link Set} of {@link RemoteRefContext}s held by this instance.
+   */
+  synchronized Set<RemoteRefContext> getAllAsSet() {
+    return new HashSet<RemoteRefContext>(contextSet);
+  }
+
+
+  /**
    * @return the number of {@link RemoteRefContext}s currently held by this instance.
    */
   synchronized int count() {
@@ -147,7 +155,7 @@ class ContextList implements Contexts.UpdateListener {
 
   /**
    * Adds the given {@link RemovalListener} to this instance.
-   * 
+   *
    * @param listener
    *          a {@link RemovalListener}.
    */

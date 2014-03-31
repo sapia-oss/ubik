@@ -9,13 +9,14 @@ import javax.naming.NamingException;
 
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
+import org.sapia.ubik.rmi.NoSuchObjectException;
 import org.sapia.ubik.rmi.naming.ServiceLocator;
 import org.sapia.ubik.rmi.server.ShutdownException;
 
 /**
  * A stub handler that manages reconnecting to another server instance provided
  * a method call fails.
- * 
+ *
  */
 public class RemoteRefReliable extends RemoteRefEx {
 
@@ -34,7 +35,7 @@ public class RemoteRefReliable extends RemoteRefEx {
 
   /**
    * Creates an instance of this class, with the given context.
-   * 
+   *
    * @param context
    *          a {@link RemoteRefContext}.
    */
@@ -46,10 +47,11 @@ public class RemoteRefReliable extends RemoteRefEx {
   /**
    * @see java.lang.reflect.InvocationHandler#invoke(Object, Method, Object[])
    */
+  @Override
   public Object invoke(Object obj, Method toCall, Object[] params) throws Throwable {
     try {
       return super.invoke(obj, toCall, params);
-    } catch (java.rmi.RemoteException e) {
+    } catch (java.rmi.RemoteException | NoSuchObjectException e) {
       if (url != null) {
         log.info("RemoteException caught, performing failover");
         return doFailOver(obj, toCall, params, e);
@@ -62,6 +64,7 @@ public class RemoteRefReliable extends RemoteRefEx {
   /**
    * @see java.io.Externalizable#readExternal(ObjectInput)
    */
+  @Override
   public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
     super.readExternal(in);
     url = (String) in.readObject();
@@ -70,6 +73,7 @@ public class RemoteRefReliable extends RemoteRefEx {
   /**
    * @see java.io.Externalizable#writeExternal(ObjectOutput)
    */
+  @Override
   public void writeExternal(ObjectOutput out) throws IOException {
     super.writeExternal(out);
     out.writeObject(url);
@@ -79,6 +83,7 @@ public class RemoteRefReliable extends RemoteRefEx {
    * @see org.sapia.ubik.rmi.server.stub.RemoteRefEx#onShutdown(Object, Method,
    *      Object[])
    */
+  @Override
   protected Object onShutdown(Object proxy, Method toCall, Object[] params) throws Throwable {
     return doFailOver(proxy, toCall, params, new ShutdownException());
   }
