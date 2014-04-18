@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.sapia.ubik.concurrent.Spawn;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.AsyncEventListener;
@@ -146,7 +147,7 @@ public class StatelessStubTable implements Module {
 
       log.debug("Registering %s new stub endpoints %s for name %s", newContexts.size(), newContexts, ref.getName());
 
-      RemoteEvent event = attachedRemoteEvent.get();
+      final RemoteEvent event = attachedRemoteEvent.get();
       if (event == null) {
         log.trace("No remote event associated to thread");
       }
@@ -154,8 +155,8 @@ public class StatelessStubTable implements Module {
       // with this instance's remote refs.
       if (event != null && !event.getType().equals(StatelessRefSyncEvent.class.getName())) {
         log.debug("Synching stateless references with remote node: %s", event.getNode());
-        EventChannel channel = eventChannelTable.getEventChannelFor(ref.getDomain(), ref.getMulticastAddress());
-        Set<RemoteRefContext> contextsToSync = new HashSet<>(contexts.getContexts());
+        final EventChannel channel = eventChannelTable.getEventChannelFor(ref.getDomain(), ref.getMulticastAddress());
+        final Set<RemoteRefContext> contextsToSync = new HashSet<>(contexts.getContexts());
         log.trace("Got current stateless ref endpoints: %s", contextsToSync);
         log.trace("Got incoming stateless ref endpoints: %s", newContexts);
         contextsToSync.removeAll(newContexts);
@@ -170,12 +171,19 @@ public class StatelessStubTable implements Module {
               }
             });
           }
-          try {
-            StatelessRefSyncEvent statelessRef = new StatelessRefSyncEvent(ref.getName(), ref.getDomain(), ref.getMulticastAddress(), contextsToSync);
-            channel.dispatch(event.getUnicastAddress(), StatelessRefSyncEvent.class.getName(), statelessRef);
-          } catch (IOException e) {
-            log.warning("Could not send stateless stub update to %s", event.getNode());
-          }
+          
+          Spawn.run(new Runnable() {
+            @Override
+            public void run() {
+              try {
+                StatelessRefSyncEvent statelessRef = new StatelessRefSyncEvent(ref.getName(), ref.getDomain(), ref.getMulticastAddress(), contextsToSync);
+                channel.dispatch(event.getUnicastAddress(), StatelessRefSyncEvent.class.getName(), statelessRef);
+              } catch (IOException e) {
+                log.warning("Could not send stateless stub update to %s", event.getNode());
+              }              
+            }
+          });
+
         }
       }
 
@@ -215,7 +223,7 @@ public class StatelessStubTable implements Module {
     }
 
     @Override
-    public synchronized void onAsyncEvent(RemoteEvent evt) {
+    public void onAsyncEvent(RemoteEvent evt) {
       try {
         if (evt.getType().equals(SyncPutEvent.class.getName())) {
           log.debug("Remote binding event received: %s", evt.getType());

@@ -15,7 +15,7 @@ import org.sapia.ubik.util.Strings;
  */
 public class DefaultOID implements Externalizable, OID {
   static final long serialVersionUID = 1L;
-  private static final Object unique = new Object();
+  private static final Object UNIQUE = new Object();
   private long id;
   private int hashCode;
 
@@ -28,7 +28,7 @@ public class DefaultOID implements Externalizable, OID {
    */
   public DefaultOID(long id) {
     this.id = id;
-    hashCode = (int) (id ^ (id >>> 32)) ^ unique.hashCode();
+    hashCode = 31 * ((int) id >>> 32) + UNIQUE.hashCode();
   }
 
   /**
@@ -69,5 +69,13 @@ public class DefaultOID implements Externalizable, OID {
 
   public String toString() {
     return Strings.toString("id", id, "hashCode", Integer.toHexString(hashCode));
+  }
+ 
+  // --------------------------------------------------------------------------
+  // Provided for testing
+  
+  void resetHashCode() {
+    Object unique = new Object();
+    hashCode = 31 * ((int) id >>> 32) + unique.hashCode();
   }
 }
