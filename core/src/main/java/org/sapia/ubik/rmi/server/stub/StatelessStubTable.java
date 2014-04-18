@@ -65,17 +65,19 @@ public class StatelessStubTable implements Module {
     dc.registerStatelessRef(ref, newContexts);
   }
 
-  private synchronized DomainContexts getDomainContextsFor(DomainName domainName, MulticastAddress addr) {
-    for (DomainContexts dc : domainContexts) {
-      if (dc.domainName.contains(domainName)) {
-        return dc;
+  private DomainContexts getDomainContextsFor(DomainName domainName, MulticastAddress addr) {
+    synchronized (domainContexts) {
+      for (DomainContexts dc : domainContexts) {
+        if (dc.domainName.contains(domainName)) {
+          return dc;
+        }
       }
-    }
-
-    DomainContexts dc = new DomainContexts(eventChannelTable, domainName, addr);
-    domainContexts.add(dc);
+  
+      DomainContexts dc = new DomainContexts(eventChannelTable, domainName, addr);
+      domainContexts.add(dc);
     dc.registerWithEventChannel();
-    return dc;
+      return dc;
+    }
   }
 
   // --------------------------------------------------------------------------

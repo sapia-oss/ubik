@@ -2,6 +2,7 @@ package org.sapia.ubik.mcast;
 
 import java.lang.ref.SoftReference;
 import java.net.UnknownHostException;
+import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 import java.util.WeakHashMap;
@@ -29,7 +30,7 @@ public class EventConsumer {
   private Category log = Log.createCategory(getClass());
   private Map<String, SoftReferenceList<AsyncEventListener>> asyncListenersByEvent = new ConcurrentHashMap<String, SoftReferenceList<AsyncEventListener>>();
   private Map<String, SoftReference<SyncEventListener>> syncListenersByEvent = new ConcurrentHashMap<String, SoftReference<SyncEventListener>>();
-  private Map<Object, String> reverseMap = new WeakHashMap<Object, String>();
+  private Map<Object, String> reverseMap = Collections.synchronizedMap(new WeakHashMap<Object, String>());
   private DomainName domain;
   private String node;
 
@@ -77,7 +78,7 @@ public class EventConsumer {
    * @param listener
    *          an {@link AsyncEventListener}.
    */
-  public synchronized void registerAsyncListener(String evtType, AsyncEventListener listener) {
+  public void registerAsyncListener(String evtType, AsyncEventListener listener) {
     SoftReferenceList<AsyncEventListener> lst = getAsyncListenersFor(evtType, true);
     synchronized (lst) {
       if (!lst.contains(listener)) {
@@ -97,12 +98,14 @@ public class EventConsumer {
    * @param listener
    *          a {@link SyncEventListener}.
    */
-  public synchronized void registerSyncListener(String evtType, SyncEventListener listener) throws ListenerAlreadyRegisteredException {
-    if (syncListenersByEvent.get(evtType) != null) {
-      throw new ListenerAlreadyRegisteredException(evtType);
+  public void synchronizedregisterSyncListener(String evtType, SyncEventListener listener) throws ListenerAlreadyRegisteredException {
+    synchronized (syncListenersByEvent) {
+      if (syncListenersByEvent.get(evtType) != null) {
+        throw new ListenerAlreadyRegisteredException(evtType);
+      }
+      syncListenersByEvent.put(evtType, new SoftReference<SyncEventListener>(listener));
+      reverseMap.put(listener, evtType);
     }
-    syncListenersByEvent.put(evtType, new SoftReference<SyncEventListener>(listener));
-    reverseMap.put(listener, evtType);
   }
 
   /**
@@ -111,7 +114,7 @@ public class EventConsumer {
    * @param listener
    *          the {@link SyncEventListener} to remove.
    */
-  public synchronized void unregisterListener(SyncEventListener listener) {
+  public void unregisterListener(SyncEventListener listener) {
     String evtId = (String) reverseMap.remove(listener);
     if (evtId != null) {
       syncListenersByEvent.remove(evtId);
@@ -124,7 +127,7 @@ public class EventConsumer {
    * @param listener
    *          the {@link AsyncEventListener} to remove.
    */
-  public synchronized void unregisterListener(AsyncEventListener listener) {
+  public void unregisterListener(AsyncEventListener listener) {
     String evtId = (String) reverseMap.remove(listener);
 
     if (evtId != null) {
@@ -242,12 +245,12 @@ public class EventConsumer {
    *         <code>null</code>, or if no listener was found for the given
    *         event's type).
    */
-  public synchronized Object onSyncEvent(RemoteEvent evt) {
+  public Object onSyncEvent(RemoteEvent evt) {
     DomainName dn = null;
 
     if (log.isDebug()) {
-      log.debug("Received remote event: " + evt.getType() + "@" + evt.getDomainName());
-      log.debug("Event from this node: " + evt.getNode().equals(node));
+      log.debug("Received remote event: %s@%s ", evt.getType(), evt.getDomainName());
+      log.debug("Event from this node: %s", evt.getNode().equals(node));
     }
 
     if (evt.getDomainName() != null) {
@@ -290,7 +293,7 @@ public class EventConsumer {
     return (dn != null) && domain.contains(dn) && (node != null) && !this.node.equals(node);
   }
 
-  private synchronized void notifyAsyncListeners(RemoteEvent evt) {
+  private void notifyAsyncListeners(RemoteEvent evt) {
     SoftReferenceList<AsyncEventListener> lst = getAsyncListenersFor(evt.getType(), false);
     if (lst.getApproximateSize() == 0) {
       log.debug("No listener for event: %s", evt.getType());
@@ -307,13 +310,17 @@ public class EventConsumer {
     SoftReferenceList<AsyncEventListener> lst = asyncListenersByEvent.get(evtId);
     if ((lst == null)) {
       if (create) {
-        lst = new SoftReferenceList<AsyncEventListener>();
-        asyncListenersByEvent.put(evtId, lst);
+        synchronized (asyncListenersByEvent) {
+          lst = asyncListenersByEvent.get(evtId);
+          if (lst == null) {
+            lst = new SoftReferenceList<AsyncEventListener>();
+            asyncListenersByEvent.put(evtId, lst);
+          }
+        }
       } else {
         lst = EMPTY_ASYNC_LISTENERS;
       }
     }
     return lst;
   }
-
 }
