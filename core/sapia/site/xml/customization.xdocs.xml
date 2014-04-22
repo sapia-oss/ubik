@@ -7,7 +7,8 @@
       <sapia:vitem name="For Dummies" href="rmi.html#dummies" />
       <sapia:vitem name="Believing" href="rmi.html#believing" />
       <sapia:vitem name="Architecture" href="architecture.html" />
-      <sapia:vitem name="Tutorial" href="tutorial.html" />    
+      <sapia:vitem name="Advanced" href="advanced.html" />
+      <sapia:vitem name="Cookbook" href="cookbook.html" />
     </sapia:vsection>
     
     <sapia:vsection name="Naming" href="naming.html">
@@ -201,7 +202,7 @@
     </sapia:sect2>
     
     <sapia:sect2 title="Callbacks" alias="callbacks">
-    	<p>The support for <a href="tutorial.html#callbacks">callbacks</a> in Ubik can be further customized with specific JVM properties: </p>
+    	<p>The support for <a href="advanced.html#callbacks">callbacks</a> in Ubik can be further customized with specific JVM properties: </p>
     	<ul>
     		<li><sapia:command>ubik.rmi.server.callback.max-threads</sapia:command>: indicates how many threads (the default is 5) should be used to process incoming callback 
     		remote method calls, which are processed asynchronously by the threads (the command object corresponding to the method call sits on a queue

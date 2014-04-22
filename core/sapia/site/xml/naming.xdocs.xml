@@ -6,7 +6,8 @@
       <sapia:vitem name="For Dummies" href="rmi.html#dummies" />
       <sapia:vitem name="Believing" href="rmi.html#believing" />
       <sapia:vitem name="Architecture" href="architecture.html" />
-      <sapia:vitem name="Tutorial" href="tutorial.html" />    
+      <sapia:vitem name="Advanced" href="advanced.html" />
+      <sapia:vitem name="Cookbook" href="cookbook.html" />
     </sapia:vsection>
     
     <sapia:vsection name="Naming" href="naming.html">
@@ -156,7 +157,7 @@
         <p>The properties that are loaded from the configuration will be exported as a set of system properties from within the JNDI server's VM, 
         at startup. Therefore they will be made available to Ubik's internal components that use them.</p>
         
-        <p>One of the properties that you will find necessary to configure at times is <sapia:command><a href="tutorial.html#bindaddr">ubik.rmi.address-pattern</a></sapia:command></p>
+        <p>One of the properties that you will find necessary to configure at times is <sapia:command><a href="cookbook.html#bindaddr">ubik.rmi.address-pattern</a></sapia:command></p>
       </sapia:sect3>
       
       <sapia:sect3 title="Binding a server to the JNDI tree">
@@ -241,7 +242,7 @@ public class HelloLookup {
     
     <sapia:sect2 title="Advanced Topics" alias="advanced">
       <sapia:sect-desc>
-      This section covers more advanced topics regarding Ubik's JNDI.
+        <p>This section covers more advanced topics regarding Ubik's JNDI.</p>
       </sapia:sect-desc>
       
       <sapia:sect3 title="Multicast Address and Port of the JNDI Server">
@@ -515,58 +516,6 @@ while(true){
         </sapia:sect4>        
         
       </sapia:sect3>
-      <!-- sapia:sect3 title="Attributes" alias="attributes">
-        <p>
-          It is now possible to bind and lookup items to/from the JNDI using additional attributes, specified
-          in the JNDI name. This allows distinguishing services bound under the same name, but that may be
-          additionaly qualified in order to be retrieved with a criteria-based approach. The following
-          illustrates how to specify attributes when binding a service to the JNDI:
-        </p>
-<sapia:code>
-// the ctx variable is an InitialContext instance, 
-/ acquired as shown further above.
-
-ctx.rebind("services/myService?version=1.0&amp;vmId=10933909", 
-           myService);
-</sapia:code>
-
-        <p>
-          Attributes are specified in a form of a query string; of course, in this case, the string
-          is not intended to make a query, but to further qualify the service that we are binding. 
-          Eventually, a similar string can be used to perform a lookup for a service instance that
-          matches specified attributes; in such a case, then, the string acts as a query:
-        </p>
-
-<sapia:code>
-MyService svc = (MyService)ctx.lookup("services/myService?version=1.0");
-</sapia:code>
-
-        <p>
-          In the above code, we attempt to retrieve an object bound under the "services/myService" name,
-          but that possesses an additional attribute (version) of a given value (1.0). The query string,
-          in this case, indeed consists of a query. The naming service will return an object that 
-          <b>matches the specified name and attributes</b> - or throw a <sapia:class>NameNotFoundException</sapia:class>.
-          Of course, if many objects match the given query, the returned one is chosen according to a round-robin
-          algortithm.
-        </p>
-          
-        <p>This mechanism can be very powerful, and is analoguous to Jini templates. When could you use it? 
-        Well, the versioning example above is a good candidate: different client applications could require
-        different versions of the same service. Another good use is when you have different development teams
-        requiring the same types of services, but in isolation from one another (a given service instance should be
-        used by a given team, and only that team); this isolation might be necessary so that teams do not "pollute"
-        each other's environment. In this case, we could bind services in a manner similar to the following:</p>
-          
-<sapia:code>
-ctx.rebind("services/myService?version=1.0&amp;vmId=10933909&amp;team=mercury", 
-           myService);
-</sapia:code>          
-          
-        <p>The example above suggests that teams are given some name that is used as an attribute in the services
-        that they use. Each team in this case would be mandated to specify that attribute when looking up
-        services.</p>
-        
-      </sapia:sect3-->
       
     </sapia:sect2>
   </sapia:sect1>

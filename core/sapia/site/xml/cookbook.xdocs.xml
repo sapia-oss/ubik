@@ -6,7 +6,8 @@
       <sapia:vitem name="For Dummies" href="rmi.html#dummies" />
       <sapia:vitem name="Believing" href="rmi.html#believing" />
       <sapia:vitem name="Architecture" href="architecture.html" />
-      <sapia:vitem name="Tutorial" href="tutorial.html" />    
+      <sapia:vitem name="Advanced" href="advanced.html" />  
+      <sapia:vitem name="Cookbook" href="cookbook.html" />
     </sapia:vsection>
     
     <sapia:vsection name="Naming" href="naming.html">
@@ -52,19 +53,21 @@
       <sapia:path name="projects" />
       <sapia:path name="ubik" href="home.html" />
       <sapia:path name="rmi" href="rmi.html" />
-      <sapia:path name="tutorial" href="tutorial.html" />      
       <sapia:path name="cookbook" />      
     </sapia:section>  
   
     <toc/>
     <sapia:sect-desc>
-    <p>This page provides a few recipes that should help developers get started with Ubik.</p>
-
+      <p>This page provides a few recipes that should help developers get started with Ubik. It does not attempt to be 
+      <i>RMI for dummies</i>. For a RMI primer, see Sun's <a href="http://java.sun.com/docs/books/tutorial/rmi/index.html">Java Tutorial</a>;
+      the <a href="rmi.html">Ubik RMI overview</a> also provides essential code snippets. Rather than teaching the basics, 
+      this cookbook will explain how to work with the features of Ubik RMI that are not present in the JDK's RMI.
+      </p>
     </sapia:sect-desc>
     
     <sapia:sect2 title="A Note on Configuration" alias="config"> 
       <p>
-      Ubik is configured with system properties, and allows overriding, for certain components of the system, at the instance level.
+      In general, Ubik is configured with system properties, and allows overriding, for certain components of the system, at the instance level.
       The framework is meant to provide remoting support for a whole JVM, and it therefore made sense to support configuration through system properties.
       </p>   
       <p>
@@ -78,20 +81,206 @@
       system properties).
       </sapia:note>
     </sapia:sect2>
+    
+    <sapia:sect2 title="Basic Stuff" alias="basics">
+      <sapia:sect-desc>
+        <p>
+          Let's start with some basics. You've seem some code lying around throughout the Ubik docs. Here we're trying to be more focused, starting
+          with the basics.
+        </p>
+      </sapia:sect-desc>
+      <sapia:sect3 title="Bind Address Selection" alias="bindaddr">    
+        <p>
+          Ubik will attempt exporting remote objects using a server bound to the first network interface that it detects which does not
+          correspond to localhost. If the host does not have such a network interface available, then Ubik resorts to localhost. If multiple network 
+          interfaces (other than localhost) are available on the host on which a Ubik server is started, then a regular expression can be used to
+          indicate to Ubik which one to use. That regular expression must be specified as a JVM property, under the 
+          <sapia:command>ubik.rmi.address-pattern</sapia:command> key. If no address could be found that matches the given regexp, then Ubik also
+          resorts to localhost. Here are a few regexps:
+        </p>
+        <sapia:code>
+\\d{3}\\.\\d{3}\\.\\d{3}\\.\\d{3}
+10\\.10\\.\\d+\\.\\d+
+192\\.168\\.\\d+\\.\\d+</sapia:code>
+  
+      <sapia:note>Note the double backslashes: in Java the backslash is an escape character, therefore it must be doubled in 
+      order to be treated as a normal character.</sapia:note>      
+      
+      <p>
+        Also, note that you can specify multiple such patterns, by using suffixes, as follows:
+      </p>
+      
+      <sapia:code>
+ubik.rmi.address-pattern.01=10\\.10\\.\\d+\\.\\d+
+ubik.rmi.address-pattern.02=192\\.168\\.\\d+\\.\\d+
+      </sapia:code>
+      
+      <p>
+        In the above case, attempt will be made to find the appropriate interface in the order in which the patterns are specified.
+      </p>
+        
+      </sapia:sect3>
+      
+      <sapia:sect3 title="The Hub">
+        <p>
+          The <sapia:classlink>org.sapia.ubik.rmi.server.Hub</sapia:classlink> keeps Ubik's state for a JVM. You use ubik to export a remote object, as so:
+        </p>
+        
+        <sapia:code>
+WorkService myRemoteObject = WorkServiceImpl();
+WorkService stub = Hub.export(myRemoteObject);
+        </sapia:code>
+       
+        <p>
+          As you can see above, the <sapia:class>Hub</sapia:class>'s <tt>export</tt> method returns the stub that was created. You could then bind 
+          that stub to Ubik's distributed JNDI tree, as explained <a href="#distributed_jndi">further below</a>.
+        </p>
+        
+        <p>As soon as you export an object through the <sapia:class>Hub</sapia:class>, its internal components are started. You may also invoke the 
+        <tt>start</tt> method explicitely, before anything else, just to manifest an intention:</p>
+        
+        <sapia:code>
+Hub.start();        
+        </sapia:code>
+      
+        <p>By the same token, upon exiting, your application should call the <sapia:class>Hub</sapia:class>'s <tt>shutdown</tt> method:</p>
+        
+        <sapia:code>
+Hub.shutdown();
+        </sapia:code>
+        
+        <sapia:note>The above must be done whether you've invoked the <tt>start</tt> method of the <sapia:class>Hub</sapia:class>
+        class or not.</sapia:note>
+      </sapia:sect3>
+      
+      <sapia:sect3 title="Exporting Remote Objects">
+        <sapia:sect-desc>
+          <p>
+           You've seen it in the previous section: you export an object through the <sapia:class>Hub</sapia:class> (or when you bind it to Ubik's distributed JNDI tree).
+           When you do so, a stub (that is, a dynamic proxy which represents it and is meant to relay remote method calls to it over the network) 
+           is created for it which implements all the object's interfaces. 
+          </p>
+          <sapia:note>
+           Ubik supports multiple transport types. Yet when you export an object through the <sapia:class>Hub</sapia:class>, if an object has already 
+           been exported for the transport you've chosen, the server that's been started for this transport will be used - even if, for example, you s
+           pecify a different port in your second <tt>export</tt> call. See the next section about the Apache Mina transport, there are more details
+           addressing this characteristic.
+          </sapia:note>
+        </sapia:sect-desc>
+        <sapia:sect4 title="The Default Transport: Apache Mina">
+          <p>
+           By default, Ubik uses <a href="https://mina.apache.org/">Apache Mina</a>. That is, when you use the single-argument 
+           <tt>export</tt> method (which you've seen used in the previous section), or the one that takes a port as an additional argument:
+          </p>
+          
+          <sapia:code>
+WorkService myRemoteObject = WorkServiceImpl();
+WorkService stub = Hub.export(myRemoteObject, 4343);  
+          </sapia:code>
+          
+          <p>If you rather call this method, a random port is internally picked:</p>
+
+          <sapia:code>
+WorkService myRemoteObject = WorkServiceImpl();
+WorkService stub = Hub.export(myRemoteObject);  
+          </sapia:code>
+          
+          <p>
+            Say the previous code is followed by this one:
+          </p>
+          
+          <sapia:code>
+WorkService mySecondRemoteObject = WorkServiceImpl();
+WorkService mySecondStub = Hub.export(myRemoteObject, 4343);
+          </sapia:code>
+          
+          <p>
+            In the above case, no new server will be started, and therefore no server will listen on port 4343.
+          </p>
+          
+          <sapia:note>
+          That is because Ubik will start only one server per transport type, and serve all remote invocations for objects exported though that 
+          transport with the same server.
+          </sapia:note>
+          
+        </sapia:sect4>
+        <sapia:sect4 title="Netty 4">
+          <p>
+           The following exports an object using the Netty transport, on a random port: </p>
+          <sapia:code>
+Properties props = new Properties();
+props.setProperty("ubik.rmi.transport.type", "tcp/nio/netty");
+WorkService myRemoteObject = WorkServiceImpl();
+WorkService stub = Hub.export(myRemoteObject, props);
+          </sapia:code>
+          <p>
+            The <tt>ubik.rmi.transport.type</tt> property indicates which tranport type to use.
+            More conveniently, you can use constants in your code, as follows:
+          </p>
+          <sapia:code>
+Properties props = new Properties();
+props.setProperty(Consts.TRANSPORT_TYPE, NettyTransportProvider.TRANSPORT_TYPE);
+WorkService myRemoteObject = WorkServiceImpl();
+WorkService stub = Hub.export(myRemoteObject, props);
+          </sapia:code>
+          
+          <p>
+          You can also specify the port to which your-Netty based server should be bound:          
+          </p>
+          
+          <sapia:code>
+Properties props = new Properties();
+props.setProperty(Consts.TRANSPORT_TYPE, NettyTransportProvider.TRANSPORT_TYPE);
+props.setProperty(NettyConsts.SERVER_PORT_KEY, "4343");
+WorkService myRemoteObject = WorkServiceImpl();
+WorkService stub = Hub.export(myRemoteObject, props);          
+          </sapia:code>
+        </sapia:sect4>
+       
+        <sapia:sect4 title="HTTP using Simple">
+          <p>
+            Ubik supports remote method invocation over HTTP, through the very convenient <a href="http://www.simpleframework.org/">Simple</a> framework,
+            which sports a high-performance embeddable HTTP server. In a manner similar to using Netty, you can export a remote object using
+            the HTTP transport as follows - in this case a random port will be used:
+          </p>
+          <sapia:code>
+Properties props = new Properties();
+props.setProperty(Consts.TRANSPORT_TYPE, HttpTransportProvider.TRANSPORT_TYPE);
+WorkService myRemoteObject = WorkServiceImpl();
+WorkService stub = Hub.export(myRemoteObject, props);
+          </sapia:code>
+          <p>
+            To specify a port explicitely:
+          </p>
+          <sapia:code>
+Properties props = new Properties();
+props.setProperty(Consts.TRANSPORT_TYPE, HttpTransportProvider.TRANSPORT_TYPE);
+props.setProperty(HttpConsts.HTTP_PORT_KEY, "8080");
+WorkService myRemoteObject = WorkServiceImpl();
+WorkService stub = Hub.export(myRemoteObject, props);
+          </sapia:code>
+        </sapia:sect4>
+       
+      </sapia:sect3>
+    </sapia:sect2>
         
     <sapia:sect2 title="Group Communication" alias="groupcomm"> 
-      <p>
-        Ubik's robustness characteristics rely on group communication. Such group communication is based on the <sapia:classlink>org.sapia.ubik.mcast.EventChannel</sapia:classlink> class.
-        As explained in the relevant <a href="group_communication.html#eventchannel">documentation</a>, the class supports unicast and broadcast communication. An <sapia:class>EventChannel</sapia:class>
-        is used behind the scenes to coordinate communications between distributed JNDI nodes and smart stubs.
-      </p> 
+      <sapia:sect-desc>
+        <p>
+        Ubik's robustness characteristics rely on group communication. Such group communication is based on the 
+        <sapia:classlink>org.sapia.ubik.mcast.EventChannel</sapia:classlink> class. As explained in the relevant 
+        <a href="group_communication.html#eventchannel">documentation</a>, the class supports unicast and broadcast communication. 
+        An <sapia:class>EventChannel</sapia:class> is used behind the scenes to coordinate communications between distributed JNDI nodes and smart stubs.
+        </p>
+      </sapia:sect-desc> 
       <p>
         Therefore, the first thing that you must do when using Ubik is to set up the configuration of the event channel. The examples below show you how.
       </p>
 		  <sapia:sect3 title="Default Setup: IP Multicast and TCP unicast">
 			<p>
-			  When creating an <sapia:channel>EventChannel</sapia:channel> with the constructor that takes only the domain name as argument, the channel will IP multicast for broadcast, and the
-			  TCP <sapia:classlink>org.sapia.ubik.mcast.UnicastDispatcher</sapia:classlink> based on Apache Mina. The code below creates such an <sapia:class>EventChannel</sapia:class>:
+			  When creating an <sapia:channel>EventChannel</sapia:channel> with the constructor that takes only the domain name as argument, the channel 
+			  will IP multicast for broadcast, and the TCP <sapia:classlink>org.sapia.ubik.mcast.UnicastDispatcher</sapia:classlink> based on Apache Mina. 
+			  The code below creates such an <sapia:class>EventChannel</sapia:class>:
 			</p> 
 			<sapia:code>
 	EventChannel channel = new EventChannel("myDomain");
@@ -105,14 +294,14 @@
 			  (which depends on the Avis router and allows deploying broadcast over TCP), define the following system property:
 			</p> 
 			<sapia:code>
-	ubik.rmi.naming.broadcast.provider=ubik.rmi.naming.broadcast.avis
+ubik.rmi.naming.broadcast.provider=ubik.rmi.naming.broadcast.avis
 			</sapia:code> 
 			<p>
 			  Then, instantiate the <sapia:class>EventChannel</sapia:class> as previously done:
 			</p>
 			<sapia:code>
-	EventChannel channel = new EventChannel("myDomain");
-	channel.start();
+EventChannel channel = new EventChannel("myDomain");
+channel.start();
 			</sapia:code> 
 		  </sapia:sect3>
 	
@@ -121,14 +310,15 @@
 			  If your code has created an <sapia:class>EventChannel</sapia:class>, then it should also terminate it, as follows:
 			</p> 
 			<sapia:code>
-	channel.close();
+channel.close();
 			</sapia:code> 
 		  </sapia:sect3>
 	 
 	   	<sapia:sect3 title="Synchronous Remote Events">
 		   	<p>
-		   	  The <code>send</code> methods allow sending <sapia:class>RemoteEvent</sapia:class>s to one or more nodes, and expect a response from each of these
-		   	  nodes in return. Events received in such a manner at the target nodes are thus dispatched to the <sapia:class>SyncEventListener</sapia:class> that is
+		   	  The <code>send</code> methods allow sending <sapia:classlink>org.sapia.ubik.mcast.RemoteEvent</sapia:classlink>s to one or more nodes, and expect 
+		   	  a response from each of these nodes in return. Events received in such a manner at the target nodes are thus dispatched to the
+		   	   <sapia:classlink>org.sapia.ubik.mcast.SyncEventListener</sapia:classlink> that is
 		   	  listening to such events, at that node. The response is synchronously sent back to the <sapia:class>EventChannel</sapia:class> from which the 
 		   	  <sapia:class>RemoteEvent</sapia:class> originated. That <sapia:class>EventChannel</sapia:class> is thus responsible for performing aggregation of the 
 		   	  different responses, returning these to application code (i.e.: the code that initially invoked the <code>send</code> method).
@@ -137,7 +327,7 @@
 		   	  The following snippets illustrate how to implement a <sapia:class>SyncEventListener</sapia:class>, and how to send <sapia:class>RemoteEvent</sapia:class>s
 		   	  to it:
 		   	</p>
-		   	<sapia:code>
+		   	<sapia:code><![CDATA[
 import org.sapia.ubik.mcast.*;
 
 // firt implement the listener
@@ -165,7 +355,7 @@ if (res.isError()) {
 } else {
   System.out.println(res.getData());
 }
-		   	</sapia:code>
+		   	]]></sapia:code>
 	   
 	      <sapia:note>Response timeout is managed globally, through the <tt>ubik.rmi.naming.mcast.response.timeout</tt> property.</sapia:note>	  
 	   	</sapia:sect3>
@@ -176,9 +366,9 @@ if (res.isError()) {
           response is expected on this case). 
         </p>
         <p>
-          Here's how  <sapia:class>AsyncEventListener</sapia:class>s are dealt with:
+          Here's how  <sapia:classlink>org.sapia.ubik.mcast.AsyncEventListener</sapia:classlink>s are dealt with:
         </p>
-        <sapia:code>
+        <sapia:code><![CDATA[
 import org.sapia.ubik.mcast.*;
 
 // firt implement the listener
@@ -200,7 +390,7 @@ recevingChannel.registerAsyncListener("ubik.example.async.event", listener);
  
 // on the other end, send the event
 sendingChannel.dispatch("ubik.example.async.event", "HELLO");
-        </sapia:code>
+        ]]></sapia:code>
      
         <sapia:note><sapia:class>RemoteEvent</sapia:class>s received in the <tt>onAsyncEvent</tt> method should
         be handled in a separated thread, if processing risks blocking for too long.</sapia:note>    
@@ -208,15 +398,24 @@ sendingChannel.dispatch("ubik.example.async.event", "HELLO");
 	    
 	  </sapia:sect2>
 	  
-		<sapia:sect2 title="Distributed JNDI">
-		  <p>To expose the smart stubs created by Ubik as remote services, you must use Ubik's distributed JNDI. 
-		  The <sapia:classlink>org.sapia.ubik.rmi.naming.remote.EmbeddableJNDIServer</sapia:classlink>, as its name implies,
-		  can be embedded in your application. An <sapia:class>EmbeddableJNDIServer</sapia:class> uses an 
-		  <sapia:class>EventChannel</sapia:class> to discover other JNDI server nodes on the network. Alltogether, they form a distributed
-		  JNDI tree across which smart stubs are replicated.
-		  </p>
+		<sapia:sect2 title="Distributed JNDI" alias="distributed_jndi">
+		  
+		  <sapia:sect-desc><p>To expose the smart stubs created by Ubik as remote services, you must use Ubik's distributed JNDI. 
+        The <sapia:classlink>org.sapia.ubik.rmi.naming.remote.EmbeddableJNDIServer</sapia:classlink>, as its name implies,
+        can be embedded in your application. An <sapia:class>EmbeddableJNDIServer</sapia:class> uses an 
+        <sapia:class>EventChannel</sapia:class> to discover other JNDI server nodes on the network. Alltogether, they form a distributed
+        JNDI tree across which smart stubs are replicated.</p>
+		  </sapia:sect-desc>
+		  
+		  <sapia:note>There's <a href="naming.html">a section of the documentation</a> that provides more details regarding Ubik's JNDI implementation, including
+		  additional code samples.</sapia:note>
+		  
 		  <sapia:sect3 title="Creating and Starting a JNDI Server">
-		    <sapia:code>
+		    <p>
+		      You embed a JNDI server instance in code as the following snippet illustrates. This starts a server on the port you choose,
+		      on the domain specified. The server relies on an <sapia:class>EventChannel</sapia:class> to discover other instances in the domain.
+		    </p>
+		    <sapia:code><![CDATA[
 EventChannel channel = new EventChannel("myDomain"); 
 channel.start();
 EmbeddableJNDIServer jndi = new EmbeddableJndiServer(channel.getReference(), 1099);
@@ -225,7 +424,12 @@ jndi.start(true); // true: server will start as daemon
 // when done:
 jndi.stop();
 channel.close();
-		    </sapia:code>
+		    ]]></sapia:code>
+		    
+		    <p>
+		      Both the lifecyle of the <sapia:class>EventChannel</sapia:class> and of the JNDI server follow the one of your application. Don't forget
+		      to dispose of those resources when your application terminates.
+		    </p>
 		  </sapia:sect3>
 		  
       <sapia:sect3 title="Binding a Remote Object">
@@ -234,96 +438,283 @@ channel.close();
 MyService stub = Hub.export(myService);
 jndi.getLocalContext().bind("services/myService", stub);
         </sapia:code>
+        
         <p>If you connect to an <sapia:class>EmbeddableJNDIServer</sapia:class> remotely, do as follows (of course use the appropriate port):</p>
-        <sapia:code>
+        
+        <sapia:code><![CDATA[
 Properties props = new Properties();
 props.setProperty(InitialContext.PROVIDER_URL, "ubik://localhost:1099/");
 props.setProperty(InitialContext.INITIAL_CONTEXT_FACTORY, RemoteInitialContextFactory.class.getName());
 InitialContext ctx = new InitialContext(props);
 MyService stub = Hub.export(myService);
 ctx.bind("services/myService", stub);
-        </sapia:code>
+        ]]></sapia:code>
       </sapia:sect3>		  
 		  
       <sapia:sect3 title="Looking up a Remote Object">
+      
         <p>If you use an <sapia:class>EmbeddableJNDIServer</sapia:class> directly in your application, you can bind a remote object to it as such:</p>
+        
         <sapia:code>
 MyService stub = (MyService) jndi.getLocalContext().lookup("services/myService");
         </sapia:code>
+        
         <p>If you connect to an JNDI server remotely, do as follows (of course use the appropriate port):</p>
-        <sapia:code>
+        
+        <sapia:code><![CDATA[
 Properties props = new Properties();
 props.setProperty(InitialContext.PROVIDER_URL, "ubik://10.10.10.11:1099/");
 props.setProperty(InitialContext.INITIAL_CONTEXT_FACTORY, RemoteInitialContextFactory.class.getName());
 InitialContext ctx = new InitialContext(props);
 MyService stub = (MyService) ctx.lookup("services/myService");
-        </sapia:code>
+        ]]></sapia:code>
       </sapia:sect3>  		  
 		  
-      <sapia:sect3 title="Resilient Lookup">
+      <sapia:sect3 title="Resilient Remote Lookup">
         <p>
           When connecting to a JNDI server remotely, the address of the host (and/or its port) may be misconfigured, or the host to which
-          you're attempting to connect may not be up. In this context, it is possible to help the 
+          you're attempting to connect may be down. In this context, it is possible to help the 
           <sapia:classlink>org.sapia.ubik.rmi.naming.remote.RemoteInitialContextFactory</sapia:classlink> connect to another existing JNDI server.
           To that end, you must specify the <tt>ubik.jndi.domain</tt> property, either as a system property, or as a property you pass to the
           <sapia:class>InitialContext</sapia:class>. The above example sets that property (by using the corresponding constant of the 
           <sapia:class>RemoteInitialContextFactory</sapia:class>):          
         </p>
         
-        <sapia:code>
+        <sapia:code><![CDATA[
 Properties props = new Properties();
 props.setProperty(RemoteInitialContextFactory.UBIK_DOMAIN_NAME, "default");
 props.setProperty(InitialContext.PROVIDER_URL, "ubik://localhost:1098");
-props.setProperty(InitialContext.INITIAL_CONTEXT_FACTORY, RemoteInitialContextFactory.class.getName()); 
-        </sapia:code>
+props.setProperty(InitialContext.INITIAL_CONTEXT_FACTORY, RemoteInitialContextFactory.class.getName());
+InitialContext ctx = new InitialContext(props);
+MyService stub = (MyService) ctx.lookup("services/myService");
+        ]]></sapia:code>
         
         <p>
-          Internally, the <sapia:class>RemoteInitialContextFactory</sapia:class> instance will create an <sapia:class>EventChannel</sapia:class>.
+          Internally, the <sapia:class>RemoteInitialContextFactory</sapia:class> instance will use an <sapia:class>EventChannel</sapia:class> to
+          discover an existing JNDI server on the network. 
+        </p>
+        
+      </sapia:sect3> 
+      
+      <sapia:sect3 title="Discovery">
+        <p>In order to discover new JNDI servers appearing on the network, or new services (i.e.: Ubik stubs) being bound to those servers, one can
+        use the convenient <sapia:classlink>org.sapia.ubik.rmi.naming.remote.discovery.DiscoveryHelper</sapia:classlink> class. An instance if this class
+        allows registering <sapia:classlink>org.sapia.ubik.rmi.naming.remote.discovery.ServiceDiscoListener</sapia:classlink>s and 
+        <sapia:classlink>org.sapia.ubik.rmi.naming.remote.discovery.JndiDiscoListener</sapia:classlink>s. These are notified when new services or JNDI servers
+        appear, respectively. The following snippet provides a good illustration:</p>
+        
+        <sapia:code>
+DiscoveryHelper discoHelper = new DiscoveryHelper(eventChannel.getReference());
+
+discoHelper.addJndiDiscoListener(new JndiDiscoListener() {
+  public void onJndiDiscovered(javax.naming.Context jndiContext) {
+    log.debug("Binding service to JNDI");
+    jndiContext.bind("/my/service", myService);
+  }
+});
+
+discoHelper.addServiceDiscoListener(new ServiceDiscoListener() {
+  public void onServiceDiscovered(ServiceDiscoveryEvent event) {
+    log.debug("Got service: {}", event.getName());
+    service = (MyService) event.getService();
+  }
+});
+        </sapia:code>
+        <p>
+        The type of code above may be used when a) a JNDI server might not yet be present on the network; or b) when a service might not yet be present on the network.
+        </p>        
+        <p>
+        In the first case, the application's code holds logic to perform late discovery of Ubik JNDI nodes: the example code shows that the application binds a stub
+        to the JNDI upon such a discovery occurring. In the second case, the code acquires the service (in fact a Ubik stub) that was discovered and assigns it to a
+        member variable.
+        </p>
+        <p>
+        You'll see in the next section that Ubik uses a <sapia:class>DiscoverHelper</sapia:class> to implement so-called "lazy stubs".
+        </p>
+      </sapia:sect3>
+      
+      <sapia:sect3 title="Lazy Stubs">
+    
+        <p>Although the ability to discover remote objects is available to you, it might not be so convenient yet: it may be cumbersome to make
+        application code "conscious" of services not yet being available at startup. See this for example:</p>
+        
+        <sapia:code><![CDATA[
+private WorkService service;
+
+@PostConstruct
+public void init() throws NamingException {
+  try {
+    service = doLookup();
+  } catch (NameNotFoundException e) {
+    doRegisterForServiceDiscovery();
+  }
+}
+
+public void performWork(Work someWork) {
+  if (service == null) {
+    throw new IllegalStateException("WorkService not yet available");
+  }
+  service.perform(someWork);
+}
+        ]]></sapia:code>
+        
+        <p>The above ilustrates cases where application code must be aware of the unavailability of distributed dependencies, and takes steps
+        to work around those explicitely, in code.</p>
+        
+        <p>An alternative to the above is to use the <sapia:classlink>org.sapia.ubik.rmi.naming.remote.LazyStubInvocationHandler</sapia:classlink> class: it implements the logic for
+        discovering the desired remote dependency lazily. You may then just create an instance of it, as needed, and wrap it in a dynamic proxy
+        implementing the interface of the dependency that you wish to use:</p>
+        
+        <sapia:code><![CDATA[
+@Inject
+private EmbeddableJNDIServer jndi;
+
+@Inject
+private DiscoveryHelper discoHelper;
+
+private WorkService service;
+
+@PostConstruct
+public void init() throws NamingException {
+  try {
+    service = (WorkService) jndi.getLocalContext().lookup("/services/workservice");
+  } catch (NameNotFoundException e) {
+    LazyStubInvocationHandler handler = LazyStubInvocationHandler.Builder.newInstance()
+      .context(jndi.getRemoteContext())
+      .name("/services/workservice")
+      .matchFunction(new Func<Void, LazyStubInvocationHandler>() {
+        @Override
+        public Void call(LazyStubInvocationHandler registeredHandler) {
+          discoHelper.removeServiceDiscoListener(registeredHandler);
+          return null;
+        }
+      })
+      .build();
+      
+    // IMPORTANT: do not forget to register the handler with the DiscoveryHelper
+    discoHelper.addServiceDiscoListener(handler);
+    service = (WorkService) Proxy.newProxyInstance(
+      Thread.currentThread().getContextClassLoader(), 
+      new Class<?>[] {WorkService.class}, 
+      handler
+    );
+  }
+}
+
+public void performWork(Work someWork) {
+  service.perform(someWork);
+}
+        ]]></sapia:code>
+        
+        <p>
+        The advantage in this solution is that the <tt>service</tt> variable is never <tt>null</tt>: it is assigned the stub that was found in the 
+        JNDI tree, or with one which will attempt lazy lookup of the service.
+        </p>
+        
+        <p>
+        Let's review what the above does:
+        </p>
+        
+        <ol>
+          <li>An attempt is made to look up the <tt>WorkService</tt>.</li>
+          <li>If it is not found, a <sapia:class>LazyStubInvocationHandler</sapia:class> is created which wraps:
+            <ul>
+              <li>The <sapia:class>RemoteContext</sapia:class> of the JNDI server.</li>
+              <li>The name of the service that is expected.</li>
+              <li>A <sapia:class>Func</sapia:class> instance that unregisters the <sapia:class>LazyStubInvocationHandler</sapia:class>
+              from the <sapia:class>DiscoveryHelper</sapia:class> after the remote stub is discovered (see the next point about the actual registration
+              with the <sapia:class>DiscoveryHelper</sapia:class>).
+              </li>
+            </ul>
+          </li>
+          <li>The <sapia:class>LazyStubInvocationHandler</sapia:class> is then registered with the <sapia:class>DiscoveryHelper</sapia:class>,
+          in order to receive the remote stub that was initially expected.</li>
+          <li>The proxy implementing the servide interface is created for wrapping the <sapia:class>LazyStubInvocationHandler</sapia:class>.
+          </li>
+        </ol>
+        
+        <p>
+        While your lazy stub has not yet found the remote object it expects, it will throw an exception every time one of its methods is called. This
+        should be a temporary state, and ideally you would plan you deployments so that service dependencies are resolved in an orderly manner.
         </p>
         
       </sapia:sect3>  
+    </sapia:sect2>
+		<sapia:sect2 title="Miscellaneous">
+		  <sapia:sect-desc>
+		    <p>This section covers various relevant subjects pertaining to using Ubik, in non-specific order.</p>
+		  </sapia:sect-desc>
+		 
+		  <sapia:sect3 title="StubContainer">
+		    <p>
+		      Since the JNDI server could be started on a separate machines that those of your application, and services bound to it in a remote manner, 
+		      it may well not have your classes in its class path. For that reason, upon binding, your remote objects are converted to a "neutral" for,
+		      that is: as instances of the <sapia:classlink>org.sapia.ubik.rmi.server.stub.StubContainer</sapia:classlink> interface.
+		    </p>
+		    <p>
+		      When you look up a stub remotely, using Ubik's client-side implementation of the JNDI (that is, when you use the 
+		      <sapia:class>RemoteInitialContextFactory</sapia:class>), that implementation does the conversion to stub automatically, upon lookup.
+		    </p>
+		    <p>
+		      When you rather use the <sapia:class>EmbeddableJNDIServer</sapia:class> directly in application code, be aware that:
+		      <ul>
+		        <li>When you invoke the <tt>getLocalContext()</tt> method, it indeed returns a <sapia:class>Context</sapia:class> implementation that
+		        converts to stub automatically what is looked up from the JNDI tree;</li>
+		        <li>When you invoke the <tt>getRemoteContext()</tt> method, it returns a <sapia:class>Context</sapia:class> implementation that
+		        returns <sapia:class>StubContainer</sapia:class> instances.</li>
+		      </ul>
+ 		    </p>
+ 		    
+ 		    <p>
+ 		     From a <sapia:class>StubContainer</sapia:class>, you can obtain the <sapia:classlink>org.sapia.ubik.rmi.server.StubInvocationHandler</sapia:classlink> that it wraps. But what
+ 		     you would rather do is obtain the Ubik stub to which it corresponds:
+ 		    </p>
+ 		    
+ 		    <sapia:code>
+WorkService service = stubContainer.toStub(Thread.currentThread().getContextClassLoader());
+ 		    </sapia:code>
+		    
+		  </sapia:sect3>
 		  
-      <sapia:sect3 title="Discovery">
-        <p>It may be that the order in which distributed nodes appear on the network is not necessarily guaranteed. It then may also be
-        that application nodes exporting services on which other nodes depend may not yet be present on the network, as these other nodes themselves
-        start up. This is also true for JNDI server nodes: a client my appear on the network, and attempt connecting on a JNDI server that isn't yet
-        on the network.</p>
-        
-        <p>To work around these situations, use a <sapia:classlink>org.sapia.ubik.rmi.naming.remote.discovery.DiscoveryHelper</sapia:classlink> 
-        instance, to which you can register a <sapia:classlink>org.sapia.ubik.rmi.naming.remote.discovery.ServiceDiscoListener</sapia:classlink>
-        (for discovering services that appear on the network), or a <sapia:classlink>org.sapia.ubik.rmi.naming.remote.discovery.JndiDiscolistener</sapia:classlink>
-        (for discovering JNDI servers).</p>
-        
-        <p>The following snippet illustrates usage of a <sapia:class>DiscoveryHelper</sapia:class> to find appearing JNDI servers, and bind to a discoverd server 
-        a remote object so that it has a copy of the stub, which is then available to clients wishing to use the service:</p>
-        
-        <sapia:code>
-EventChannel    channel     = new EventChannel("myDomain");
-DiscoveryHelper discoHelper = new DiscoveryHelper(channel.getReference());
-discoHelper.addJndiDiscoListener(new JndiDiscoListener() {
-  @Override
-  public void onJndiDiscovered(Context ctx) {
-    ctx.bind("services/myService", remoteObject);
+		  <sapia:sect3 title="Health Checks">
+		    <p>
+          It is a good practice, as part of your applications, to asynchronously check connections to external systems and report such status in an
+          administration console, or through some HTTP endpoint.
+		    </p>
+		    <p>
+          All Ubik stubs (which are, as you should know by now, dynamic proxies) wrap an instance of the 
+          <sapia:classlink>org.sapia.ubik.rmi.server.stub.StubInvocationHandler</sapia:classlink> interface. The interface specifies the following method:
+        </p>
+          
+          <sapia:code>
+public boolean isValid() throws RemoteException;
+          </sapia:code>
+          
+        <p>
+          You can invoke that method as part of health check logic, in your code. See the following:
+		    </p>
+		    <sapia:code><![CDATA[
+private WorkService service;
+
+public boolean isUp() {
+  
+  try {
+    return Stubs.getStubInvocationHandler(service).isValid();
+  } catch (RemoteException e) {
+    return false;
   }
-});
-        </sapia:code>
-        
-        <p>The following demonstrates how to discover services:</p>
-        
-        <sapia:code>
-EventChannel    channel     = new EventChannel("myDomain");
-DiscoveryHelper discoHelper = new DiscoveryHelper(channel.getReference());
-discoHelper.addServiceDiscoListener(new ServiceDiscoListener() {
-  @Override
-  public void onServiceDiscovered(ServiceDiscoveryEvent evt) {
-    System.out.println("Discovered service: " + evt);
-  }
-});
-        </sapia:code>
-        
-      </sapia:sect3>    
+
+}
+		    ]]></sapia:code>
+		    
+		    <p>
+		    In the above case, we're obtaining the <sapia:class>StubInvocationHandler</sapia:class> that's wrapped by the stub, calling it's <tt>isValid()</tt>
+		    method. A <sapia:class>RemoteException</sapia:class> may be thrown: this must be interpreted as the server being unavailable.
+		    </p>
 		  
-		</sapia:sect2>
+		  </sapia:sect3>
+	  </sapia:sect2>
+	
 
   </sapia:sect1>
 

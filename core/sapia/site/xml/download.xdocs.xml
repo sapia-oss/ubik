@@ -1,0 +1,61 @@
+<sapia:page xmlns:sapia="http://www.sapia-oss.org/2003/XSL/Transform">
+  <title><sapia:param value="project.name"/> - Download</title>
+ 
+   <sapia:vmenu>
+    <sapia:vsection name="Project Home" href="home.html"/>
+    <sapia:vsection name="Javadoc" href="maven/api/index.html"/>
+    <sapia:vsection name="Download" href="download.html"/>
+    <sapia:vsection name="Mailing List" href="list.html"/>
+  </sapia:vmenu>
+ 
+  <sapia:sect1 title="Download">
+  
+    <toc />
+
+    <sapia:sect2 title="License">
+    
+      <p>Individual and organizations using this software must abide by the following licence:</p>
+      
+      <sapia:license-apache2/>
+    </sapia:sect2>
+    
+    <sapia:sect2 title="Download from Maven Repository">
+      <p>The latest <a href="http://code.google.com/p/sapia/source/browse/#svn/tags">release</a> 
+      jar can be downloaded from the Maven repository:
+      </p>
+      <sapia:template>
+~~~~~~~
+&lt;dependency&gt;
+  &lt;groupId&gt;org.sapia&lt;/groupId&gt;
+  &lt;artifactId&gt;sapia_ubik&lt;/artifactId&gt;
+  &lt;version&gt;${project.version}&lt;/version&gt;
+&lt;/dependency&gt;      
+~~~~~~~
+
+</sapia:template>
+      
+      <p>
+      	Add the following repository declarations to your Maven <tt>setting.xml</tt> (in the order specified):       
+      </p>
+      
+      <sapia:code><![CDATA[
+...
+  <repositories>
+    <repository>
+      <id>bintray-sapia</id>
+      <url>http://dl.bintray.com/sapiaoss/main</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>  
+  </repositories>    
+...
+]]>  
+      </sapia:code>
+      
+    </sapia:sect2>
+  </sapia:sect1>
+</sapia:page>

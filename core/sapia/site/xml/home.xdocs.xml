@@ -6,7 +6,8 @@
       <sapia:vitem name="For Dummies" href="rmi.html#dummies" />
       <sapia:vitem name="Believing" href="rmi.html#believing" />
       <sapia:vitem name="Architecture" href="architecture.html" />
-      <sapia:vitem name="Tutorial" href="tutorial.html" />    
+      <sapia:vitem name="Advanced" href="advanced.html" />
+      <sapia:vitem name="Cookbook" href="cookbook.html" />
     </sapia:vsection>
     
     <sapia:vsection name="Naming" href="naming.html">
@@ -45,7 +46,7 @@
     <sapia:vsection name="Download" href="download.html"/>
     <sapia:vsection name="Mailing List" href="list.html"/>
   </sapia:vmenu>
-  <sapia:sect1 title="Ubik 3">
+  <sapia:sect1 title="Ubik">
     <sapia:section>
       <sapia:path name="home" href="../../home.html" />
       <sapia:path name="projects" />
@@ -82,7 +83,7 @@
           <li>client-side discovery (naming service is automatically discovered, stateless stubs 
           automatically discover new servers and add them to their round-robin list);</li>
           <li>different discovery mechanisms (IP Multicast, TCP-based broadcast relying on <a href="http://avis.sourceforge.net/">Avis</a>);</li>          
-          <li>support for <a href="tutorial.html#callbacks">callbacks</a>;</li>                            
+          <li>support for <a href="advanced.html#callbacks">callbacks</a>;</li>                            
           <li>dynamically generated stubs (no stub compilation);</li>
           <li>no need to throw <sapia:class>RemoteException</sapia:class>s;</li>
           <li>no need to extend <sapia:class>UnicastRemoteObject</sapia:class>;</li>

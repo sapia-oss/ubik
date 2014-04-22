@@ -18,136 +18,16 @@
       not invalidate XML for such use, but provides an alternative if clients are in Java, and if getting up and running fast
       is a must.</p>    
       
-      <p>Ubik's HTTP Tranport layer is implemented by two transport providers, for two
-      different usages: 1) stand-alone; 2) embedding Ubik within a servlet - for use within a servlet container.</p>
+      <p>Ubik's HTTP Tranport layer is implemented on top of the <a href="http://www.simpleframework.org/">Simple</a> HTTP server.</p>
     </sapia:sect-desc>
     
-    <sapia:sect2 title="Servlet Transport">
-      <p>In short, the <sapia:class link="../maven/api/org/sapia/ubik/rmi/server/transport/http/servlet/ServletTransportProvider.html">
-      ServletTransportProvider</sapia:class> can be used to export remote objects over HTTP,
-      from within a servlet. This means the following:</p>
-      
-      <ul>
-        <li>A Ubik server can receive remote method calls over HTTP;</li>
-        <li>A Ubik server can be embedded within an already-running servlet container (Tomcat, WebSphere, WebLogic...);</li>        
-        <li>A Ubik server can benefit from existing HTTP infrastructure setups (firewalls, load-balancers, integration with Apache, SSL, etc.);</li>
-      </ul>
-      
-      <sapia:sect3 title="Server-Side">
-        <p>The code below is taken from the examples that come with Ubik. Although simple and meaningless, it clearly demonstrates
-        the steps necessary to embed Ubik within a servlet:</p>
-        
-<sapia:code>
-public class HttpFooServlet extends HttpServlet{
-	
-  private Foo _foo;
-  private ServletTransportProvider _provider;
-  
-  // this would not be hard-coded like this 
-  // normally - but rather configured in servlet 
-  // init parameters.
-  static final String SERVLET_URL = 
-               "http://localhost:8080/ubik";
-	
-  public void init(ServletConfig conf) 
-    throws ServletException {
-  	
-    _provider = new ServletTransportProvider();
-    TransportManager.registerProvider(_provider);
-  	
-    Properties props = new Properties();
-    
-    // we would normally get value for this 
-    // property from init parameters...
-    props.setProperty(
-      ServletConsts.SERVLET_URL_KEY, 
-      SERVLET_URL);
-    
-    // this tells ubik "under" which transport 
-    // our object will be exported 
-    props.setProperty(
-      Consts.TRANSPORT_TYPE, 
-      ServletConsts.DEFAULT_SERVLET_TRANSPORT_TYPE);
-    
-    try{
-      _foo = new UbikFoo();
-      Hub.exportObject(_foo, props);
-    }catch(RemoteException e){
-      throw new 
-        ServletException("Could not export Foo", e);
-    }
-  }
-
-  protected void service(HttpServletRequest req, 
-                         HttpServletResponse res)
-                         throws ServletException, 
-                                IOException {
-    _provider.handleRequest(req, res);
-  }
-  
-  /**
-   * @see javax.servlet.GenericServlet#destroy()
-   */
-  public void destroy() {
-  	try {
-      Hub.shutdown(30000);      
-    } catch (Exception e) {
-      getServletContext()
-        .log("Exception caught performing Hub shutdown", 
-             e);
-    }
-  }
-</sapia:code>
-        <p>
-          Note, in the code above, that passing the URL of the servlet that
-          embeds Ubik when exporting our object is mandated by the underlying
-          transport provider (in this case, the <sapia:class>ServletTransportProvider</sapia:class>). 
-          This URL eventually ends up in the stubs that are received by clients: stubs will
-          perform remote method calls through this URL.
-        </p>
-        <p>
-          Normally, the servlet URL would not be hard-coded like this (as comments in the code
-          indicate). Rather, it would be passed to the servlet through an initialization parameter. 
-          For the constants that are used, see the <sapia:class link="../maven/api/org/sapia/ubik/rmi/server/transport/http/servlet/ServletConsts.html">
-          ServletConsts</sapia:class> interface.
-        </p>
-      </sapia:sect3>
-      <sapia:sect3 title="Client-Side">
-        <p>
-          On the client-side, the code is straightforward:
-        </p>
-      
-<sapia:code>
-public class HttpFooServletClient {
-  public static void main(String[] args) {
-    try {
-      TransportManager.registerProvider(
-        new ServletTransportProvider());
-
-      Foo foo = (Foo) Hub.connect(new ServletAddress(
-            "http://localhost:8080/ubik"));
-      System.out.println(foo.getBar().getMsg());
-    } catch (Throwable t) {
-      t.printStackTrace();
-    }
-  }
-}
-</sapia:code>
-     
-      </sapia:sect3>
-    </sapia:sect2>    
-    <sapia:sect2 title="Stand-Alone">
+   
+    <sapia:sect2 title="Usage">
       <p>The <sapia:class link="../maven/api/org/sapia/ubik/rmi/server/transport/http/HttpTransportProvider.html">
       HttpTransportProvider</sapia:class> can be used when wishing to export objects over HTTP using
       an underlying stand-alone HTTP server. In this case, you do not embed Ubik in a servlet, but rather
       use it as you would normally - to the exception that you must register the appropriate transport
       provider with the Hub.</p>
-      
-      <p>Preferrably use this implementation when needing a quick-and-dirty stand-alone HTTP-based Ubik server that
-      does not need a full-fledge infrastructure (security, load-balancing, etc.).</p>
-      
-      <p>This transport layer builds on the <a href="http://simpleweb.sourceforge.net/" target="simple_window">Simple</a> API,
-      and allows to plug in custom Simple services.</p>
       
       <sapia:sect3 title="Server-Side">
             
@@ -230,56 +110,6 @@ public class HttpFooClient {
 }    
 </sapia:code>
       </sapia:sect3>
-      <sapia:sect3 title="Custom Simple Services">
-        <p>As was mentioned, Ubik's stand-alone HTTP transport layer is built on top of 
-        <a href="http://simpleweb.sourceforge.net/">Simple</a>. The Simple API allows  
-        implementing custom services that can benefit from the HTTP infrastructure. Ubik makes
-        this feature available to developers that would want to plug their Simple services (see Simple's
-        API for more on how to implement them) in its HTTP layer. A Simple service can be added 
-        to a <sapia:class>HttpTransportProvider</sapia:class> in the following way:</p>
-        
-<sapia:code>
-HttpTransportProvider prov = new HttpTransportProvider();
-MyService mySvc = new MyService();
-prov.getServiceMapper().addService("/myPath", mySvc);
-
-// here register provider with hub and export remote object...
-</sapia:code>        
-        <p>The above is an interesting feature: it allows handling remote method calls and other types of
-        HTTP requests with the same underlying HTTP server.</p>
-      </sapia:sect3>
     </sapia:sect2>
-    <sapia:sect2 title="Conclusion">
-      <p>So there you have it, at last: remote method invocations over HTTP, in two flavors, depending on your
-      needs. This transport layer is especially suited to receive remote method calls from clients across the
-      internet. It also opens the door to rich client interfaces, and frees you from XML if you do not need it.</p>
-    </sapia:sect2>
-    
-    <sapia:sect2 title="Using with Firewalls">
-      <p>If you want clients to be able to connect to your Ubik/HTTP servers through firewalls, you must configure
-      the "external" address of your firewall when initializing the transport provider (as illustrated in the examples
-      above). The URL that is given to clients is thus NOT the address of the host/port on which our Ubik server is listening...</p>
-      
-      <p>Then, of course, at your firewall, you need to forward the calls target at a Ubik server to the host/port
-      corresponding to that server.</p>
-    </sapia:sect2>
-    
-    <sapia:sect2 title="Using with Load-Balancers">
-      <p>You should work with the servlet transport provider if you wish to use Ubik with load-balancers. To dispatch to the 
-      appropriate servers, load-balancers typically either use cookies, SSL session IDs, or some other sort of string identiers 
-      that are part of the request/response cycle between  HTTP clients and servers. In the case of Ubik, it is important that once a 
-      client has acquired a stub, all remote method calls be performed in the context of a session.</p>
-      <p>Indeed, when you export an object through HTTP, the stub that the client obtains for that object must connect to that
-      original object whenever a remote method call is performed using the acquired stub.</p>
-      
-      <p>The best way to ensure that a HTTP session is indeed established, call the <sapia:command>getSession(true)</sapia:command>
-      method on the <sapia:class link="http://java.sun.com/j2ee/sdk_1.3/techdocs/api/javax/servlet/http/HttpServletRequest.html">HttpServletRequest</sapia:class> 
-      instance every time your servlet receives a request.</p>
-      
-      <p>Of course, the above explanation is generic, and you should discuss with your sysadmin in order to figure out what's most
-      appropriate...</p>
-    </sapia:sect2>    
-    
   </sapia:sect1>
-
 </sapia:page>

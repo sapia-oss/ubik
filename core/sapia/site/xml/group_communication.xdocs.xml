@@ -6,7 +6,8 @@
       <sapia:vitem name="For Dummies" href="rmi.html#dummies" />
       <sapia:vitem name="Believing" href="rmi.html#believing" />
       <sapia:vitem name="Architecture" href="architecture.html" />
-      <sapia:vitem name="Tutorial" href="tutorial.html" />    
+      <sapia:vitem name="Advanced" href="advanced.html" />
+      <sapia:vitem name="Cookbook" href="cookbook.html" />
     </sapia:vsection>
     
     <sapia:vsection name="Naming" href="naming.html">

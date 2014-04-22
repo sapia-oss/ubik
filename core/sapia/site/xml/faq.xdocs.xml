@@ -7,7 +7,8 @@
       <sapia:vitem name="For Dummies" href="rmi.html#dummies" />
       <sapia:vitem name="Believing" href="rmi.html#believing" />
       <sapia:vitem name="Architecture" href="architecture.html" />
-      <sapia:vitem name="Tutorial" href="tutorial.html" />    
+      <sapia:vitem name="Advanced" href="advanced.html" />
+      <sapia:vitem name="Cookbook" href="cookbook.html" />
     </sapia:vsection>
     
     <sapia:vsection name="Naming" href="naming.html">
@@ -76,7 +77,7 @@
 
     <sapia:sect2 title="Performance and Scalability" alias="perf">
       <sapia:sect-desc>
-        We've grouped in this section the questions pertaining to performance and scalability.
+        <p>We've grouped in this section the questions pertaining to performance and scalability.</p>
       </sapia:sect-desc>
       
       <sapia:sect3 title="Is Ubik fast?">
@@ -87,14 +88,14 @@
       <sapia:sect3 title="Is Ubik scalable?">
         <p>Yes. Ubik has features that allow it to scale across the board (from the system and administration standpoints): distributed JNDI tree that guarantees 
         availabity in case one node fails; smart stubs supporting failover, load balancing and dynamic discovery; an extremely performant 
-        <a href="transport/nio_tcp.html">NIO transport</a> that scales to thousands of concurrent connections; and support for <a href="tutorial.html#callbacks">callbacks</a>.</p>       
+        <a href="transport/nio_tcp.html">NIO transport</a> that scales to thousands of concurrent connections; and support for <a href="advanced.html#callbacks">callbacks</a>.</p>       
       </sapia:sect3>      
 
     </sapia:sect2>
     
     <sapia:sect2 title="Networking" alias="networking">
       <sapia:sect-desc>
-        This section addresses questions pertaining to Ubik networking.
+        <p>This section addresses questions pertaining to Ubik networking.</p>
       </sapia:sect-desc>
 
 	  <sapia:sect3 title="My client can't seem to be able to connect to my server. What's happening?">
@@ -109,6 +110,10 @@
 	  	<sapia:code>\\d{3}\\.\\d{3}\\.\\d{3}\\.\\d{3}
 10\\.10\\.\\d+\\.\\d+
 192\\.168\\.\\d+\\.\\d+</sapia:code>
+
+      <p>
+        See the <a href="cookbook.html#bindaddr">Cookbook</a> for more information regarding bind address selection.
+      </p>
 
 		<p>Note the double backslashes: in Java the backslash is an escape character, therefore it must be doubled in order to be treated as a normal
 		character.</p>
