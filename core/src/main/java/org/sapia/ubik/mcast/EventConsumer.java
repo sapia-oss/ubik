@@ -98,7 +98,7 @@ public class EventConsumer {
    * @param listener
    *          a {@link SyncEventListener}.
    */
-  public void synchronizedregisterSyncListener(String evtType, SyncEventListener listener) throws ListenerAlreadyRegisteredException {
+  public void registerSyncListener(String evtType, SyncEventListener listener) throws ListenerAlreadyRegisteredException {
     synchronized (syncListenersByEvent) {
       if (syncListenersByEvent.get(evtType) != null) {
         throw new ListenerAlreadyRegisteredException(evtType);
