@@ -323,10 +323,11 @@ public class HelloLookup {
     try{
     	
     	Context context = JNDIContextBuilder.newInstance()
-    	        .host("localhost").port(1099)
-    			.property(Consts.BROADCAST_PROVIDER, Consts.BROADCAST_PROVIDER_AVIS)
-    			.property(Consts.BROADCAST_AVIS_URL, "elvin://localhost")
-    			.build();
+          .host("localhost")
+          .port(1099)
+          .property(Consts.BROADCAST_PROVIDER, Consts.BROADCAST_PROVIDER_AVIS)
+          .property(Consts.BROADCAST_AVIS_URL, "elvin://localhost")
+          .build();
       
       Hello hello = (Hello)context.lookup("server/hello");
       
@@ -385,10 +386,11 @@ InitialContext context = new InitialContext(props);
 
 <p>Using the <sapia:class>JNDIContextBuilder</sapia:class> the above would be:</p>
 
-<sapia:code>Context context = JNDIContextBuilder.newInstance()
-    	        .host("localhost").port(1099)
-    			.domain("someDomain");
-    			.build();
+<sapia:code>
+Context context = JNDIContextBuilder.newInstance()
+    .host("localhost").port(1099)
+    .domain("someDomain");
+    .build();
 ...</sapia:code>
 		
 		<p>

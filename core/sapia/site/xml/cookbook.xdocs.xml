@@ -116,7 +116,8 @@ ubik.rmi.address-pattern.02=192\\.168\\.\\d+\\.\\d+
       </sapia:code>
       
       <p>
-        In the above case, attempt will be made to find the appropriate interface in the order in which the patterns are specified.
+        In the above case, attempt will be made to find the appropriate interface (network interfaces will be searched according to the lexicographical 
+        order of the pattern key suffix).
       </p>
         
       </sapia:sect3>
@@ -151,6 +152,75 @@ Hub.shutdown();
         
         <sapia:note>The above must be done whether you've invoked the <tt>start</tt> method of the <sapia:class>Hub</sapia:class>
         class or not.</sapia:note>
+      </sapia:sect3>
+      
+      <sapia:sect3 title="Implementing Remote Objects">
+        <sapia:sect-desc>
+          <p>There are two types of remote objects: those that are bound to Ubik's JNDI, and those that are returned by remote method calls.</p>
+        </sapia:sect-desc>
+
+        <sapia:sect4 title="Remote Interface">
+          <p>Contrary to the JDK's RMI, remote object classes do not have to implement the <sapia:class>java.rmi.Remote</sapia:class> interface 
+          <b>if their instances are bound to Ubik's JNDI</b>. That is, if a remote object corresponds to the return value of a remote method call, its class
+          must implement the <sapia:class>java.rmi.Remote</sapia:class> marker interface: </p>
+
+          <sapia:code>
+public interface WorkService {
+
+  public WorkResult performWork(Work w);
+
+}          
+
+...
+
+public class WorkResultImpl implements WorkResult, Remote {
+  ...
+} 
+          </sapia:code>
+          
+       </sapia:sect4>
+       <sapia:sect4 title="Remote Annotation">
+         
+         <p>Rather than implementing the <sapia:class>Remote</sapia:class> interface, you could also annotate your class with the 
+         <sapia:classlink>org.sapia.ubik.rmi.Remote</sapia:classlink> annotation:</p>
+                    
+          <sapia:code>
+@Remote(WorkResult.class)
+public class WorkResultImpl implements WorkResult {
+  ...
+} 
+          </sapia:code> 
+          
+          <p>The annotation requires that you specify which interfaces implemented by your class should also be implemented by the stubs
+          generated for it.</p>         
+        
+        </sapia:sect4>
+                
+        <sapia:sect4 title="Stateful vs Stateless">
+          <p>
+          Ubik's JNDI supports multiple objects under the same name. Stubs bound to the JNDI tree are enriched in a special way, as to make them either stateful or stateless:
+          </p>
+          <ul>
+            <li>Stateless stubs implement automatic failover and load-balancing over servers that expose remote objects under the same name. This implies a stateless behavior:
+            it is expected then that each remote method call can be executed at any of the servers, independently, without side effects.</li>
+            <li>Statefull stubs implement automatic failover, but no load-balancing. This is the default behavior: in such a case, stubs perform remote method calls against the
+            same server, until that server disappears. When that occurs, stubs fail over to the "next" server.</li>
+          </ul>
+          
+          <p>
+            For scalability purposes, it is much preferrable to go with stateless stubs. In order for remote objects to be recognized as stateless when they are bound
+            to Ubik's JNDI, their class or one of their interfaces must implement the <sapia:classlink>Stateless</sapia:classlink> marker interface, as shown below:
+          </p>
+        
+          <sapia:code>
+public interface WorkService extends Stateless {
+
+  public WorkResult performWork(Work w);
+
+}          
+          </sapia:code>
+        </sapia:sect4>
+      
       </sapia:sect3>
       
       <sapia:sect3 title="Exporting Remote Objects">
@@ -283,8 +353,8 @@ WorkService stub = Hub.export(myRemoteObject, props);
 			  The code below creates such an <sapia:class>EventChannel</sapia:class>:
 			</p> 
 			<sapia:code>
-	EventChannel channel = new EventChannel("myDomain");
-	channel.start();
+EventChannel channel = new EventChannel("myDomain");
+channel.start();
 			</sapia:code> 
 		  </sapia:sect3>
 	
@@ -430,6 +500,11 @@ channel.close();
 		      Both the lifecyle of the <sapia:class>EventChannel</sapia:class> and of the JNDI server follow the one of your application. Don't forget
 		      to dispose of those resources when your application terminates.
 		    </p>
+		    <sapia:note>
+		      Multiple JNDI servers started across different hosts, using the same <sapia:class>EventChannel</sapia:class> configuration (domain, etc.), will
+		      <i>de facto</i> form a distributed JNDI tree.
+		    </sapia:note>
+		    
 		  </sapia:sect3>
 		  
       <sapia:sect3 title="Binding a Remote Object">
@@ -529,7 +604,7 @@ discoHelper.addServiceDiscoListener(new ServiceDiscoListener() {
         member variable.
         </p>
         <p>
-        You'll see in the next section that Ubik uses a <sapia:class>DiscoverHelper</sapia:class> to implement so-called "lazy stubs".
+        You'll see in the next section that Ubik uses a <sapia:class>DiscoveryHelper</sapia:class> to implement so-called "lazy stubs".
         </p>
       </sapia:sect3>
       
@@ -666,7 +741,7 @@ public void performWork(Work someWork) {
  		    </p>
  		    
  		    <p>
- 		     From a <sapia:class>StubContainer</sapia:class>, you can obtain the <sapia:classlink>org.sapia.ubik.rmi.server.StubInvocationHandler</sapia:classlink> that it wraps. But what
+ 		     From a <sapia:class>StubContainer</sapia:class>, you can obtain the <sapia:classlink>org.sapia.ubik.rmi.server.stub.StubInvocationHandler</sapia:classlink> that it wraps. But what
  		     you would rather do is obtain the Ubik stub to which it corresponds:
  		    </p>
  		    

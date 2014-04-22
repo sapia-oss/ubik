@@ -68,16 +68,16 @@
     
     <sapia:sect2 title="The EventChannel" alias="eventchannel">    
       <p>
-        Ubik's group communication logic is built upon the <sapia:class link="maven/api/org/sapia/ubik/mcast/EventChannel.html">EventChannel</sapia:class> class, which implements group communication
+        Ubik's group communication logic is built upon the <sapia:classlink>org.sapia.ubik.mcast.EventChannel</sapia:classlink> class, which implements group communication
         on top of two abstractions:
         <ul>
           <li>
-          	<sapia:class link="maven/api/org/sapia/ubik/mcast/BroadcastDispatcher.html">BroadcastDispatcher</sapia:class>: handles the broadcast of 
-          	<sapia:class link="maven/api/org/sapia/ubik/mcast/RemoteEvent.html">RemoteEvent</sapia:class>s 
+          	<sapia:classlink>org.sapia.ubik.mcast.BroadcastDispatcher</sapia:classlink>: handles the broadcast of 
+          	<sapia:classlink>org.sapia.ubik.mcast.RemoteEvent</sapia:classlink>s 
           	to all other <sapia:class>EventChannel</sapia:class> nodes in a domain.
           </li>
           <li>
-          	<sapia:class link="maven/api/org/sapia/ubik/mcast/UnicastDispatcher.html">UnicastDispatcher</sapia:class>: handles the dispatching 
+          	<sapia:classlink>org.sapia.ubik.mcast.UnicastDispatcher</sapia:classlink>: handles the dispatching 
           	of <sapia:class>RemoteEvent</sapia:class>s in a point-to-point manner - from one <sapia:class>EventChannel</sapia:class> to another.
           </li>
         </ul>
@@ -94,9 +94,9 @@
         their view of the domain.
       </p>
       <p>
-      	By default, the implementations of the dispacher abstractions that are used by an <sapia:class>EventChannel</sapia:class> are 
-        <sapia:class link="maven/api/org/sapia/ubik/mcast/udp/UDPBroadcastDispatcher.html">UDPBroadcastDispatcher</sapia:class> and 
-        <sapia:class link="maven/api/org/sapia/ubik/mcast/tcp/mina/MinaTcpUnicastDispatcher.html">MinaTcpUnicastDispatcher</sapia:class> respectively. The former
+      	By default, the implementations of the dispatcher abstractions that are used by an <sapia:class>EventChannel</sapia:class> are 
+        <sapia:classlink>org.sapia.ubik.mcast.udp.UDPBroadcastDispatcher</sapia:classlink> and 
+        <sapia:classlink>org.sapia.ubik.mcast.tcp.mina.MinaTcpUnicastDispatcher</sapia:classlink> respectively. The former
         uses IP multicast to broadcast <sapia:class>RemoteEvent</sapia:class>s. It is by default configured to listen to multicast address and port
         <sapia:command>231.173.5.7</sapia:command> and <sapia:command>5454</sapia:command>, respectively. This can be configured through the following JVM properties:
         
@@ -119,7 +119,7 @@
       multicast address, resulting in control messages crossing domains.</p>
       
       <p>Rather then, the protocol is implemented over unicast, but using a cascading scheme where slave nodes are put
-      to contribution: a first set of nodes is determined, where each is relays the control messages to other 
+      to contribution: a first set of nodes is determined, where each relays the control messages to other 
       nodes, and so on, until no nodes are left to contact. The number of nodes into which to split, at every stage, 
       is determined by the <sapia:command>ubik.rmi.naming.mcast.control.split.size</sapia:command> JVM property - which defaults to 5.</p>
       
@@ -132,12 +132,12 @@
       of these nodes will dispatch the control messages to 4 or 3 other nodes - accordingly. If you do the calculations you'll see that it takes 4 stages in the 
       cascade to dispatch a message across a cluster of 1000 event channel nodes, given a split size of 5. Of course the larger that split size, the less 
       dispatch stages you will incur. Let's just try with a split size of 10, with the 101 nodes of our cluster: the first split will yield 10 sets of 10 nodes.
-      When the control message reaches the first node of each set, there are 9 nodes remaining to contact at each level. Therefore, given our split size, not
-      further splits are done, and the each of the nodes at that stage will relay the control message to the 9 remaining nodes it has in its set.
+      When the control message reaches the first node of each set, there are 9 nodes remaining to contact at each level. Therefore, given our split size, no
+      further splits are done, and each of the nodes at that stage will relay the control message to the 9 remaining nodes it has in its set.
       </p>
       
-      <p>By default, since the size of control messages may be larger (given their payload in terms of having to carry node IDs around), the <a href="">MinaTcpUnicastDispatcher</a>
-      is used: it implements point-to-point communication over TCP, using a NIO-based transport. You can change this to using UDP, although we really do not recommend it. see the 
+      <p>By default, since the size of control messages may be larger (given their payload in terms of having to carry node IDs around), the <sapia:classlink>org.sapia.ubik.mcast.tcp.mina.MinaTcpUnicastDispatcher</sapia:classlink>
+      is used: it implements point-to-point communication over TCP, using a NIO-based transport. You can change this to using UDP, although we really do not recommend it. See the 
       <a href="group_communication.html#udp_unicast">UDP Unicast</a> section for details.</p>
 
     </sapia:sect2>
@@ -155,7 +155,7 @@
       
       <ul>
         <li><sapia:command>ubik.rmi.naming.broadcast.provider</sapia:command> should have its value set to <sapia:command>ubik.rmi.naming.broadcast.avis</sapia:command>: 
-        this indicates that the <sapia:class link="maven/api/org/sapia/ubik/mcast/avis/AvisBroadcastDispatcher.html">AvisBroadcastDispatcher</sapia:class> 
+        this indicates that the <sapia:classlink>org.sapia.ubik.mcast.avis.AvisBroadcastDispatcher</sapia:classlink> 
         should be used for broadcasting.</li>
       	<li><sapia:command>ubik.rmi.naming.broadcast.avis.url</sapia:command> should be set to the URL to use to connect to the Avis router - 
       	For example: <sapia:command>elvin://localhost:2917</sapia:command>. 
@@ -187,7 +187,7 @@ EventChannel channel = new EventChannel("myDomain", new Props().addProperties(pr
       on the size of messages that are exchanged, and you may risk having some messages not going through.
       </p>
     
-   	  <p>To activate the <sapia:class link="maven/api/org/sapia/ubik/mcast/udp/UDPUnicastDispatcher.html">UDPUnicastDispatcher</sapia:class>, you have to set the 
+   	  <p>To activate the <sapia:classlink>org.sapia.ubik.mcast.udp.UDPUnicastDispatcher</sapia:classlink>, you have to set the 
    	  <sapia:command>ubik.rmi.naming.unicast.provider</sapia:command> to <sapia:command>ubik.rmi.naming.unicast.udp</sapia:command>
    	  </p>
    		
