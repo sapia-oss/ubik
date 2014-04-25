@@ -25,6 +25,7 @@ import org.sapia.ubik.rmi.server.oid.DefaultOID;
 import org.sapia.ubik.rmi.server.oid.OID;
 import org.sapia.ubik.rmi.server.stub.LocalMethod.LocalMethodMap;
 import org.sapia.ubik.util.Collects;
+import org.sapia.ubik.util.Exceptions;
 import org.sapia.ubik.util.Func;
 import org.sapia.ubik.util.Strings;
 
@@ -231,7 +232,7 @@ public class RemoteRefStateless implements StubInvocationHandler, Externalizable
       return toReturn;
     } else if (toReturn instanceof Throwable) {
       Throwable err = (Throwable) toReturn;
-      err.fillInStackTrace();
+      Exceptions.fillInStackTrace(err);
       throw err;
     }
 

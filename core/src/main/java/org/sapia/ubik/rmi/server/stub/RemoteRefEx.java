@@ -7,6 +7,7 @@ import org.sapia.ubik.rmi.server.ShutdownException;
 import org.sapia.ubik.rmi.server.command.CallbackInvokeCommand;
 import org.sapia.ubik.rmi.server.command.InvokeCommand;
 import org.sapia.ubik.rmi.server.stub.LocalMethod.LocalMethodMap;
+import org.sapia.ubik.util.Exceptions;
 
 /**
  * This class implements a basic stub handler (no fail over, no load balancing,
@@ -72,7 +73,7 @@ public class RemoteRefEx extends RemoteRef {
         onShutdown(proxy, toCall, params);
       }
       Throwable err = (Throwable) toReturn;
-      err.fillInStackTrace();
+      Exceptions.fillInStackTrace(err);
       throw err;
     }
 
