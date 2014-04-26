@@ -1,16 +1,21 @@
 package org.sapia.ubik.rmi.naming.remote;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.Properties;
 
 import javax.naming.Context;
 
+import org.sapia.archie.Name;
+import org.sapia.archie.NamePart;
 import org.sapia.ubik.concurrent.NamedThreadFactory;
+import org.sapia.ubik.concurrent.Spawn;
 import org.sapia.ubik.concurrent.ThreadShutdown;
 import org.sapia.ubik.concurrent.ThreadStartup;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.AsyncEventListener;
+import org.sapia.ubik.mcast.Defaults;
 import org.sapia.ubik.mcast.EventChannel;
 import org.sapia.ubik.mcast.EventChannelRef;
 import org.sapia.ubik.mcast.EventChannelStateListener;
@@ -18,12 +23,15 @@ import org.sapia.ubik.mcast.RemoteEvent;
 import org.sapia.ubik.net.TCPAddress;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.naming.UrlMaker;
+import org.sapia.ubik.rmi.naming.remote.archie.SyncPutEvent;
 import org.sapia.ubik.rmi.naming.remote.archie.UbikRemoteContext;
 import org.sapia.ubik.rmi.naming.remote.proxy.LocalContext;
 import org.sapia.ubik.rmi.server.Hub;
 import org.sapia.ubik.rmi.server.stub.StubContainer;
 import org.sapia.ubik.rmi.server.transport.mina.MinaAddress;
 import org.sapia.ubik.rmi.server.transport.mina.MinaTransportProvider;
+import org.sapia.ubik.taskman.Task;
+import org.sapia.ubik.taskman.TaskContext;
 import org.sapia.ubik.util.Assertions;
 import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.Localhost;
@@ -52,8 +60,11 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
   private int port;
   private Thread serverThread;
   private EventChannelRef channel;
-  private Context root, local;
+  private UbikRemoteContext root;
+  private Context local;
   private ThreadStartup startBarrier = new ThreadStartup();
+  private long syncInterval = Conf.newInstance().getLongProperty(Consts.JNDI_SYNC_MAX_COUNT, Defaults.DEFAULT_JNDI_SYNC_INTERVAL);
+  private int syncMaxCount  = Conf.newInstance().getIntProperty(Consts.JNDI_SYNC_MAX_COUNT, Defaults.DEFAULT_JNDI_SYNC_MAX_COUNT);
 
   /**
    * Used this constructor when you want this instance NOT to manage the start/close of the {@link EventChannel}
@@ -143,7 +154,7 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
    * {@link JNDIConsts#JNDI_SERVER_DISCO} remote events in response.
    */
   @Override
-  public void onAsyncEvent(RemoteEvent evt) {
+  public void onAsyncEvent(final RemoteEvent evt) {
     if (evt.getType().equals(JNDIConsts.JNDI_CLIENT_PUBLISH)) {
       try {
         channel.get().dispatch(
@@ -153,6 +164,44 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
         );
       } catch (Exception e) {
         log.warning("Could not dispatch JNDI server publishing event", e);
+      }
+    } else if (evt.getType().equals(JndiSyncRequest.class.getName())) {
+      Spawn.run(new Runnable() {
+        @Override
+        public void run() {
+          try {
+            handleJndiSyncRequest(evt);
+          } catch (IOException e) {
+            log.warning("Could not deserialize remote event data", e);
+          }
+        }
+      });
+    }
+  }
+
+  private void handleJndiSyncRequest(RemoteEvent evt) throws IOException {
+    JndiSyncVisitor visitor = new JndiSyncVisitor();
+    root.accept(visitor);
+    JndiSyncRequest req = (JndiSyncRequest) evt.getData();
+    Map<String, Integer> diff = req.diff(visitor.asMap());
+    // checking count difference: if count < 0, means other instance is missing values.
+    // if count > 0, means this instance is missing values
+    for (Map.Entry<String, Integer> e : diff.entrySet()) {
+      if (e.getValue() < 0) {
+        try {
+          Name path = root.getDelegate().getNameParser().parse(e.getKey());
+          NamePart name = path.last();
+          SyncPutEvent put = new SyncPutEvent(path.getTo(path.count() - 1), name, root.lookup(e.getKey()), true);
+          channel.get().dispatch(SyncPutEvent.class.getName(), put);
+        } catch (Exception err) {
+          log.warning("Could not send event: %", err, SyncPutEvent.class.getName());
+        }
+      } else if (e.getValue() > 0) {
+        try {
+          channel.get().dispatch(evt.getUnicastAddress(), JndiSyncRequest.class.getName(), JndiSyncRequest.newInstance(visitor.asMap()));
+        } catch (IOException err) {
+          log.warning("Could not send event %s to %s", err, JndiSyncRequest.class.getName(), evt.getUnicastAddress());
+        }
       }
     }
   }
@@ -188,7 +237,7 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
   @Override
   public RemoteContext getRemoteContext() {
     Assertions.illegalState(root == null, "Context not initialized (server probably not started)");
-    return (RemoteContext) root;
+    return root;
   }
 
   /**
@@ -240,6 +289,7 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
       log.warning("Starting JNDI server on port %s, domain %s", port, domain);
 
       channel.get().registerAsyncListener(JNDIConsts.JNDI_CLIENT_PUBLISH, this);
+      channel.get().registerAsyncListener(JndiSyncRequest.class.getName(), this);
       channel.start();
 
       TCPAddress address = new MinaAddress(Localhost.getPreferredLocalAddress().getHostAddress(), port);
@@ -254,6 +304,25 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
       Hub.exportObject(this, props);
 
       log.warning("JNDI Server started. Listening on %s:%s", address.getHost(), address.getPort());
+      Hub.getModules().getTaskManager().addTask(new TaskContext("", syncInterval), new Task() {
+        private int execCount;
+        @Override
+        public void exec(TaskContext ctx) {
+          JndiSyncVisitor visitor = new JndiSyncVisitor();
+          root.accept(visitor);
+          JndiSyncRequest request = JndiSyncRequest.newInstance(visitor.asMap());
+          try {
+            log.debug("Dispatching sync request");
+            channel.get().dispatch(JndiSyncRequest.class.getName(), request);
+          } catch (IOException e) {
+            log.warning("Could not dispatch event %s", e, JndiSyncRequest.class.getName());
+          }
+          execCount++;
+          if (syncMaxCount > 0 && execCount >= syncMaxCount) {
+            ctx.abort();
+          }
+        }
+      });
 
       startBarrier.started();
 

@@ -67,7 +67,7 @@ public interface Consts {
    * instance.
    */
   public static final String JNDI_SYNC_LOOKUP_BATCH_SIZE = "ubik.rmi.naming.sync.lookup.batch-size";
-  
+
   /**
    * The number of milliseconds to wait for on the client-side when attempting to discover a JNDI server (defaults to 10000).
    */
@@ -79,6 +79,21 @@ public interface Consts {
    * should perform lookups.
    */
   public static final String JNDI_LAZY_LOOKUP_INTERVAL = "ubik.rmi.naming.lazy.lookup.interval";
+
+  /**
+   * This constant corresponds to the <code>ubik.rmi.naming.sync.interval</code>
+   * property key. It is used to specify the interval (in millis) at which JNDI servers
+   * should synchronize their state with the other JNDI servers in the cluster (defaults to 30 secs).
+   */
+  public static final String JNDI_SYNC_INTERVAL = "ubik.rmi.naming.sync.interval";
+
+  /**
+   * This constant corresponds to the <code>ubik.rmi.naming.sync.max-count</code>
+   * property key. It is used to specify the maximum number of times JNDI servers should
+   * synchronize their state with the other JNDI servers in the cluster (defaults to 3 times,
+   * a negative value is interpreted as no maximum).
+   */
+  public static final String JNDI_SYNC_MAX_COUNT = "ubik.rmi.naming.sync.max-count";
 
   /**
    * This constant corresponds to the <code>ubik.rmi.naming.mcast.port</code>

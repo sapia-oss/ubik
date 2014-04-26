@@ -23,7 +23,7 @@ public class Defaults {
    */
 
   public static final long DEFAULT_JNDI_CLIENT_DISCO_TIMEOUT = 5000;
-  
+
   /**
    * The default value for the batch size when looking up synchronously other JNDI nodes, from a
    * given node missing a stub (see {@link Consts#JNDI_LAZY_LOOKUP_INTERVAL}).
@@ -145,6 +145,20 @@ public class Defaults {
    * @see Consts#MCAST_BROADCAST_MONITOR_INTERVAL
    */
   public static final long DEFAULT_BROADCAST_MONITOR_INTERVAL = 30000L;
+
+  /**
+   * The default interval at which JNDI servers synchronize their state with others.
+   *
+   * @see Consts#JNDI_SYNC_INTERVAL
+   */
+  public static final long DEFAULT_JNDI_SYNC_INTERVAL = 30000L;
+
+  /**
+   * The default max number of times at which JNDI servers synchronize their state with others.
+   *
+   * @see Consts#JNDI_SYNC_MAX_COUNT
+   */
+  public static final int DEFAULT_JNDI_SYNC_MAX_COUNT = 3;
 
   private Defaults() {
   }

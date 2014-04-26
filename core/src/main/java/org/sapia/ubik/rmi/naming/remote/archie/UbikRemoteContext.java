@@ -8,6 +8,7 @@ import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 
 import org.sapia.archie.Node;
+import org.sapia.archie.NodeVisitor;
 import org.sapia.archie.ProcessingException;
 import org.sapia.archie.jndi.JndiContext;
 import org.sapia.archie.sync.Synchronizer;
@@ -31,14 +32,31 @@ public class UbikRemoteContext extends JndiContext implements RemoteContext {
     this.domain = domain;
   }
 
-  public Synchronizer getSynchronizer() {
-    return ((UbikSyncNode) super.getArchie().getRoot()).getSynchronizer();
-  }
-
   protected UbikRemoteContext(UbikSyncNode node) {
     super(node);
     EventChannelRef channel = ((UbikSynchronizer) node.getSynchronizer()).getEventChannel();
     this.domain = new DomainInfo(channel.get().getDomainName(), channel.get().getMulticastAddress());
+  }
+
+  /**
+   * @return this instance's {@link Synchronizer}.
+   */
+  public Synchronizer getSynchronizer() {
+    return ((UbikSyncNode) super.getArchie().getRoot()).getSynchronizer();
+  }
+
+  /**
+   * @return the {@link UbikSyncNode} instance wrapped by this instance.
+   */
+  public UbikSyncNode getDelegate() {
+    return (UbikSyncNode) getArchie().getRoot();
+  }
+
+  /**
+   * @param visitor a {@link NodeVisitor} to notify.
+   */
+  public void accept(NodeVisitor visitor) {
+    getArchie().getRoot().accept(visitor);
   }
 
   /**
