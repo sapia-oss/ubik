@@ -152,13 +152,13 @@ public class Defaults {
    * @see Consts#JNDI_SYNC_INTERVAL
    */
   public static final long DEFAULT_JNDI_SYNC_INTERVAL = 30000L;
-
+  
   /**
    * The default max number of times at which JNDI servers synchronize their state with others.
    *
    * @see Consts#JNDI_SYNC_MAX_COUNT
    */
-  public static final int DEFAULT_JNDI_SYNC_MAX_COUNT = 3;
+  public static final int DEFAULT_JNDI_SYNC_MAX_COUNT = 5;
 
   private Defaults() {
   }

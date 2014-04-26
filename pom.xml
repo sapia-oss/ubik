@@ -89,7 +89,7 @@
 		<dependency>
 			<groupId>org.sapia</groupId>
 			<artifactId>sapia_archie</artifactId>
-      <version>1.4-SNAPSHOT</version>
+      <version>1.4</version>
 		</dependency>
 
 		<!-- =========== JBoss serialization ========== -->

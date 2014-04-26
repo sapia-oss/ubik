@@ -24,7 +24,7 @@ import org.sapia.ubik.rmi.naming.remote.RemoteContext;
 @SuppressWarnings(value = "unchecked")
 public class UbikRemoteContext extends JndiContext implements RemoteContext {
 
-  private DomainInfo           domain;
+  private DomainInfo                        domain;
 
   protected UbikRemoteContext(DomainInfo domain, UbikSyncNode root) {
     super(root);

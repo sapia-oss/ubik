@@ -30,10 +30,10 @@ import org.sapia.ubik.rmi.server.Hub;
 import org.sapia.ubik.rmi.server.stub.StubContainer;
 import org.sapia.ubik.rmi.server.transport.mina.MinaAddress;
 import org.sapia.ubik.rmi.server.transport.mina.MinaTransportProvider;
-import org.sapia.ubik.taskman.Task;
 import org.sapia.ubik.taskman.TaskContext;
 import org.sapia.ubik.util.Assertions;
 import org.sapia.ubik.util.Conf;
+import org.sapia.ubik.util.Func;
 import org.sapia.ubik.util.Localhost;
 
 /**
@@ -64,7 +64,6 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
   private Context local;
   private ThreadStartup startBarrier = new ThreadStartup();
   private long syncInterval = Conf.newInstance().getLongProperty(Consts.JNDI_SYNC_MAX_COUNT, Defaults.DEFAULT_JNDI_SYNC_INTERVAL);
-  private int syncMaxCount  = Conf.newInstance().getIntProperty(Consts.JNDI_SYNC_MAX_COUNT, Defaults.DEFAULT_JNDI_SYNC_MAX_COUNT);
 
   /**
    * Used this constructor when you want this instance NOT to manage the start/close of the {@link EventChannel}
@@ -184,24 +183,31 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
     root.accept(visitor);
     JndiSyncRequest req = (JndiSyncRequest) evt.getData();
     Map<String, Integer> diff = req.diff(visitor.asMap());
+    log.debug("Got diff: %s", diff);
     // checking count difference: if count < 0, means other instance is missing values.
     // if count > 0, means this instance is missing values
+    JndiSyncRequest toSend = null;
     for (Map.Entry<String, Integer> e : diff.entrySet()) {
       if (e.getValue() < 0) {
         try {
           Name path = root.getDelegate().getNameParser().parse(e.getKey());
           NamePart name = path.last();
+          log.debug("Dispatching synchronized put for %s (node %s (%s) not in sync)", e.getKey(), evt.getUnicastAddress(), evt.getNode());
           SyncPutEvent put = new SyncPutEvent(path.getTo(path.count() - 1), name, root.lookup(e.getKey()), true);
           channel.get().dispatch(SyncPutEvent.class.getName(), put);
         } catch (Exception err) {
-          log.warning("Could not send event: %", err, SyncPutEvent.class.getName());
+          log.warning("Could not send event %s", err, SyncPutEvent.class.getName());
         }
-      } else if (e.getValue() > 0) {
-        try {
-          channel.get().dispatch(evt.getUnicastAddress(), JndiSyncRequest.class.getName(), JndiSyncRequest.newInstance(visitor.asMap()));
-        } catch (IOException err) {
-          log.warning("Could not send event %s to %s", err, JndiSyncRequest.class.getName(), evt.getUnicastAddress());
-        }
+      } else if (e.getValue() > 0 && toSend == null) {
+        toSend = JndiSyncRequest.newInstance(visitor.asMap());
+      }
+    }
+    if (toSend != null) {
+      try {
+        log.debug("Sending synchronization request to %s (%s)", evt.getUnicastAddress(), evt.getNode());
+        channel.get().dispatch(evt.getUnicastAddress(), JndiSyncRequest.class.getName(), toSend);
+      } catch (IOException err) {
+        log.warning("Could not send event %s to %s (%s)", err, JndiSyncRequest.class.getName(), evt.getUnicastAddress(), evt.getNode());
       }
     }
   }
@@ -304,26 +310,22 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
       Hub.exportObject(this, props);
 
       log.warning("JNDI Server started. Listening on %s:%s", address.getHost(), address.getPort());
-      Hub.getModules().getTaskManager().addTask(new TaskContext("", syncInterval), new Task() {
-        private int execCount;
-        @Override
-        public void exec(TaskContext ctx) {
-          JndiSyncVisitor visitor = new JndiSyncVisitor();
-          root.accept(visitor);
-          JndiSyncRequest request = JndiSyncRequest.newInstance(visitor.asMap());
-          try {
-            log.debug("Dispatching sync request");
-            channel.get().dispatch(JndiSyncRequest.class.getName(), request);
-          } catch (IOException e) {
-            log.warning("Could not dispatch event %s", e, JndiSyncRequest.class.getName());
+      Hub.getModules().getTaskManager().addTask(
+          new TaskContext("JndiSync", syncInterval), new JndiSyncTask(root, new Func<Void, JndiSyncRequest>() {
+            @Override
+            public Void call(JndiSyncRequest request) {
+              try {
+                log.debug("Dispatching sync request");
+                channel.get().dispatch(JndiSyncRequest.class.getName(), request);
+              } catch (IOException e) {
+                log.warning("Could not dispatch event %s", e, JndiSyncRequest.class.getName());
+              }
+              return null;
+            }
           }
-          execCount++;
-          if (syncMaxCount > 0 && execCount >= syncMaxCount) {
-            ctx.abort();
-          }
-        }
-      });
-
+        )
+      );
+        
       startBarrier.started();
 
       channel.get().dispatch(JNDIConsts.JNDI_SERVER_PUBLISH, address);

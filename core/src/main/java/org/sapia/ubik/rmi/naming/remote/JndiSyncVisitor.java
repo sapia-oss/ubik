@@ -28,17 +28,16 @@ class JndiSyncVisitor implements NodeVisitor {
     return countsByNames;
   }
 
-  @SuppressWarnings("unchecked")
   @Override
-  public boolean visit(Node paramNode) {
-    Iterator<NamePart> valueNames = paramNode.getValueNames();
+  public boolean visit(Node node) {
+    Iterator<NamePart> valueNames = node.getValueNames();
     while (valueNames.hasNext()) {
       NamePart valueName = valueNames.next();
-      Name fullName = paramNode.getAbsolutePath().add(valueName);
-      Object value = paramNode.getValue(valueNames.next());
+      Name fullName = node.getAbsolutePath().add(valueName);
+      Object value = node.getValue(valueName);
       if (value instanceof StubContainer) {
         StubContainer container = (StubContainer) value;
-        countsByNames.put(fullName.toString(), container.getStubInvocationHandler().getContexts().size());
+        countsByNames.put(node.getNameParser().asString(fullName), container.getStubInvocationHandler().getContexts().size());
       }
     }
     return true;

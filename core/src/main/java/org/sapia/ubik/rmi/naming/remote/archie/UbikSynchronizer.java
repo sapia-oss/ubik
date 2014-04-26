@@ -46,7 +46,6 @@ public class UbikSynchronizer implements Synchronizer, AsyncEventListener, SyncE
 
   UbikSynchronizer(EventChannelRef channel) throws NamingException {
     this.channel = channel;
-
     channel.get().registerAsyncListener(SyncPutEvent.class.getName(), this);
 
     try {

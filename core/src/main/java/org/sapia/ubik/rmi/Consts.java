@@ -86,11 +86,11 @@ public interface Consts {
    * should synchronize their state with the other JNDI servers in the cluster (defaults to 30 secs).
    */
   public static final String JNDI_SYNC_INTERVAL = "ubik.rmi.naming.sync.interval";
-
+  
   /**
    * This constant corresponds to the <code>ubik.rmi.naming.sync.max-count</code>
    * property key. It is used to specify the maximum number of times JNDI servers should
-   * synchronize their state with the other JNDI servers in the cluster (defaults to 3 times,
+   * synchronize their state with the other JNDI servers in the cluster (defaults to 5 times,
    * a negative value is interpreted as no maximum).
    */
   public static final String JNDI_SYNC_MAX_COUNT = "ubik.rmi.naming.sync.max-count";

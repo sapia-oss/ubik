@@ -5,21 +5,26 @@ import java.lang.reflect.Proxy;
 import javax.naming.Context;
 import javax.naming.NameNotFoundException;
 
+import org.sapia.ubik.log.IncludeClassFilter;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.EventChannel;
 import org.sapia.ubik.rmi.examples.Foo;
 import org.sapia.ubik.rmi.naming.remote.EmbeddableJNDIServer;
+import org.sapia.ubik.rmi.naming.remote.JndiSyncTask;
 import org.sapia.ubik.rmi.naming.remote.LazyStubInvocationHandler;
 import org.sapia.ubik.rmi.naming.remote.discovery.DiscoveryHelper;
 import org.sapia.ubik.rmi.naming.remote.discovery.JndiDiscoListener;
 import org.sapia.ubik.rmi.naming.remote.discovery.ServiceDiscoListener;
 import org.sapia.ubik.rmi.naming.remote.discovery.ServiceDiscoveryEvent;
+import org.sapia.ubik.rmi.server.gc.CommandGc;
+import org.sapia.ubik.rmi.server.stub.StatelessStubTable;
 import org.sapia.ubik.util.Func;
 
 public class EmbeddedJndi2 {
 
   public static void main(String[] args) throws Exception {
-    Log.setInfo();
+    Log.setDebug();
+    Log.setLogFilter(IncludeClassFilter.newInstance(EmbeddableJNDIServer.class, StatelessStubTable.class, JndiSyncTask.class, CommandGc.class));
 
     final EventChannel channel = new EventChannel("default");
     final EmbeddableJNDIServer server = new EmbeddableJNDIServer(channel.getReference(), 1099);
@@ -81,7 +86,7 @@ public class EmbeddedJndi2 {
       } catch (Exception e) {
         System.out.println("Not yet present");
       }
-      Thread.sleep(1000);
+      Thread.sleep(60000);
     }
   }
 }
