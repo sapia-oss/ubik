@@ -82,8 +82,8 @@ public interface Consts {
 
   /**
    * This constant corresponds to the <code>ubik.rmi.naming.sync.interval</code>
-   * property key. It is used to specify the interval (in millis) at which JNDI servers
-   * should synchronize their state with the other JNDI servers in the cluster (defaults to 30 secs).
+   * property key. It is used to specify the time range that is used to calculate the interval at which
+   * JNDI servers should synchronize their state with the other JNDI servers in the cluster (defaults to 25:30 secs).
    */
   public static final String JNDI_SYNC_INTERVAL = "ubik.rmi.naming.sync.interval";
 
@@ -286,12 +286,28 @@ public interface Consts {
   public static final String MCAST_BROADCAST_MONITOR_INTERVAL = "ubik.rmi.naming.mcast.broadcast.monitor.interval";
 
   /**
-   * This constant corresponds to the <code>ubik.rmi.naming.mcast.event.channel.reuse</code>
+   * Corresponds to the
+   * <code>ubik.rmi.naming.mcast.channel.start.delay</code> property key.
+   * The value of this property specifies the time range to use for calculating the delay before the event channel publishes its
+   * presence for the first time (defaults to 500:3000 millis).
+   */
+  public static final String MCAST_CHANNEL_START_DELAY = "ubik.rmi.naming.mcast.channel.start.delay";
+
+  /**
+   * Corresponds to the
+   * <code>ubik.rmi.naming.mcast.channel.pub-interval</code> property key.
+   * The value of this property specifies the time range used for calculating the interval at which an event channel
+   * publishes itself, either upon resync or in the context of master broadcast (defaults to 1000:5000 millis).
+   */
+  public static final String MCAST_CHANNEL_PUBLISH_INTERVAL = "ubik.rmi.naming.mcast.channel.pub-interval";
+
+  /**
+   * This constant corresponds to the <code>ubik.rmi.naming.mcast.channel.reuse</code>
    * property key. It is used in test to indicate if {@link EventChannel} instance reuse should be enabled.
    * <p>
    * When testing event channel behavior in-memory, this property should be set to false.
    */
-  public static final String MCAST_REUSE_EXISTINC_CHANNELS = "ubik.rmi.naming.mcast.event.channel.reuse";
+  public static final String MCAST_REUSE_EXISTINC_CHANNELS = "ubik.rmi.naming.mcast.channel.reuse";
 
   /**
    * Identifies the unicast provider to use as part of {@link EventChannel}s.

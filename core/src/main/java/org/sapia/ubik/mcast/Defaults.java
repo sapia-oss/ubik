@@ -2,6 +2,7 @@ package org.sapia.ubik.mcast;
 
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.util.Time;
+import org.sapia.ubik.util.TimeRange;
 
 /**
  * Holds default values that are shared across different
@@ -148,11 +149,28 @@ public class Defaults {
   public static final Time DEFAULT_BROADCAST_MONITOR_INTERVAL = Time.createMillis(30000);
 
   /**
-   * The default interval at which JNDI servers synchronize their state with others.
+   * The default random time range specifying the interval used by the event channel to publish itself
+   * upon either upon resync, or as part of master broadcast.
+   *
+   * @see Consts#MCAST_CHANNEL_PUBLISH_INTERVAL
+   */
+  public static final TimeRange DEFAULT_CHANNEL_PUBLISH_INTERVAL = TimeRange.valueOf("1s-5s");
+
+  /**
+   * The default random time range specifying the delay observed by the event channel before publishing itself
+   * for the first time at startup.
+   *
+   * @see Consts#MCAST_CHANNEL_START_DELAY
+   *
+   */
+  public static final TimeRange DEFAULT_CHANNEL_START_DELAY = TimeRange.valueOf("500ms-3000ms");
+
+  /**
+   * The time range used to determine the default interval at which JNDI servers synchronize their state with others.
    *
    * @see Consts#JNDI_SYNC_INTERVAL
    */
-  public static final String DEFAULT_JNDI_SYNC_INTERVAL = "25s-35s";
+  public static final TimeRange DEFAULT_JNDI_SYNC_INTERVAL = TimeRange.valueOf("25s-35s");
 
   /**
    * The default max number of times at which JNDI servers synchronize their state with others.

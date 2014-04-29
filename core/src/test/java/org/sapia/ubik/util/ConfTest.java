@@ -125,12 +125,26 @@ public class ConfTest {
     Map<String, String> properties = new HashMap<String, String>();
     properties.put("key", "30s");
     props.addMap(properties);
-    assertEquals(30, props.getTimeProperty("key", Time.createSeconds(30)).getValueInSeconds());
+    assertEquals(30, props.getTimeProperty("key").getValueInSeconds());
   }
 
   @Test
   public void testGetTimePropertyWithDefault() {
     assertEquals(30, props.getTimeProperty("key", Time.createSeconds(30)).getValueInSeconds());
+  }
+
+
+  @Test
+  public void testGetTimeRangeProperty() {
+    Map<String, String> properties = new HashMap<String, String>();
+    properties.put("key", "30s:30s");
+    props.addMap(properties);
+    assertEquals(30, props.getTimeRangeProperty("key").getRandomTime().getValueInSeconds());
+  }
+
+  @Test
+  public void testGetTimeRangePropertyWithDefault() {
+    assertEquals(30, props.getTimeRangeProperty("key", TimeRange.valueOf("30s:30s")).getRandomTime().getValueInSeconds());
   }
 
   @Test(expected = IllegalArgumentException.class)

@@ -35,7 +35,7 @@ import org.sapia.ubik.util.Assertions;
 import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.Func;
 import org.sapia.ubik.util.Localhost;
-import org.sapia.ubik.util.TimeUtil;
+import org.sapia.ubik.util.Time;
 
 /**
  * This class implements an embeddable JNDI server.
@@ -64,9 +64,9 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
   private UbikRemoteContext root;
   private Context local;
   private ThreadStartup startBarrier = new ThreadStartup();
-  private long syncInterval = TimeUtil.parseRandomTime(
-      Conf.newInstance().getProperty(Consts.JNDI_SYNC_MAX_COUNT, Defaults.DEFAULT_JNDI_SYNC_INTERVAL)
-  ).getValueInMillis();
+  private Time syncInterval = Conf.newInstance().getTimeRangeProperty(
+      Consts.JNDI_SYNC_INTERVAL, Defaults.DEFAULT_JNDI_SYNC_INTERVAL
+  ).getRandomTime();
 
   /**
    * Used this constructor when you want this instance NOT to manage the start/close of the {@link EventChannel}
@@ -315,7 +315,7 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
       log.info("JNDI sync interval set to %s millis", syncInterval);
       log.warning("JNDI Server started. Listening on %s:%s", address.getHost(), address.getPort());
       Hub.getModules().getTaskManager().addTask(
-          new TaskContext("JndiSync", syncInterval), new JndiSyncTask(root, new Func<Void, JndiSyncRequest>() {
+          new TaskContext("JndiSync", syncInterval.getValueInMillis()), new JndiSyncTask(root, new Func<Void, JndiSyncRequest>() {
             @Override
             public Void call(JndiSyncRequest request) {
               try {

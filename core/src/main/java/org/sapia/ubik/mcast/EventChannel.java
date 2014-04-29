@@ -6,7 +6,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
-import java.util.Random;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -37,6 +36,7 @@ import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.Func;
 import org.sapia.ubik.util.SoftReferenceList;
 import org.sapia.ubik.util.SysClock;
+import org.sapia.ubik.util.TimeRange;
 
 /**
  * An instance of this class represents a node in a given logical event channel.
@@ -157,12 +157,7 @@ public class EventChannel {
    */
   static final String CONTROL_EVT = "ubik/mcast/control";
 
-  private static final int MIN_STARTUP_DELAY = 5000;
-  private static final int MIN_STARTUP_DELAY_OFFSET = 10000;
-
   private static final int DEFAULT_MAX_PUB_ATTEMPTS = 3;
-  private static final long MIN_PUB_INTERVAL = 2000;
-  private static final int MIN_PUB_OFFSET = 5000;
 
   private static Set<EventChannel> CHANNELS_BY_DOMAIN = Collections.synchronizedSet(new HashSet<EventChannel>());
 
@@ -180,7 +175,8 @@ public class EventChannel {
   private SoftReferenceList<DiscoveryListener> discoListeners = new SoftReferenceList<DiscoveryListener>();
   private volatile State state = State.CREATED;
   private int maxPublishAttempts = DEFAULT_MAX_PUB_ATTEMPTS;
-  private long publishInterval = MIN_PUB_INTERVAL + new Random().nextInt(MIN_PUB_OFFSET);
+  private TimeRange startDelayRange;
+  private TimeRange publishIntervalRange;
   private ConnectionStateListenerList stateListeners = new ConnectionStateListenerList();
   private ExecutorService publishExecutor = Executors.newSingleThreadExecutor(NamedThreadFactory.createWith("Ubik.EventChannel.Publish").setDaemon(
       true));
@@ -346,8 +342,6 @@ public class EventChannel {
 
       broadcast.addConnectionStateListener(new ConnectionStateListener() {
 
-        private int resyncAttempts = 0;
-
         @Override
         public void onReconnected() {
           if (doResync()) stateListeners.notifyReconnected();
@@ -364,16 +358,8 @@ public class EventChannel {
         }
 
         private boolean doResync() {
-          try {
-            resync();
-            if (resyncAttempts > 0) {
-              Thread.sleep(new Random().nextInt(MIN_STARTUP_DELAY) + MIN_STARTUP_DELAY_OFFSET);
-            }
-            resyncAttempts++;
-            return true;
-          } catch (InterruptedException e) {
-            return false;
-          }
+          resync();
+          return true;
         }
       });
 
@@ -399,7 +385,7 @@ public class EventChannel {
             log.warning("Error publishing presence to cluster", e);
           }
           try {
-            Thread.sleep(publishInterval);
+            Thread.sleep(publishIntervalRange.getRandomTime().getValueInMillis());
           } catch (InterruptedException e) {
             break;
           }
@@ -874,7 +860,7 @@ public class EventChannel {
               log.warning("Error performing master broadcast presence to cluster", e);
             }
             try {
-              Thread.sleep(publishInterval);
+              Thread.sleep(publishIntervalRange.getRandomTime().getValueInMillis());
             } catch (InterruptedException e) {
               break;
             }
@@ -1066,6 +1052,8 @@ public class EventChannel {
     long masterBroadcastInterval = props.getTimeProperty(Consts.MCAST_MASTER_BROADCAST_INTERVAL, Defaults.DEFAULT_MASTER_BROADCAST_INTERVAL).getValueInMillis();
     boolean masterBroadcastEnabled = props.getBooleanProperty(Consts.MCAST_MASTER_BROADCAST_ENABLED, true);
 
+    this.startDelayRange = props.getTimeRangeProperty(Consts.MCAST_CHANNEL_START_DELAY, Defaults.DEFAULT_CHANNEL_START_DELAY);
+    this.publishIntervalRange = props.getTimeRangeProperty(Consts.MCAST_CHANNEL_PUBLISH_INTERVAL, Defaults.DEFAULT_CHANNEL_PUBLISH_INTERVAL);
     this.controlBatchSize = props.getIntProperty(Consts.MCAST_CONTROL_SPLIT_SIZE, Defaults.DEFAULT_CONTROL_SPLIT_SIZE);
 
     log.debug("Heartbeat timeout set to %s", heartbeatTimeout);
@@ -1089,8 +1077,6 @@ public class EventChannel {
   }
 
   protected void startTimer(long heartbeatInterval) {
-    Random random = new Random();
-    long firstTaskStartupDelay = MIN_STARTUP_DELAY + random.nextInt(MIN_STARTUP_DELAY_OFFSET);
     heartbeatTimer.schedule(new TimerTask() {
       @Override
       public void run() {
@@ -1098,7 +1084,7 @@ public class EventChannel {
           controller.checkStatus();
         }
       }
-    }, firstTaskStartupDelay, heartbeatInterval);
+    }, startDelayRange.getRandomTime().getValueInMillis(), heartbeatInterval);
   }
 
   protected SysClock createClock() {

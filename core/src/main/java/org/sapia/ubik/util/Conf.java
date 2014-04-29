@@ -208,6 +208,38 @@ public class Conf {
   /**
    * @param key
    *          the key of the desired property.
+   * @return the {@link TimeRange} corresponding to the property value, which is
+   *         expected to be a time range literal.
+   */
+  public TimeRange getTimeRangeProperty(String key, TimeRange defaultValue) {
+    String val = lookup(key, false);
+    if (val == null) {
+      return defaultValue;
+    }
+    val = val.toLowerCase();
+    return TimeRange.valueOf(val);
+  }
+
+  /**
+   * @param key
+   *          the key of the desired property.
+   * @return the {@link TimeRange} corresponding to the retrieved property
+   *         value (which is expected to be a time range literal.
+   * @throws IllegalArgumentException not value could be found for the
+   *         the desired property.
+   */
+  public TimeRange getTimeRangeProperty(String key) throws IllegalArgumentException {
+    String val = lookup(key, false);
+    if (val == null) {
+      throw new IllegalArgumentException("No time specified for property: " + key);
+    }
+    val = val.toLowerCase();
+    return TimeRange.valueOf(val);
+  }
+
+  /**
+   * @param key
+   *          the key of the desired property.
    * @return the {@link Time} corresponding to the property value, which is
    *         expected to be a time literal.
    */
