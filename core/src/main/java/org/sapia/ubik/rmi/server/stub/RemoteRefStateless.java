@@ -263,7 +263,7 @@ public class RemoteRefStateless implements StubInvocationHandler, Externalizable
       try {
         return doInvoke(context, obj, toCall, params);
       } catch (Throwable t) {
-        if (t instanceof RemoteException || t instanceof ShutdownException) {
+        if (t instanceof RemoteException || t instanceof ShutdownException || t instanceof NoSuchObjectException) {
           err = t;
         }
       }

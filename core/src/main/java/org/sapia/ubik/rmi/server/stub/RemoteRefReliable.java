@@ -51,7 +51,7 @@ public class RemoteRefReliable extends RemoteRefEx {
   public Object invoke(Object obj, Method toCall, Object[] params) throws Throwable {
     try {
       return super.invoke(obj, toCall, params);
-    } catch (java.rmi.RemoteException | NoSuchObjectException e) {
+    } catch (java.rmi.RemoteException | NoSuchObjectException | ShutdownException e) {
       if (url != null) {
         log.info("RemoteException caught, performing failover");
         return doFailOver(obj, toCall, params, e);
