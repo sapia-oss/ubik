@@ -36,9 +36,9 @@ import org.sapia.ubik.util.pool.PooledObjectCreationException;
 
 /**
  * Base implementation for TCP-based {@link UnicastDispatcher}s.
- * 
+ *
  * @author yduchesne
- * 
+ *
  */
 public abstract class BaseTcpUnicastDispatcher implements UnicastDispatcher {
 
@@ -48,7 +48,7 @@ public abstract class BaseTcpUnicastDispatcher implements UnicastDispatcher {
   protected Category log = Log.createCategory(getClass());
   protected EventConsumer consumer;
   protected ConnectionPools connections = new ConnectionPools();
-  private int responseTimeout = Defaults.DEFAULT_SYNC_RESPONSE_TIMEOUT;
+  private long responseTimeout = Defaults.DEFAULT_SYNC_RESPONSE_TIMEOUT.getValueInMillis();
   private int senderCount = Defaults.DEFAULT_SENDER_COUNT;
   private int maxConnectionsPerHost = Defaults.DEFAULT_MAX_CONNECTIONS_PER_HOST;
   private ExecutorService senders;
@@ -64,21 +64,21 @@ public abstract class BaseTcpUnicastDispatcher implements UnicastDispatcher {
 
   /**
    * Sets this instance's response timeout.
-   * 
+   *
    * @param responseTimeout
    *          the number of millis to wait for synchronous responses.
    */
-  public void setResponseTimeout(int responseTimeout) {
+  public void setResponseTimeout(long responseTimeout) {
     Assertions.isTrue(responseTimeout > 0, "Response timeout must be greater than 0");
     this.responseTimeout = responseTimeout;
   }
 
   /**
    * Sets the number of threads used to send remote events.
-   * 
+   *
    * @param senderCount
    *          the number of sender threads.
-   * 
+   *
    * @see #send(List, String, Object)
    */
   public void setSenderCount(int senderCount) {
@@ -127,6 +127,7 @@ public abstract class BaseTcpUnicastDispatcher implements UnicastDispatcher {
 
       senders.execute(new Runnable() {
 
+        @Override
         public void run() {
           Split split = syncSend.start();
           try {
@@ -322,7 +323,7 @@ public abstract class BaseTcpUnicastDispatcher implements UnicastDispatcher {
       ConnectionPool pool = pools.get(addr);
       if (pool == null) {
         TCPAddress tcpAddr = (TCPAddress) addr;
-        ConnectionFactory sockets = doGetConnectionFactory(responseTimeout);
+        ConnectionFactory sockets = doGetConnectionFactory((int) responseTimeout);
         pool = new ConnectionPool.Builder().host(tcpAddr.getHost()).port(tcpAddr.getPort()).maxSize(maxConnectionsPerHost).connectionFactory(sockets)
             .build();
         pools.put(addr, pool);

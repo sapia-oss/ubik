@@ -1,6 +1,7 @@
 package org.sapia.ubik.mcast;
 
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.util.Time;
 
 /**
  * Holds default values that are shared across different
@@ -22,13 +23,13 @@ public class Defaults {
    * The default value of the timeout for client-side JNDI discovery. (see {@link Consts#JNDI_CLIENT_DISCO_TIMEOUT}).
    */
 
-  public static final long DEFAULT_JNDI_CLIENT_DISCO_TIMEOUT = 5000;
+  public static final Time DEFAULT_JNDI_CLIENT_DISCO_TIMEOUT = Time.createMillis(5000);
 
   /**
    * The default value for the batch size when looking up synchronously other JNDI nodes, from a
    * given node missing a stub (see {@link Consts#JNDI_LAZY_LOOKUP_INTERVAL}).
    */
-  public static final long DEFAULT_LAZY_LOOKUP_INTERVAL = 1000;
+  public static final Time DEFAULT_LAZY_LOOKUP_INTERVAL = Time.createMillis(1000);
 
   /**
    * The default UDP packet size (see {@link Consts#MCAST_BUFSIZE_KEY}).
@@ -56,18 +57,18 @@ public class Defaults {
    * The default synchronous response timeout (see
    * {@link Consts#MCAST_SYNC_RESPONSE_TIMEOUT}).
    */
-  public static final int DEFAULT_SYNC_RESPONSE_TIMEOUT = 10000;
+  public static final Time DEFAULT_SYNC_RESPONSE_TIMEOUT = Time.createMillis(10000);
 
   /**
    * The default heartbeat timeout (see {@link Consts#MCAST_HEARTBEAT_TIMEOUT}).
    */
-  public static final long DEFAULT_HEARTBEAT_TIMEOUT = 90000;
+  public static final Time DEFAULT_HEARTBEAT_TIMEOUT = Time.createMillis(90000);
 
   /**
    * The default heartbeat interval (see {@link Consts#MCAST_HEARTBEAT_INTERVAL}
    * ).
    */
-  public static final int DEFAULT_HEARTBEAT_INTERVAL = 60000;
+  public static final Time DEFAULT_HEARTBEAT_INTERVAL = Time.createMillis(60000);
 
   /**
    * The interval at which a node will resync itself with the cluster by
@@ -76,7 +77,7 @@ public class Defaults {
    * @see #DEFAULT_RESYNC_NODE_COUNT
    * @see Consts#MCAST_RESYNC_INTERVAL
    */
-  public static final int DEFAULT_RESYNC_INTERVAL = 60000;
+  public static final Time DEFAULT_RESYNC_INTERVAL = Time.createMillis(60000);
 
   /**
    * The default minimum number of nodes in the cluster before a given node will
@@ -104,7 +105,7 @@ public class Defaults {
   /**
    * The default timeout for channel control responses.
    */
-  public static final long DEFAULT_CONTROL_RESPONSE_TIMEOUT = 60000;
+  public static final Time DEFAULT_CONTROL_RESPONSE_TIMEOUT = Time.createMillis(60000);
 
   /**
    * The size for the splits of control requests/notifications.
@@ -130,28 +131,28 @@ public class Defaults {
    *
    * @see Consts#MCAST_PING_INTERVAL
    */
-  public static final long DEFAULT_PING_INTERVAL = 2000L;
+  public static final Time DEFAULT_PING_INTERVAL = Time.createMillis(2000);
 
   /**
    * The default master broadcast interval.
    *
    * @see Consts#MCAST_MASTER_BROADCAST_INTERVAL
    */
-  public static final long DEFAULT_MASTER_BROADCAST_INTERVAL = 120000L;
+  public static final Time DEFAULT_MASTER_BROADCAST_INTERVAL = Time.createMillis(120000);
 
   /**
    * The default broadcast monitor reconnection interval.
    *
    * @see Consts#MCAST_BROADCAST_MONITOR_INTERVAL
    */
-  public static final long DEFAULT_BROADCAST_MONITOR_INTERVAL = 30000L;
+  public static final Time DEFAULT_BROADCAST_MONITOR_INTERVAL = Time.createMillis(30000);
 
   /**
    * The default interval at which JNDI servers synchronize their state with others.
    *
    * @see Consts#JNDI_SYNC_INTERVAL
    */
-  public static final String DEFAULT_JNDI_SYNC_INTERVAL = "25000-35000";
+  public static final String DEFAULT_JNDI_SYNC_INTERVAL = "25s-35s";
 
   /**
    * The default max number of times at which JNDI servers synchronize their state with others.
@@ -159,6 +160,35 @@ public class Defaults {
    * @see Consts#JNDI_SYNC_MAX_COUNT
    */
   public static final int DEFAULT_JNDI_SYNC_MAX_COUNT = 5;
+
+  /**
+   * The time to for which threads should be kept alive in the spawning thread pool.
+   *
+   * @see Consts#SPAWN_THREADS_KEEP_ALIVE
+   */
+  public static final Time DEFAULT_SPAWN_KEEP_ALIVE = Time.createSeconds(30);
+
+  /**
+   * The number of core threads in the spawning thread pool.
+   *
+   * @see Consts#SPAWN_CORE_THREADS
+   *
+   */
+  public static final int  DEFAULT_SPAWN_CORE_POOL_SIZE = 5;
+
+  /**
+   * The max number of threads in the spawning thread pool.
+   *
+   * @see Consts#SPAWN_MAX_THREADS
+   */
+  public static final int  DEFAULT_SPAWN_MAX_POOL_SIZE  = 10;
+
+  /**
+   * The queue size of the spawning thread pool.
+   *
+   * @see Consts#SPAWN_THREADS_QUEUE_SIZE
+   */
+  public static final int  DEFAULT_SPAWN_QUEUE_SIZE = 100;
 
   private Defaults() {
   }

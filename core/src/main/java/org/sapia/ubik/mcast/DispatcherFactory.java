@@ -21,9 +21,9 @@ import org.sapia.ubik.util.Conf;
 /**
  * This class implements a factory of {@link UnicastDispatcher}s and
  * {@link BroadcastDispatcher}s.
- * 
+ *
  * @author yduchesne
- * 
+ *
  */
 public final class DispatcherFactory {
 
@@ -50,7 +50,7 @@ public final class DispatcherFactory {
   /**
    * Creates a {@link UnicastDispatcher}, based on the given {@link Properties},
    * and returns it.
-   * 
+   *
    * @param consumer
    *          an {@link EventConsumer}.
    * @param props
@@ -80,7 +80,7 @@ public final class DispatcherFactory {
             Defaults.DEFAULT_HANDLER_COUNT), props.getIntProperty(Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE));
         dispatcher.setSenderCount(props.getIntProperty(Consts.MCAST_SENDER_COUNT, Defaults.DEFAULT_SENDER_COUNT));
         dispatcher.setMaxConnectionsPerHost(props.getIntProperty(Consts.MCAST_MAX_CLIENT_CONNECTIONS, Defaults.DEFAULT_MAX_CONNECTIONS_PER_HOST));
-        dispatcher.setResponseTimeout(props.getIntProperty(Consts.MCAST_SYNC_RESPONSE_TIMEOUT, Defaults.DEFAULT_SYNC_RESPONSE_TIMEOUT));
+        dispatcher.setResponseTimeout(props.getTimeProperty(Consts.MCAST_SYNC_RESPONSE_TIMEOUT, Defaults.DEFAULT_SYNC_RESPONSE_TIMEOUT).getValueInMillis());
         return dispatcher;
       } else {
         log.info("Creating BIO TCP unicast provider");
@@ -90,16 +90,16 @@ public final class DispatcherFactory {
         TcpUnicastDispatcher dispatcher = new TcpUnicastDispatcher(consumer, threadingConfig);
         dispatcher.setSenderCount(props.getIntProperty(Consts.MCAST_SENDER_COUNT, Defaults.DEFAULT_SENDER_COUNT));
         dispatcher.setMaxConnectionsPerHost(props.getIntProperty(Consts.MCAST_MAX_CLIENT_CONNECTIONS, Defaults.DEFAULT_MAX_CONNECTIONS_PER_HOST));
-        dispatcher.setResponseTimeout(props.getIntProperty(Consts.MCAST_SYNC_RESPONSE_TIMEOUT, Defaults.DEFAULT_SYNC_RESPONSE_TIMEOUT));
+        dispatcher.setResponseTimeout(props.getTimeProperty(Consts.MCAST_SYNC_RESPONSE_TIMEOUT, Defaults.DEFAULT_SYNC_RESPONSE_TIMEOUT).getValueInMillis());
         return dispatcher;
       }
-    } 
+    }
   }
 
   /**
    * Creates a {@link BroadcastDispatcher}, based on the given
    * {@link Properties}, and returns it.
-   * 
+   *
    * @param consumer
    *          an {@link EventConsumer}.
    * @param props

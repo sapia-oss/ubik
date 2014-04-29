@@ -42,7 +42,7 @@ import org.sapia.ubik.util.Strings;
 public class LazyStubInvocationHandler implements StubInvocationHandler, ServiceDiscoListener {
 
   private static final Category LOG = Log.createCategory(LazyStubInvocationHandler.class);
-  
+
   /**
    * A builder of {@link LazyStubInvocationHandler}s.
    */
@@ -50,10 +50,10 @@ public class LazyStubInvocationHandler implements StubInvocationHandler, Service
     private String        name;
     private RemoteContext context;
     private Func<Void, LazyStubInvocationHandler> matchFunction;
-    
+
     private Builder() {
     }
-    
+
     /**
      * @param name the name of the remote object to lookup.
      * @return this instance.
@@ -62,7 +62,7 @@ public class LazyStubInvocationHandler implements StubInvocationHandler, Service
       this.name = name;
       return this;
     }
-    
+
     /**
      * @param context the {@link Context} to use to perform lazy lookup.
      * @return this instance.
@@ -71,7 +71,7 @@ public class LazyStubInvocationHandler implements StubInvocationHandler, Service
       this.context = context;
       return this;
     }
-  
+
     /**
      * @param func the {@link Func} that is invoked when a service corresponding to the
      * @return this instance.
@@ -80,7 +80,7 @@ public class LazyStubInvocationHandler implements StubInvocationHandler, Service
       this.matchFunction = func;
       return this;
     }
-    
+
     /**
      * @return the {@link LazyStubInvocationHandler}.
      */
@@ -90,7 +90,7 @@ public class LazyStubInvocationHandler implements StubInvocationHandler, Service
       Assertions.notNull(matchFunction, "Match function not set");
       return new LazyStubInvocationHandler(name, context, matchFunction);
     }
-    
+
     /**
      * @return a new instance of this class.
      */
@@ -98,17 +98,17 @@ public class LazyStubInvocationHandler implements StubInvocationHandler, Service
       return new Builder();
     }
   }
-  
+
   // ==========================================================================
 
   private String                         name;
   private Context                        context;
   private volatile StubInvocationHandler delegate;
   private TimeIntervalBarrier            lookupBarrier = TimeIntervalBarrier.forMillis(
-      Conf.newInstance().getLongProperty(Consts.JNDI_LAZY_LOOKUP_INTERVAL, Defaults.DEFAULT_LAZY_LOOKUP_INTERVAL)
+      Conf.newInstance().getTimeProperty(Consts.JNDI_LAZY_LOOKUP_INTERVAL, Defaults.DEFAULT_LAZY_LOOKUP_INTERVAL).getValueInMillis()
   );
   private Func<Void, LazyStubInvocationHandler> discoveryMatchFunction;
-  
+
   /**
    * @param name the name of the remote object to look up.
    * @param context the {@link Context} to use when performing the lookup.
@@ -125,18 +125,18 @@ public class LazyStubInvocationHandler implements StubInvocationHandler, Service
   /**
    * This constructor allows passing a {@link Func} which is invoked when a remote object is found
    * that matches the name of this instance's intended stub.
-   * 
+   *
    * @param name the name of the remote object to look up.
    * @param context the {@link Context} to use when performing the lookup.
-   * @param discoveryMatchFunction the {@link Func} that this invoked when the {@link #onServiceDiscovered(ServiceDiscoveryEvent)} 
-   * of this instance is called, and the remote object that was found matches this instance's name. 
+   * @param discoveryMatchFunction the {@link Func} that this invoked when the {@link #onServiceDiscovered(ServiceDiscoveryEvent)}
+   * of this instance is called, and the remote object that was found matches this instance's name.
    */
   public LazyStubInvocationHandler(String name, Context context, Func<Void, LazyStubInvocationHandler> discoveryMatchFunction) {
     this.name    = name.startsWith("/") ? name : "/" + name;
     this.context = context;
     this.discoveryMatchFunction = discoveryMatchFunction;
   }
-  
+
   @Override
   public StubContainer toStubContainer(Object proxy) {
     return delegate.toStubContainer(proxy);
@@ -190,7 +190,7 @@ public class LazyStubInvocationHandler implements StubInvocationHandler, Service
   }
 
   /**
-   * @return the {@link StubInvocationHandler} that this instance wraps, or <code>null</code> if 
+   * @return the {@link StubInvocationHandler} that this instance wraps, or <code>null</code> if
    * no corresponding remote object has yet been discovered.
    */
   public StubInvocationHandler getDelegate() {
@@ -199,11 +199,11 @@ public class LazyStubInvocationHandler implements StubInvocationHandler, Service
 
   // --------------------------------------------------------------------------
   // Restricted
-  
+
   void setDelegate(StubInvocationHandler delegate) {
     this.delegate = delegate;
   }
-  
+
   private void doLookup() throws RemoteException, NamingException {
     synchronized (lookupBarrier) {
       if (delegate == null) {

@@ -86,7 +86,7 @@ public interface Consts {
    * should synchronize their state with the other JNDI servers in the cluster (defaults to 30 secs).
    */
   public static final String JNDI_SYNC_INTERVAL = "ubik.rmi.naming.sync.interval";
-  
+
   /**
    * This constant corresponds to the <code>ubik.rmi.naming.sync.max-count</code>
    * property key. It is used to specify the maximum number of times JNDI servers should
@@ -422,6 +422,31 @@ public interface Consts {
    * @see #SERVER_MAX_THREADS
    */
   public static final String SERVER_THREADS_QUEUE_SIZE = "ubik.rmi.server.threads.queue-size";
+
+  /**
+   * Specifies the number of core spawned threads - system property
+   * name: <code>ubik.rmi.spawn.core-threads</code>. Defaults to 5.
+   */
+  public static final String SPAWN_CORE_THREADS = "ubik.rmi.spawn.core-threads";
+
+  /**
+   * Specifies the maximum number of spawned threads - system property
+   * name: <code>ubik.rmi.spawn.max-threads</code>. Defaults to 10.
+   */
+  public static final String SPAWN_MAX_THREADS = "ubik.rmi.spawn.max-threads";
+
+  /**
+   * Specifies the duration of the idle period for spawned threads (in seconds).
+   * System property name: <code>ubik.rmi.spawn.threads.keep-alive</code>.
+   * Defaults to 30 (seconds).
+   */
+  public static final String SPAWN_THREADS_KEEP_ALIVE = "ubik.rmi.spawn.threads.keep-alive";
+
+  /**
+   * Specifies the size of task processing queue for spawned threads:
+   * <code>ubik.rmi.spawn.threads.queue-size</code>. Defaults to 100.
+   */
+  public static final String SPAWN_THREADS_QUEUE_SIZE = "ubik.rmi.spawn.threads.queue-size";
 
   /**
    * Specifies the maximum number of threads that process method invocation

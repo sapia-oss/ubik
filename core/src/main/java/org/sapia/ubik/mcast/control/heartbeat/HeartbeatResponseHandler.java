@@ -17,10 +17,10 @@ import org.sapia.ubik.util.Conf;
 
 /**
  * This class holds logic for handling {@link HeartbeatResponse}s.
- * 
+ *
  * @see HeartbeatRequest
  * @author yduchesne
- * 
+ *
  */
 public class HeartbeatResponseHandler implements ControlResponseHandler {
 
@@ -52,7 +52,7 @@ public class HeartbeatResponseHandler implements ControlResponseHandler {
     this.targetedNodes = targetedNodes;
     Conf sysProps = Conf.getSystemProperties();
     maxPingAttempts = sysProps.getIntProperty(Consts.MCAST_MAX_PING_ATTEMPTS, Defaults.DEFAULT_PING_ATTEMPTS);
-    pingInterval = sysProps.getLongProperty(Consts.MCAST_PING_INTERVAL, Defaults.DEFAULT_PING_INTERVAL);
+    pingInterval = sysProps.getTimeProperty(Consts.MCAST_PING_INTERVAL, Defaults.DEFAULT_PING_INTERVAL).getValueInMillis();
     pingDisabled = sysProps.getBooleanProperty(HEARTBEAT_PING_DISABLED, false);
     forceResync = sysProps.getBooleanProperty(Consts.MCAST_HEARTBEAT_FORCE_RESYNC, true);
   }
@@ -151,6 +151,7 @@ public class HeartbeatResponseHandler implements ControlResponseHandler {
           responses.addAll(context.getChannelCallback().sendSynchronousRequest(remainingTargets, new PingRequest()));
 
           Set<String> tmp = Collects.convertAsSet(responses, new org.sapia.ubik.util.Func<String, SynchronousControlResponse>() {
+            @Override
             public String call(SynchronousControlResponse res) {
               return res.getOriginNode();
             }

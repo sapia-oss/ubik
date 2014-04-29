@@ -5,25 +5,25 @@ import org.sapia.ubik.rmi.Consts;
 
 /**
  * Holds the configuration for an {@link EventChannelController}.
- * 
+ *
  * @author yduchesne
- * 
+ *
  */
 public class ControllerConfiguration {
 
-  private long responseTimeout = Defaults.DEFAULT_CONTROL_RESPONSE_TIMEOUT;
-  private long heartbeatInterval = Defaults.DEFAULT_HEARTBEAT_INTERVAL;
-  private long heartbeatTimeout = Defaults.DEFAULT_HEARTBEAT_TIMEOUT;
-  private long resyncInterval = Defaults.DEFAULT_RESYNC_INTERVAL;
+  private long responseTimeout = Defaults.DEFAULT_CONTROL_RESPONSE_TIMEOUT.getValueInMillis();
+  private long heartbeatInterval = Defaults.DEFAULT_HEARTBEAT_INTERVAL.getValueInMillis();
+  private long heartbeatTimeout = Defaults.DEFAULT_HEARTBEAT_TIMEOUT.getValueInMillis();
+  private long resyncInterval = Defaults.DEFAULT_RESYNC_INTERVAL.getValueInMillis();
   private long resyncNodeCount = Defaults.DEFAULT_RESYNC_NODE_COUNT;
   private int forceResyncBatchSize = Defaults.DEFAULT_FORCE_RESYNC_BATCH_SIZE;
   private int forceResyncAttempts = Defaults.DEFAULT_FORCE_RESYNC_ATTEMPTS;
   private boolean masterBroadcastEnabled = true;
-  private long masterBroadcastInterval = Defaults.DEFAULT_MASTER_BROADCAST_INTERVAL;
+  private long masterBroadcastInterval = Defaults.DEFAULT_MASTER_BROADCAST_INTERVAL.getValueInMillis();
 
   /**
    * Sets the heartbeat interval.
-   * 
+   *
    * @param heartbeatInterval
    *          an interval, in millis.
    * @see Consts#MCAST_HEARTBEAT_INTERVAL
@@ -42,7 +42,7 @@ public class ControllerConfiguration {
 
   /**
    * Sets the heartbeat timeout.
-   * 
+   *
    * @param heartbeatTimeout
    *          an interval, in millis.
    * @see Consts#MCAST_HEARTBEAT_TIMEOUT
@@ -61,7 +61,7 @@ public class ControllerConfiguration {
 
   /**
    * Sets the control response timeout.
-   * 
+   *
    * @param responseTimeout
    *          a response timeout, in millis.
    * @see Consts#MCAST_CONTROL_RESPONSE_TIMEOUT
@@ -112,7 +112,7 @@ public class ControllerConfiguration {
   /**
    * @param forceResyncBatchSize
    *          a batch size.
-   * 
+   *
    * @see Consts#MCAST_HEARTBEAT_FORCE_RESYNC_BATCH_SIZE
    */
   public void setForceResyncBatchSize(int forceResyncBatchSize) {
@@ -129,7 +129,7 @@ public class ControllerConfiguration {
   /**
    * @param attempts
    *          the maximum number of force-resync attempts.
-   * 
+   *
    * @see Consts#MCAST_HEARTBEAT_FORCE_RESYNC_ATTEMPTS
    */
   public void setForceResyncAttempts(int attempts) {
@@ -146,7 +146,7 @@ public class ControllerConfiguration {
   /**
    * @param masterBroadcastEnabled
    *          indicates if master broadcast should be enabled or not.
-   * 
+   *
    * @see Consts#MCAST_MASTER_BROADCAST_ENABLED
    */
   public void setMasterBroadcastEnabled(boolean masterBroadcastEnabled) {
@@ -160,7 +160,7 @@ public class ControllerConfiguration {
   /**
    * @param masterBroadcastInterval
    *          the master broadcast interval.
-   * 
+   *
    * @see Consts#MCAST_MASTER_BROADCAST_INTERVAL
    */
   public void setMasterBroadcastInterval(long masterBroadcastInterval) {

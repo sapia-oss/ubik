@@ -27,8 +27,8 @@ import org.sapia.ubik.rmi.naming.remote.proxy.ContextResolver;
 import org.sapia.ubik.rmi.naming.remote.proxy.DefaultContextResolver;
 import org.sapia.ubik.rmi.naming.remote.proxy.ReliableLocalContext;
 import org.sapia.ubik.util.Condition;
-import org.sapia.ubik.util.Pause;
 import org.sapia.ubik.util.Conf;
+import org.sapia.ubik.util.Pause;
 
 /**
  * Implements a factory that allows to register {@link ServiceDiscoListener}s
@@ -169,7 +169,7 @@ public class RemoteInitialContextFactory implements InitialContextFactory, JNDIC
       try {
         channel.get().dispatch(JNDI_CLIENT_PUBLISH, "");
 
-        long discoTimeout = allProps.getLongProperty(Consts.JNDI_CLIENT_DISCO_TIMEOUT, Defaults.DEFAULT_JNDI_CLIENT_DISCO_TIMEOUT);
+        long discoTimeout = allProps.getTimeProperty(Consts.JNDI_CLIENT_DISCO_TIMEOUT, Defaults.DEFAULT_JNDI_CLIENT_DISCO_TIMEOUT).getValueInMillis();
         RemoteEvent evt = listener.waitForEvent(discoTimeout);
         channel.get().unregisterAsyncListener(listener);
 

@@ -14,8 +14,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class Time {
 
-  long     value;
-  TimeUnit unit;
+  private long     value;
+  private TimeUnit unit;
 
   private static final Map<String, TimeUnit> UNITS_BY_NAME = new HashMap<String, TimeUnit>();
   private static final List<String> UNIT_NAMES = new ArrayList<>();

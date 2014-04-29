@@ -31,12 +31,12 @@ import org.sapia.ubik.net.ConnectionStateListener;
 import org.sapia.ubik.net.ConnectionStateListenerList;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
-import org.sapia.ubik.util.SysClock;
 import org.sapia.ubik.util.Collects;
 import org.sapia.ubik.util.Condition;
-import org.sapia.ubik.util.Func;
 import org.sapia.ubik.util.Conf;
+import org.sapia.ubik.util.Func;
 import org.sapia.ubik.util.SoftReferenceList;
+import org.sapia.ubik.util.SysClock;
 
 /**
  * An instance of this class represents a node in a given logical event channel.
@@ -676,21 +676,21 @@ public class EventChannel {
   public synchronized boolean containsSyncListener(SyncEventListener listener) {
     return consumer.containsSyncListener(listener);
   }
-  
+
   /**
    * @see BroadcastDispatcher#getNode()
    */
   public String getNode() {
     return broadcast.getNode();
   }
-  
+
   /**
    * Used when testing to disable active instance reuse.
    */
   public static void disableReuse() {
     eventChannelReuse = false;
   }
-  
+
   /**
    * Used when testing to re-enable instance reuse.
    */
@@ -1058,12 +1058,12 @@ public class EventChannel {
     } catch (ListenerAlreadyRegisteredException e) {
       throw new IllegalStateException("Could not register sync event listener", e);
     }
-    long heartbeatTimeout = props.getLongProperty(Consts.MCAST_HEARTBEAT_TIMEOUT, Defaults.DEFAULT_HEARTBEAT_TIMEOUT);
-    long heartbeatInterval = props.getLongProperty(Consts.MCAST_HEARTBEAT_INTERVAL, Defaults.DEFAULT_HEARTBEAT_INTERVAL);
-    long controlResponseTimeout = props.getLongProperty(Consts.MCAST_CONTROL_RESPONSE_TIMEOUT, Defaults.DEFAULT_CONTROL_RESPONSE_TIMEOUT);
+    long heartbeatTimeout = props.getTimeProperty(Consts.MCAST_HEARTBEAT_TIMEOUT, Defaults.DEFAULT_HEARTBEAT_TIMEOUT).getValueInMillis();
+    long heartbeatInterval = props.getTimeProperty(Consts.MCAST_HEARTBEAT_INTERVAL, Defaults.DEFAULT_HEARTBEAT_INTERVAL).getValueInMillis();
+    long controlResponseTimeout = props.getTimeProperty(Consts.MCAST_CONTROL_RESPONSE_TIMEOUT, Defaults.DEFAULT_CONTROL_RESPONSE_TIMEOUT).getValueInMillis();
     int forceResyncAttempts = props.getIntProperty(Consts.MCAST_HEARTBEAT_FORCE_RESYNC_ATTEMPTS, Defaults.DEFAULT_FORCE_RESYNC_ATTEMPTS);
     int forceResyncBatchSize = props.getIntProperty(Consts.MCAST_HEARTBEAT_FORCE_RESYNC_BATCH_SIZE, Defaults.DEFAULT_FORCE_RESYNC_BATCH_SIZE);
-    long masterBroadcastInterval = props.getLongProperty(Consts.MCAST_MASTER_BROADCAST_INTERVAL, Defaults.DEFAULT_MASTER_BROADCAST_INTERVAL);
+    long masterBroadcastInterval = props.getTimeProperty(Consts.MCAST_MASTER_BROADCAST_INTERVAL, Defaults.DEFAULT_MASTER_BROADCAST_INTERVAL).getValueInMillis();
     boolean masterBroadcastEnabled = props.getBooleanProperty(Consts.MCAST_MASTER_BROADCAST_ENABLED, true);
 
     this.controlBatchSize = props.getIntProperty(Consts.MCAST_CONTROL_SPLIT_SIZE, Defaults.DEFAULT_CONTROL_SPLIT_SIZE);

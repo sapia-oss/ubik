@@ -15,10 +15,10 @@ import org.sapia.ubik.mcast.EventChannel.Role;
 import org.sapia.ubik.mcast.control.ControllerContext;
 import org.sapia.ubik.mcast.control.EventChannelControllerListener;
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.util.Conf;
+import org.sapia.ubik.util.Pause;
 import org.sapia.ubik.util.SysClock;
 import org.sapia.ubik.util.SysClock.MutableClock;
-import org.sapia.ubik.util.Pause;
-import org.sapia.ubik.util.Conf;
 
 public class EventChannelControlAlgoTest {
 
@@ -65,7 +65,7 @@ public class EventChannelControlAlgoTest {
 
     // triggering heartbeat request and waiting
     // for responses to come in
-    clock.increaseCurrentTimeMillis(Defaults.DEFAULT_HEARTBEAT_INTERVAL + 1);
+    clock.increaseCurrentTimeMillis(Defaults.DEFAULT_HEARTBEAT_INTERVAL.getValueInMillis() + 1);
     do {
       checkStatus();
     } while (!listener.waitHeartbeatCompleted(3000));

@@ -156,7 +156,7 @@ public class Conf {
 
   /**
    * @param key
-   *          the key of the desired property
+   *          the key of the desired property.
    * @return <code>true</code> if the value corresponding to the given key
    *         equals <code>true</code>, <code>on</code>, or <code>yes</code>,
    *         <code>false</code> otherwise, or if no value could be found for the
@@ -173,7 +173,7 @@ public class Conf {
 
   /**
    * @param key
-   *          the key of the desired property
+   *          the key of the desired property.
    * @return <code>true</code> if the value corresponding to the given key
    *         equals <code>true</code>, <code>on</code>, or <code>yes</code>,
    *         <code>false</code> otherwise, or the passed in default if no value
@@ -186,6 +186,38 @@ public class Conf {
     }
     val = val.toLowerCase();
     return val.equals("true") || val.equals("on") || val.equals("yes");
+  }
+
+  /**
+   * @param key
+   *          the key of the desired property.
+   * @return the {@link Time} corresponding to the retrieved property
+   *         value (which is expected to be a time literal.
+   * @throws IllegalArgumentException not value could be found for the
+   *         the desired property.
+   */
+  public Time getTimeProperty(String key) throws IllegalArgumentException {
+    String val = lookup(key, false);
+    if (val == null) {
+      throw new IllegalArgumentException("No time specified for property: " + key);
+    }
+    val = val.toLowerCase();
+    return Time.valueOf(val);
+  }
+
+  /**
+   * @param key
+   *          the key of the desired property.
+   * @return the {@link Time} corresponding to the property value, which is
+   *         expected to be a time literal.
+   */
+  public Time getTimeProperty(String key, Time defaultValue) {
+    String val = lookup(key, false);
+    if (val == null) {
+      return defaultValue;
+    }
+    val = val.toLowerCase();
+    return Time.valueOf(val);
   }
 
   /**

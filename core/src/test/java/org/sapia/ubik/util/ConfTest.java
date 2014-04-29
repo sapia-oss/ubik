@@ -1,6 +1,7 @@
 package org.sapia.ubik.util;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -117,6 +118,19 @@ public class ConfTest {
   @Test
   public void testGetBooleanPropertyWithDefault() {
     assertTrue(props.getBooleanProperty("key", true));
+  }
+
+  @Test
+  public void testGetTimeProperty() {
+    Map<String, String> properties = new HashMap<String, String>();
+    properties.put("key", "30s");
+    props.addMap(properties);
+    assertEquals(30, props.getTimeProperty("key", Time.createSeconds(30)).getValueInSeconds());
+  }
+
+  @Test
+  public void testGetTimePropertyWithDefault() {
+    assertEquals(30, props.getTimeProperty("key", Time.createSeconds(30)).getValueInSeconds());
   }
 
   @Test(expected = IllegalArgumentException.class)

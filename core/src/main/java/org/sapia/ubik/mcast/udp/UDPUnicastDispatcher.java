@@ -30,7 +30,7 @@ import org.sapia.ubik.util.Localhost;
 
 /**
  * Implements the {@link UnicastDispatcher} interface over UDP.
- * 
+ *
  * @author Yanick Duchesne
  */
 public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher {
@@ -39,7 +39,7 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
 
   private Category log = Log.createCategory(getClass());
   private EventConsumer consumer;
-  private int responseTimeout = Defaults.DEFAULT_SYNC_RESPONSE_TIMEOUT;
+  private long responseTimeout = Defaults.DEFAULT_SYNC_RESPONSE_TIMEOUT.getValueInMillis();
   private int senderCount = Defaults.DEFAULT_SENDER_COUNT;
   private ExecutorService senders;
   private ExecutorService handlers;
@@ -99,7 +99,7 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
 
     DatagramSocket sock = new DatagramSocket();
 
-    sock.setSoTimeout(responseTimeout);
+    sock.setSoTimeout((int) responseTimeout);
 
     try {
       RemoteEvent evt = new RemoteEvent(null, type, data).setNode(consumer.getNode());
@@ -121,7 +121,7 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
   public Response send(ServerAddress addr, String type, Object data) throws IOException {
 
     DatagramSocket sock = new DatagramSocket();
-    sock.setSoTimeout(responseTimeout);
+    sock.setSoTimeout((int) responseTimeout);
     RemoteEvent evt = new RemoteEvent(null, type, data).setNode(consumer.getNode()).setSync();
     evt.setUnicastAddress(addr);
     UDPUnicastAddress inet = (UDPUnicastAddress) addr;
@@ -158,7 +158,7 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
           DatagramSocket sock = null;
           try {
             sock = new DatagramSocket();
-            sock.setSoTimeout(responseTimeout);
+            sock.setSoTimeout((int) responseTimeout);
             Response resp = (Response) doSend(addr.getInetAddress(), addr.getPort(), sock, bytes, true, type);
             queue.add(resp);
           } catch (TimeoutException e) {

@@ -27,12 +27,12 @@ import org.sapia.ubik.util.Conf;
 /**
  * Implements a {@link BroadcastDispatcher} on top of the Avis group
  * communication framework.
- * 
+ *
  * @author yduchesne
- * 
+ *
  */
 public class AvisBroadcastDispatcher implements BroadcastDispatcher {
-  
+
   public enum ConnectionState {
     DOWN, UP
   }
@@ -76,18 +76,18 @@ public class AvisBroadcastDispatcher implements BroadcastDispatcher {
   public void dispatch(ServerAddress unicastAddr, boolean alldomains, String evtType, Object data) throws IOException {
     if (state == ConnectionState.UP) {
       RemoteEvent evt;
-  
+
       try {
         if (alldomains) {
           evt = new RemoteEvent(null, evtType, data).setNode(consumer.getNode());
           evt.setUnicastAddress(unicastAddr);
           connector.getConnection().send(createNotification(evt, ANY_DOMAIN));
-    
+
         } else {
           evt = new RemoteEvent(domain, evtType, data).setNode(consumer.getNode());
           evt.setUnicastAddress(unicastAddr);
           connector.getConnection().send(createNotification(evt, domain));
-    
+
         }
       } catch (IOException e) {
         watchConnection();
@@ -131,17 +131,17 @@ public class AvisBroadcastDispatcher implements BroadcastDispatcher {
       monitor.stop();
     }
   }
-  
+
   @Override
   public void addConnectionStateListener(ConnectionStateListener listener) {
     listeners.add(listener);
   }
-  
+
   @Override
   public void removeConnectionStateListener(ConnectionStateListener listener) {
     listeners.remove(listener);
   }
-  
+
   private synchronized void doConnect() throws IOException {
     connector.connect();
     connector.getConnection().subscribe(String.format("(begins-with(Domain, \"%s\") || Domain == '*') && Type == '%s'", consumer.getDomainName().get(0),
@@ -160,11 +160,11 @@ public class AvisBroadcastDispatcher implements BroadcastDispatcher {
           log.error("Could not deserialize data", e);
         }
       }
-    });    
-    
+    });
+
     state = ConnectionState.UP;
   }
-  
+
   private synchronized void watchConnection() {
     if (state == ConnectionState.UP) {
       listeners.onDisconnected();
@@ -175,12 +175,12 @@ public class AvisBroadcastDispatcher implements BroadcastDispatcher {
           log.debug("Reconnected to Avis router");
           monitor = null;
         }
-      }, 
+      },
       this.listeners,
-      Conf.getSystemProperties().getLongProperty(Consts.MCAST_BROADCAST_MONITOR_INTERVAL, Defaults.DEFAULT_BROADCAST_MONITOR_INTERVAL));
+      Conf.getSystemProperties().getTimeProperty(Consts.MCAST_BROADCAST_MONITOR_INTERVAL, Defaults.DEFAULT_BROADCAST_MONITOR_INTERVAL).getValueInMillis());
       state = ConnectionState.DOWN;
-    } 
-  }  
+    }
+  }
 
   private Notification createNotification(RemoteEvent evt, String domain) throws IOException {
     Notification notification = new Notification();
