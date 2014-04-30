@@ -4,15 +4,12 @@ package org.sapia.ubik.rmi.server;
  * Thrown by the Ubik RMI runtime when operations are requested and it is
  * shutdown.
  * 
- * @author Yanick Duchesne 8-Sep-2003
+ * @author Yanick Duchesne
  */
-public class ShutdownException extends RuntimeException {
+public class ShutdownException extends RuntimeRemoteException {
 
   static final long serialVersionUID = 1L;
 
-  /**
-   * Constructor for ShutdownException.
-   */
   public ShutdownException() {
     super();
   }

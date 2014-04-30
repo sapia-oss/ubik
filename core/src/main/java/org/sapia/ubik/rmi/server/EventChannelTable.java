@@ -12,7 +12,6 @@ import org.sapia.ubik.mcast.EventChannelRef;
 import org.sapia.ubik.mcast.MulticastAddress;
 import org.sapia.ubik.module.Module;
 import org.sapia.ubik.module.ModuleContext;
-import org.sapia.ubik.rmi.RemoteRuntimeException;
 import org.sapia.ubik.util.Condition;
 import org.sapia.ubik.util.Conf;
 
@@ -66,7 +65,7 @@ public class EventChannelTable implements Module, EventChannelTableMBean {
    * @throws RemoteRuntimeException
    *           if a channel could not be returned/created.
    */
-  public EventChannel getEventChannelFor(final String domain, final MulticastAddress address) throws RemoteRuntimeException {
+  public EventChannel getEventChannelFor(final String domain, final MulticastAddress address) throws RuntimeRemoteException {
     EventChannelRef ref;
     ChannelKey key = new ChannelKey(domain, address);
 
@@ -95,7 +94,7 @@ public class EventChannelTable implements Module, EventChannelTableMBean {
               ref.get().start();
               channels.put(key, ref);
             } catch (IOException e) {
-              throw new RemoteRuntimeException("Could not create event channel for domain: " + domain, e);
+              throw new RuntimeRemoteException("Could not create event channel for domain: " + domain, e);
             }
           }
         }

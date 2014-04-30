@@ -2,9 +2,12 @@ package org.sapia.ubik.util;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
+import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import org.sapia.ubik.rmi.server.RuntimeRemoteException;
 
 /**
  * Exception-related methods.
@@ -48,5 +51,13 @@ public final class Exceptions {
       elements.add(currentStackTrace.get(i));
     }
     toFillIn.setStackTrace(elements.toArray(new StackTraceElement[elements.size()]));
+  }
+  
+  /**
+   * @param e the {@link Throwable} to test.
+   * @return <code>true</code> if the given exception is an instance of {@link RemoteException} or {@link RuntimeRemoteException}.
+   */
+  public static boolean isRemoteException(Throwable e) {
+    return e instanceof RemoteException || e instanceof RuntimeRemoteException;
   }
 }

@@ -13,9 +13,9 @@ import java.util.Set;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.MulticastAddress;
-import org.sapia.ubik.rmi.NoSuchObjectException;
 import org.sapia.ubik.rmi.server.CommandPing;
 import org.sapia.ubik.rmi.server.Hub;
+import org.sapia.ubik.rmi.server.RuntimeRemoteException;
 import org.sapia.ubik.rmi.server.ShutdownException;
 import org.sapia.ubik.rmi.server.UIDGenerator;
 import org.sapia.ubik.rmi.server.command.CallbackInvokeCommand;
@@ -121,7 +121,7 @@ public class RemoteRefStateless implements StubInvocationHandler, Externalizable
       toReturn = doInvoke(context, obj, toCall, params);
     } catch (ShutdownException e) {
       toReturn = handleError(context, obj, toCall, params, e);
-    } catch (RemoteException | NoSuchObjectException e) {
+    } catch (RemoteException | RuntimeRemoteException e) {
       toReturn = handleError(context, obj, toCall, params, e);
     }
 
@@ -263,11 +263,11 @@ public class RemoteRefStateless implements StubInvocationHandler, Externalizable
       try {
         return doInvoke(context, obj, toCall, params);
       } catch (Throwable t) {
-        if (t instanceof RemoteException || t instanceof ShutdownException || t instanceof NoSuchObjectException) {
+        if (Exceptions.isRemoteException(t)) {
           err = t;
         }
       }
-    } while ((err instanceof ShutdownException || err instanceof RemoteException) && (contexts.count() > 0));
+    } while (Exceptions.isRemoteException(err) && (contexts.count() > 0));
 
     throw err;
   }

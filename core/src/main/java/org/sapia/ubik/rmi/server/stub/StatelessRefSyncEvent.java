@@ -73,6 +73,7 @@ public class StatelessRefSyncEvent implements Externalizable {
     return Strings.toString("name", name, "domain", domain, "multicastAddress", multicastAddress, "contexts", contexts);
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
     name = in.readUTF();

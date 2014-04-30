@@ -9,8 +9,8 @@ import javax.naming.NamingException;
 
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
-import org.sapia.ubik.rmi.NoSuchObjectException;
 import org.sapia.ubik.rmi.naming.ServiceLocator;
+import org.sapia.ubik.rmi.server.RuntimeRemoteException;
 import org.sapia.ubik.rmi.server.ShutdownException;
 
 /**
@@ -51,7 +51,7 @@ public class RemoteRefReliable extends RemoteRefEx {
   public Object invoke(Object obj, Method toCall, Object[] params) throws Throwable {
     try {
       return super.invoke(obj, toCall, params);
-    } catch (java.rmi.RemoteException | NoSuchObjectException | ShutdownException e) {
+    } catch (java.rmi.RemoteException | RuntimeRemoteException e) {
       if (url != null) {
         log.info("RemoteException caught, performing failover");
         return doFailOver(obj, toCall, params, e);

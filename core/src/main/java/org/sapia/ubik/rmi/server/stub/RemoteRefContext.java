@@ -9,9 +9,9 @@ import java.rmi.RemoteException;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.ServerAddress;
-import org.sapia.ubik.rmi.RemoteRuntimeException;
 import org.sapia.ubik.rmi.server.ClientRuntime;
 import org.sapia.ubik.rmi.server.Hub;
+import org.sapia.ubik.rmi.server.RuntimeRemoteException;
 import org.sapia.ubik.rmi.server.VmId;
 import org.sapia.ubik.rmi.server.command.RMICommand;
 import org.sapia.ubik.rmi.server.oid.OID;
@@ -112,7 +112,7 @@ public class RemoteRefContext implements Externalizable {
           try {
             initPool(false);
           } catch (RemoteException e) {
-            throw new RemoteRuntimeException("Could not initialize connection pool", e);
+            throw new RuntimeRemoteException("Could not initialize connection pool", e);
           }
         }
       }
