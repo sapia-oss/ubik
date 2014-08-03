@@ -5,7 +5,7 @@
 	<url>http://www.sapia-oss.org/projects/console/index.html</url>
 
 	<artifactId>sapia_ubik_parent</artifactId>
-	<version>4.0-RC9-SNAPSHOT</version>
+	<version>4.0</version>
 
 	<parent>
 		<groupId>org.sapia</groupId>
@@ -245,4 +245,10 @@
 		</dependency>
 
 	</dependencies>
+
+  <scm>
+    <connection>scm:svn:https://sapia.googlecode.com/4.0</connection>
+    <developerConnection>scm:svn:https://sapia.googlecode.com/svn/tags/4.0</developerConnection>
+    <url>scm:svn:https://sapia.googlecode.com/svn/4.0</url>
+  </scm>
 </project>
