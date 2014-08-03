@@ -23,7 +23,7 @@ public final class JBossSerializationDetector {
 
   static {
     Conf props = Conf.getSystemProperties();
-    String serializationProvider = props.getProperty(Consts.SERIALIZATION_PROVIDER_JDK, Consts.SERIALIZATION_PROVIDER_JBOSS);
+    String serializationProvider = props.getProperty(Consts.SERIALIZATION_PROVIDER, Consts.SERIALIZATION_PROVIDER_JBOSS);
     if (serializationProvider.equals(Consts.SERIALIZATION_PROVIDER_JBOSS)) {
       try {
         Class.forName("org.jboss.serial.io.JBossObjectInputStream");
