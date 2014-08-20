@@ -136,6 +136,7 @@ public class EmbeddableJNDIServerTest  {
   @Test
   public void testRemoteLookup() throws Exception {
     jndi.start(true);
+    Thread.sleep(500);
     jndi.getLocalContext().bind("test", Mockito.mock(TestService.class));
 
     Properties props = new Properties();
@@ -147,7 +148,7 @@ public class EmbeddableJNDIServerTest  {
     props.setProperty(InitialContext.INITIAL_CONTEXT_FACTORY, RemoteInitialContextFactory.class.getName());
 
     InitialContext ctx = new InitialContext(props);
-    TestService service =  (TestService) ctx.lookup("test");
+    ctx.lookup("test");
   }
   
   public interface TestService {
