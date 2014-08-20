@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.sapia.ubik.concurrent.Spawn;
 import org.sapia.ubik.util.Strings;
 
 /**
@@ -159,14 +160,25 @@ class ContextList implements Contexts.UpdateListener {
    * @param listener
    *          a {@link RemovalListener}.
    */
-  synchronized void addRemovalListener(RemovalListener listener) {
-    listeners.add(listener);
+  void addRemovalListener(RemovalListener listener) {
+    synchronized (listeners) {
+      listeners.add(listener);
+    }
   }
 
-  private synchronized void notifyListeners(RemoteRefContext removed) {
-    for (RemovalListener listener : listeners) {
-      listener.onRemoval(removed);
-    }
+  private void notifyListeners(final RemoteRefContext removed) {
+    Spawn.run(new Runnable() {
+      @Override
+      public void run() {
+        List<RemovalListener> toNotify = null;
+        synchronized (listeners) {
+          toNotify = new ArrayList<>(listeners); 
+        }
+        for (RemovalListener listener : toNotify) {
+          listener.onRemoval(removed);
+        }
+      }
+    });
   }
 
   @Override

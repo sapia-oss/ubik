@@ -66,10 +66,11 @@ public class ContextListTest {
   }
 
   @Test
-  public void testRemovalListener() {
+  public void testRemovalListener() throws InterruptedException {
     ContextList.RemovalListener listener = mock(ContextList.RemovalListener.class);
     contexts.addRemovalListener(listener);
     contexts.remove(contexts.getAll().get(0));
+    Thread.sleep(500);
     verify(listener, times(1)).onRemoval(any(RemoteRefContext.class));
   }
 

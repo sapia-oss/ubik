@@ -10,6 +10,7 @@ import org.sapia.ubik.mcast.EventChannel;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.naming.remote.EmbeddableJNDIServer;
 import org.sapia.ubik.rmi.naming.remote.RemoteInitialContextFactory;
+import org.sapia.ubik.util.Localhost;
 
 public class TestSocketServerTransportSetup {
 
@@ -24,7 +25,7 @@ public class TestSocketServerTransportSetup {
     Thread.sleep(10000);
     Properties props = new Properties();
     props.setProperty(Consts.UBIK_DOMAIN_NAME, "testDomain");
-    props.setProperty(Context.PROVIDER_URL, "ubik://localhost:1099/");
+    props.setProperty(Context.PROVIDER_URL, "ubik://" + Localhost.getPreferredLocalAddress().getHostAddress() + ":1099/");
     props.setProperty(Context.INITIAL_CONTEXT_FACTORY, RemoteInitialContextFactory.class.getName());
     context = new InitialContext(props);
 
