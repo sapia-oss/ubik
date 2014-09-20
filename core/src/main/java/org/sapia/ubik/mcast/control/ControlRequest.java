@@ -113,10 +113,10 @@ public abstract class ControlRequest implements Externalizable, SplittableMessag
     List<SplittableMessage> requests = new ArrayList<SplittableMessage>();
     for (Set<String> batch : batches) {
       ControlRequest copy = getCopy(batch);
-      copy.creationTime = this.creationTime;
-      copy.masterAddress = this.masterAddress;
-      copy.masterNode = this.masterNode;
-      copy.requestId = this.requestId;
+      copy.creationTime   = this.creationTime;
+      copy.masterAddress  = this.masterAddress;
+      copy.masterNode     = this.masterNode;
+      copy.requestId      = this.requestId;
       requests.add(copy);
     }
     return requests;

@@ -13,6 +13,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.sapia.ubik.concurrent.NamedThreadFactory;
+import org.sapia.ubik.concurrent.Spawn;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.control.ChannelCallback;
@@ -162,24 +163,25 @@ public class EventChannel {
   private static Set<EventChannel> CHANNELS_BY_DOMAIN = Collections.synchronizedSet(new HashSet<EventChannel>());
 
   private Category log = Log.createCategory(getClass());
-  private static boolean eventChannelReuse = Conf.getSystemProperties().getBooleanProperty(Consts.MCAST_REUSE_EXISTINC_CHANNELS, true);
-  private Timer heartbeatTimer = new Timer("Ubik.EventChannel.Timer", true);
-  private BroadcastDispatcher broadcast;
-  private UnicastDispatcher unicast;
-  private EventConsumer consumer;
-  private ChannelEventListener listener;
-  private View view = new View();
+  private static boolean         eventChannelReuse = Conf.getSystemProperties().getBooleanProperty(Consts.MCAST_REUSE_EXISTINC_CHANNELS, true);
+  private Timer                  heartbeatTimer = new Timer("Ubik.EventChannel.Timer", true);
+  private BroadcastDispatcher    broadcast;
+  private UnicastDispatcher      unicast;
+  private EventConsumer          consumer;
+  private ChannelEventListener   listener;
+  private View                   view = new View();
   private EventChannelController controller;
-  private int controlBatchSize;
-  private ServerAddress address;
-  private SoftReferenceList<DiscoveryListener> discoListeners = new SoftReferenceList<DiscoveryListener>();
-  private volatile State state = State.CREATED;
-  private int maxPublishAttempts = DEFAULT_MAX_PUB_ATTEMPTS;
-  private TimeRange startDelayRange;
-  private TimeRange publishIntervalRange;
+  private int                    controlBatchSize;
+  private ServerAddress          address;
+  private SoftReferenceList<DiscoveryListener> discoListeners     = new SoftReferenceList<DiscoveryListener>();
+  private volatile State         state              = State.CREATED;
+  private int                    maxPublishAttempts = DEFAULT_MAX_PUB_ATTEMPTS;
+  private TimeRange              startDelayRange;
+  private TimeRange              publishIntervalRange;
   private ConnectionStateListenerList stateListeners = new ConnectionStateListenerList();
-  private ExecutorService publishExecutor = Executors.newSingleThreadExecutor(NamedThreadFactory.createWith("Ubik.EventChannel.Publish").setDaemon(
-      true));
+  private ExecutorService             publishExecutor = Executors.newSingleThreadExecutor(
+      NamedThreadFactory.createWith("Ubik.EventChannel.Publish").setDaemon(true)
+  );
 
   /**
    * Creates an instance of this class that will use IP multicast and UDP
@@ -855,7 +857,7 @@ public class EventChannel {
         public void run() {
           for (int i = 0; i < maxPublishAttempts; i++) {
             try {
-              broadcast.dispatch(address, false, MASTER_BROADCAST, address);
+              broadcast.dispatch(address, false, MASTER_BROADCAST, new BroadcastData(view.getNodes().size()));
             } catch (IOException e) {
               log.warning("Error performing master broadcast presence to cluster", e);
             }
@@ -900,7 +902,7 @@ public class EventChannel {
 
     @SuppressWarnings("unchecked")
     @Override
-    public void onAsyncEvent(RemoteEvent evt) {
+    public void onAsyncEvent(final RemoteEvent evt) {
 
       log.debug("Received remote event %s from %s", evt.getType(), evt.getNode());
 
@@ -927,27 +929,48 @@ public class EventChannel {
 
       } else if (evt.getType().equals(MASTER_BROADCAST)) {
         try {
-          ServerAddress addr = (ServerAddress) evt.getData();
-          if (addr == null) {
-            return;
-          }
-
+          BroadcastData data = (BroadcastData) evt.getData();
           String thisMaster = controller.getContext().getMasterNode();
 
           // if the broadcast comes from a node that's not in this instance's
-          // view, or if the this node's
+          // view, or if this node's
           // current master (if it exists) does not corresponds to the node that
           // sent the broadcast,
           // we're acking that broadcast.
-          if (controller.getContext().getRole() == Role.MASTER || view.addHost(addr, evt.getNode())
+          if (controller.getContext().getRole() == Role.MASTER || view.addHost(evt.getUnicastAddress(), evt.getNode())
               || (thisMaster != null && !thisMaster.equals(evt.getNode()))) {
 
             // if this node is itself a master, trigger a challenge
             if (controller.getContext().getRole() == Role.MASTER) {
               controller.getContext().triggerChallenge();
             }
-            log.debug("Acking master broadcast from %s", evt.getNode());
-            unicast.dispatch(addr, MASTER_BROADCAST_ACK, address);
+            log.info("Acking master broadcast from %s (current node does not have same master, or has no master yet)", evt.getNode());
+            
+            Spawn.run(new Runnable() {
+              @Override
+              public void run() {
+                try {
+                  unicast.dispatch(evt.getUnicastAddress(), MASTER_BROADCAST_ACK, new BroadcastData(view.getNodes().size()));
+                } catch (IOException e) {
+                  log.error("Error caught while trying to process event " + evt.getType(), e);
+                }
+              }
+            });
+          
+          // if previous condition not true, checking if this node has same node count as master 
+          // (if yes, send ack to eventually trigger resync).
+          } else if (view.getNodeCount() != data.getCurrentNumberOfNodes()) {
+            log.info("Acking master broadcast from %s (current node does not have same number of nodes as master)", evt.getNode());
+            Spawn.run(new Runnable() {
+              @Override
+              public void run() {
+                try {
+                  unicast.dispatch(evt.getUnicastAddress(), MASTER_BROADCAST_ACK, new BroadcastData(view.getNodes().size()));
+                } catch (IOException e) {
+                  log.error("Error caught while trying to process event " + evt.getType(), e);
+                }
+              }
+            });
           }
         } catch (IOException e) {
           log.error("Error caught while trying to process event " + evt.getType(), e);
@@ -956,14 +979,23 @@ public class EventChannel {
         // ----------------------------------------------------------------------
 
       } else if (evt.getType().equals(MASTER_BROADCAST_ACK)) {
-
-        // if a ack is received, its from a node that doesn't have this node in
-        // its view (or as a master).
-        // In such a case, we're forcing a resync of that node by adding it to
-        // the purgatory.
-        if (!view.containsNode(evt.getNode())) {
-          log.debug("Received master broadcast ack from %s - adding it to purgatory to force resync", evt.getNode());
-          controller.getContext().getPurgatory().add(evt.getNode());
+        try {
+          BroadcastData data = (BroadcastData) evt.getData();
+  
+          // if a ack is received, it may be from a node that doesn't have this 
+          // node in its view (or as a master).
+          // In such a case, we're forcing a resync of that node by adding it to
+          // the purgatory.
+          if (!view.containsNode(evt.getNode())) {
+            log.info("Received master broadcast ack from %s - adding it to purgatory to force resync", evt.getNode());
+            controller.getContext().getPurgatory().add(evt.getNode());
+          // slave node does not have same number of nodes as master, forcing resync by adding to purgatory  
+          } else if (data.getCurrentNumberOfNodes() != view.getNodeCount()) {
+            log.info("Received master broadcast ack from %s: number of nodes inconsistent with master view. Adding it to purgatory to force resync", evt.getNode());
+            controller.getContext().getPurgatory().add(evt.getNode());
+          }
+        } catch (IOException e) {
+          log.error("Error caught while trying to process event " + evt.getType(), e);
         }
 
         // ----------------------------------------------------------------------
@@ -972,10 +1004,10 @@ public class EventChannel {
         try {
           Set<String> targetedNodes = (Set<String>) evt.getData();
           if (targetedNodes == null || targetedNodes.contains(EventChannel.this.broadcast.getNode())) {
-            log.debug("Received force resync event: proceeding to resync");
+            log.info("Received force resync event: proceeding to resync");
             resync();
           } else {
-            log.debug("Ignoring force resync event: node %s is not in targeted set: %s", broadcast.getNode(), targetedNodes);
+            log.info("Ignoring force resync event: node %s is not in targeted set: %s", broadcast.getNode(), targetedNodes);
           }
         } catch (IOException e) {
           log.error("Error caught while trying to process event " + evt.getType(), e);
@@ -1050,7 +1082,6 @@ public class EventChannel {
     int forceResyncAttempts = props.getIntProperty(Consts.MCAST_HEARTBEAT_FORCE_RESYNC_ATTEMPTS, Defaults.DEFAULT_FORCE_RESYNC_ATTEMPTS);
     int forceResyncBatchSize = props.getIntProperty(Consts.MCAST_HEARTBEAT_FORCE_RESYNC_BATCH_SIZE, Defaults.DEFAULT_FORCE_RESYNC_BATCH_SIZE);
     long masterBroadcastInterval = props.getTimeProperty(Consts.MCAST_MASTER_BROADCAST_INTERVAL, Defaults.DEFAULT_MASTER_BROADCAST_INTERVAL).getValueInMillis();
-    boolean masterBroadcastEnabled = props.getBooleanProperty(Consts.MCAST_MASTER_BROADCAST_ENABLED, true);
 
     this.startDelayRange = props.getTimeRangeProperty(Consts.MCAST_CHANNEL_START_DELAY, Defaults.DEFAULT_CHANNEL_START_DELAY);
     this.publishIntervalRange = props.getTimeRangeProperty(Consts.MCAST_CHANNEL_PUBLISH_INTERVAL, Defaults.DEFAULT_CHANNEL_PUBLISH_INTERVAL);
@@ -1061,7 +1092,6 @@ public class EventChannel {
     log.debug("Control response timeout set to %s", controlResponseTimeout);
     log.debug("Forced resync attempts set to %s", forceResyncAttempts);
     log.debug("Forced resync batch size set to %s", forceResyncBatchSize);
-    log.debug("Master broadcast enabled: %s", masterBroadcastEnabled);
     log.debug("Master broadcast interval set to %s", masterBroadcastInterval);
 
     ControllerConfiguration config = new ControllerConfiguration();
@@ -1070,7 +1100,6 @@ public class EventChannel {
     config.setResponseTimeout(controlResponseTimeout);
     config.setForceResyncAttempts(forceResyncAttempts);
     config.setForceResyncBatchSize(forceResyncBatchSize);
-    config.setMasterBroadcastEnabled(masterBroadcastEnabled);
     config.setMasterBroadcastInterval(masterBroadcastInterval);
     controller = new EventChannelController(createClock(), config, new ChannelCallbackImpl());
     startTimer(heartbeatInterval);
@@ -1089,6 +1118,31 @@ public class EventChannel {
 
   protected SysClock createClock() {
     return SysClock.RealtimeClock.getInstance();
+  }
+  
+  // =========================================================================
+  
+  public static final class BroadcastData {
+    
+    private int currentNumberOfNodes;
+    
+    /**
+     * Meant for externalization only.
+     */
+    public BroadcastData() {
+    }
+    
+    BroadcastData(int currentNumberOfNodes) {
+      this.currentNumberOfNodes = currentNumberOfNodes;
+    }
+    
+    /**
+     * @return the current number of nodes.
+     */
+    int getCurrentNumberOfNodes() {
+      return currentNumberOfNodes;
+    }
+    
   }
 
 }

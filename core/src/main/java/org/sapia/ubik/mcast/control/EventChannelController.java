@@ -227,7 +227,7 @@ public class EventChannelController {
           log.info("Number of peers deemed not enough, forcing a resync");
           context.getChannelCallback().resync();
           autoResyncInterval.reset();
-        } else if (masterBroadcastInterval.isOver() && config.isMasterBroadcastEnabled()) {
+        } else if (masterBroadcastInterval.isOver()) {
           context.getChannelCallback().triggerMasterBroadcast();
         }
 
@@ -267,8 +267,7 @@ public class EventChannelController {
     // ----------------------------------------------------------------------
 
     // This node is a slave: has it received a heartbeat request "lately" ? If
-    // no,
-    // we're triggering a challenge: the master may be down.
+    // no, we're triggering a challenge: the master may be down.
     default: // SLAVE
       if (context.getChannelCallback().getNodes().isEmpty() && autoResyncInterval.isOver()) {
         log.debug("Node appears alone in the cluster, forcing a resync");
@@ -310,10 +309,9 @@ public class EventChannelController {
     List<String> nodes = new ArrayList<String>(context.getChannelCallback().getNodes());
 
     // Sorting the node identifiers and comparing them to this node's. In the
-    // end,
-    // the node that comes "first" becomes the master.
+    // end, the node that comes "first" becomes the master.
     Collections.sort(nodes);
-    if (nodes.size() > 0) {
+    if (!nodes.isEmpty()) {
       log.debug("Node %s has %s sibling node(s): %s", context.getNode(), nodes.size(), nodes);
       if (force || context.getNode().compareTo(nodes.get(0)) <= 0) {
         // Master role not yet confirmed, upgrading to candidate for now.

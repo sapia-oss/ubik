@@ -18,7 +18,6 @@ public class ControllerConfiguration {
   private long resyncNodeCount = Defaults.DEFAULT_RESYNC_NODE_COUNT;
   private int forceResyncBatchSize = Defaults.DEFAULT_FORCE_RESYNC_BATCH_SIZE;
   private int forceResyncAttempts = Defaults.DEFAULT_FORCE_RESYNC_ATTEMPTS;
-  private boolean masterBroadcastEnabled = true;
   private long masterBroadcastInterval = Defaults.DEFAULT_MASTER_BROADCAST_INTERVAL.getValueInMillis();
 
   /**
@@ -141,20 +140,6 @@ public class ControllerConfiguration {
    */
   public int getForceResyncAttempts() {
     return this.forceResyncAttempts;
-  }
-
-  /**
-   * @param masterBroadcastEnabled
-   *          indicates if master broadcast should be enabled or not.
-   *
-   * @see Consts#MCAST_MASTER_BROADCAST_ENABLED
-   */
-  public void setMasterBroadcastEnabled(boolean masterBroadcastEnabled) {
-    this.masterBroadcastEnabled = masterBroadcastEnabled;
-  }
-
-  public boolean isMasterBroadcastEnabled() {
-    return masterBroadcastEnabled;
   }
 
   /**

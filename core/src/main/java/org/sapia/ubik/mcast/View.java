@@ -75,6 +75,13 @@ public class View {
       }
     });
   }
+  
+  /**
+   * @return the number of nodes held by this instance.
+   */
+  public int getNodeCount() {
+    return nodeToNodeInfo.size();
+  }
 
   /**
    * Returns this instance's {@link Set} of nodes.

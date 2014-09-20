@@ -194,16 +194,6 @@ public interface Consts {
 
   /**
    * This constant corresponds to the
-   * <code>ubik.rmi.naming.mcast.master.broadcast.enabled</code> property key.
-   * It is used to determine if the master node should broadcast its presence
-   * periocially.
-   *
-   * @see #MCAST_MASTER_BROADCAST_INTERVAL
-   */
-  public static final String MCAST_MASTER_BROADCAST_ENABLED = "ubik.rmi.naming.mcast.master.broadcast.enabled";
-
-  /**
-   * This constant corresponds to the
    * <code>ubik.rmi.naming.mcast.master.broadcast.interval</code> property key.
    * It is used to determine the interval (in millis) at which the master node
    * will broadcast its presence (defaults to 120000).

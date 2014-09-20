@@ -16,6 +16,7 @@ public class PingRequestHandler implements SynchronousControlRequestHandler {
 
   @Override
   public SynchronousControlResponse handle(String originNode, SynchronousControlRequest request) {
+    context.heartbeatRequestReceived();
     return ControlResponseFactory.createPingResponse(context.getNode());
   }
 

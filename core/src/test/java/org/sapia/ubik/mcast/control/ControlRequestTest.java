@@ -24,13 +24,16 @@ public class ControlRequestTest {
     TestControlRequest req = new TestControlRequest(targetedNodes);
 
     List<SplittableMessage> splits = req.split(10);
+    int total = 0;
     for (int i = 0; i < splits.size(); i++) {
       assertEquals(10, splits.get(i).getTargetedNodes().size());
       List<SplittableMessage> nestedSplits = splits.get(i).split(5);
       for (int j = 0; j < nestedSplits.size(); j++) {
         assertEquals(2, nestedSplits.get(j).getTargetedNodes().size());
+        total += nestedSplits.get(j).getTargetedNodes().size();
       }
     }
+    assertEquals(100, total);
   }
 
   @Test
@@ -38,6 +41,13 @@ public class ControlRequestTest {
     Set<String> targetedNodes = Collects.arrayToSet("1", "2");
     TestControlRequest req = new TestControlRequest(targetedNodes);
     assertEquals(2, req.split(3).size());
+  }
+  
+  @Test
+  public void testBatchSizeSmallerSplit() {
+    Set<String> targetedNodes = Collects.arrayToSet("1", "2", "3", "4", "5");
+    TestControlRequest req = new TestControlRequest(targetedNodes);
+    assertEquals(3, req.split(3).size());
   }
 
   @Test

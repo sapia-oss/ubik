@@ -1,16 +1,20 @@
 package org.sapia.ubik.mcast.control;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anySet;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.util.HashSet;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.ServerAddress;
-import org.sapia.ubik.util.SysClock;
 import org.sapia.ubik.util.Collects;
+import org.sapia.ubik.util.SysClock;
 
 public class ClusterResyncTest {
 
@@ -35,7 +39,6 @@ public class ClusterResyncTest {
     when(callback.getAddress()).thenReturn(serverAddress);
     when(callback.getNode()).thenReturn("testNode");
     when(callback.sendSynchronousRequest(anySet(), any(SynchronousControlRequest.class))).thenReturn(new HashSet<SynchronousControlResponse>());
-
   }
 
   @Test
