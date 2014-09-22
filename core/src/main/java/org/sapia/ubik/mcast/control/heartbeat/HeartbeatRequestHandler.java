@@ -45,6 +45,7 @@ public class HeartbeatRequestHandler implements ControlRequestHandler {
    */
   @Override
   public void handle(String originNode, ControlRequest request) {
+    log.info("Receiving heartbeat request from: %s", originNode);
     if (ignoreHeartbeatRequest) {
       if (context.getRole() == Role.MASTER) {
         log.debug("Received heartbeat request from other master node %s, triggering challenge", originNode);

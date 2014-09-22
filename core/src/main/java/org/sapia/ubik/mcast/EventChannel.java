@@ -13,7 +13,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.sapia.ubik.concurrent.NamedThreadFactory;
-import org.sapia.ubik.concurrent.Spawn;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.control.ChannelCallback;
@@ -852,6 +851,7 @@ public class EventChannel {
 
     @Override
     public void triggerMasterBroadcast() {
+      log.info("Triggering master broadcast");
       publishExecutor.execute(new Runnable() {
         @Override
         public void run() {
@@ -945,12 +945,11 @@ public class EventChannel {
               controller.getContext().triggerChallenge();
             }
             log.info("Acking master broadcast from %s (current node does not have same master, or has no master yet)", evt.getNode());
-            
-            Spawn.run(new Runnable() {
+            publishExecutor.execute(new Runnable() {
               @Override
               public void run() {
                 try {
-                  unicast.dispatch(evt.getUnicastAddress(), MASTER_BROADCAST_ACK, new BroadcastData(view.getNodes().size()));
+                  unicast.dispatch(evt.getUnicastAddress(), MASTER_BROADCAST_ACK, new BroadcastData(view.getNodeCount()));
                 } catch (IOException e) {
                   log.error("Error caught while trying to process event " + evt.getType(), e);
                 }
@@ -961,11 +960,11 @@ public class EventChannel {
           // (if yes, send ack to eventually trigger resync).
           } else if (view.getNodeCount() != data.getCurrentNumberOfNodes()) {
             log.info("Acking master broadcast from %s (current node does not have same number of nodes as master)", evt.getNode());
-            Spawn.run(new Runnable() {
+            publishExecutor.execute(new Runnable() {
               @Override
               public void run() {
                 try {
-                  unicast.dispatch(evt.getUnicastAddress(), MASTER_BROADCAST_ACK, new BroadcastData(view.getNodes().size()));
+                  unicast.dispatch(evt.getUnicastAddress(), MASTER_BROADCAST_ACK, new BroadcastData(view.getNodeCount()));
                 } catch (IOException e) {
                   log.error("Error caught while trying to process event " + evt.getType(), e);
                 }
@@ -993,6 +992,8 @@ public class EventChannel {
           } else if (data.getCurrentNumberOfNodes() != view.getNodeCount()) {
             log.info("Received master broadcast ack from %s: number of nodes inconsistent with master view. Adding it to purgatory to force resync", evt.getNode());
             controller.getContext().getPurgatory().add(evt.getNode());
+          } else {
+            log.info("Received master broadcast ack from %s. Nothing to do: number of nodes consistent with master view: %s", evt.getNode(), data.getCurrentNumberOfNodes());           
           }
         } catch (IOException e) {
           log.error("Error caught while trying to process event " + evt.getType(), e);

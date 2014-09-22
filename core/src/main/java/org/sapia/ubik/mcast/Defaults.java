@@ -69,7 +69,7 @@ public class Defaults {
    * The default heartbeat interval (see {@link Consts#MCAST_HEARTBEAT_INTERVAL}
    * ).
    */
-  public static final Time DEFAULT_HEARTBEAT_INTERVAL = Time.createMillis(60000);
+  public static final Time DEFAULT_HEARTBEAT_INTERVAL = Time.createMillis(30000);
 
   /**
    * The interval at which a node will resync itself with the cluster by

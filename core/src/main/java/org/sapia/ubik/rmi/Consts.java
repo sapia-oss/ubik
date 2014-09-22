@@ -160,7 +160,7 @@ public interface Consts {
    * This constant corresponds to the
    * <code>ubik.rmi.naming.mcast.heartbeat.interval</code> property key. It is
    * used to determine the interval (in millis) at which nodes send their
-   * heartbeat to the other nodes (defaults to 60000).
+   * heartbeat to the other nodes (defaults to 30000).
    * <p>
    * The value of this property should consistent with the value given to the
    * heartbeat timeout: it should not be more.

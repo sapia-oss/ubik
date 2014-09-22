@@ -75,6 +75,7 @@ public class EventChannelController {
 
   private SynchronizedRef<PendingResponseState> ref = new SynchronizedRef<PendingResponseState>();
   private Map<String, ControlRequestHandler> requestHandlers = new HashMap<String, ControlRequestHandler>();
+  private Map<String, ControlEventHandler> eventHandlers = new HashMap<String, ControlEventHandler>();
   private Map<String, ControlNotificationHandler> notificationHandlers = new HashMap<String, ControlNotificationHandler>();
   private Map<String, SynchronousControlRequestHandler> syncRequestHandlers = new HashMap<String, SynchronousControlRequestHandler>();
   private Pause autoResyncInterval, masterBroadcastInterval;
@@ -162,6 +163,16 @@ public class EventChannelController {
       // cascading the request
       request.getTargetedNodes().remove(context.getNode());
       context.getChannelCallback().sendRequest(request);
+    }
+  }
+  
+  
+  public synchronized void onEvent(String originNode, ControlEvent event) {
+    ControlEventHandler handler = eventHandlers.get(event.getClass().getName());
+    if (handler != null) {
+      handler.handle(originNode, event);
+    } else {
+      log.error("No request handler for request %s", event);
     }
   }
 
@@ -317,8 +328,10 @@ public class EventChannelController {
         // Master role not yet confirmed, upgrading to candidate for now.
         log.debug("Setting self (%s) to candidate for master", context.getNode());
         context.setRole(Role.MASTER_CANDIDATE);
+      } else {
+        context.getChannelCallback().resync();
       }
-      // Lonely node: automatically becomes the master
+    // Lonely node: automatically becomes the master
     } else {
       log.debug("No other nodes found, setting self to candidate for master", nodes.size());
       context.setRole(Role.MASTER_CANDIDATE);
