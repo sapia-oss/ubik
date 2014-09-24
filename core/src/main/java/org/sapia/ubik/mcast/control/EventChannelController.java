@@ -24,6 +24,13 @@ import org.sapia.ubik.mcast.control.heartbeat.HeartbeatRequest;
 import org.sapia.ubik.mcast.control.heartbeat.HeartbeatRequestHandler;
 import org.sapia.ubik.mcast.control.heartbeat.PingRequest;
 import org.sapia.ubik.mcast.control.heartbeat.PingRequestHandler;
+import org.sapia.ubik.mcast.control.master.MasterBroadcastEventHandler;
+import org.sapia.ubik.mcast.control.master.MasterBroadcastAckEvent;
+import org.sapia.ubik.mcast.control.master.MasterBroadcastAckEventHandler;
+import org.sapia.ubik.mcast.control.master.MasterBroadcastEvent;
+import org.sapia.ubik.mcast.control.master.MasterSyncEvent;
+import org.sapia.ubik.mcast.control.master.MasterSyncEventHandler;
+import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.util.SysClock;
 import org.sapia.ubik.util.Collects;
 import org.sapia.ubik.util.Pause;
@@ -92,6 +99,9 @@ public class EventChannelController {
     syncRequestHandlers.put(PingRequest.class.getName(), new PingRequestHandler(context));
     notificationHandlers.put(DownNotification.class.getName(), new DownNotificationHandler(context));
     notificationHandlers.put(ChallengeCompletionNotification.class.getName(), new ChallengeCompletionNotificationHandler(context));
+    eventHandlers.put(MasterBroadcastEvent.class.getName(), new MasterBroadcastEventHandler(context));
+    eventHandlers.put(MasterBroadcastAckEvent.class.getName(), new MasterBroadcastAckEventHandler(context));
+    eventHandlers.put(MasterSyncEvent.class.getName(), new MasterSyncEventHandler(context));
 
     autoResyncInterval      = new Pause(clock, config.getResyncInterval());
     masterBroadcastInterval = new Pause(clock, config.getMasterBroadcastInterval());
@@ -167,10 +177,10 @@ public class EventChannelController {
   }
   
   
-  public synchronized void onEvent(String originNode, ControlEvent event) {
+  public synchronized void onEvent(String originNode, ServerAddress originAddress, ControlEvent event) {
     ControlEventHandler handler = eventHandlers.get(event.getClass().getName());
     if (handler != null) {
-      handler.handle(originNode, event);
+      handler.handle(originNode, originAddress, event);
     } else {
       log.error("No request handler for request %s", event);
     }
@@ -270,7 +280,7 @@ public class EventChannelController {
 
         ref.set(new PendingResponseState(heartbeatHandler, heartbeatRq.getRequestId(), context.getClock().currentTimeMillis()));
         context.heartbeatRequestSent();
-        log.debug("Sending heartbeat request to %s", heartbeatRq.getTargetedNodes());
+        log.info("Sending heartbeat request to %s", heartbeatRq.getTargetedNodes());
         context.getChannelCallback().sendRequest(heartbeatRq);
       }
       break;
@@ -298,7 +308,7 @@ public class EventChannelController {
 
   void triggerChallenge() {
     context.setRole(Role.MASTER_CANDIDATE);
-    log.debug("Node %s triggering challenge", context.getNode());
+    log.info("Node %s triggering challenge", context.getNode());
     ControlRequest challengeRq = ControlRequestFactory.createChallengeRequest(context);
     ControlResponseHandler challengeHandler = ControlResponseHandlerFactory.createChallengeResponseHandler(context, context.getChannelCallback()
         .getNodes());
@@ -326,21 +336,21 @@ public class EventChannelController {
       log.debug("Node %s has %s sibling node(s): %s", context.getNode(), nodes.size(), nodes);
       if (force || context.getNode().compareTo(nodes.get(0)) <= 0) {
         // Master role not yet confirmed, upgrading to candidate for now.
-        log.debug("Setting self (%s) to candidate for master", context.getNode());
+        log.info("Setting self (%s) to candidate for master", context.getNode());
         context.setRole(Role.MASTER_CANDIDATE);
       } else {
         context.getChannelCallback().resync();
       }
     // Lonely node: automatically becomes the master
     } else {
-      log.debug("No other nodes found, setting self to candidate for master", nodes.size());
+      log.info("No other nodes found, setting self to candidate for master", nodes.size());
       context.setRole(Role.MASTER_CANDIDATE);
     }
 
     if (context.getRole() == Role.MASTER_CANDIDATE) {
       triggerChallenge();
     } else {
-      log.debug("Node %s is setting itelf to slave", context.getNode());
+      log.info("Node %s is setting itelf to slave", context.getNode());
       context.setRole(Role.SLAVE);
     }
   }

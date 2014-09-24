@@ -36,7 +36,7 @@ public class DownNotificationHandler implements ControlNotificationHandler {
   @Override
   public void handle(String originNode, ControlNotification notification) {
     DownNotification downNotif = (DownNotification) notification;
-    log.debug("Notified of nodes that are down: %s", downNotif.getDownNodes());
+    log.info("Notified of nodes that are down: %s", downNotif.getDownNodes());
 
     for (String down : downNotif.getDownNodes()) {
       context.getChannelCallback().down(down);

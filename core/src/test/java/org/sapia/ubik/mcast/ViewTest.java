@@ -1,11 +1,18 @@
 package org.sapia.ubik.mcast;
 
 import static org.junit.Assert.*;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.sapia.ubik.mcast.EventChannelStateListener.EventChannelEvent;
+import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.TCPAddress;
 
 public class ViewTest {
@@ -88,6 +95,27 @@ public class ViewTest {
     assertTrue("Removed EventChannelStateListener should not have been notified", !notified.get());
 
   }
+  
+  @Test
+  public void testUpdateView() {
+    view.addHost(mock(ServerAddress.class), "1");
+    view.addHost(mock(ServerAddress.class), "2");
+    view.addHost(mock(ServerAddress.class), "3");
+
+    EventChannelStateListener listener = mock(EventChannelStateListener.class);
+    view.addEventChannelStateListener(listener);
+    
+    List<NodeInfo> actual = new ArrayList<>();
+    actual.add(new NodeInfo(mock(ServerAddress.class), "1"));
+    actual.add(new NodeInfo(mock(ServerAddress.class), "2"));
+    actual.add(new NodeInfo(mock(ServerAddress.class), "4"));
+
+    view.update(actual);
+    
+    verify(listener).onDown(any(EventChannelEvent.class));
+    
+  }
+  
 
   @Test
   public void testGetAddressFor() {

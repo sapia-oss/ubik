@@ -35,15 +35,15 @@ public class ChallengeRequestHandler implements ControlRequestHandler {
    */
   @Override
   public void handle(String originNode, ControlRequest request) {
-    log.debug("Received challenge request from %s (master is %s)", originNode, request.getMasterNode());
+    log.info("Received challenge request from %s (master is %s)", originNode, request.getMasterNode());
     context.challengeRequestReceived();
     context.getChannelCallback().heartbeat(originNode, request.getMasterAddress());
     if (context.getRole() == Role.MASTER || context.getRole() == Role.MASTER_CANDIDATE) {
-      log.debug("This node's status is currently %s. The challenge fails", context.getRole());
+      log.info("This node's status is currently %s. The challenge fails", context.getRole());
       context.getChannelCallback().sendResponse(request.getMasterNode(),
           ControlResponseFactory.createChallengeResponse(Code.DENIED, request, context.getChannelCallback().getAddress()));
     } else {
-      log.debug("Challenge accepted by node %s. Sending response to %s", context.getNode(), request.getMasterNode());
+      log.info("Challenge accepted by node %s. Sending response to %s", context.getNode(), request.getMasterNode());
       context.setRole(Role.SLAVE);
       context.getChannelCallback().sendResponse(request.getMasterNode(),
           ControlResponseFactory.createChallengeResponse(Code.ACCEPTED, request, context.getChannelCallback().getAddress()));

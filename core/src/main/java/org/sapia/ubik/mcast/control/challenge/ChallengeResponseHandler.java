@@ -43,16 +43,16 @@ public class ChallengeResponseHandler implements ControlResponseHandler {
       replyingNodes.add(originNode);
 
       if (challengeRs.getCode() == Code.DENIED) {
-        log.debug("Challenge was denied by node %s. Setting state of this node to SLAVE and aborting response handling", originNode);
+        log.info("Challenge was denied by node %s. Setting state of this node to SLAVE and aborting response handling", originNode);
         context.setRole(Role.SLAVE);
         notifyChallengeCompleted();
         return true;
       }
 
-      log.debug("Challenge was accepted by %s", originNode);
+      log.info("Challenge was accepted by %s", originNode);
 
       if (replyingNodes.size() >= targetedNodes.size()) {
-        log.debug("All expected challenge responses received. Upgrading role to MASTER");
+        log.info("All expected challenge responses received. Upgrading role to MASTER");
         context.setRole(Role.MASTER);
         notifyChallengeCompleted();
         return true;

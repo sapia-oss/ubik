@@ -1,13 +1,16 @@
 package org.sapia.ubik.mcast.control;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.sapia.ubik.mcast.NodeInfo;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.util.SysClock;
 
@@ -88,6 +91,38 @@ public class TestChannelCallback implements ChannelCallback {
   @Override
   public Set<String> getNodes() {
     return new TreeSet<String>(siblings.keySet());
+  }
+  
+  @Override
+  public boolean addNewNode(String node, ServerAddress addr) {
+    return false;
+  }
+  
+  @Override
+  public boolean containsNode(String node) {
+    return siblings.containsKey(node);
+  }
+  
+  @Override
+  public int getNodeCount() {
+    return siblings.size();
+  }
+  
+  @Override
+  public List<NodeInfo> getView() {
+    return new ArrayList<>();
+  }
+  
+  @Override
+  public void sendBroadcastEvent(ControlEvent event) {
+  }
+  
+  @Override
+  public void sendUnicastEvent(ServerAddress destination, ControlEvent event) {
+  }
+  
+  @Override
+  public void updateView(List<NodeInfo> nodes) {
   }
 
   @Override

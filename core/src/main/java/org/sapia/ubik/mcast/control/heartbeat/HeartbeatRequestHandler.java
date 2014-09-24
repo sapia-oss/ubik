@@ -48,7 +48,7 @@ public class HeartbeatRequestHandler implements ControlRequestHandler {
     log.info("Receiving heartbeat request from: %s", originNode);
     if (ignoreHeartbeatRequest) {
       if (context.getRole() == Role.MASTER) {
-        log.debug("Received heartbeat request from other master node %s, triggering challenge", originNode);
+        log.info("Received heartbeat request from other master node %s, triggering challenge", originNode);
         context.triggerChallenge();
       }
     } else {
@@ -57,7 +57,7 @@ public class HeartbeatRequestHandler implements ControlRequestHandler {
       context.getChannelCallback().sendResponse(request.getMasterNode(),
           ControlResponseFactory.createHeartbeatResponse(request, context.getChannelCallback().getAddress()));
       if (context.getRole() == Role.MASTER) {
-        log.debug("Received heartbeat request from other master node %s, triggering challenge", originNode);
+        log.info("Received heartbeat request from other master node %s, triggering challenge", originNode);
         context.triggerChallenge();
       } else {
         context.setMasterNode(request.getMasterNode());

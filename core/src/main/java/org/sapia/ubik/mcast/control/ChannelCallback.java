@@ -1,9 +1,11 @@
 package org.sapia.ubik.mcast.control;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Set;
 
 import org.sapia.ubik.mcast.EventChannel;
+import org.sapia.ubik.mcast.NodeInfo;
 import org.sapia.ubik.net.ServerAddress;
 
 /**
@@ -32,6 +34,16 @@ public interface ChannelCallback {
    *         the domain/cluster.
    */
   public Set<String> getNodes();
+  
+  /**
+   * @return the number of nodes that the underlying {@link EventChannel} "sees".
+   */
+  public int getNodeCount();
+  
+  /**
+   * @param nodes a {@link List} of {@link NodeInfo} instances corresponding to the master's view.
+   */
+  public void updateView(List<NodeInfo> nodes);
 
   /**
    * Triggers a resync with the cluster.
@@ -80,7 +92,18 @@ public interface ChannelCallback {
    *          a {@link ControlNotification}.
    */
   public void sendNotification(ControlNotification notif);
-
+  
+  /**
+   * @param destination the {@link ServerAddress} to which to even should be sent.
+   * @param event the {@link ControlEvent} to send.
+   */
+  public void sendUnicastEvent(ServerAddress destination, ControlEvent event);
+  
+  /**
+   * @param event a {@link ControlEvent} to broadcast across the domain.
+   */
+  public void sendBroadcastEvent(ControlEvent event);
+  
   /**
    * This method is meant to notify the underlying event channel that a given
    * node has provided its heartbeat.
@@ -102,6 +125,29 @@ public interface ChannelCallback {
    *          was detected as being down.
    */
   public void down(String node);
+  
+  /**
+   * @param node 
+   *          a {@link String} corresponding to the identifier of the node that
+   *          was disovered.
+   * @param addr
+   *          the {@link ServerAddress} corresponding to the unicast address of the discovered node.
+   * @return <code>true</code> if the given data effectively corresponds to a new node.
+   */
+  public boolean addNewNode(String node, ServerAddress addr);
+  
+  /**
+   * @param node 
+   *          a {@link String} corresponding to the identifier of the node to test for.
+   * @return <code>true</code> if the node is known to the underlying {@link EventChannel}.
+   */
+  public boolean containsNode(String node);
+  
+  /**
+   * @return the {@link List} of {@link NodeInfo} instances corresponding to the nodes that
+   * the underlying {@link EventChannel} "sees".
+   */
+  public List<NodeInfo> getView();
 
   /**
    * @param targetedNodes

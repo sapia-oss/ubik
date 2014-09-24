@@ -20,11 +20,11 @@ public class ChallengeCompletionNotificationHandler implements ControlNotificati
   public void handle(String originNode, ControlNotification notif) {
     ChallengeCompletionNotification completionNotif = (ChallengeCompletionNotification) notif;
     if (context.getRole() == Role.MASTER || context.getRole() == Role.MASTER_CANDIDATE) {
-      log.debug("Received challenge completion notification from master node: ", completionNotif.getMasterNode());
-      log.debug("Current node %s is currently %s. Triggering challenge", context.getNode(), context.getRole());
+      log.info("Received challenge completion notification from master node: ", completionNotif.getMasterNode());
+      log.info("Current node %s is currently %s. Triggering challenge", context.getNode(), context.getRole());
       context.triggerChallenge();
     } else {
-      log.debug("Received challenge completion notification from master node: ", completionNotif.getMasterNode());
+      log.info("Received challenge completion notification from master node: ", completionNotif.getMasterNode());
       context.setMasterNode(completionNotif.getMasterNode());
     }
   }

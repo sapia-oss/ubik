@@ -16,6 +16,7 @@ import org.sapia.ubik.concurrent.NamedThreadFactory;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.control.ChannelCallback;
+import org.sapia.ubik.mcast.control.ControlEvent;
 import org.sapia.ubik.mcast.control.ControlNotification;
 import org.sapia.ubik.mcast.control.ControlRequest;
 import org.sapia.ubik.mcast.control.ControlResponse;
@@ -785,6 +786,27 @@ public class EventChannel {
     public Set<String> getNodes() {
       return view.getNodesAsSet();
     }
+    
+    @Override
+    public int getNodeCount() {
+      return view.getNodeCount();
+    }
+    
+    @Override
+    public List<NodeInfo> getView() {
+      return view.getNodeInfos();
+    }
+    
+    @Override
+    public void updateView(List<NodeInfo> nodes) {
+      view.update(nodes);
+      resync();
+    }
+    
+    @Override
+    public boolean containsNode(String node) {
+      return view.containsNode(node);
+    }
 
     @Override
     public void heartbeat(String node, ServerAddress addr) {
@@ -795,7 +817,7 @@ public class EventChannel {
     public void resync() {
       EventChannel.this.resync();
     }
-
+    
     @Override
     public void down(String node) {
       view.removeDeadNode(node);
@@ -804,6 +826,39 @@ public class EventChannel {
     @Override
     public void sendNotification(ControlNotification notif) {
       sendControlMessage(notif);
+    }
+    
+    @Override
+    public void sendBroadcastEvent(final ControlEvent event) {
+      publishExecutor.execute(new Runnable() {
+        @Override
+        public void run() {
+          try {
+            broadcast.dispatch(getUnicastAddress(), false, CONTROL_EVT, event);
+          } catch (IOException e) {
+            log.error("Could not dispatch control event", e);
+          }
+        }
+      });
+    }
+    
+    @Override
+    public void sendUnicastEvent(ServerAddress destination, final ControlEvent event) {
+      publishExecutor.execute(new Runnable() {
+        @Override
+        public void run() {
+          try {
+            unicast.send(getUnicastAddress(), CONTROL_EVT, event);
+          } catch (IOException e) {
+            log.error("Could not dispatch control event", e);
+          }
+        }
+      });
+    }
+    
+    @Override
+    public boolean addNewNode(String node, ServerAddress addr) {
+      return view.addHost(addr, node);
     }
 
     @Override
@@ -892,7 +947,10 @@ public class EventChannel {
           Object data = evt.getData();
           if (data instanceof SynchronousControlRequest) {
             return controller.onSynchronousRequest(evt.getNode(), (SynchronousControlRequest) data);
+          } else if (data instanceof ControlEvent) {
+            controller.onEvent(evt.getNode(), evt.getUnicastAddress(), (ControlEvent) data);
           }
+          
         } catch (IOException e) {
           log.error("Error caught while trying to process synchronous control request", e);
         }
@@ -920,80 +978,6 @@ public class EventChannel {
           notifyDiscoListeners(addr, evt);
           if (controller.getContext().getPurgatory().remove(evt.getNode())) {
             log.debug("Removed node from purgatory: %s", evt.getNode());
-          }
-        } catch (IOException e) {
-          log.error("Error caught while trying to process event " + evt.getType(), e);
-        }
-
-        // ----------------------------------------------------------------------
-
-      } else if (evt.getType().equals(MASTER_BROADCAST)) {
-        try {
-          BroadcastData data = (BroadcastData) evt.getData();
-          String thisMaster = controller.getContext().getMasterNode();
-
-          // if the broadcast comes from a node that's not in this instance's
-          // view, or if this node's
-          // current master (if it exists) does not corresponds to the node that
-          // sent the broadcast,
-          // we're acking that broadcast.
-          if (controller.getContext().getRole() == Role.MASTER || view.addHost(evt.getUnicastAddress(), evt.getNode())
-              || (thisMaster != null && !thisMaster.equals(evt.getNode()))) {
-
-            // if this node is itself a master, trigger a challenge
-            if (controller.getContext().getRole() == Role.MASTER) {
-              controller.getContext().triggerChallenge();
-            }
-            log.info("Acking master broadcast from %s (current node does not have same master, or has no master yet)", evt.getNode());
-            publishExecutor.execute(new Runnable() {
-              @Override
-              public void run() {
-                try {
-                  unicast.dispatch(evt.getUnicastAddress(), MASTER_BROADCAST_ACK, new BroadcastData(view.getNodeCount()));
-                } catch (IOException e) {
-                  log.error("Error caught while trying to process event " + evt.getType(), e);
-                }
-              }
-            });
-          
-          // if previous condition not true, checking if this node has same node count as master 
-          // (if yes, send ack to eventually trigger resync).
-          } else if (view.getNodeCount() != data.getCurrentNumberOfNodes()) {
-            log.info("Acking master broadcast from %s (current node does not have same number of nodes as master)", evt.getNode());
-            publishExecutor.execute(new Runnable() {
-              @Override
-              public void run() {
-                try {
-                  unicast.dispatch(evt.getUnicastAddress(), MASTER_BROADCAST_ACK, new BroadcastData(view.getNodeCount()));
-                } catch (IOException e) {
-                  log.error("Error caught while trying to process event " + evt.getType(), e);
-                }
-              }
-            });
-          }
-        } catch (IOException e) {
-          log.error("Error caught while trying to process event " + evt.getType(), e);
-        }
-
-        // ----------------------------------------------------------------------
-
-      } else if (evt.getType().equals(MASTER_BROADCAST_ACK)) {
-        try {
-          BroadcastData data = (BroadcastData) evt.getData();
-  
-          // if a ack is received, it may be from a node that doesn't have this 
-          // node in its view (or as a master).
-          // In such a case, we're forcing a resync of that node by adding it to
-          // the purgatory.
-          if (!view.containsNode(evt.getNode())) {
-            log.info("Received master broadcast ack from %s - adding it to purgatory to force resync", evt.getNode());
-            controller.getContext().getPurgatory().add(evt.getNode());
-          // slave node does not have same number of nodes as master, forcing resync by adding to purgatory  
-          } else if (data.getCurrentNumberOfNodes() != view.getNodeCount()) {
-            log.info("Received master broadcast ack from %s: number of nodes inconsistent with master view. Adding it to purgatory to force resync", evt.getNode());
-            controller.getContext().getPurgatory().add(evt.getNode());
-          } else {
-            log.info("Received master broadcast ack from %s. Nothing to do: number of nodes consistent with master view: %s", evt.getNode(), data.getCurrentNumberOfNodes());           
           }
         } catch (IOException e) {
           log.error("Error caught while trying to process event " + evt.getType(), e);

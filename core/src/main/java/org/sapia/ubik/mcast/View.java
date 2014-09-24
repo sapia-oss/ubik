@@ -1,6 +1,8 @@
 package org.sapia.ubik.mcast;
 
 import java.lang.ref.SoftReference;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -95,6 +97,13 @@ public class View {
       }
     });
   }
+  
+  /**
+   * @return this instance's {@link List} of {@link NodeInfo} instances.
+   */
+  public List<NodeInfo> getNodeInfos() {
+    return new ArrayList<>(nodeToNodeInfo.values());
+  }
 
   /**
    * Returns the {@link ServerAddress} corresponding to the given node.
@@ -134,7 +143,7 @@ public class View {
    * @param addr
    *          a {@link ServerAddress}.
    * @param node
-   *          node identifier.
+   *          a node identifier.
    */
   void heartbeat(ServerAddress addr, String node) {
     NodeInfo info = new NodeInfo(addr, node);
@@ -145,6 +154,10 @@ public class View {
     }
   }
 
+  /**
+   * @param node
+   *          a node identifier. 
+   */
   void removeDeadNode(String node) {
     NodeInfo removed = nodeToNodeInfo.remove(node);
     if (removed != null) {
@@ -152,7 +165,41 @@ public class View {
       notifyListeners(new EventChannelEvent(removed.node, removed.addr), false);
     }
   }
+  
+  /**
+   * @param nodes the {@link List} of {@link NodeInfo} instances corresponding to the nodes
+   * to remove.
+   */
+  void update(List<NodeInfo> nodes) {
+    Set<String> actual = Collects.convertAsSet(nodes, new Func<String, NodeInfo>() {
+      @Override
+      public String call(NodeInfo arg) {
+        return arg.node;
+      }
+    });
+    Set<String> current = getNodesAsSet();
+    Set<String> toRemove = new HashSet<>();
+    for (String c : current) {
+      if (!actual.contains(c)) {
+        toRemove.add(c);
+      }
+    }
+    
+    for (NodeInfo n : nodes) {
+      if (!nodeToNodeInfo.containsKey(n.node)) {
+        addHost(n.addr, n.node);
+      }
+    }
+    
+    for (String r : toRemove) {
+      removeDeadNode(r);
+    }
+  }
 
+  /**
+   * @param node a node identifier.
+   * @return <code>true</code> if this instance has the corresponding node.
+   */
   boolean containsNode(String node) {
     return nodeToNodeInfo.containsKey(node);
   }
