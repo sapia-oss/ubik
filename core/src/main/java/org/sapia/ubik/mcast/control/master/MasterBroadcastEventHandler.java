@@ -1,5 +1,7 @@
 package org.sapia.ubik.mcast.control.master;
 
+import java.util.ArrayList;
+
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.EventChannel.Role;
@@ -44,14 +46,20 @@ public class MasterBroadcastEventHandler implements ControlEventHandler {
         context.triggerChallenge();
       } else {
         log.info("Acking master broadcast from %s (current node does not have same master, or has no master yet)", originNode);
-        context.getChannelCallback().sendUnicastEvent(address, new MasterBroadcastAckEvent(context.getChannelCallback().getNodeCount()));
+        context.getChannelCallback().sendUnicastEvent(
+            address, 
+            new MasterBroadcastAckEvent(new ArrayList<>(context.getChannelCallback().getView()))
+        );
       }
     
     // if previous condition not true, checking if this node has same node count as master 
     // (if yes, send ack to eventually trigger resync).
     } else if (context.getChannelCallback().getNodeCount() != data.getNodeCount()) {
       log.info("Acking master broadcast from %s (current node does not have same number of nodes as master)", originNode);
-      context.getChannelCallback().sendUnicastEvent(address, new MasterBroadcastAckEvent(context.getChannelCallback().getNodeCount()));
+      context.getChannelCallback().sendUnicastEvent(
+          address, 
+          new MasterBroadcastAckEvent(new ArrayList<>(context.getChannelCallback().getView()))
+      );
     }
   }
   

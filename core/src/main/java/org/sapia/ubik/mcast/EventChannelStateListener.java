@@ -70,4 +70,21 @@ public interface EventChannelStateListener {
    *          node that was discovered.
    */
   public void onUp(EventChannelEvent event);
+  
+  /**
+   * 
+   * @param event
+   *          an {@link EventChannelEvent} holding the unique identifier of the master node 
+   *          that made the heartbeat request.
+   */
+  public void onHeartbeatRequest(EventChannelEvent event);
+  
+  /**
+   * 
+   * @param event
+   *          an {@link EventChannelEvent} holding the unique identifier of a slave node 
+   *          that replied to the heartbeat request.
+   */
+  public void onHeartbeatResponse(EventChannelEvent event);
+  
 }

@@ -53,7 +53,7 @@ public class HeartbeatRequestHandler implements ControlRequestHandler {
       }
     } else {
       context.heartbeatRequestReceived();
-      context.getChannelCallback().heartbeat(originNode, request.getMasterAddress());
+      context.getChannelCallback().heartbeatRequest(originNode, request.getMasterAddress());
       context.getChannelCallback().sendResponse(request.getMasterNode(),
           ControlResponseFactory.createHeartbeatResponse(request, context.getChannelCallback().getAddress()));
       if (context.getRole() == Role.MASTER) {

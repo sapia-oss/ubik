@@ -37,7 +37,7 @@ public class ChallengeRequestHandler implements ControlRequestHandler {
   public void handle(String originNode, ControlRequest request) {
     log.info("Received challenge request from %s (master is %s)", originNode, request.getMasterNode());
     context.challengeRequestReceived();
-    context.getChannelCallback().heartbeat(originNode, request.getMasterAddress());
+    context.getChannelCallback().heartbeatRequest(originNode, request.getMasterAddress());
     if (context.getRole() == Role.MASTER || context.getRole() == Role.MASTER_CANDIDATE) {
       log.info("This node's status is currently %s. The challenge fails", context.getRole());
       context.getChannelCallback().sendResponse(request.getMasterNode(),

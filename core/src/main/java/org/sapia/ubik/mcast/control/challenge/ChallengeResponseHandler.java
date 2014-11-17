@@ -39,7 +39,7 @@ public class ChallengeResponseHandler implements ControlResponseHandler {
     if (response instanceof ChallengeResponse) {
       ChallengeResponse challengeRs = (ChallengeResponse) response;
       log.debug("Received challenge response from %s", originNode);
-      context.getChannelCallback().heartbeat(originNode, challengeRs.getUnicastAddress());
+      context.getChannelCallback().heartbeatResponse(originNode, challengeRs.getUnicastAddress());
       replyingNodes.add(originNode);
 
       if (challengeRs.getCode() == Code.DENIED) {

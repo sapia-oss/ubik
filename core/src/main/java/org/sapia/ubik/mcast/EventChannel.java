@@ -809,8 +809,13 @@ public class EventChannel {
     }
 
     @Override
-    public void heartbeat(String node, ServerAddress addr) {
-      view.heartbeat(addr, node);
+    public void heartbeatResponse(String node, ServerAddress addr) {
+      view.heartbeatResponse(addr, node);
+    }
+    
+    @Override
+    public void heartbeatRequest(String node, ServerAddress addr) {
+      view.heartbeatRequest(addr, node);
     }
 
     @Override

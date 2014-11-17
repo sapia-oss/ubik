@@ -20,12 +20,12 @@ public class MasterSyncEventTest {
   
   @Test
   public void testGetView() {
-    assertEquals(1, event.getView().size());
+    assertEquals(1, event.getMasterView().size());
   }
   
   @Test
   public void testSerialization() throws Exception {
     MasterSyncEvent copy = (MasterSyncEvent) Serialization.deserialize(Serialization.serialize(event));
-    assertEquals(1, copy.getView().size());
+    assertEquals(1, copy.getMasterView().size());
   }
 }

@@ -231,6 +231,14 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
   @Override
   public void onDown(EventChannelEvent event) {
   }
+  
+  @Override
+  public void onHeartbeatRequest(EventChannelEvent event) {
+  }
+  
+  @Override
+  public void onHeartbeatResponse(EventChannelEvent event) {
+  }
 
   /**
    * @return this instance's root JNDI {@link Context}.

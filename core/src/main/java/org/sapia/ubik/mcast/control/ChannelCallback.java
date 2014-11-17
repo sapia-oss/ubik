@@ -114,7 +114,19 @@ public interface ChannelCallback {
    * @param unicastAddress
    *          the unicast {@link ServerAddress} of the given node.
    */
-  public void heartbeat(String node, ServerAddress unicastAddress);
+  public void heartbeatResponse(String node, ServerAddress unicastAddress);
+  
+  /**
+   * This method is meant to notify the underlying event channel that a given
+   * node has received a heartbeat request from its master.
+   * 
+   * @param a
+   *          {@link String} corresponding to the identifier of the master node 
+   *          that sent the request.
+   * @param unicastAddress
+   *          the unicast {@link ServerAddress} of the given node.
+   */
+  public void heartbeatRequest(String node, ServerAddress unicastAddress);
 
   /**
    * This method is meant to notify the underlying event channel that a given

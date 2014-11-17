@@ -80,7 +80,7 @@ public class HeartbeatResponseHandler implements ControlResponseHandler {
     if (response instanceof HeartbeatResponse) {
       HeartbeatResponse heartbeatRs = (HeartbeatResponse) response;
       log.debug("Received heartbeat response from %s", originNode);
-      context.getChannelCallback().heartbeat(originNode, heartbeatRs.getUnicastAddress());
+      context.getChannelCallback().heartbeatResponse(originNode, heartbeatRs.getUnicastAddress());
       replyingNodes.add(originNode);
       if (replyingNodes.size() >= targetedNodes.size()) {
         log.debug("All expected heartbeats received");

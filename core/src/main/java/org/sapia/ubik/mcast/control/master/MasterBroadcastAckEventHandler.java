@@ -1,6 +1,9 @@
 package org.sapia.ubik.mcast.control.master;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
@@ -9,6 +12,8 @@ import org.sapia.ubik.mcast.control.ControlEvent;
 import org.sapia.ubik.mcast.control.ControlEventHandler;
 import org.sapia.ubik.mcast.control.ControllerContext;
 import org.sapia.ubik.net.ServerAddress;
+import org.sapia.ubik.util.Collects;
+import org.sapia.ubik.util.Func;
 
 /**
  * Handles {@link MasterBroadcastAckEvent}s.
@@ -40,15 +45,30 @@ public class MasterBroadcastAckEventHandler implements ControlEventHandler {
       MasterSyncEvent sync = new MasterSyncEvent(view);
       context.getChannelCallback().sendUnicastEvent(originAddress, sync);
       
-    // slave node does not have same number of nodes as master, forcing resync by adding to purgatory  
-    } else if (ack.getNodeCount() != context.getChannelCallback().getNodeCount()) {
-      List<NodeInfo> view = context.getChannelCallback().getView();
+    // slave node does not have same number of nodes as master, forcing resync by adding origin node
+    // to purgatory (also adding slave nodes that master node does not have).  
+    } else if (!ack.isSameView(context.getChannelCallback().getView())) {
+      List<NodeInfo> view    = new ArrayList<>(context.getChannelCallback().getView());
+      Set<NodeInfo>  orphans = new HashSet<>(ack.getSlaveView());  
+      orphans.removeAll(context.getChannelCallback().getView());
+      if (!orphans.isEmpty()) {
+        log.debug("Adding orphans to purgatory: %s", orphans);
+        context.getPurgatory().addAll(Collects.convertAsSet(orphans, new Func<String, NodeInfo>() {
+          @Override
+          public String call(NodeInfo arg) {
+            return arg.getNode();
+          }
+        }));
+      }
+      log.debug("Adding slave node to purgatory: %s", originNode);
+      context.getPurgatory().add(originNode);
+      
       log.info("Received master broadcast ack from %s: number of nodes inconsistent with master view. Replying with master sync event", originNode);
       view.add(new NodeInfo(context.getChannelCallback().getAddress(), context.getChannelCallback().getNode()));
       MasterSyncEvent sync = new MasterSyncEvent(view);
       context.getChannelCallback().sendUnicastEvent(originAddress, sync);
     } else {
-      log.info("Received master broadcast ack from %s. Nothing to do: number of nodes consistent with master view: %s", originNode, ack.getNodeCount());           
+      log.info("Received master broadcast ack from %s. Nothing to do: number of nodes consistent with master view: %s", originNode, ack.getSlaveView().size());           
     }
   }
 

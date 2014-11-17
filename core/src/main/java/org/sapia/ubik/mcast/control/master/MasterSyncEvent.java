@@ -31,7 +31,7 @@ public class MasterSyncEvent extends ControlEvent {
   /**
    * @return the {@link List} of {@link NodeInfo} corresponding to the master's view.
    */
-  public List<NodeInfo> getView() {
+  public List<NodeInfo> getMasterView() {
     return view;
   }
 

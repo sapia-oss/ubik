@@ -23,7 +23,7 @@ public class MasterSyncEventHandler implements ControlEventHandler {
   public void handle(String originNode, ServerAddress originAddress,
       ControlEvent event) {
     MasterSyncEvent sync = (MasterSyncEvent) event;
-    context.getChannelCallback().updateView(sync.getView());
+    context.getChannelCallback().updateView(sync.getMasterView());
   }
 
 }

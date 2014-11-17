@@ -35,6 +35,15 @@ public class ViewTest {
       public void onUp(org.sapia.ubik.mcast.EventChannelStateListener.EventChannelEvent event) {
         onUp.set(true);
       }
+      
+      @Override
+      public void onHeartbeatRequest(EventChannelEvent event) {
+      }
+      
+      @Override
+      public void onHeartbeatResponse(EventChannelEvent event) {
+      }
+       
     };
     view.addEventChannelStateListener(listener);
     view.addHost(new TCPAddress("test", "test", 1), "123");
@@ -52,9 +61,18 @@ public class ViewTest {
       public void onUp(org.sapia.ubik.mcast.EventChannelStateListener.EventChannelEvent event) {
         onUp.set(true);
       }
+      
+      @Override
+      public void onHeartbeatRequest(EventChannelEvent event) {
+      }
+      
+      @Override
+      public void onHeartbeatResponse(EventChannelEvent event) {
+      }
+       
     };
     view.addEventChannelStateListener(listener);
-    view.heartbeat(new TCPAddress("test", "test", 1), "123");
+    view.heartbeatResponse(new TCPAddress("test", "test", 1), "123");
     assertTrue("EventChannelStateListener onUp() not called", onUp.get());
   }
 
@@ -69,9 +87,18 @@ public class ViewTest {
       public void onUp(org.sapia.ubik.mcast.EventChannelStateListener.EventChannelEvent event) {
 
       }
+      
+      @Override
+      public void onHeartbeatRequest(EventChannelEvent event) {
+      }
+      
+      @Override
+      public void onHeartbeatResponse(EventChannelEvent event) {
+      }
+       
     };
     view.addEventChannelStateListener(listener);
-    view.heartbeat(new TCPAddress("test", "test", 1), "123");
+    view.heartbeatResponse(new TCPAddress("test", "test", 1), "123");
     view.removeDeadNode("123");
     assertTrue("EventChannelStateListener onDown() not called", onDown.get());
   }
@@ -88,10 +115,19 @@ public class ViewTest {
       public void onUp(org.sapia.ubik.mcast.EventChannelStateListener.EventChannelEvent event) {
         notified.set(true);
       }
+      
+      @Override
+      public void onHeartbeatRequest(EventChannelEvent event) {
+      }
+      
+      @Override
+      public void onHeartbeatResponse(EventChannelEvent event) {
+      }
+       
     };
     view.addEventChannelStateListener(listener);
     assertTrue("EventChannelStateListener was not removed", view.removeEventChannelStateListener(listener));
-    view.heartbeat(new TCPAddress("test", "test", 1), "123");
+    view.heartbeatResponse(new TCPAddress("test", "test", 1), "123");
     assertTrue("Removed EventChannelStateListener should not have been notified", !notified.get());
 
   }

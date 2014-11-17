@@ -51,6 +51,14 @@ public class EventChannelTest {
       public void onUp(EventChannelEvent event) {
         isUpRef.set(true);
       }
+      
+      @Override
+      public void onHeartbeatRequest(EventChannelEvent event) {
+      }
+      
+      @Override
+      public void onHeartbeatResponse(EventChannelEvent event) {
+      }
     };
 
     source.addEventChannelStateListener(listener);
@@ -82,6 +90,14 @@ public class EventChannelTest {
 
       @Override
       public void onUp(EventChannelEvent event) {
+      }
+      
+      @Override
+      public void onHeartbeatRequest(EventChannelEvent event) {
+      }
+      
+      @Override
+      public void onHeartbeatResponse(EventChannelEvent event) {
       }
     };
     source.addEventChannelStateListener(listener);

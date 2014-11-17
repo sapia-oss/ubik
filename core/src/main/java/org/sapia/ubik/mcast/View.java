@@ -137,6 +137,8 @@ public class View {
   }
 
   /**
+   * Invoked when a heartbeat request is received.
+   * <p>
    * Updates the "last access" flag corresponding to the passed in
    * {@link ServerAddress}.
    * 
@@ -145,12 +147,42 @@ public class View {
    * @param node
    *          a node identifier.
    */
-  void heartbeat(ServerAddress addr, String node) {
+  void heartbeatResponse(ServerAddress addr, String node) {
     NodeInfo info = new NodeInfo(addr, node);
-    log.debug("Received heartbeat from %s", node);
+    log.debug("Received heartbeat response from %s", node);
     if (nodeToNodeInfo.put(node, info) == null) {
       log.debug("Adding node %s at address %s to view", node, addr);
       notifyListeners(new EventChannelEvent(node, addr), true);
+    } else {
+      EventChannelEvent event = new EventChannelEvent(node, addr);
+      for (EventChannelStateListener listener : listeners) {
+        listener.onHeartbeatResponse(event);
+      }
+    }
+  }
+  
+  /**
+   * Invoked when a heartbeat request is received.
+   * <p>
+   * Updates the "last access" flag corresponding to the passed in
+   * {@link ServerAddress}.
+   * 
+   * @param addr
+   *          a {@link ServerAddress}.
+   * @param node
+   *          a node identifier.
+   */
+  void heartbeatRequest(ServerAddress addr, String node) {
+    NodeInfo info = new NodeInfo(addr, node);
+    log.debug("Received heartbeat response from %s", node);
+    if (nodeToNodeInfo.put(node, info) == null) {
+      log.debug("Adding node %s at address %s to view", node, addr);
+      notifyListeners(new EventChannelEvent(node, addr), true);
+    } else {
+      EventChannelEvent event = new EventChannelEvent(node, addr);
+      for (EventChannelStateListener listener : listeners) {
+        listener.onHeartbeatRequest(event);
+      }
     }
   }
 

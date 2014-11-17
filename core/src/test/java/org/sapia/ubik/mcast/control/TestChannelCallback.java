@@ -126,8 +126,13 @@ public class TestChannelCallback implements ChannelCallback {
   }
 
   @Override
-  public void heartbeat(String node, ServerAddress address) {
+  public void heartbeatRequest(String node, ServerAddress address) {
     siblings.get(node).lastHeartbeatTime = this.controller.getContext().getClock().currentTimeMillis();
+  }
+  
+  @Override
+  public void heartbeatResponse(String node, ServerAddress unicastAddress) {
+    heartbeatRequest(node, unicastAddress);
   }
 
   @Override
