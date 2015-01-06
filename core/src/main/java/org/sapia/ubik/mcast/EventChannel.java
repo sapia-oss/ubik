@@ -124,29 +124,34 @@ public class EventChannel {
    * Sent by a node when it receives a publish event. Allows discovery by the
    * node that just published itself.
    */
-  static final String DISCOVER_EVT = "ubik/mcast/discover";
+  static final String DISCOVER_EVT         = "ubik/mcast/discover";
 
   /**
    * Sent at startup when a node first appears.
    */
-  static final String PUBLISH_EVT = "ubik/mcast/publish";
+  static final String PUBLISH_EVT          = "ubik/mcast/publish";
 
   /**
    * Sent when a node (or set of nodes) are detected as down, and a last attempt
    * is being made to rediscover them - nodes that receive this event should try
    * to resync themselves.
    */
-  static final String FORCE_RESYNC_EVT = "ubik/mcast/forceResync";
+  static final String FORCE_RESYNC_EVT     = "ubik/mcast/forceResync";
 
   /**
    * Sent by a node to notify other nodes that it is shutting down.
    */
-  static final String SHUTDOWN_EVT = "ubik/mcast/shutdown";
+  static final String SHUTDOWN_EVT         = "ubik/mcast/shutdown";
 
+  /**
+   * Sent by a node to notify other nodes that it is leaving.
+   */
+  static final String LEAVE_EVT            = "ubik/mcast/leave";
+  
   /**
    * Sent by a master node periodically.
    */
-  static final String MASTER_BROADCAST = "ubik/mcast/master/broadcast";
+  static final String MASTER_BROADCAST     = "ubik/mcast/master/broadcast";
 
   /**
    * Sent back as ack to master broadcast.
@@ -156,7 +161,7 @@ public class EventChannel {
   /**
    * Corresponds to all types of control events.
    */
-  static final String CONTROL_EVT = "ubik/mcast/control";
+  static final String CONTROL_EVT          = "ubik/mcast/control";
 
   private static final int DEFAULT_MAX_PUB_ATTEMPTS = 3;
 
@@ -369,7 +374,28 @@ public class EventChannel {
       unicast.start();
       address = unicast.getAddress();
       CHANNELS_BY_DOMAIN.add(this);
-      state = State.STARTED;
+      state   = State.STARTED;
+    }
+  }
+  
+  /**
+   * Forces a domain change: this instance will leave the current domain, 
+   * and publish itself in the given new domain.
+   * 
+   * @param newDomain the new domain to change to.
+   */
+  public synchronized void changeDomain(final String newDomain) {
+    synchronized (CHANNELS_BY_DOMAIN) {
+      CHANNELS_BY_DOMAIN.remove(this);
+      try {
+        broadcast.dispatch(address, false, LEAVE_EVT, newDomain);
+      } catch (IOException e) {
+        log.warning("Error broadcasting domain leave event");
+      }
+      view.removedFromDomain();
+      consumer.changeDomain(newDomain);
+      CHANNELS_BY_DOMAIN.add(this); 
+      resync();
     }
   }
 
@@ -1027,6 +1053,11 @@ public class EventChannel {
         view.removeDeadNode(evt.getNode());
 
         // ----------------------------------------------------------------------
+        
+      } else if (evt.getType().equals(LEAVE_EVT)) {
+        view.removeLeavingNode(evt.getNode());
+
+        // ----------------------------------------------------------------------
 
       } else if (evt.getType().equals(CONTROL_EVT)) {
         try {
@@ -1058,6 +1089,7 @@ public class EventChannel {
     consumer.registerAsyncListener(FORCE_RESYNC_EVT, listener);
     consumer.registerAsyncListener(DISCOVER_EVT, listener);
     consumer.registerAsyncListener(SHUTDOWN_EVT, listener);
+    consumer.registerAsyncListener(LEAVE_EVT, listener);
     consumer.registerAsyncListener(MASTER_BROADCAST, listener);
     consumer.registerAsyncListener(MASTER_BROADCAST_ACK, listener);
     consumer.registerAsyncListener(CONTROL_EVT, listener);

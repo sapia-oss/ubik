@@ -28,9 +28,15 @@ import org.sapia.ubik.util.SoftReferenceList;
  */
 public class View {
 
+  private enum ViewEventType {
+    ADDED, REMOVED, LEFT
+  }
+  
   private Category log = Log.createCategory(getClass());
-  private Map<String, NodeInfo> nodeToNodeInfo = new ConcurrentHashMap<String, NodeInfo>();
-  private SoftReferenceList<EventChannelStateListener> listeners = new SoftReferenceList<EventChannelStateListener>();
+  
+  private Map<String, NodeInfo>                         nodeToNodeInfo = new ConcurrentHashMap<String, NodeInfo>();
+  private SoftReferenceList<EventChannelStateListener> listeners       = new SoftReferenceList<EventChannelStateListener>();
+  
 
   /**
    * Adds the given listener to this instance, which will be kept in a
@@ -130,7 +136,7 @@ public class View {
     NodeInfo info = new NodeInfo(addr, node);
     if (nodeToNodeInfo.put(node, info) == null) {
       log.debug("Adding node %s at address %s to view", node, addr);
-      notifyListeners(new EventChannelEvent(node, addr), true);
+      notifyListeners(new EventChannelEvent(node, addr), ViewEventType.ADDED);
       return true;
     }
     return false;
@@ -152,7 +158,7 @@ public class View {
     log.debug("Received heartbeat response from %s", node);
     if (nodeToNodeInfo.put(node, info) == null) {
       log.debug("Adding node %s at address %s to view", node, addr);
-      notifyListeners(new EventChannelEvent(node, addr), true);
+      notifyListeners(new EventChannelEvent(node, addr), ViewEventType.ADDED);
     } else {
       EventChannelEvent event = new EventChannelEvent(node, addr);
       for (EventChannelStateListener listener : listeners) {
@@ -177,7 +183,7 @@ public class View {
     log.debug("Received heartbeat response from %s", node);
     if (nodeToNodeInfo.put(node, info) == null) {
       log.debug("Adding node %s at address %s to view", node, addr);
-      notifyListeners(new EventChannelEvent(node, addr), true);
+      notifyListeners(new EventChannelEvent(node, addr), ViewEventType.ADDED);
     } else {
       EventChannelEvent event = new EventChannelEvent(node, addr);
       for (EventChannelStateListener listener : listeners) {
@@ -194,7 +200,30 @@ public class View {
     NodeInfo removed = nodeToNodeInfo.remove(node);
     if (removed != null) {
       log.debug("Removing dead node %s", node);
-      notifyListeners(new EventChannelEvent(removed.node, removed.addr), false);
+      notifyListeners(new EventChannelEvent(removed.node, removed.addr), ViewEventType.REMOVED);
+    }
+  }
+
+  /**
+   * @param node
+   *          a node identifier. 
+   */
+  void removeLeavingNode(String node) {
+    NodeInfo removed = nodeToNodeInfo.remove(node);
+    if (removed != null) {
+      log.debug("Removing leaving node %s", node);
+      notifyListeners(new EventChannelEvent(removed.node, removed.addr), ViewEventType.LEFT);
+    }
+  }
+
+  /**
+   * Invoked when it is actually the node corresponding to this view
+   * that leaves the domain.
+   */
+  void removedFromDomain() {
+    for (NodeInfo removed : nodeToNodeInfo.values()) {
+      log.debug("Removing leaving node %s", removed.node);
+      notifyListeners(new EventChannelEvent(removed.node, removed.addr), ViewEventType.LEFT);
     }
   }
   
@@ -236,15 +265,19 @@ public class View {
     return nodeToNodeInfo.containsKey(node);
   }
 
-  private void notifyListeners(EventChannelEvent event, boolean added) {
+  private void notifyListeners(EventChannelEvent event, ViewEventType eventType) {
     synchronized (listeners) {
       for (EventChannelStateListener listener : listeners) {
-        if (added) {
+        if (eventType == ViewEventType.ADDED) {
           log.debug("Node %s is up", event.getNode());
           listener.onUp(event);
-        } else {
+        } else if (eventType == ViewEventType.REMOVED) {
           log.debug("Node %s is down", event.getNode());
           listener.onDown(event);
+        } else if (eventType == ViewEventType.LEFT) {
+          listener.onLeft(event);
+        } else {
+          log.error("Unknown view event type: %s", eventType);
         }
       }
     }

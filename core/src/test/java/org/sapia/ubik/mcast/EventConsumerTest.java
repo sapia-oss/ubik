@@ -39,9 +39,15 @@ public class EventConsumerTest {
     TestEventListener listener = new TestEventListener();
     cons.registerAsyncListener("test", listener);
     assertTrue("Should contain AsyncEventListener", cons.containsAsyncListener(listener));
+  }
+  
+  @Test
+  public void testUnregisterAsyncListener() throws Exception {
+    EventConsumer cons = new EventConsumer("node", "domain");
+    TestEventListener listener = new TestEventListener();
+    cons.registerAsyncListener("test", listener);
     cons.unregisterListener((AsyncEventListener) listener);
     assertTrue("Should contain AsyncEventListener that has been removed", !cons.containsAsyncListener(listener));
-    assertEquals("Listener count should be 0", 0, cons.getListenerCount());
   }
 
   @Test
@@ -49,7 +55,14 @@ public class EventConsumerTest {
     EventConsumer cons = new EventConsumer("node", "domain");
     SyncEventListener listener = new TestEventListener();
     cons.registerSyncListener("test", listener);
-    assertTrue("Should contain SyncEventListener", cons.containsSyncListener(listener));
+    assertTrue("Should contain AsyncEventListener", cons.containsSyncListener(listener));
+  }
+  
+  @Test
+  public void testUnregisterSyncListener() throws Exception {
+    EventConsumer cons = new EventConsumer("node", "domain");
+    SyncEventListener listener = new TestEventListener();
+    cons.registerSyncListener("test", listener);
     cons.unregisterListener(listener);
     assertTrue("Should not contain SyncEventListener", !cons.containsSyncListener(listener));
     assertEquals("Listener count should be 0", 0, cons.getListenerCount());

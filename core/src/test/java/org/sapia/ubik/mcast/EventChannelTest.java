@@ -2,6 +2,7 @@ package org.sapia.ubik.mcast;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,6 +13,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.sapia.ubik.concurrent.BlockingRef;
+import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.util.PropUtil;
@@ -19,7 +21,7 @@ import org.sapia.ubik.util.Conf;
 
 public class EventChannelTest {
 
-  private EventChannel source, destination;
+  private EventChannel source, destination, other;
 
   @Before
   public void setUp() {
@@ -32,15 +34,17 @@ public class EventChannelTest {
       source.close();
     if (destination != null)
       destination.close();
+    if (other != null)
+      other.close();
   }
 
   @Test
   public void testEventChannelState() throws Exception {
     source = createEventChannel(1000, 2000);
 
-    final BlockingRef<Boolean> isUpRef = new BlockingRef<Boolean>();
+    final BlockingRef<Boolean> isUpRef   = new BlockingRef<Boolean>();
     final BlockingRef<Boolean> isDownRef = new BlockingRef<Boolean>();
-
+    
     EventChannelStateListener listener = new EventChannelStateListener() {
       @Override
       public void onDown(EventChannelEvent event) {
@@ -50,6 +54,10 @@ public class EventChannelTest {
       @Override
       public void onUp(EventChannelEvent event) {
         isUpRef.set(true);
+      }
+      
+      @Override
+      public void onLeft(EventChannelEvent event) {
       }
       
       @Override
@@ -78,31 +86,52 @@ public class EventChannelTest {
     assertTrue("Destination not detected as down (event channel listener not called)", isDown != null);
     assertTrue("Destination not detected as down", isDown);
   }
+  
+  @Test
+  public void testEventChannelDomainChange() throws Exception {
+    source      = createEventChannel(1000, 2000);
+    destination = createEventChannel(1000, 2000);
+    other       = createEventChannel("test2", 1000, 2000);
+
+    final BlockingRef<Boolean> joinedOtherDomain = new BlockingRef<Boolean>();
+    final BlockingRef<Boolean> leftOldDomain     = new BlockingRef<Boolean>();
+    
+    EventChannelStateListener otherDomainListener = new EventChannelStateListener.Adapter() {
+      @Override
+      public void onUp(EventChannelEvent event) {
+        joinedOtherDomain.set(true);
+      }
+    };
+    other.addEventChannelStateListener(otherDomainListener);
+
+    EventChannelStateListener destinationListener = new EventChannelStateListener.Adapter() {
+      @Override
+      public void onLeft(EventChannelEvent event) {
+        leftOldDomain.set(true);
+      }
+    };
+    destination.addEventChannelStateListener(destinationListener);
+    
+    source.start();
+    other.start();
+    destination.start();
+    Thread.sleep(1000);
+    
+    source.changeDomain("test2");
+    Boolean joined = joinedOtherDomain.await(10000);
+    assertTrue("Other domain node did not discover new node", joined != null && joined);
+    
+    Boolean left   = leftOldDomain.await(10000);
+    assertTrue("Did not leave old domain", left != null && left);
+  }
 
   @Test
   public void testRemoveEventChannelStateListener() throws Exception {
     source = createEventChannel();
     source.start();
-    EventChannelStateListener listener = new EventChannelStateListener() {
-      @Override
-      public void onDown(EventChannelEvent event) {
-      }
-
-      @Override
-      public void onUp(EventChannelEvent event) {
-      }
-      
-      @Override
-      public void onHeartbeatRequest(EventChannelEvent event) {
-      }
-      
-      @Override
-      public void onHeartbeatResponse(EventChannelEvent event) {
-      }
-    };
+    EventChannelStateListener listener = mock(EventChannelStateListener.class);
     source.addEventChannelStateListener(listener);
     assertTrue("EventChannelStateListener not removed", source.removeEventChannelStateListener(listener));
-
   }
 
   @Test

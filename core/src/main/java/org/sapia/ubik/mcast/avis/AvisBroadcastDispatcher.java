@@ -41,21 +41,19 @@ public class AvisBroadcastDispatcher implements BroadcastDispatcher {
   private static final String ANY_DOMAIN = "*";
   public static final int DEFAULT_BUFSZ = 1024;
 
-  private Category log = Log.createCategory(getClass());
+  private Category      log = Log.createCategory(getClass());
   private EventConsumer consumer;
-  private String domain;
   private AvisConnector connector;
-  private AvisAddress address;
-  private int bufsize;
+  private AvisAddress   address;
+  private int           bufsize;
   private ConnectionStateListenerList listeners = new ConnectionStateListenerList();
-  private volatile ConnectionState state = ConnectionState.UP;
-  private ConnectionMonitor monitor;
+  private volatile ConnectionState    state     = ConnectionState.UP;
+  private ConnectionMonitor           monitor;
 
   public AvisBroadcastDispatcher(EventConsumer consumer, String avisUrl) throws IOException {
     this.consumer = consumer;
-    domain = consumer.getDomainName().toString();
-    connector = new AvisConnector(avisUrl);
-    address = new AvisAddress(avisUrl);
+    connector     = new AvisConnector(avisUrl);
+    address       = new AvisAddress(avisUrl);
   }
 
   public void setBufsize(int size) {
@@ -84,9 +82,9 @@ public class AvisBroadcastDispatcher implements BroadcastDispatcher {
           connector.getConnection().send(createNotification(evt, ANY_DOMAIN));
 
         } else {
-          evt = new RemoteEvent(domain, evtType, data).setNode(consumer.getNode());
+          evt = new RemoteEvent(consumer.getDomainName().toString(), evtType, data).setNode(consumer.getNode());
           evt.setUnicastAddress(unicastAddr);
-          connector.getConnection().send(createNotification(evt, domain));
+          connector.getConnection().send(createNotification(evt, consumer.getDomainName().toString()));
 
         }
       } catch (IOException e) {
@@ -168,16 +166,21 @@ public class AvisBroadcastDispatcher implements BroadcastDispatcher {
   private synchronized void watchConnection() {
     if (state == ConnectionState.UP) {
       listeners.onDisconnected();
-      monitor = new ConnectionMonitor("AvisBroadcastDispatcher::" + this.domain + "::" + this.getNode(), new ConnectionMonitor.ConnectionFacade() {
-        @Override
-        public void tryConnection() throws IOException {
-          doConnect();
-          log.debug("Reconnected to Avis router");
-          monitor = null;
-        }
-      },
-      this.listeners,
-      Conf.getSystemProperties().getTimeProperty(Consts.MCAST_BROADCAST_MONITOR_INTERVAL, Defaults.DEFAULT_BROADCAST_MONITOR_INTERVAL).getValueInMillis());
+      monitor = new ConnectionMonitor("AvisBroadcastDispatcher::" + consumer.getDomainName() + "::" + getNode(), 
+        new ConnectionMonitor.ConnectionFacade() {
+          @Override
+          public void tryConnection() throws IOException {
+            doConnect();
+            log.debug("Reconnected to Avis router");
+            monitor = null;
+          }
+        },
+        this.listeners,
+        Conf.getSystemProperties().getTimeProperty(
+            Consts.MCAST_BROADCAST_MONITOR_INTERVAL,
+            Defaults.DEFAULT_BROADCAST_MONITOR_INTERVAL
+        ).getValueInMillis()
+      );
       state = ConnectionState.DOWN;
     }
   }

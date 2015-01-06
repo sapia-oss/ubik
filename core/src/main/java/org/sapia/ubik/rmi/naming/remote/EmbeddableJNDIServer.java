@@ -57,14 +57,13 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
   EventChannelStateListener {
 
   private Category log = Log.createCategory(getClass());
-  private String domain;
-  private int port;
-  private Thread serverThread;
-  private EventChannelRef channel;
+  private int               port;
+  private Thread            serverThread;
+  private EventChannelRef   channel;
   private UbikRemoteContext root;
-  private Context local;
-  private ThreadStartup startBarrier = new ThreadStartup();
-  private Time syncInterval = Conf.newInstance().getTimeRangeProperty(
+  private Context           local;
+  private ThreadStartup     startBarrier = new ThreadStartup();
+  private Time              syncInterval = Conf.newInstance().getTimeRangeProperty(
       Consts.JNDI_SYNC_INTERVAL, Defaults.DEFAULT_JNDI_SYNC_INTERVAL
   ).getRandomTime();
 
@@ -78,7 +77,6 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
    */
   public EmbeddableJNDIServer(EventChannelRef ref, int port) {
     this.channel = ref;
-    this.domain = ref.get().getDomainName().toString();
     this.port = port;
   }
 
@@ -117,7 +115,6 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
    * multicast address and port.
    */
   public EmbeddableJNDIServer(String domain, int port, String mcastAddress, int mcastPort) {
-    this.domain = domain;
     this.port = port;
     Properties props = new Properties();
     props.setProperty(JNDIConsts.MCAST_ADDR_KEY, mcastAddress);
@@ -239,6 +236,10 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
   @Override
   public void onHeartbeatResponse(EventChannelEvent event) {
   }
+  
+  @Override
+  public void onLeft(EventChannelEvent event) {
+  }
 
   /**
    * @return this instance's root JNDI {@link Context}.
@@ -291,7 +292,7 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
    *          thread.
    */
   public void start(boolean daemon) throws Exception {
-    serverThread = NamedThreadFactory.createWith("ubik.jndi.server@" + domain).setDaemon(true).newThread(new Runnable() {
+    serverThread = NamedThreadFactory.createWith("ubik.jndi.server@" + channel.get().getDomainName()).setDaemon(true).newThread(new Runnable() {
       @Override
       public void run() {
         doRun();
@@ -303,7 +304,7 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
 
   private final void doRun() {
     try {
-      log.warning("Starting JNDI server on port %s, domain %s", port, domain);
+      log.warning("Starting JNDI server on port %s, domain %s", port, channel.get().getDomainName());
 
       channel.get().registerAsyncListener(JNDIConsts.JNDI_CLIENT_PUBLISH, this);
       channel.get().registerAsyncListener(JndiSyncRequest.class.getName(), this);
@@ -346,7 +347,7 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
         Thread.sleep(Integer.MAX_VALUE);
       }
     } catch (InterruptedException e) {
-      log.warning("Thread interrupted - shutting down JNDI server: " + port + ", " + domain);
+      log.warning("Thread interrupted - shutting down JNDI server: " + port + ", " + channel.get().getDomainName());
       startBarrier.failed(e);
     } catch (Exception e) {
       log.error("Could not start JNDI server", e);

@@ -34,6 +34,7 @@ public class DomainName implements java.io.Serializable {
 
   public static final char DELIM = '/';
   private List<String> segments;
+  private String literal;
 
   private DomainName(List<String> segments) {
     this.segments = segments;
@@ -142,20 +143,27 @@ public class DomainName implements java.io.Serializable {
    * Returns a string representation of this instance - or, more precisely, this
    * instance's path representation, where subdomains/partitions are separated
    * by '/' characters.
+   * <p>
+   * The thus generated string representation is kept internally, so invoking this method
+   * does not create GC overhead.
    * 
    * @return this instance's string representation.
    */
   public String toString() {
-    StringBuffer s = new StringBuffer(segments.size() * 8);
-
-    for (int i = 0; i < segments.size(); i++) {
-      s.append((String) segments.get(i));
-
-      if (i < (segments.size() - 1)) {
-        s.append(DELIM);
+    if (literal == null) {
+      StringBuffer s = new StringBuffer(segments.size() * 8);
+  
+      for (int i = 0; i < segments.size(); i++) {
+        s.append((String) segments.get(i));
+  
+        if (i < (segments.size() - 1)) {
+          s.append(DELIM);
+        }
       }
+  
+      literal = s.toString();
     }
-
-    return s.toString();
+    return literal;
   }
+  
 }

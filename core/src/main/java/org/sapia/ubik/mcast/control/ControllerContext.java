@@ -19,16 +19,16 @@ public class ControllerContext {
 
   private List<EventChannelControllerListener> listeners = new CopyOnWriteArrayList<EventChannelControllerListener>();
 
-  private Role role;
-  private Purgatory purgatory = new Purgatory();
+  private volatile Role          role;
+  private Purgatory              purgatory = new Purgatory();
   private EventChannelController controller;
-  private ChannelCallback channelCallback;
-  private SysClock clock;
-  private AtomicLong lastHeartbeatReqRcvTime = new AtomicLong();
+  private ChannelCallback        channelCallback;
+  private SysClock               clock;
+  private volatile String        masterNode;
+  private AtomicLong lastHeartbeatReqRcvTime  = new AtomicLong();
   private AtomicLong lastHeartbeatReqSentTime = new AtomicLong();
-  private AtomicLong lastChallengeReqRcvTime = new AtomicLong();
+  private AtomicLong lastChallengeReqRcvTime  = new AtomicLong();
   private AtomicLong lastChallengeReqSentTime = new AtomicLong();
-  private String masterNode;
 
   /**
    * Creates an instance of this class with the given objects.
@@ -43,10 +43,10 @@ public class ControllerContext {
    *          the {@link SysClock} instance to use.
    */
   ControllerContext(EventChannelController controller, ChannelCallback callback, SysClock clock) {
-    this.controller = controller;
-    this.role = Role.UNDEFINED;
+    this.controller      = controller;
+    this.role            = Role.UNDEFINED;
     this.channelCallback = callback;
-    this.clock = clock;
+    this.clock           = clock;
     lastHeartbeatReqRcvTime.set(clock.currentTimeMillis());
   }
 
@@ -85,10 +85,12 @@ public class ControllerContext {
    *          the {@link Role} to assign to this instance.
    */
   public synchronized void setRole(Role role) {
+    this.role = role;
     if (role == Role.MASTER) {
       masterNode = null;
+    } else {
+      purgatory.removeAll();
     }
-    this.role = role;
   }
 
   /**

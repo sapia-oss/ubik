@@ -42,10 +42,10 @@ public abstract class BroadcastDispatcherTestSupport {
   @After
   public void tearDown() throws Exception {
     doTearDown();
-    source.close();
-    domainDestination.close();
-    nonDomainDestination.close();
-    allDomainDestination.close();
+    if (source != null) source.close();
+    if (domainDestination != null) domainDestination.close();
+    if (nonDomainDestination != null) nonDomainDestination.close();
+    if (allDomainDestination != null) allDomainDestination.close();
   }
 
   protected void doSetup() throws Exception {

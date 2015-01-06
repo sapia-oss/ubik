@@ -54,8 +54,8 @@ public class EventChannelController {
     private long requestTime;
 
     public PendingResponseState(ControlResponseHandler handler, long requestId, long requestTime) {
-      this.handler = handler;
-      this.requestId = requestId;
+      this.handler     = handler;
+      this.requestId   = requestId;
       this.requestTime = requestTime;
     }
 
@@ -113,6 +113,16 @@ public class EventChannelController {
 
   public ControllerContext getContext() {
     return context;
+  }
+
+  /**
+   * Resets this instance to this original state (makes it a {@link Role#SLAVE}).
+   */
+  public synchronized void reset() {
+    synchronized (ref) {
+      context.setRole(Role.SLAVE);
+      ref.unset();
+    }
   }
 
   public void checkStatus() {
@@ -275,8 +285,11 @@ public class EventChannelController {
           }
         }
         ControlRequest heartbeatRq = ControlRequestFactory.createHeartbeatRequest(context);
-        ControlResponseHandler heartbeatHandler = ControlResponseHandlerFactory.createHeartbeatResponseHandler(context, new HashSet<String>(context
-            .getChannelCallback().getNodes()));
+        ControlResponseHandler heartbeatHandler = ControlResponseHandlerFactory
+            .createHeartbeatResponseHandler(
+                context, 
+                new HashSet<String>(context.getChannelCallback().getNodes())
+            );
 
         ref.set(new PendingResponseState(heartbeatHandler, heartbeatRq.getRequestId(), context.getClock().currentTimeMillis()));
         context.heartbeatRequestSent();

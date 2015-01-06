@@ -27,8 +27,8 @@ public class InMemoryUnicastDispatcher implements UnicastDispatcher {
   private int instanceId = INSTANCE_COUNTER.incrementAndGet();
   private Category log = Log.createCategory(getClass().getName() + "#" + instanceId);
   private InMemoryDispatchChannel channel = InMemoryDispatchChannel.getInstance();
-  private InMemoryUnicastAddress address = new InMemoryUnicastAddress();
-  private EventConsumer consumer;
+  private InMemoryUnicastAddress  address = new InMemoryUnicastAddress();
+  private EventConsumer           consumer;
 
   public InMemoryUnicastDispatcher(EventConsumer consumer) {
     this.consumer = consumer;

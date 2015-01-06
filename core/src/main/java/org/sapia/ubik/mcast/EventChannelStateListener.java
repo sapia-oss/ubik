@@ -72,6 +72,15 @@ public interface EventChannelStateListener {
   public void onUp(EventChannelEvent event);
   
   /**
+   * Called when a remote node has signaled that it is leaving the domain.
+   * 
+   * @param event
+   *          an {@link EventChannelEvent} holding the unique identifier of the
+   *          node that left.
+   */
+  public void onLeft(EventChannelEvent event);
+  
+  /**
    * 
    * @param event
    *          an {@link EventChannelEvent} holding the unique identifier of the master node 
@@ -87,4 +96,35 @@ public interface EventChannelStateListener {
    */
   public void onHeartbeatResponse(EventChannelEvent event);
   
+  // ==========================================================================
+  
+  /**
+   * Adapter implementation of this  interface.
+   * 
+   * @author yduchesne
+   *
+   */
+  public static class Adapter implements EventChannelStateListener {
+    
+    @Override
+    public void onDown(EventChannelEvent event) {
+    }
+    
+    @Override
+    public void onHeartbeatRequest(EventChannelEvent event) {
+    }
+    
+    @Override
+    public void onHeartbeatResponse(EventChannelEvent event) {
+    }
+    
+    @Override
+    public void onLeft(EventChannelEvent event) {
+    }
+    
+    @Override
+    public void onUp(EventChannelEvent event) {
+    }
+  }
+   
 }
