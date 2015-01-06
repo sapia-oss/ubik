@@ -2,14 +2,14 @@
   <modelVersion>4.0.0</modelVersion>
   <name>Sapia Ubik Core</name>
   <description>A RMI-like distributed computing framework</description>
-  <url>http://www.sapia-oss.org/projects/console/index.html</url>
+  <url>http://www.sapia-oss.org/projects/ubik/index.html</url>
 
   <artifactId>sapia_ubik</artifactId>
 
   <parent>
     <groupId>org.sapia</groupId>
     <artifactId>sapia_ubik_parent</artifactId>
-    <version>4.0.5-SNAPSHOT</version>
+    <version>develop-SNAPSHOT</version>
     <relativePath>../</relativePath>
   </parent>
 
