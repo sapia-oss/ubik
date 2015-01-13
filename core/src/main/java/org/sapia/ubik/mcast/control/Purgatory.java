@@ -64,6 +64,13 @@ public class Purgatory {
     }
     return false;
   }
+  
+  /**
+   * Removes all node references from this instance.ß
+   */
+  public synchronized void removeAll() {
+    nodes.clear();
+  }
 
   /**
    * @param node
@@ -127,5 +134,5 @@ public class Purgatory {
     }
     return toReturn;
   }
-
+  
 }

@@ -29,20 +29,18 @@ import org.sapia.ubik.util.Assertions;
  */
 public class UDPBroadcastDispatcher implements BroadcastDispatcher {
 
-  private static Category log = Log.createCategory(UDPBroadcastDispatcher.class);
-  private String node;
-  private String domain;
-  private BroadcastServer server;
-  private int bufsz = Defaults.DEFAULT_UDP_PACKET_SIZE;
+  private static Category     log       = Log.createCategory(UDPBroadcastDispatcher.class);
+  private EventConsumer       consumer;
+  private BroadcastServer     server;
+  private int                 bufsz     = Defaults.DEFAULT_UDP_PACKET_SIZE;
   private UDPMulticastAddress address;
   private ConnectionStateListenerList stateListeners = new ConnectionStateListenerList();
 
   public UDPBroadcastDispatcher(EventConsumer cons, String mcastHost, int mcastPort, int ttl) throws IOException {
-    server = new BroadcastServer(cons, mcastHost, mcastPort, ttl);
+    server   = new BroadcastServer(cons, mcastHost, mcastPort, ttl);
     server.setBufsize(bufsz);
-    node = cons.getNode();
-    domain = cons.getDomainName().toString();
-    address = new UDPMulticastAddress(mcastHost, mcastPort);
+    consumer = cons;
+    address  = new UDPMulticastAddress(mcastHost, mcastPort);
   }
 
   /**
@@ -67,7 +65,7 @@ public class UDPBroadcastDispatcher implements BroadcastDispatcher {
    */
   @Override
   public String getNode() {
-    return node;
+    return consumer.getNode();
   }
 
   /**
@@ -100,9 +98,9 @@ public class UDPBroadcastDispatcher implements BroadcastDispatcher {
     RemoteEvent evt;
 
     if (alldomains) {
-      evt = new RemoteEvent(null, evtType, data).setNode(node);
+      evt = new RemoteEvent(null, evtType, data).setNode(consumer.getNode());
     } else {
-      evt = new RemoteEvent(domain, evtType, data).setNode(node);
+      evt = new RemoteEvent(consumer.getDomainName().toString(), evtType, data).setNode(consumer.getNode());
     }
     evt.setUnicastAddress(unicastAddr);
 
@@ -119,7 +117,7 @@ public class UDPBroadcastDispatcher implements BroadcastDispatcher {
     RemoteEvent evt;
 
     log.debug("Sending event bytes for: %s", evtType);
-    evt = new RemoteEvent(domain, evtType, data).setNode(node);
+    evt = new RemoteEvent(domain, evtType, data).setNode(consumer.getNode());
     evt.setUnicastAddress(unicastAddr);
 
     if (server != null) {
@@ -144,6 +142,8 @@ public class UDPBroadcastDispatcher implements BroadcastDispatcher {
   public void removeConnectionStateListener(ConnectionStateListener listener) {
     stateListeners.remove(listener);
   }
+  
+  // ==========================================================================
 
   public static class UDPMulticastAddress implements MulticastAddress {
 

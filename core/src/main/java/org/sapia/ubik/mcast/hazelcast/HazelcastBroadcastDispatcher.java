@@ -35,15 +35,14 @@ import com.hazelcast.core.MessageListener;
 public class HazelcastBroadcastDispatcher implements BroadcastDispatcher {
 
   private static Category log = Log.createCategory(HazelcastBroadcastDispatcher.class);
-  private EventConsumer consumer;
-  private String domain;
-  private ITopic<MessagePayload> topic;
-  private HazelcastMulticastAddress address;
+  
+  private EventConsumer               consumer;
+  private ITopic<MessagePayload>      topic;
+  private HazelcastMulticastAddress   address;
   private ConnectionStateListenerList listeners = new ConnectionStateListenerList();
 
   public HazelcastBroadcastDispatcher(EventConsumer consumer, String topicName) {
     this.consumer = consumer;
-    this.domain   = consumer.getDomainName().toString();
     HazelcastInstance instance = Hub.getBean(HazelcastInstance.class);
     if (instance == null) {
        instance = Singleton.get();
@@ -86,7 +85,7 @@ public class HazelcastBroadcastDispatcher implements BroadcastDispatcher {
     if (alldomains) {
       evt = new RemoteEvent(null, evtType, data).setNode(consumer.getNode());
     } else {
-      evt = new RemoteEvent(domain, evtType, data).setNode(consumer.getNode());
+      evt = new RemoteEvent(consumer.getDomainName().toString(), evtType, data).setNode(consumer.getNode());
     }
     evt.setUnicastAddress(unicastAddr);
 

@@ -42,16 +42,20 @@ import org.sapia.ubik.util.pool.PooledObjectCreationException;
  */
 public abstract class BaseTcpUnicastDispatcher implements UnicastDispatcher {
 
-  private Stopwatch syncSend = Stats.createStopwatch(getClass(), "SyncSendTime", "Time required to send synchronously");
-  private Stopwatch asyncDispatch = Stats.createStopwatch(getClass(), "AsyncDispatchTime", "Time required to dispatch asynchronously");
+  private Stopwatch syncSend      = Stats.createStopwatch(
+      getClass(), "SyncSendTime", "Time required to send synchronously"
+  );
+  private Stopwatch asyncDispatch = Stats.createStopwatch(
+      getClass(), "AsyncDispatchTime", "Time required to dispatch asynchronously"
+  );
 
   protected Category log = Log.createCategory(getClass());
-  protected EventConsumer consumer;
-  protected ConnectionPools connections = new ConnectionPools();
-  private long responseTimeout = Defaults.DEFAULT_SYNC_RESPONSE_TIMEOUT.getValueInMillis();
-  private int senderCount = Defaults.DEFAULT_SENDER_COUNT;
-  private int maxConnectionsPerHost = Defaults.DEFAULT_MAX_CONNECTIONS_PER_HOST;
-  private ExecutorService senders;
+  protected EventConsumer   consumer;
+  protected ConnectionPools connections           = new ConnectionPools();
+  private long              responseTimeout       = Defaults.DEFAULT_SYNC_RESPONSE_TIMEOUT.getValueInMillis();
+  private int               senderCount           = Defaults.DEFAULT_SENDER_COUNT;
+  private int               maxConnectionsPerHost = Defaults.DEFAULT_MAX_CONNECTIONS_PER_HOST;
+  private ExecutorService   senders;
 
   /**
    * @param consumer

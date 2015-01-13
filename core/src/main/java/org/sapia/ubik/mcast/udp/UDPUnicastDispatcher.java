@@ -38,11 +38,11 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
   private static final long STARTUP_TIMEOUT = 5000;
 
   private Category log = Log.createCategory(getClass());
-  private EventConsumer consumer;
-  private long responseTimeout = Defaults.DEFAULT_SYNC_RESPONSE_TIMEOUT.getValueInMillis();
-  private int senderCount = Defaults.DEFAULT_SENDER_COUNT;
-  private ExecutorService senders;
-  private ExecutorService handlers;
+  private EventConsumer     consumer;
+  private long              responseTimeout = Defaults.DEFAULT_SYNC_RESPONSE_TIMEOUT.getValueInMillis();
+  private int               senderCount     = Defaults.DEFAULT_SENDER_COUNT;
+  private ExecutorService   senders;
+  private ExecutorService   handlers;
   private UDPUnicastAddress addr;
 
   public UDPUnicastDispatcher(EventConsumer consumer, int maxThreads) throws SocketException {

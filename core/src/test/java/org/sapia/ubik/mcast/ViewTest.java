@@ -1,23 +1,31 @@
 package org.sapia.ubik.mcast;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 import org.sapia.ubik.mcast.EventChannelStateListener.EventChannelEvent;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.TCPAddress;
 
+@RunWith(MockitoJUnitRunner.class)
 public class ViewTest {
 
   private View view;
+  
+  @Mock
+  private EventChannelStateListener listener;
 
   @Before
   public void setUp() throws Exception {
@@ -26,110 +34,46 @@ public class ViewTest {
 
   @Test
   public void testEventChannelStateListenerOnUpWithNewHost() {
-
-    final AtomicBoolean onUp = new AtomicBoolean();
-    EventChannelStateListener listener = new EventChannelStateListener() {
-      public void onDown(org.sapia.ubik.mcast.EventChannelStateListener.EventChannelEvent event) {
-      }
-
-      public void onUp(org.sapia.ubik.mcast.EventChannelStateListener.EventChannelEvent event) {
-        onUp.set(true);
-      }
-      
-      @Override
-      public void onHeartbeatRequest(EventChannelEvent event) {
-      }
-      
-      @Override
-      public void onHeartbeatResponse(EventChannelEvent event) {
-      }
-       
-    };
     view.addEventChannelStateListener(listener);
     view.addHost(new TCPAddress("test", "test", 1), "123");
-    assertTrue("EventChannelStateListener onUp() not called", onUp.get());
+
+    verify(listener).onUp(any(EventChannelEvent.class));
   }
 
   @Test
   public void testEventChannelStateListenerOnUpWithHeartbeat() {
-
-    final AtomicBoolean onUp = new AtomicBoolean();
-    EventChannelStateListener listener = new EventChannelStateListener() {
-      public void onDown(org.sapia.ubik.mcast.EventChannelStateListener.EventChannelEvent event) {
-      }
-
-      public void onUp(org.sapia.ubik.mcast.EventChannelStateListener.EventChannelEvent event) {
-        onUp.set(true);
-      }
-      
-      @Override
-      public void onHeartbeatRequest(EventChannelEvent event) {
-      }
-      
-      @Override
-      public void onHeartbeatResponse(EventChannelEvent event) {
-      }
-       
-    };
     view.addEventChannelStateListener(listener);
     view.heartbeatResponse(new TCPAddress("test", "test", 1), "123");
-    assertTrue("EventChannelStateListener onUp() not called", onUp.get());
+
+    verify(listener).onUp(any(EventChannelEvent.class));
   }
 
   @Test
   public void testEventChannelStateListenerOnDown() throws Exception {
-    final AtomicBoolean onDown = new AtomicBoolean();
-    EventChannelStateListener listener = new EventChannelStateListener() {
-      public void onDown(org.sapia.ubik.mcast.EventChannelStateListener.EventChannelEvent event) {
-        onDown.set(true);
-      }
-
-      public void onUp(org.sapia.ubik.mcast.EventChannelStateListener.EventChannelEvent event) {
-
-      }
-      
-      @Override
-      public void onHeartbeatRequest(EventChannelEvent event) {
-      }
-      
-      @Override
-      public void onHeartbeatResponse(EventChannelEvent event) {
-      }
-       
-    };
     view.addEventChannelStateListener(listener);
     view.heartbeatResponse(new TCPAddress("test", "test", 1), "123");
     view.removeDeadNode("123");
-    assertTrue("EventChannelStateListener onDown() not called", onDown.get());
+ 
+    verify(listener).onDown(any(EventChannelEvent.class));
+  }
+  
+  @Test
+  public void testEventChannelStateListenerOnLeft() throws Exception {
+    view.addEventChannelStateListener(listener);
+    view.heartbeatResponse(new TCPAddress("test", "test", 1), "123");
+    view.removeLeavingNode("123");
+
+    verify(listener).onLeft(any(EventChannelEvent.class));
   }
 
   @Test
   public void testRemoveEventChannelStateListener() {
-    final AtomicBoolean notified = new AtomicBoolean();
 
-    EventChannelStateListener listener = new EventChannelStateListener() {
-      public void onDown(org.sapia.ubik.mcast.EventChannelStateListener.EventChannelEvent event) {
-        notified.set(true);
-      }
-
-      public void onUp(org.sapia.ubik.mcast.EventChannelStateListener.EventChannelEvent event) {
-        notified.set(true);
-      }
-      
-      @Override
-      public void onHeartbeatRequest(EventChannelEvent event) {
-      }
-      
-      @Override
-      public void onHeartbeatResponse(EventChannelEvent event) {
-      }
-       
-    };
     view.addEventChannelStateListener(listener);
     assertTrue("EventChannelStateListener was not removed", view.removeEventChannelStateListener(listener));
     view.heartbeatResponse(new TCPAddress("test", "test", 1), "123");
-    assertTrue("Removed EventChannelStateListener should not have been notified", !notified.get());
-
+    
+    verify(listener, never()).onUp(any(EventChannelEvent.class));
   }
   
   @Test
@@ -149,9 +93,7 @@ public class ViewTest {
     view.update(actual);
     
     verify(listener).onDown(any(EventChannelEvent.class));
-    
   }
-  
 
   @Test
   public void testGetAddressFor() {

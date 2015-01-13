@@ -31,7 +31,7 @@ public class EventConsumer {
   private Map<String, SoftReferenceList<AsyncEventListener>> asyncListenersByEvent = new ConcurrentHashMap<String, SoftReferenceList<AsyncEventListener>>();
   private Map<String, SoftReference<SyncEventListener>> syncListenersByEvent = new ConcurrentHashMap<String, SoftReference<SyncEventListener>>();
   private Map<Object, String> reverseMap = Collections.synchronizedMap(new WeakHashMap<Object, String>());
-  private DomainName domain;
+  private volatile DomainName domain;
   private String node;
 
   /**
@@ -69,6 +69,13 @@ public class EventConsumer {
   public DomainName getDomainName() {
     return domain;
   }
+  
+  /**
+   * @param newDomain the new domain to change to.
+   */
+  public void changeDomain(String newDomain) {
+    this.domain = DomainName.parse(newDomain);
+  }
 
   /**
    * Registers the given listener with the given "logical" event type.
@@ -85,7 +92,7 @@ public class EventConsumer {
         lst.add(listener);
         reverseMap.put(listener, evtType);
       } else {
-        log.info("A listener is already registered for %", evtType);
+        log.info("A listener is already registered for %s", evtType);
       }
     }
   }

@@ -29,14 +29,13 @@ public class InMemoryBroadcastDispatcher implements BroadcastDispatcher {
 
   private static final AtomicInteger INSTANCE_COUNTER = new AtomicInteger();
   
-  private int instanceId = INSTANCE_COUNTER.incrementAndGet();
-  private Category log = Log.createCategory(getClass().getName() + "#" + instanceId);
-  private InMemoryDispatchChannel channel = InMemoryDispatchChannel.getInstance();
-  private EventConsumer consumer;
-  private String domain;
+  private int      instanceId = INSTANCE_COUNTER.incrementAndGet();
+  private Category log        = Log.createCategory(getClass().getName() + "#" + instanceId);
+  
+  private InMemoryDispatchChannel     channel = InMemoryDispatchChannel.getInstance();
+  private EventConsumer               consumer;
   private ConnectionStateListenerList stateListeners = new ConnectionStateListenerList();
-
-  private InMemoryMulticastAddress address;
+  private InMemoryMulticastAddress    address;
 
   /**
    * @param consumer
@@ -45,7 +44,6 @@ public class InMemoryBroadcastDispatcher implements BroadcastDispatcher {
   public InMemoryBroadcastDispatcher(EventConsumer consumer) {
     this.consumer = consumer;
     this.address = new InMemoryMulticastAddress(UUID.randomUUID().toString());
-    this.domain = consumer.getDomainName().toString();
   }
 
   @Override
@@ -79,7 +77,7 @@ public class InMemoryBroadcastDispatcher implements BroadcastDispatcher {
     if (alldomains) {
       evt = new RemoteEvent(null, evtType, data).setNode(consumer.getNode());
     } else {
-      evt = new RemoteEvent(domain, evtType, data).setNode(consumer.getNode());
+      evt = new RemoteEvent(consumer.getDomainName().toString(), evtType, data).setNode(consumer.getNode());
     }
     evt.setUnicastAddress(unicastAddr);
     channel.dispatch(this, evt);
