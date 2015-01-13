@@ -1,11 +1,3 @@
-.project
-.classpath
-.settings/
-target/
-lib/
-bin/
-
-
 # Compiled source #
 ###################
 *.com
@@ -43,3 +35,12 @@ bin/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Dev resources #
+#################
+.project
+.classpath
+.settings/
+target/
+lib/
+bin/
