@@ -79,25 +79,6 @@
           </execution>
         </executions>
       </plugin>
-      
-      <!-- plugin>
-        <artifactId>maven-assembly-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>make-server-dist</id>
-            <phase>package</phase>
-            <goals>
-              <goal>single</goal>
-            </goals>
-	        <configuration>
-	          <descriptors>
-	            <descriptor>src/main/assembly/server.xml</descriptor>
-	          </descriptors>
-	        </configuration>
-          </execution>
-        </executions>
-      </plugin-->
-      
     </plugins>
 
     <pluginManagement>
