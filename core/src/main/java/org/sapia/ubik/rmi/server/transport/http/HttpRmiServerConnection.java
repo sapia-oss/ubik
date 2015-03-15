@@ -6,6 +6,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.rmi.RemoteException;
 
 import org.sapia.ubik.net.ServerAddress;
@@ -106,6 +107,12 @@ class HttpRmiServerConnection implements RmiConnection {
     } catch (Exception e) {
       throw new IOException(e);
     }
+  }
+  
+  @Override
+  public Object receive(long timeout) throws IOException,
+      ClassNotFoundException, RemoteException, SocketTimeoutException {
+    return receive();
   }
 
   /**

@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.SocketTimeoutException;
 import java.rmi.RemoteException;
 
 import org.apache.http.HttpResponse;
@@ -130,6 +131,12 @@ public class HttpRmiClientConnection implements RmiConnection {
     } finally {
       is.close();
     }
+  }
+  
+  @Override
+  public Object receive(long timeout) throws IOException,
+      ClassNotFoundException, RemoteException, SocketTimeoutException {
+    return receive();
   }
 
   /**

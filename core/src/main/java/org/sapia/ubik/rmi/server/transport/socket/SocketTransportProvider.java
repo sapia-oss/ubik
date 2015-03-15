@@ -24,7 +24,7 @@ import org.sapia.ubik.taskman.Task;
 import org.sapia.ubik.taskman.TaskContext;
 import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.Localhost;
-import org.sapia.ubik.util.Time;
+import org.sapia.ubik.util.TimeValue;
 
 /**
  * Implements the {@link TransportProvider} interface over the standard java
@@ -174,7 +174,7 @@ public class SocketTransportProvider implements TransportProvider {
     long keepAlive = props.getLongProperty(Consts.SERVER_THREADS_KEEP_ALIVE, ThreadingConfiguration.DEFAULT_KEEP_ALIVE.getValueInSeconds());
 
     ThreadingConfiguration threadConf = ThreadingConfiguration.newInstance().setCorePoolSize(coreThreads).setMaxPoolSize(maxThreads)
-        .setQueueSize(queueSize).setKeepAlive(Time.createSeconds(keepAlive));
+        .setQueueSize(queueSize).setKeepAlive(TimeValue.createSeconds(keepAlive));
 
     SocketRmiServer server;
     long resetInterval;

@@ -7,7 +7,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import org.sapia.ubik.mcast.Defaults;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.util.Conf;
-import org.sapia.ubik.util.Time;
+import org.sapia.ubik.util.TimeValue;
 
 /**
  * Utility class to fork ad-hoc threads.
@@ -25,7 +25,7 @@ public class Spawn {
         .setDaemon(true);
 
     Conf conf = Conf.getSystemProperties();
-    Time keepAlive = conf.getTimeProperty(Consts.SPAWN_THREADS_KEEP_ALIVE, Defaults.DEFAULT_SPAWN_KEEP_ALIVE);
+    TimeValue keepAlive = conf.getTimeProperty(Consts.SPAWN_THREADS_KEEP_ALIVE, Defaults.DEFAULT_SPAWN_KEEP_ALIVE);
     executor = new ThreadPoolExecutor(
         conf.getIntProperty(Consts.SPAWN_CORE_THREADS, Defaults.DEFAULT_SPAWN_CORE_POOL_SIZE),
         conf.getIntProperty(Consts.SPAWN_MAX_THREADS, Defaults.DEFAULT_SPAWN_MAX_POOL_SIZE),

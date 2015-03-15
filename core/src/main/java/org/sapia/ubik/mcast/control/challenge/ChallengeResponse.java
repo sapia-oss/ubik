@@ -8,6 +8,8 @@ import org.sapia.ubik.mcast.control.ControlResponse;
 import org.sapia.ubik.net.ServerAddress;
 
 public class ChallengeResponse extends ControlResponse {
+  
+  static final long serialVersionUID = 1L;
 
   public enum Code {
     ACCEPTED, DENIED;

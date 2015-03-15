@@ -11,6 +11,7 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.rmi.RemoteException;
 
 import org.javasimon.Split;
@@ -110,6 +111,27 @@ public class NettyRmiClientConnection implements RmiConnection {
    */
   public Object receive() throws IOException, ClassNotFoundException, RemoteException {
     try {
+      sock.setSoTimeout(0);
+      DataInputStream dis = new DataInputStream(sock.getInputStream());
+      log.debug("Receiving response of %s bytes", dis.readInt());
+      if (ois == null) {
+        ois = MarshalStreamFactory.createInputStream(new BufferedInputStream(sock.getInputStream(), bufsize));
+      }
+      return ois.readObject();
+    } catch (EOFException e) {
+      throw new RemoteException("Communication with server interrupted; server probably disappeared", e);
+    } catch (SocketException e) {
+      throw new RemoteException("Connection could not be opened; server is probably down", e);
+    }
+  }
+  
+  /**
+   * @see org.sapia.ubik.net.Connection#receive(long)
+   */
+  public Object receive(long timeout) throws IOException,
+      ClassNotFoundException, RemoteException, SocketTimeoutException {
+    try {
+      sock.setSoTimeout((int) timeout);
       DataInputStream dis = new DataInputStream(sock.getInputStream());
       log.debug("Receiving response of %s bytes", dis.readInt());
       if (ois == null) {

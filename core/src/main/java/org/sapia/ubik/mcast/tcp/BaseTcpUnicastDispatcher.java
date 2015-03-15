@@ -24,6 +24,7 @@ import org.sapia.ubik.mcast.RespList;
 import org.sapia.ubik.mcast.Response;
 import org.sapia.ubik.mcast.TimeoutException;
 import org.sapia.ubik.mcast.UnicastDispatcher;
+import org.sapia.ubik.mcast.UnicastDispatcherSupport;
 import org.sapia.ubik.net.Connection;
 import org.sapia.ubik.net.ConnectionFactory;
 import org.sapia.ubik.net.ConnectionPool;
@@ -32,6 +33,7 @@ import org.sapia.ubik.net.TCPAddress;
 import org.sapia.ubik.net.ThreadInterruptedException;
 import org.sapia.ubik.rmi.server.stats.Stats;
 import org.sapia.ubik.util.Assertions;
+import org.sapia.ubik.util.TimeValue;
 import org.sapia.ubik.util.pool.PooledObjectCreationException;
 
 /**
@@ -40,7 +42,7 @@ import org.sapia.ubik.util.pool.PooledObjectCreationException;
  * @author yduchesne
  *
  */
-public abstract class BaseTcpUnicastDispatcher implements UnicastDispatcher {
+public abstract class BaseTcpUnicastDispatcher extends UnicastDispatcherSupport implements UnicastDispatcher {
 
   private Stopwatch syncSend      = Stats.createStopwatch(
       getClass(), "SyncSendTime", "Time required to send synchronously"
@@ -52,7 +54,7 @@ public abstract class BaseTcpUnicastDispatcher implements UnicastDispatcher {
   protected Category log = Log.createCategory(getClass());
   protected EventConsumer   consumer;
   protected ConnectionPools connections           = new ConnectionPools();
-  private long              responseTimeout       = Defaults.DEFAULT_SYNC_RESPONSE_TIMEOUT.getValueInMillis();
+  private TimeValue         asyncAckTimeout       = Defaults.DEFAULT_SYNC_RESPONSE_TIMEOUT;
   private int               senderCount           = Defaults.DEFAULT_SENDER_COUNT;
   private int               maxConnectionsPerHost = Defaults.DEFAULT_MAX_CONNECTIONS_PER_HOST;
   private ExecutorService   senders;
@@ -67,17 +69,6 @@ public abstract class BaseTcpUnicastDispatcher implements UnicastDispatcher {
   }
 
   /**
-   * Sets this instance's response timeout.
-   *
-   * @param responseTimeout
-   *          the number of millis to wait for synchronous responses.
-   */
-  public void setResponseTimeout(long responseTimeout) {
-    Assertions.isTrue(responseTimeout > 0, "Response timeout must be greater than 0");
-    this.responseTimeout = responseTimeout;
-  }
-
-  /**
    * Sets the number of threads used to send remote events.
    *
    * @param senderCount
@@ -86,7 +77,7 @@ public abstract class BaseTcpUnicastDispatcher implements UnicastDispatcher {
    * @see #send(List, String, Object)
    */
   public void setSenderCount(int senderCount) {
-    Assertions.isTrue(senderCount > 0, "Sender count must be greater than 0");
+    Assertions.isTrue(senderCount > 0, "Sender count must be greater than 0: %s", senderCount);
     this.senderCount = senderCount;
   }
 
@@ -95,8 +86,16 @@ public abstract class BaseTcpUnicastDispatcher implements UnicastDispatcher {
    *          the maximum number of connections to pool, by host.
    */
   public void setMaxConnectionsPerHost(int maxConnectionsPerHost) {
-    Assertions.isTrue(maxConnectionsPerHost > 0, "Max connections per host must be greater than 0");
+    Assertions.isTrue(maxConnectionsPerHost > 0, "Max connections per host must be greater than 0: %s", maxConnectionsPerHost);
     this.maxConnectionsPerHost = maxConnectionsPerHost;
+  }
+  
+  /**
+   * @param asyncAckTimeout the timeout to observe when waiting for async event acknowledgement.
+   */
+  public void setAsyncAckTimeout(TimeValue asyncAckTimeout) {
+    Assertions.isTrue(asyncAckTimeout.getValue() >= 0, "Async ack must be equal to or greater than 0: %s", asyncAckTimeout);
+    this.asyncAckTimeout = asyncAckTimeout;
   }
 
   @Override
@@ -120,7 +119,7 @@ public abstract class BaseTcpUnicastDispatcher implements UnicastDispatcher {
   }
 
   @Override
-  public RespList send(List<ServerAddress> addresses, final String type, Object data) throws IOException, InterruptedException {
+  public RespList send(List<ServerAddress> addresses, final String type, Object data, final TimeValue timeout) throws IOException, InterruptedException {
 
     final BlockingCompletionQueue<Response> queue = new BlockingCompletionQueue<Response>(addresses.size());
     final RemoteEvent evt = new RemoteEvent(null, type, data).setNode(consumer.getNode()).setSync();
@@ -135,45 +134,41 @@ public abstract class BaseTcpUnicastDispatcher implements UnicastDispatcher {
         public void run() {
           Split split = syncSend.start();
           try {
-            queue.add((Response) doSend(addr, evt, true, type));
-          } catch (ClassNotFoundException e) {
-            log.warning("Could not deserialize response received from %s", e, addr);
-            try {
-              queue.add(new Response(evt.getId(), e));
-            } catch (IllegalStateException ise) {
-              log.info("Could not add response to queue", ise, log.noArgs());
-            }
-          } catch (TimeoutException e) {
-            log.warning("Response from %s not received in timely manner", addr);
-            try {
-              queue.add(new Response(evt.getId(), e).setStatusSuspect());
-            } catch (IllegalStateException ise) {
-              log.info("Could not add response to queue", ise, log.noArgs());
-            }
-          } catch (ConnectException e) {
-            log.warning("Remote node probably down: %s", e, addr);
-            try {
-              queue.add(new Response(evt.getId(), e).setStatusSuspect());
-            } catch (IllegalStateException ise) {
-              log.info("Could not add response to queue", ise, log.noArgs());
-            }
-          } catch (RemoteException e) {
-            log.warning("Remote node probably down: %s", e, addr);
-            try {
-              queue.add(new Response(evt.getId(), e).setStatusSuspect());
-            } catch (IllegalStateException ise) {
-              log.info("Could not add response to queue", ise, log.noArgs());
-            }
-          } catch (IOException e) {
-            log.warning("IO error caught trying to send to %s", e, addr);
-            try {
-              queue.add(new Response(evt.getId(), e));
-            } catch (IllegalStateException ise) {
-              log.info("Could not add response to queue", ise, log.noArgs());
-            }
-          } catch (InterruptedException e) {
-            ThreadInterruptedException tie = new ThreadInterruptedException();
-            throw tie;
+            queue.add((Response) doSend(addr, evt, true, type, timeout));
+          } catch (Exception e) {
+            handleException(queue, e, evt, addr);
+          } finally {
+            split.stop();
+          }
+        }
+      });
+    }
+    
+    RespList responses = new RespList(queue.await(timeout.getValueInMillis()));
+    log.debug("Returning %s responses", responses.count());
+    return responses;
+  }   
+ 
+  @Override
+  public RespList send(ServerAddress[] addresses, final String type, Object[] data, final TimeValue timeout) throws IOException, InterruptedException {
+
+    final BlockingCompletionQueue<Response> queue = new BlockingCompletionQueue<Response>(addresses.length);
+
+
+    for (int i = 0; i < addresses.length; i++) {
+      final TCPAddress addr = (TCPAddress) addresses[i];
+      final RemoteEvent evt = new RemoteEvent(null, type, data[i]).setNode(consumer.getNode()).setSync();
+      evt.setUnicastAddress(getAddress());
+      
+      senders.execute(new Runnable() {
+
+        @Override
+        public void run() {
+          Split split = syncSend.start();
+          try {
+            queue.add((Response) doSend(addr, evt, true, type, timeout));
+          } catch (Exception e) {
+            handleException(queue, e, evt, addr);
           } finally {
             split.stop();
           }
@@ -181,11 +176,13 @@ public abstract class BaseTcpUnicastDispatcher implements UnicastDispatcher {
       });
     }
 
-    return new RespList(queue.await(responseTimeout));
+    RespList responses = new RespList(queue.await(timeout.getValueInMillis()));
+    log.debug("Returning %s responses", responses.count());
+    return responses;
   }
 
   @Override
-  public Response send(ServerAddress addr, String type, Object data) throws IOException {
+  public Response send(ServerAddress addr, String type, Object data, final TimeValue timeout) throws IOException {
 
     RemoteEvent evt = new RemoteEvent(null, type, data).setNode(consumer.getNode()).setSync();
     evt.setUnicastAddress(addr);
@@ -193,22 +190,22 @@ public abstract class BaseTcpUnicastDispatcher implements UnicastDispatcher {
     Split split = syncSend.start();
 
     try {
-      return (Response) doSend(addr, evt, true, type);
+      return (Response) doSend(addr, evt, true, type, timeout);
     } catch (ClassNotFoundException e) {
       log.warning("Could not deserialize response from %s", e, addr);
-      return new Response(evt.getId(), e);
+      return new Response(addr, evt.getId(), e);
     } catch (TimeoutException e) {
       log.warning("Response from %s not received in timely manner", addr);
-      return new Response(evt.getId(), e).setStatusSuspect();
+      return new Response(addr, evt.getId(), e).setStatusSuspect();
     } catch (ConnectException e) {
       log.warning("Remote node probably down: %s", e, addr);
-      return new Response(evt.getId(), e).setStatusSuspect();
+      return new Response(addr, evt.getId(), e).setStatusSuspect();
     } catch (RemoteException e) {
       log.warning("Remote node probably down: %s", e, addr);
-      return new Response(evt.getId(), e).setStatusSuspect();
+      return new Response(addr, evt.getId(), e).setStatusSuspect();
     } catch (IOException e) {
       log.warning("IO error caught trying to send to %s", e, addr);
-      return new Response(evt.getId(), e);
+      return new Response(addr, evt.getId(), e);
     } catch (InterruptedException e) {
       ThreadInterruptedException tie = new ThreadInterruptedException();
       throw tie;
@@ -226,7 +223,7 @@ public abstract class BaseTcpUnicastDispatcher implements UnicastDispatcher {
       RemoteEvent evt = new RemoteEvent(null, type, data).setNode(consumer.getNode());
       evt.setUnicastAddress(getAddress());
       log.debug("dispatch() to %s, type: %s, data: %s", addr, type, data);
-      doSend(addr, evt, false, type);
+      doSend(addr, evt, false, type, this.asyncAckTimeout);
     } catch (RemoteException e) {
       log.warning("Could not send to %s", e, addr);
     } catch (ClassNotFoundException e) {
@@ -241,7 +238,7 @@ public abstract class BaseTcpUnicastDispatcher implements UnicastDispatcher {
     }
   }
 
-  private Object doSend(ServerAddress addr, Serializable toSend, boolean synchro, String type) throws IOException, ClassNotFoundException,
+  private Object doSend(ServerAddress addr, Serializable toSend, boolean synchro, String type, TimeValue timeout) throws IOException, ClassNotFoundException,
       TimeoutException, InterruptedException, RemoteException {
     log.debug("doSend() : %s, event type: %s", addr, type);
     ConnectionPool pool = connections.getPoolFor(addr);
@@ -285,7 +282,7 @@ public abstract class BaseTcpUnicastDispatcher implements UnicastDispatcher {
 
     if (synchro) {
       try {
-        Object toReturn = connection.receive();
+        Object toReturn = connection.receive(timeout.getValueInMillis());
         pool.release(connection);
         return toReturn;
       } catch (SocketTimeoutException e) {
@@ -314,7 +311,7 @@ public abstract class BaseTcpUnicastDispatcher implements UnicastDispatcher {
 
   protected abstract String doGetTransportType();
 
-  protected abstract ConnectionFactory doGetConnectionFactory(int soTimeout);
+  protected abstract ConnectionFactory doGetConnectionFactory();
 
   // ==========================================================================
   // Inner classes
@@ -327,7 +324,7 @@ public abstract class BaseTcpUnicastDispatcher implements UnicastDispatcher {
       ConnectionPool pool = pools.get(addr);
       if (pool == null) {
         TCPAddress tcpAddr = (TCPAddress) addr;
-        ConnectionFactory sockets = doGetConnectionFactory((int) responseTimeout);
+        ConnectionFactory sockets = doGetConnectionFactory();
         pool = new ConnectionPool.Builder().host(tcpAddr.getHost()).port(tcpAddr.getPort()).maxSize(maxConnectionsPerHost).connectionFactory(sockets)
             .build();
         pools.put(addr, pool);

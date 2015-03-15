@@ -1,5 +1,9 @@
 package org.sapia.ubik.util;
 
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -12,7 +16,9 @@ import java.util.concurrent.TimeUnit;
  * @author yduchesne
  *
  */
-public class Time {
+public class TimeValue implements Externalizable {
+  
+  static final long serialVersionUID = 1L;
 
   private long     value;
   private TimeUnit unit;
@@ -41,7 +47,7 @@ public class Time {
    * @param unit
    *          the {@link TimeUnit} in which the given value is expressed.
    */
-  public Time(long value, TimeUnit unit) {
+  public TimeValue(long value, TimeUnit unit) {
     this.value = value;
     this.unit = unit;
   }
@@ -64,6 +70,9 @@ public class Time {
    * @return this instance's value in millis.
    */
   public long getValueInMillis() {
+    if (unit.equals(TimeUnit.MILLISECONDS)) {
+      return value;
+    } 
     return TimeUnit.MILLISECONDS.convert(value, unit);
   }
 
@@ -71,47 +80,69 @@ public class Time {
    * @return this instance's value in seconds.
    */
   public long getValueInSeconds() {
+    if (unit.equals(TimeUnit.SECONDS)) {
+      return value;
+    } 
     return TimeUnit.SECONDS.convert(value, unit);
   }
 
   /**
    * @param millis
    *          a milliseconds value.
-   * @return a new {@link Time}.
+   * @return a new {@link TimeValue}.
    */
-  public static Time createMillis(long millis) {
-    return new Time(millis, TimeUnit.MILLISECONDS);
+  public static TimeValue createMillis(long millis) {
+    return new TimeValue(millis, TimeUnit.MILLISECONDS);
   }
 
   /**
    * @param seconds
    *          a seconds value.
-   * @return a new {@link Time}.
+   * @return a new {@link TimeValue}.
    */
-  public static Time createSeconds(long seconds) {
-    return new Time(seconds, TimeUnit.SECONDS);
+  public static TimeValue createSeconds(long seconds) {
+    return new TimeValue(seconds, TimeUnit.SECONDS);
   }
 
   /**
-   * @param s a {@link String} corresponding to a {@link Time} literal.
-   * @return a new {@link Time}.
+   * @param s a {@link String} corresponding to a {@link TimeValue} literal.
+   * @return a new {@link TimeValue}.
    */
-  public static Time valueOf(String s) {
+  public static TimeValue valueOf(String s) {
     for (String n : UNIT_NAMES) {
       if (s.contains(n)) {
         int i = s.indexOf(n);
         TimeUnit unit = UNITS_BY_NAME.get(n);
         Assertions.notNull(unit, "Could not find time unit for %s", s.substring(i));
-        return new Time(Long.parseLong(s.substring(0, i)), unit);
+        return new TimeValue(Long.parseLong(s.substring(0, i)), unit);
       }
     }
-    return Time.createMillis(Long.parseLong(s));
+    return TimeValue.createMillis(Long.parseLong(s));
   }
+  
+  // --------------------------------------------------------------------------
+  // Externalizable
+  
+  @Override
+  public void readExternal(ObjectInput in) throws IOException,
+      ClassNotFoundException {
+    this.unit = (TimeUnit) in.readObject();
+    this.value = in.readLong();
+  }
+  
+  @Override
+  public void writeExternal(ObjectOutput out) throws IOException {
+    out.writeObject(unit);
+    out.writeLong(value);
+  }
+  
+  // --------------------------------------------------------------------------
+  // Object overriddes
 
   @Override
   public boolean equals(Object obj) {
-    if (obj instanceof Time) {
-      Time other = (Time) obj;
+    if (obj instanceof TimeValue) {
+      TimeValue other = (TimeValue) obj;
       return getValueInMillis() == other.getValueInMillis();
     }
     return false;
@@ -124,6 +155,6 @@ public class Time {
 
   @Override
   public String toString() {
-    return new StringBuilder().append(value).append(unit).toString();
+    return new StringBuilder().append(value).append(" ").append(unit).toString();
   }
 }

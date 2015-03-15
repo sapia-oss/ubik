@@ -6,7 +6,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.sapia.ubik.util.Strings;
-import org.sapia.ubik.util.Time;
+import org.sapia.ubik.util.TimeValue;
 
 /**
  * A {@link ThreadPoolExecutor} which is configured with a
@@ -26,12 +26,12 @@ public class ConfigurableExecutor extends ThreadPoolExecutor {
     public static final int DEFAULT_CORE_POOL_SIZE = 10;
     public static final int DEFAULT_MAX_POOL_SIZE = 25;
     public static final int DEFAULT_QUEUE_SIZE = 50;
-    public static final Time DEFAULT_KEEP_ALIVE = new Time(30, TimeUnit.SECONDS);
+    public static final TimeValue DEFAULT_KEEP_ALIVE = new TimeValue(30, TimeUnit.SECONDS);
 
     private int corePoolSize = DEFAULT_CORE_POOL_SIZE;
     private int maxPoolSize = DEFAULT_MAX_POOL_SIZE;
     private int queueSize = DEFAULT_QUEUE_SIZE;
-    private Time keepAlive = DEFAULT_KEEP_ALIVE;
+    private TimeValue keepAlive = DEFAULT_KEEP_ALIVE;
 
     /**
      * @param corePoolSize
@@ -55,10 +55,10 @@ public class ConfigurableExecutor extends ThreadPoolExecutor {
 
     /**
      * @param keepValive
-     *          the keep-alive {@link Time} of idle threads.
+     *          the keep-alive {@link TimeValue} of idle threads.
      * @return
      */
-    public ThreadingConfiguration setKeepAlive(Time keepAlive) {
+    public ThreadingConfiguration setKeepAlive(TimeValue keepAlive) {
       this.keepAlive = keepAlive;
       return this;
     }

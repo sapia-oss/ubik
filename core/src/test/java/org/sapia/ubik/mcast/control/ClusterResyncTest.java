@@ -12,9 +12,12 @@ import java.util.HashSet;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.sapia.ubik.log.Log;
+import org.sapia.ubik.mcast.EventChannel.Role;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.util.Collects;
 import org.sapia.ubik.util.SysClock;
+import org.sapia.ubik.util.TimeValue;
 
 public class ClusterResyncTest {
 
@@ -30,15 +33,16 @@ public class ClusterResyncTest {
     clock = SysClock.MutableClock.getInstance();
     config = new ControllerConfiguration();
     config.setResyncInterval(1000);
-    config.setHeartbeatInterval(1000);
+    config.setHeartbeatTimeout(1000);
     config.setResponseTimeout(100);
     controller = new EventChannelController(clock, config, callback);
+    controller.getContext().setRole(Role.SLAVE);
     serverAddress = mock(ServerAddress.class);
 
     when(callback.getNodes()).thenReturn(new HashSet<String>());
     when(callback.getAddress()).thenReturn(serverAddress);
     when(callback.getNode()).thenReturn("testNode");
-    when(callback.sendSynchronousRequest(anySet(), any(SynchronousControlRequest.class))).thenReturn(new HashSet<SynchronousControlResponse>());
+    when(callback.sendSynchronousRequest(anySet(), any(SynchronousControlRequest.class), any(TimeValue.class))).thenReturn(new HashSet<SynchronousControlResponse>());
   }
 
   @Test

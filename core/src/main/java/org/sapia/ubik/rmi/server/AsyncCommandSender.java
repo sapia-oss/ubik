@@ -18,7 +18,7 @@ import org.sapia.ubik.rmi.server.stats.Stats;
 import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
 import org.sapia.ubik.rmi.server.transport.TransportProvider;
-import org.sapia.ubik.util.Time;
+import org.sapia.ubik.util.TimeValue;
 
 /**
  * This module is used to send non-remote method invocation commands to other
@@ -35,7 +35,7 @@ public class AsyncCommandSender implements Module {
   private static final int DEFAULT_CORE_POOL_SIZE = 5;
   private static final int DEFAULT_MAX_POOL_SIZE = 5;
   private static final int DEFAULT_QUEUE_SIZE = 1000;
-  private static final Time DEFAULT_KEEP_ALIVE = Time.createSeconds(30);
+  private static final TimeValue DEFAULT_KEEP_ALIVE = TimeValue.createSeconds(30);
 
   private Category log = Log.createCategory(getClass());
 

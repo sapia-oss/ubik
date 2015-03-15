@@ -34,8 +34,8 @@ public class View {
   
   private Category log = Log.createCategory(getClass());
   
-  private Map<String, NodeInfo>                         nodeToNodeInfo = new ConcurrentHashMap<String, NodeInfo>();
-  private SoftReferenceList<EventChannelStateListener> listeners       = new SoftReferenceList<EventChannelStateListener>();
+  private Map<String, NodeInfo>                        nodeToNodeInfo = new ConcurrentHashMap<String, NodeInfo>();
+  private SoftReferenceList<EventChannelStateListener> listeners      = new SoftReferenceList<EventChannelStateListener>();
   
 
   /**

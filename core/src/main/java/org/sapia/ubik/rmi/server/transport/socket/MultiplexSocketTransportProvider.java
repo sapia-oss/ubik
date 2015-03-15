@@ -17,7 +17,7 @@ import org.sapia.ubik.rmi.server.Server;
 import org.sapia.ubik.rmi.server.transport.TransportProvider;
 import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.Localhost;
-import org.sapia.ubik.util.Time;
+import org.sapia.ubik.util.TimeValue;
 
 /**
  * Implements the {@link TransportProvider} interface by extending the basic
@@ -93,7 +93,7 @@ public class MultiplexSocketTransportProvider extends SocketTransportProvider {
     threadConf.setCorePoolSize(coreThreads);
     threadConf.setMaxPoolSize(maxThreads);
     threadConf.setQueueSize(queueSize);
-    threadConf.setKeepAlive(Time.createSeconds(keepAlive));
+    threadConf.setKeepAlive(TimeValue.createSeconds(keepAlive));
 
     int acceptorCount;
     int selectorCount;

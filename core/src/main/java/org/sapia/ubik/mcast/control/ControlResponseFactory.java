@@ -20,7 +20,8 @@ public class ControlResponseFactory {
    *          the {@link ControlRequest} for which to create a response.
    * @param address
    *          the unicast {@link ServerAddress} of the node that is sending the
-   *          response. s * @return a new {@link ChallengeResponse}.
+   *          response. 
+   * @return a new {@link ChallengeResponse}.
    */
   public static ControlResponse createChallengeResponse(ChallengeResponse.Code code, ControlRequest request, ServerAddress address) {
     ChallengeResponse response = new ChallengeResponse(request.getRequestId(), code, address);
@@ -30,22 +31,23 @@ public class ControlResponseFactory {
   /**
    * @param request
    *          the {@link ControlRequest} for which to create a response.
-   * @param address
+   * @param originAddress
    *          the unicast {@link ServerAddress} of the node that is sending the
    *          response.
    * @return a new {@link HeartbeatResponse}.
    */
-  public static ControlResponse createHeartbeatResponse(ControlRequest request, ServerAddress address) {
-    return new HeartbeatResponse(request.getRequestId(), address);
+  public static ControlResponse createHeartbeatResponse(ControlRequest request, ServerAddress originAddress) {
+    return new HeartbeatResponse(request.getRequestId(), originAddress);
   }
 
   /**
    * @param originNode
    *          the node from which the ping response is sent.
+   * @param originAddress
+   *          the unicast {@link ServerAddress} of the origin node. 
    * @return a new {@link PingResponse}
    */
-  public static SynchronousControlResponse createPingResponse(String originNode) {
-    return new PingResponse(originNode);
+  public static SynchronousControlResponse createPingResponse(String originNode, ServerAddress originAddress) {
+    return new PingResponse(originNode, originAddress);
   }
-
 }

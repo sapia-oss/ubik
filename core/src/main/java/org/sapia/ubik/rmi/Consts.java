@@ -53,7 +53,7 @@ public interface Consts {
 
   /**
    * This constant corresponds to the <code>ubik.rmi.address-pattern</code>
-   * property key. The property should be used to specify a regular expression
+   * property. The property should be used to specify a regular expression
    * based upon which the address of this host is chosen (if this host has more
    * than one network interfaces).
    *
@@ -63,7 +63,7 @@ public interface Consts {
 
   /**
    * This constant corresponds to the <code>ubik.rmi.naming.sync.lookup.batch-size</code>
-   * property key. It is used to bind a multicast port value in a properties/map
+   * property. It is used to bind a multicast port value in a properties/map
    * instance.
    */
   public static final String JNDI_SYNC_LOOKUP_BATCH_SIZE = "ubik.rmi.naming.sync.lookup.batch-size";
@@ -75,21 +75,21 @@ public interface Consts {
 
   /**
    * This constant corresponds to the <code>ubik.rmi.naming.lazy.lookup.interval</code>
-   * property key. It is used to specify the interval (in millis) at which lazy stub invocation handlers
+   * property. It is used to specify the interval (in millis) at which lazy stub invocation handlers
    * should perform lookups.
    */
   public static final String JNDI_LAZY_LOOKUP_INTERVAL = "ubik.rmi.naming.lazy.lookup.interval";
 
   /**
    * This constant corresponds to the <code>ubik.rmi.naming.sync.interval</code>
-   * property key. It is used to specify the time range that is used to calculate the interval at which
+   * property. It is used to specify the time range that is used to calculate the interval at which
    * JNDI servers should synchronize their state with the other JNDI servers in the cluster (defaults to 25:30 secs).
    */
   public static final String JNDI_SYNC_INTERVAL = "ubik.rmi.naming.sync.interval";
 
   /**
    * This constant corresponds to the <code>ubik.rmi.naming.sync.max-count</code>
-   * property key. It is used to specify the maximum number of times JNDI servers should
+   * property. It is used to specify the maximum number of times JNDI servers should
    * synchronize their state with the other JNDI servers in the cluster (defaults to 5 times,
    * a negative value is interpreted as no maximum).
    */
@@ -97,28 +97,28 @@ public interface Consts {
 
   /**
    * This constant corresponds to the <code>ubik.rmi.naming.mcast.port</code>
-   * property key. It is used to bind a multicast port value in a properties/map
+   * property. It is used to bind a multicast port value in a properties/map
    * instance.
    */
   public static final String MCAST_PORT_KEY = "ubik.rmi.naming.mcast.port";
 
   /**
    * This constant corresponds to the <code>ubik.rmi.naming.mcast.address</code>
-   * property key. It is used to bind a multicast address value in a
+   * property. It is used to bind a multicast address value in a
    * properties/map instance.
    */
   public static final String MCAST_ADDR_KEY = "ubik.rmi.naming.mcast.address";
 
   /**
    * This constant corresponds to the <code>ubik.rmi.naming.mcast.ttl</code>
-   * property key. It is used to specify the time-to-live of UDP multicast
+   * property. It is used to specify the time-to-live of UDP multicast
    * packets.
    */
   public static final String MCAST_TTL = "ubik.rmi.naming.mcast.ttl";
 
   /**
    * This constant corresponds to the <code>ubik.rmi.naming.mcast.bufsize</code>
-   * property key. It is used to set the size of buffers that handle UDP
+   * property. It is used to set the size of buffers that handle UDP
    * datagrams. A too small value may result in multicast events not being
    * sent/received. Defaults to 3072 bytes.
    */
@@ -126,7 +126,7 @@ public interface Consts {
 
   /**
    * This constant corresponds to the
-   * <code>ubik.rmi.naming.mcast.sender.count</code> property key. It is used to
+   * <code>ubik.rmi.naming.mcast.sender.count</code> property. It is used to
    * set the number of sender threads that may be used in
    * {@link UnicastDispatcher} or {@link BroadcastDispatcher} implementations.
    */
@@ -134,7 +134,7 @@ public interface Consts {
 
   /**
    * This constant corresponds to the
-   * <code>ubik.rmi.naming.mcast.handler.count</code> property key. It is used
+   * <code>ubik.rmi.naming.mcast.handler.count</code> property. It is used
    * to set the number of worker threads that handler request in
    * {@link UnicastDispatcher} or {@link BroadcastDispatcher} implementations.
    */
@@ -142,23 +142,41 @@ public interface Consts {
 
   /**
    * This constant corresponds to the
-   * <code>ubik.rmi.naming.mcast.response.timeout</code> property key. The value
+   * <code>ubik.rmi.naming.mcast.response.timeout</code> property. The value
    * is expected to indicate the timeout (in millis) when waiting for
    * synchronous responses.
    */
   public static final String MCAST_SYNC_RESPONSE_TIMEOUT = "ubik.rmi.naming.mcast.response.timeout";
+  
+  /**
+   * This constant corresponds to the
+   * <code>ubik.rmi.naming.mcast.async.ack.timeout</code> property. The value
+   * is expected to indicate the timeout (in millis) when waiting for
+   * asynchronous response acks upon dispatching remote events.
+   */
+  public static final String MCAST_ASYNC_ACK_TIMEOUT = "ubik.rmi.naming.mcast.async.ack.timeout";
 
   /**
    * This constant corresponds to the
-   * <code>ubik.rmi.naming.mcast.heartbeat.timeout</code> property key. It is
+   * <code>ubik.rmi.naming.mcast.heartbeat.timeout</code> property. It is
    * used to determine the interval (in millis) after which nodes that haven't
    * sent a heartbeat are considered down (defaults to 90000).
    */
   public static final String MCAST_HEARTBEAT_TIMEOUT = "ubik.rmi.naming.mcast.heartbeat.timeout";
+  
+  /**
+   * This constant corresponds to the
+   * <code>ubik.rmi.naming.mcast.heartbeat.response-delay</code> property. It is
+   * used to determine the amount of time (in millis) to wait for before sending heartbeat responses (defaults to 2000).
+   * If set to <= 0, then no pause is observed.
+   * <p>
+   * This property is used to not overwhelm the master node with a flood of heartbeat responses at once.
+   */
+  public static final String MCAST_HEARTBEAT_RESPONSE_DELAY = "ubik.rmi.naming.mcast.heartbeat.reponse-delay";
 
   /**
    * This constant corresponds to the
-   * <code>ubik.rmi.naming.mcast.heartbeat.interval</code> property key. It is
+   * <code>ubik.rmi.naming.mcast.heartbeat.interval</code> property. It is
    * used to determine the interval (in millis) at which nodes send their
    * heartbeat to the other nodes (defaults to 30000).
    * <p>
@@ -169,7 +187,7 @@ public interface Consts {
 
   /**
    * This constant corresponds to the
-   * <code>ubik.rmi.naming.mcast.heartbeat.force.resync</code> property key. It
+   * <code>ubik.rmi.naming.mcast.heartbeat.force.resync</code> property. It
    * is used indicate if an event forcing the resync of down slave nodes should
    * be broadcast throughout the cluster upon nodes being considered down
    * (default to <code>true</code>).
@@ -179,7 +197,7 @@ public interface Consts {
   /**
    * This constant corresponds to the
    * <code>ubik.rmi.naming.mcast.heartbeat.force.resync.batch-size</code>
-   * property key. It is used indicate how many "down node" IDs should be packed
+   * property. It is used indicate how many "down node" IDs should be packed
    * per "force-resync" event - defaults to 3.
    */
   public static final String MCAST_HEARTBEAT_FORCE_RESYNC_BATCH_SIZE = "ubik.rmi.naming.mcast.heartbeat.force.resync.batch-size";
@@ -194,7 +212,14 @@ public interface Consts {
 
   /**
    * This constant corresponds to the
-   * <code>ubik.rmi.naming.mcast.master.broadcast.interval</code> property key.
+   * <code>ubik.rmi.naming.mcast.heartbeat.request.ignore</code> property
+   * key. It configures if heartbeat requests should be ignore or not (defaults to false). USED FOR TESTING ONLY.
+   */
+  public static final String MCAST_HEARBEAT_REQUEST_ENABLED = "ubik.rmi.naming.mcast.heartbeat.request.ignore";
+  
+  /**
+   * This constant corresponds to the
+   * <code>ubik.rmi.naming.mcast.master.broadcast.interval</code> property.
    * It is used to determine the interval (in millis) at which the master node
    * will broadcast its presence (defaults to 120000).
    *
@@ -204,7 +229,7 @@ public interface Consts {
 
   /**
    * This constant corresponds to the
-   * <code>ubik.rmi.naming.mcast.control.response.timeout</code> property key.
+   * <code>ubik.rmi.naming.mcast.control.response.timeout</code> property.
    * It is used to determine the amount of time (in millis) that is allowed for
    * receiving control responses (defaults to 60000).
    */
@@ -212,15 +237,36 @@ public interface Consts {
 
   /**
    * This constant corresponds to the
-   * <code>ubik.rmi.naming.mcast.control.split.size</code> property key. It is
+   * <code>ubik.rmi.naming.mcast.control.split.size</code> property. It is
    * used to specify the size of the batches of control notifications and
    * requests (defaults to 5).
    */
   public static final String MCAST_CONTROL_SPLIT_SIZE = "ubik.rmi.naming.mcast.control.split.size";
+  
+  /**
+   * This constant corresponds to the
+   * <code>ubik.rmi.naming.mcast.control.heartbeat.sync.split.size</code> property. It is
+   * used to specify the size of the batches of synchronous heartbeat requests (defaults to 2).
+   */
+  public static final String MCAST_CONTROL_SYNC_HEARTBEAT_SPLIT_SIZE = "ubik.rmi.naming.mcast.control.heartbeat.sync.split.size";
+  
+  /**
+   * This constant corresponds to the
+   * <code>ubik.rmi.naming.mcast.control.heartbeat.sync.enabled</code> property. It is
+   * used to enable/disable synchronous heartbeat requests (defaults to true).
+   */
+  public static final String MCAST_CONTROL_SYNC_HEARTBEAT_ENABLED = "ubik.rmi.naming.mcast.control.heartbeat.sync.enabled";
 
   /**
+   * This constant corresponds to the
+   * <code>ubik.rmi.naming.mcast.control.heartbeat.sync.response.timeout</code> property. It is
+   * used to specify the timeout to observe (in millis) when blocking no synchronous heartbeat responses (defaults to 10000).
+   */
+  public static final String MCAST_CONTROL_SYNC_HEARTBEAT_RESPONSE_TIMEOUT = "ubik.rmi.naming.mcast.control.heartbeat.sync.response.timeout";
+  
+  /**
    * The constant corresponds to the
-   * <code>ubik.rmi.naming.mcast.resync.interval</code> property key. It is used
+   * <code>ubik.rmi.naming.mcast.resync.interval</code> property. It is used
    * to determine the interval (in millis) at which nodes auto-resync with the
    * cluster (that is: broadcast their presence to it).
    * <p>
@@ -232,10 +278,10 @@ public interface Consts {
    * The default value is 60000 millis.
    */
   public static final String MCAST_RESYNC_INTERVAL = "ubik.rmi.naming.mcast.resync.interval";
-
+  
   /**
    * This constant corresponds to the
-   * <code>ubik.rmi.naming.mcast.resync.node-count</code> property key. It is
+   * <code>ubik.rmi.naming.mcast.resync.node-count</code> property. It is
    * used to indicate below which number of detected nodes in the cluster a
    * given node will trigger its resync: the resync will be triggered if the
    * number of detected nodes in the cluster is equal to or lower than the one
@@ -244,9 +290,10 @@ public interface Consts {
    */
   public static final String MCAST_RESYNC_NODE_COUNT = "ubik.rmi.naming.mcast.resync.node-count";
 
+
   /**
    * This constant corresponds to the
-   * <code>ubik.rmi.naming.mcast.ping.max-attempts</code> property key. It is
+   * <code>ubik.rmi.naming.mcast.ping.max-attempts</code> property. It is
    * used to indicate how many attempts to send ping messages to unresponding
    * nodes will be made before they are considered down.
    */
@@ -260,8 +307,15 @@ public interface Consts {
   public static final String MCAST_PING_INTERVAL = "ubik.rmi.naming.mcast.ping.interval";
 
   /**
+   * Corresponds to the <code>ubik.rmi.naming.mcast.ping.disabled</code>
+   * property: indicates if ping responses should be disabled (defaults to false). THIS PROPERTY
+   * SHOULD BE USED FOR TESTING ONLY.
+   */
+  public static final String MCAST_PING_DISABLED = "ubik.rmi.naming.mcast.ping.disabled";
+
+  /**
    * Corresponds to the
-   * <code>ubik.rmi.naming.mcast.tcp.client.max-connections</code> property key.
+   * <code>ubik.rmi.naming.mcast.tcp.client.max-connections</code> property.
    * The value of this property specifies the number of connections that should
    * be pooled on the client side for each remote peer (defaults to 3).
    */
@@ -269,7 +323,7 @@ public interface Consts {
 
   /**
    * Corresponds to the
-   * <code>ubik.rmi.naming.mcast.broadcast.monitor.interval</code> property key.
+   * <code>ubik.rmi.naming.mcast.broadcast.monitor.interval</code> property.
    * The value of this property specifies the number of seconds between reconnection attempts when a connection failure occurs
    * on the broadcast dispatcher (defaults to 30000 millis).
    */
@@ -277,7 +331,7 @@ public interface Consts {
 
   /**
    * Corresponds to the
-   * <code>ubik.rmi.naming.mcast.channel.start.delay</code> property key.
+   * <code>ubik.rmi.naming.mcast.channel.start.delay</code> property.
    * The value of this property specifies the time range to use for calculating the delay before the event channel publishes its
    * presence for the first time (defaults to 500:3000 millis).
    */
@@ -285,7 +339,7 @@ public interface Consts {
 
   /**
    * Corresponds to the
-   * <code>ubik.rmi.naming.mcast.channel.pub-interval</code> property key.
+   * <code>ubik.rmi.naming.mcast.channel.pub-interval</code> property.
    * The value of this property specifies the time range used for calculating the interval at which an event channel
    * publishes itself, either upon resync or in the context of master broadcast (defaults to 1000:5000 millis).
    */
@@ -293,7 +347,7 @@ public interface Consts {
 
   /**
    * This constant corresponds to the <code>ubik.rmi.naming.mcast.channel.reuse</code>
-   * property key. It is used in test to indicate if {@link EventChannel} instance reuse should be enabled.
+   * property. It is used in test to indicate if {@link EventChannel} instance reuse should be enabled.
    * <p>
    * When testing event channel behavior in-memory, this property should be set to false.
    */
@@ -370,7 +424,7 @@ public interface Consts {
 
   /**
    * This constant corresponds to the
-   * <code>ubik.rmi.marshalling.buffer.size</code> property key. It indicates
+   * <code>ubik.rmi.marshalling.buffer.size</code> property. It indicates
    * the buffer size (in bytes) to use when performing
    * marshalling/unmarshalling. Defaults to 512.
    */
@@ -552,7 +606,7 @@ public interface Consts {
   public static final String STATS_ENABLED = "ubik.rmi.stats.enabled";
 
   /**
-   * Determines the interval at which Ubik stats must be dumped - system
+   * Determines the interval (in SECONDS) at which Ubik stats must be dumped - system
    * property: <code>ubik.rmi.stats.dump.interval</code>. Note: this property
    * will only be taken into account if stats are enabled - see
    * {@link #STATS_ENABLED}. Value is expected to be in seconds. If it is set to

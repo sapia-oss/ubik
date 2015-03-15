@@ -5,12 +5,14 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.SocketTimeoutException;
 
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.VmId;
 import org.sapia.ubik.rmi.server.transport.MarshalStreamFactory;
 import org.sapia.ubik.rmi.server.transport.RmiObjectOutput;
 import org.sapia.ubik.util.Conf;
+import org.sapia.ubik.util.Pause;
 
 /**
  * Models an in-memory request.
@@ -65,6 +67,25 @@ class InMemoryRequest {
   synchronized Object waitForResponse() throws InterruptedException, IOException, ClassNotFoundException {
     while (response == null) {
       wait();
+    }
+    return response.getData();
+  }
+  
+  /**
+   * Blocks until this instance's response is set.
+   * 
+   * @param timeout a timeout to wait for, in millis.
+   * @return the response that was returned.
+   * @throws InterruptedException
+   *           if the calling thread is interrupted while waiting.
+   */
+  synchronized Object waitForResponse(long timeout) throws InterruptedException, IOException, ClassNotFoundException, SocketTimeoutException {
+    Pause pause = new Pause(timeout);
+    while (!pause.isOver() && response == null) {
+      wait(pause.remainingNotZero());
+    }
+    if (response == null) {
+      throw new SocketTimeoutException("Response not received within specified timeout");
     }
     return response.getData();
   }

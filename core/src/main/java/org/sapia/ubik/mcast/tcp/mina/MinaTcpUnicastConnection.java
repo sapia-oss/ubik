@@ -11,6 +11,7 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.rmi.RemoteException;
 
 import org.apache.mina.common.ByteBuffer;
@@ -60,6 +61,23 @@ public class MinaTcpUnicastConnection implements Connection {
   @Override
   public Object receive() throws IOException, ClassNotFoundException, RemoteException {
     try {
+      sock.setSoTimeout(0);
+      DataInputStream dis = new DataInputStream(sock.getInputStream());
+      dis.readInt();
+      ObjectInputStream ois = SerializationStreams.createObjectInputStream(new BufferedInputStream(sock.getInputStream(), bufsize));
+      return ois.readObject();
+    } catch (EOFException e) {
+      throw new RemoteException("Communication with server interrupted; server probably disappeared", e);
+    } catch (SocketException e) {
+      throw new RemoteException("Connection could not be opened; server is probably down", e);
+    }
+  }
+  
+  @Override
+  public Object receive(long timeout) throws IOException,
+      ClassNotFoundException, RemoteException, SocketTimeoutException {
+    try {
+      sock.setSoTimeout((int) timeout);
       DataInputStream dis = new DataInputStream(sock.getInputStream());
       dis.readInt();
       ObjectInputStream ois = SerializationStreams.createObjectInputStream(new BufferedInputStream(sock.getInputStream(), bufsize));

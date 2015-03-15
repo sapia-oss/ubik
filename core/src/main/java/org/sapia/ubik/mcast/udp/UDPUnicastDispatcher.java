@@ -27,6 +27,7 @@ import org.sapia.ubik.mcast.server.UDPServer;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.util.Assertions;
 import org.sapia.ubik.util.Localhost;
+import org.sapia.ubik.util.TimeValue;
 
 /**
  * Implements the {@link UnicastDispatcher} interface over UDP.
@@ -39,7 +40,7 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
 
   private Category log = Log.createCategory(getClass());
   private EventConsumer     consumer;
-  private long              responseTimeout = Defaults.DEFAULT_SYNC_RESPONSE_TIMEOUT.getValueInMillis();
+  private TimeValue         asyncAckTimeout = Defaults.DEFAULT_ASYNC_ACK_TIMEOUT;
   private int               senderCount     = Defaults.DEFAULT_SENDER_COUNT;
   private ExecutorService   senders;
   private ExecutorService   handlers;
@@ -57,8 +58,18 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
     handlers = Executors.newFixedThreadPool(maxThreads, NamedThreadFactory.createWith("udp.unicast.dispatcher.Handler").setDaemon(true));
   }
 
+  /**
+   * @param senderCount the number of threads in the sender thread pool. Defaults to {@link Defaults#DEFAULT_SENDER_COUNT}.
+   */
   public void setSenderCount(int senderCount) {
     this.senderCount = senderCount;
+  }
+  
+  /**
+   * @param asyncAckTimeout the timeout to use when awaiting async event acks. Defaults to {@link Defaults#DEFAULT_ASYNC_ACK_TIMEOUT}.
+   */
+  public void setAsyncAckTimeout(TimeValue asyncAckTimeout) {
+    this.asyncAckTimeout = asyncAckTimeout;
   }
 
   @Override
@@ -99,10 +110,10 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
 
     DatagramSocket sock = new DatagramSocket();
 
-    sock.setSoTimeout((int) responseTimeout);
+    sock.setSoTimeout((int) asyncAckTimeout.getValueInMillis());
 
     try {
-      RemoteEvent evt = new RemoteEvent(null, type, data).setNode(consumer.getNode());
+      RemoteEvent evt = new RemoteEvent(consumer.getDomainName().toString(), type, data).setNode(consumer.getNode());
       evt.setUnicastAddress(addr);
       log.debug("dispatch() : %s, type: %s, data: %s", addr, type, data);
       UDPUnicastAddress inet = (UDPUnicastAddress) addr;
@@ -118,18 +129,18 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
   }
 
   @Override
-  public Response send(ServerAddress addr, String type, Object data) throws IOException {
+  public Response send(ServerAddress addr, String type, Object data, TimeValue timeout) throws IOException {
 
     DatagramSocket sock = new DatagramSocket();
-    sock.setSoTimeout((int) responseTimeout);
-    RemoteEvent evt = new RemoteEvent(null, type, data).setNode(consumer.getNode()).setSync();
+    sock.setSoTimeout((int) timeout.getValueInMillis());
+    RemoteEvent evt = new RemoteEvent(consumer.getDomainName().toString(), type, data).setNode(consumer.getNode()).setSync();
     evt.setUnicastAddress(addr);
     UDPUnicastAddress inet = (UDPUnicastAddress) addr;
 
     try {
       return (Response) doSend(inet.getInetAddress(), inet.getPort(), sock, McastUtil.toBytes(evt, bufSize()), true, type);
     } catch (TimeoutException e) {
-      return new Response(evt.getId(), e).setStatusSuspect();
+      return new Response(addr, evt.getId(), e).setStatusSuspect();
     } finally {
       try {
         sock.close();
@@ -139,11 +150,11 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
   }
 
   @Override
-  public RespList send(List<ServerAddress> addresses, final String type, Object data) throws IOException, InterruptedException {
+  public RespList send(List<ServerAddress> addresses, final String type, Object data, final TimeValue timeout) throws IOException, InterruptedException {
 
     final BlockingCompletionQueue<Response> queue = new BlockingCompletionQueue<Response>(addresses.size());
 
-    final RemoteEvent evt = new RemoteEvent(null, type, data).setNode(consumer.getNode()).setSync();
+    final RemoteEvent evt = new RemoteEvent(consumer.getDomainName().toString(), type, data).setNode(consumer.getNode()).setSync();
     evt.setUnicastAddress(addr);
     final byte[] bytes = McastUtil.toBytes(evt, bufSize());
 
@@ -158,14 +169,14 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
           DatagramSocket sock = null;
           try {
             sock = new DatagramSocket();
-            sock.setSoTimeout((int) responseTimeout);
+            sock.setSoTimeout((int) timeout.getValueInMillis());
             Response resp = (Response) doSend(addr.getInetAddress(), addr.getPort(), sock, bytes, true, type);
             queue.add(resp);
           } catch (TimeoutException e) {
             log.warning("Response from %s not received in timely manner", addr);
 
             try {
-              queue.add(new Response(evt.getId(), e).setStatusSuspect());
+              queue.add(new Response(addr, evt.getId(), e).setStatusSuspect());
             } catch (IllegalStateException ise) {
               log.info("Could not add response to queue", ise, new Object[] {});
             }
@@ -179,9 +190,51 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
       });
     }
 
-    return new RespList(queue.await(responseTimeout));
-
+    return new RespList(queue.await(timeout.getValueInMillis()));
   }
+  
+  @Override
+  public RespList send(ServerAddress[] addresses, final String type, Object[] data, final TimeValue timeout)
+      throws IOException, InterruptedException {
+    final BlockingCompletionQueue<Response> queue = new BlockingCompletionQueue<Response>(addresses.length);
+
+    for (int i = 0; i < addresses.length; i++) {
+
+      final UDPUnicastAddress addr = (UDPUnicastAddress) addresses[i];
+      final RemoteEvent evt = new RemoteEvent(null, type, data[i]).setNode(consumer.getNode()).setSync();
+      evt.setUnicastAddress(addr);
+      final byte[] bytes = McastUtil.toBytes(evt, bufSize());
+
+      senders.execute(new Runnable() {
+
+        @Override
+        public void run() {
+          DatagramSocket sock = null;
+          try {
+            sock = new DatagramSocket();
+            sock.setSoTimeout((int) timeout.getValueInMillis());
+            Response resp = (Response) doSend(addr.getInetAddress(), addr.getPort(), sock, bytes, true, type);
+            queue.add(resp);
+          } catch (TimeoutException e) {
+            log.warning("Response from %s not received in timely manner", addr);
+
+            try {
+              queue.add(new Response(addr, evt.getId(), e).setStatusSuspect());
+            } catch (IllegalStateException ise) {
+              log.info("Could not add response to queue", ise, new Object[] {});
+            }
+          } catch (IOException e) {
+            log.error("IO problem sending remote event to " + addr, e);
+          } finally {
+            if (sock != null)
+              sock.close();
+          }
+        }
+      });
+    }
+
+    return new RespList(queue.await(timeout.getValueInMillis()));  }
+  
 
   @Override
   public ServerAddress getAddress() throws IllegalStateException {
@@ -226,7 +279,7 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
             Object response = consumer.onSyncEvent(evt);
 
             try {
-              doSend(addr, port, sock, McastUtil.toBytes(new Response(evt.getId(), response), bufSize()), false, evt.getType());
+              doSend(addr, port, sock, McastUtil.toBytes(new Response(UDPUnicastDispatcher.this.getAddress(), evt.getId(), response), bufSize()), false, evt.getType());
             } catch (TimeoutException e) {
               // will not occur - see doSend()
             }
@@ -235,7 +288,7 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
 
           } else {
             try {
-              doSend(addr, port, sock, McastUtil.toBytes(new Response(evt.getId(), null).setNone(), bufSize()), false, evt.getType());
+              doSend(addr, port, sock, McastUtil.toBytes(new Response(UDPUnicastDispatcher.this.getAddress(), evt.getId(), null).setNone(), bufSize()), false, evt.getType());
             } catch (TimeoutException e) {
               // will not occur - see doSend()
             }

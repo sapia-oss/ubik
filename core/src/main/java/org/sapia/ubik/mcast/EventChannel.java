@@ -22,7 +22,7 @@ import org.sapia.ubik.mcast.control.ControlRequest;
 import org.sapia.ubik.mcast.control.ControlResponse;
 import org.sapia.ubik.mcast.control.ControllerConfiguration;
 import org.sapia.ubik.mcast.control.EventChannelController;
-import org.sapia.ubik.mcast.control.SplittableMessage;
+import org.sapia.ubik.mcast.control.SplitteableMessage;
 import org.sapia.ubik.mcast.control.SynchronousControlRequest;
 import org.sapia.ubik.mcast.control.SynchronousControlResponse;
 import org.sapia.ubik.mcast.udp.UDPBroadcastDispatcher;
@@ -38,6 +38,7 @@ import org.sapia.ubik.util.Func;
 import org.sapia.ubik.util.SoftReferenceList;
 import org.sapia.ubik.util.SysClock;
 import org.sapia.ubik.util.TimeRange;
+import org.sapia.ubik.util.TimeValue;
 
 /**
  * An instance of this class represents a node in a given logical event channel.
@@ -163,7 +164,8 @@ public class EventChannel {
    */
   static final String CONTROL_EVT          = "ubik/mcast/control";
 
-  private static final int DEFAULT_MAX_PUB_ATTEMPTS = 3;
+  private static final int       DEFAULT_MAX_PUB_ATTEMPTS = 3;
+  private static final TimeValue DEFAULT_READ_TIMEOUT     = TimeValue.createMillis(10000);
 
   private static Set<EventChannel> CHANNELS_BY_DOMAIN = Collections.synchronizedSet(new HashSet<EventChannel>());
 
@@ -183,6 +185,7 @@ public class EventChannel {
   private int                    maxPublishAttempts = DEFAULT_MAX_PUB_ATTEMPTS;
   private TimeRange              startDelayRange;
   private TimeRange              publishIntervalRange;
+  private TimeValue              defaultReadTimeout = DEFAULT_READ_TIMEOUT;
   private ConnectionStateListenerList stateListeners = new ConnectionStateListenerList();
   private ExecutorService             publishExecutor = Executors.newSingleThreadExecutor(
       NamedThreadFactory.createWith("Ubik.EventChannel.Publish").setDaemon(true)
@@ -398,7 +401,7 @@ public class EventChannel {
       resync();
     }
   }
-
+  
   /**
    * Forces a resync of this instance with the cluster.
    */
@@ -545,40 +548,91 @@ public class EventChannel {
   }
 
   /**
-   * Synchronously sends a remote event to the node corresponding to the given
-   * {@link ServerAddress}, and returns the corresponding response.
-   *
-   * @param addr
-   *          the {@link ServerAddress} of the node to which to send the remote
-   *          event.
-   * @param type
-   *          the "logical type" of the remote event.
-   * @param data
-   *          the data to encapsulate in the remote event.
-   *
-   * @return the {@link Response} corresponding to this call.
-   *
-   * @see RemoteEvent
+   * Sends the given data to the specified address, blocking for a response for the
+   * default timeout duration that has been configured on this instance.
+   * 
+   * @see UnicastDispatcher#send(ServerAddress, String, Object, TimeValue)
    */
-  public Response send(ServerAddress addr, String type, Object data) throws IOException, TimeoutException {
-    return unicast.send(addr, type, data);
+  public Response send(ServerAddress addr, String type, Object data) 
+      throws IOException, TimeoutException {
+    return unicast.send(addr, type, data, defaultReadTimeout);
   }
-
+  
   /**
-   * @see UnicastDispatcher#send(List, String, Object)
+   * Sends the given data to the specified address, blocking for a response for the
+   * given timeout duration.
+   * 
+   * @see UnicastDispatcher#send(ServerAddress, String, Object, TimeValue)
    */
-  public RespList send(List<ServerAddress> addresses, String type, Object data) throws IOException, TimeoutException, InterruptedException {
-    return unicast.send(addresses, type, data);
+  public Response send(ServerAddress addr, String type, Object data, TimeValue timeout) 
+      throws IOException, TimeoutException {
+    return unicast.send(addr, type, data, timeout);
+  }
+  
+  /**
+   * Sends the given data to the specified addresses, blocking for a response for the
+   * default timeout duration that has been configured on this instance.
+   * 
+   * @see UnicastDispatcher#send(List, String, Object, TimeValue)
+   */
+  public RespList send(List<ServerAddress> addresses, String type, Object data) 
+      throws IOException, TimeoutException, InterruptedException {
+    return unicast.send(addresses, type, data, defaultReadTimeout);
+  }
+  
+  /**
+   * Sends the given data to the specified addresses, blocking for a response for the
+   * given timeout duration.
+   * 
+   * @see UnicastDispatcher#send(List, String, Object, TimeValue)
+   */
+  public RespList send(List<ServerAddress> addresses, String type, Object data, TimeValue timeout) 
+      throws IOException, TimeoutException, InterruptedException {
+    return unicast.send(addresses, type, data, timeout);
+  }
+  
+  /**
+   * Sends the given data elements to the specified addresses (respectively), blocking for a response for the
+   * default timeout duration that has been configured on this instance.
+   * 
+   * @see UnicastDispatcher#send(ServerAddress[], String, Object[], TimeValue)
+   */
+  public RespList send(ServerAddress[] addresses, String type, Object[] data) 
+      throws IOException, TimeoutException, InterruptedException {
+    return unicast.send(addresses, type, data, defaultReadTimeout);
+  }
+  
+  /**
+   * Sends the given data elements to the specified addresses (respectively), blocking for a response for the
+   * given timeout duration.
+   * 
+   * @see UnicastDispatcher#send(ServerAddress[], String, Object[], TimeValue)
+   */
+  public RespList send(ServerAddress[] addresses, String type, Object[] data, TimeValue timeout) 
+      throws IOException, TimeoutException, InterruptedException {
+    return unicast.send(addresses, type, data, timeout);
   }
 
   /**
    * Synchronously sends a remote event to all this instance's nodes and returns
-   * the corresponding responses.
+   * the corresponding responses. Blocks for the default timeout duration that has been
+   * configured on this instance.
    *
-   * @see UnicastDispatcher#send(List, String, Object)
+   * @see UnicastDispatcher#send(ServerAddress, String, Object, TimeValue)
    */
   public RespList send(String type, Object data) throws IOException, InterruptedException {
-    return unicast.send(view.getNodeAddresses(), type, data);
+    return unicast.send(view.getNodeAddresses(), type, data, defaultReadTimeout);
+  }
+  
+  /**
+   * Synchronously sends a remote event to all this instance's nodes and returns
+   * the corresponding responses. Blocks for the given timeout duration.
+   *
+   * @see UnicastDispatcher#send(ServerAddress, String, Object, TimeValue)
+   */
+  public RespList send(String type, Object data, TimeValue timeout) 
+      throws IOException, InterruptedException {
+    return unicast.send(view.getNodeAddresses(), type, data, timeout);
   }
 
   /**
@@ -716,12 +770,12 @@ public class EventChannel {
     return controller;
   }
 
-  void sendControlMessage(SplittableMessage msg) {
+  void sendControlMessage(SplitteableMessage msg) {
     msg.getTargetedNodes().remove(getNode());
     if (!msg.getTargetedNodes().isEmpty()) {
       log.debug("Sending control message %s to nodes: %s", msg.getClass().getSimpleName(), msg.getTargetedNodes());
-      List<SplittableMessage> splits = msg.split(controlBatchSize);
-      for (SplittableMessage toSend : splits) {
+      List<SplitteableMessage> splits = msg.split(controlBatchSize);
+      for (SplitteableMessage toSend : splits) {
         ServerAddress address = null;
         while (address == null && !toSend.getTargetedNodes().isEmpty()) {
           try {
@@ -741,6 +795,17 @@ public class EventChannel {
           }
         }
       }
+    }
+  }
+  
+  /**
+   * Closes the statically cached event channels, and clears the cache.
+   */
+  public static void closeCachedChannels() {
+    List<EventChannel> channels = new ArrayList<EventChannel>(CHANNELS_BY_DOMAIN);
+    for (EventChannel ec : channels) {
+      ec.close();
+      CHANNELS_BY_DOMAIN.remove(ec);
     }
   }
 
@@ -879,7 +944,7 @@ public class EventChannel {
         @Override
         public void run() {
           try {
-            unicast.send(getUnicastAddress(), CONTROL_EVT, event);
+            unicast.dispatch(getUnicastAddress(), CONTROL_EVT, event);
           } catch (IOException e) {
             log.error("Could not dispatch control event", e);
           }
@@ -893,26 +958,72 @@ public class EventChannel {
     }
 
     @Override
-    public Set<SynchronousControlResponse> sendSynchronousRequest(Set<String> targetedNodes, SynchronousControlRequest request)
+    public Set<SynchronousControlResponse> sendSynchronousRequest(Set<String> targetedNodes, SynchronousControlRequest request, TimeValue timeout)
         throws InterruptedException, IOException {
 
+      log.debug("Sending sync request to %s target nodes", targetedNodes.size());
+      
       List<ServerAddress> targetAddresses = new ArrayList<ServerAddress>();
       for (String targetedNode : targetedNodes) {
         ServerAddress addr = view.getAddressFor(targetedNode);
         if (addr != null) {
           targetAddresses.add(addr);
+        } else {
+          log.info("Could not resolve unicast address for node: %s", targetedNode);
         }
       }
 
-      RespList responses = unicast.send(targetAddresses, CONTROL_EVT, request);
+      RespList responses = unicast.send(targetAddresses, CONTROL_EVT, request, timeout);
 
       Set<SynchronousControlResponse> toReturn = new HashSet<SynchronousControlResponse>();
       for (int i = 0; i < responses.count(); i++) {
         Response r = responses.get(i);
-        if (!r.isNone() && !r.isError() && r.getData() != null) {
-          toReturn.add((SynchronousControlResponse) r.getData());
+        SynchronousControlResponse sr = (SynchronousControlResponse) r.getData();
+        if (!r.isNone() && !r.isThrowable() && sr != null) {
+          toReturn.add(sr);
+        } else {
+          log.debug("Discarding response: %s => ", r.getStatus(), sr);
         }
       }
+      
+      log.debug("Returning %s responses", toReturn.size());
+      return toReturn;
+    }
+    
+    @Override
+    public Set<SynchronousControlResponse> sendSynchronousRequests(
+        String[] targetedNodes, SynchronousControlRequest[] requests, TimeValue timeout) throws InterruptedException,
+        IOException {
+      
+      
+      log.debug("Sending sync requests to %s target nodes", targetedNodes.length);
+      
+      List<ServerAddress> targetAddresses = new ArrayList<ServerAddress>();
+      for (String targetedNode : targetedNodes) {
+        ServerAddress addr = view.getAddressFor(targetedNode);
+        if (addr != null) {
+          targetAddresses.add(addr);
+        } else {
+          log.info("Could not resolve unicast address for node: %s", targetedNode);
+        }
+      }
+
+      RespList responses = unicast.send(targetAddresses.toArray(
+          new ServerAddress[targetAddresses.size()]), CONTROL_EVT, requests, timeout
+      );
+
+      Set<SynchronousControlResponse> toReturn = new HashSet<SynchronousControlResponse>();
+      for (int i = 0; i < responses.count(); i++) {
+        Response r = responses.get(i);
+        SynchronousControlResponse sr = (SynchronousControlResponse) r.getData();
+        if (!r.isNone() && !r.isThrowable() && sr != null) {
+          toReturn.add(sr);
+        } else {
+          log.debug("Discarding response: %s => ", r.getStatus(), sr);
+        }
+      }
+      
+      log.debug("Returning %s responses", toReturn.size());
       return toReturn;
     }
 
@@ -977,7 +1088,7 @@ public class EventChannel {
         try {
           Object data = evt.getData();
           if (data instanceof SynchronousControlRequest) {
-            return controller.onSynchronousRequest(evt.getNode(), (SynchronousControlRequest) data);
+            return controller.onSynchronousRequest(evt.getNode(), evt.getUnicastAddress(), (SynchronousControlRequest) data);
           } else if (data instanceof ControlEvent) {
             controller.onEvent(evt.getNode(), evt.getUnicastAddress(), (ControlEvent) data);
           }
@@ -1064,7 +1175,7 @@ public class EventChannel {
           Object data = evt.getData();
           view.addHost(getUnicastAddress(), evt.getNode());
           if (data instanceof ControlRequest) {
-            controller.onRequest(evt.getNode(), (ControlRequest) data);
+            controller.onRequest(evt.getNode(), evt.getUnicastAddress(), (ControlRequest) data);
           } else if (data instanceof ControlNotification) {
             controller.onNotification(evt.getNode(), (ControlNotification) data);
           } else if (data instanceof ControlResponse) {
@@ -1098,32 +1209,62 @@ public class EventChannel {
     } catch (ListenerAlreadyRegisteredException e) {
       throw new IllegalStateException("Could not register sync event listener", e);
     }
+    
+    long resyncInterval = props.getTimeProperty(Consts.MCAST_RESYNC_INTERVAL, Defaults.DEFAULT_RESYNC_INTERVAL).getValueInMillis();
     long heartbeatTimeout = props.getTimeProperty(Consts.MCAST_HEARTBEAT_TIMEOUT, Defaults.DEFAULT_HEARTBEAT_TIMEOUT).getValueInMillis();
     long heartbeatInterval = props.getTimeProperty(Consts.MCAST_HEARTBEAT_INTERVAL, Defaults.DEFAULT_HEARTBEAT_INTERVAL).getValueInMillis();
     long controlResponseTimeout = props.getTimeProperty(Consts.MCAST_CONTROL_RESPONSE_TIMEOUT, Defaults.DEFAULT_CONTROL_RESPONSE_TIMEOUT).getValueInMillis();
     int forceResyncAttempts = props.getIntProperty(Consts.MCAST_HEARTBEAT_FORCE_RESYNC_ATTEMPTS, Defaults.DEFAULT_FORCE_RESYNC_ATTEMPTS);
     int forceResyncBatchSize = props.getIntProperty(Consts.MCAST_HEARTBEAT_FORCE_RESYNC_BATCH_SIZE, Defaults.DEFAULT_FORCE_RESYNC_BATCH_SIZE);
     long masterBroadcastInterval = props.getTimeProperty(Consts.MCAST_MASTER_BROADCAST_INTERVAL, Defaults.DEFAULT_MASTER_BROADCAST_INTERVAL).getValueInMillis();
-
+    int heartbeatSplitSize = props.getIntProperty(Consts.MCAST_CONTROL_SYNC_HEARTBEAT_SPLIT_SIZE, Defaults.DEFAULT_SYNC_HEARTBEAT_SPLIT_SIZE);
+    boolean syncHeartbeanEnabled = props.getBooleanProperty(Consts.MCAST_CONTROL_SYNC_HEARTBEAT_ENABLED, Defaults.DEFAULT_SYNC_HEARTBEAT_ENABLED);
+    TimeRange heartbeatResponseDelay = props.getTimeRangeProperty(Consts.MCAST_HEARTBEAT_RESPONSE_DELAY, Defaults.DEFAULT_HEARTBEAT_RESPONSE_DELAY);
+    boolean ignoreHeartbeatRequests = props.getBooleanProperty(Consts.MCAST_HEARBEAT_REQUEST_ENABLED, false);
+    int maxPingAttempts = props.getIntProperty(Consts.MCAST_MAX_PING_ATTEMPTS, Defaults.DEFAULT_PING_ATTEMPTS);
+    TimeValue pingInterval = props.getTimeProperty(Consts.MCAST_PING_INTERVAL, Defaults.DEFAULT_PING_INTERVAL);
+    TimeValue syncHeartBeatResponseTimeout = props.getTimeProperty(Consts.MCAST_CONTROL_SYNC_HEARTBEAT_RESPONSE_TIMEOUT, Defaults.DEFAULT_SYNC_HEARTBEAT_RESPONSE_TIMEOUT);
+    TimeValue syncResponseTimeout = props.getTimeProperty(Consts.MCAST_SYNC_RESPONSE_TIMEOUT, Defaults.DEFAULT_SYNC_RESPONSE_TIMEOUT);
+    
     this.startDelayRange = props.getTimeRangeProperty(Consts.MCAST_CHANNEL_START_DELAY, Defaults.DEFAULT_CHANNEL_START_DELAY);
     this.publishIntervalRange = props.getTimeRangeProperty(Consts.MCAST_CHANNEL_PUBLISH_INTERVAL, Defaults.DEFAULT_CHANNEL_PUBLISH_INTERVAL);
     this.controlBatchSize = props.getIntProperty(Consts.MCAST_CONTROL_SPLIT_SIZE, Defaults.DEFAULT_CONTROL_SPLIT_SIZE);
 
+    log.debug("Resync interval set to %s", resyncInterval);
     log.debug("Heartbeat timeout set to %s", heartbeatTimeout);
     log.debug("Heartbeat interval set to %s", heartbeatInterval);
     log.debug("Control response timeout set to %s", controlResponseTimeout);
     log.debug("Forced resync attempts set to %s", forceResyncAttempts);
     log.debug("Forced resync batch size set to %s", forceResyncBatchSize);
     log.debug("Master broadcast interval set to %s", masterBroadcastInterval);
+    log.debug("Sync heartbeat split size set to %s", heartbeatSplitSize);
+    log.debug("Sync heartbeat enabled set to: %s", syncHeartbeanEnabled);
+    log.debug("Heartbeat reponse delay time range set to: %s", heartbeatResponseDelay);
+    log.debug("Ignore heartbeat requests set to (SHOULD BE DISABLED FOR TESTING ONLY): %s", ignoreHeartbeatRequests);
+    log.debug("Max ping attempts set to: %s", maxPingAttempts);
+    log.debug("Ping interval set to: %s", pingInterval);
+    log.debug("Sync response timeout set to: %s", syncResponseTimeout);
+    log.debug("Heartbeat sync response timeout set to: %s", syncHeartBeatResponseTimeout);
 
     ControllerConfiguration config = new ControllerConfiguration();
+    config.setResyncInterval(resyncInterval);
     config.setHeartbeatInterval(heartbeatInterval);
     config.setHeartbeatTimeout(heartbeatTimeout);
     config.setResponseTimeout(controlResponseTimeout);
     config.setForceResyncAttempts(forceResyncAttempts);
     config.setForceResyncBatchSize(forceResyncBatchSize);
     config.setMasterBroadcastInterval(masterBroadcastInterval);
+    config.setHeartbeatControllMessageSplitSize(heartbeatSplitSize);
+    config.setSyncHeartBeatEnabled(syncHeartbeanEnabled);
+    config.setHeartbeatResponseDelay(heartbeatResponseDelay);
+    config.setIgnoreHeartbeatRequests(ignoreHeartbeatRequests);
+    config.setMaxPingAttempts(maxPingAttempts);
+    config.setPingInterval(pingInterval);
+    config.setSyncHeartBeatResponseTimeout(syncHeartBeatResponseTimeout);
+    config.setSyncResponseTimeout(syncResponseTimeout);
+    
     controller = new EventChannelController(createClock(), config, new ChannelCallbackImpl());
+
     startTimer(heartbeatInterval);
   }
 

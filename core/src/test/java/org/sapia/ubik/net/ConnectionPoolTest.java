@@ -4,6 +4,7 @@ import static junit.framework.Assert.*;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.rmi.RemoteException;
 
 import org.junit.Test;
@@ -78,6 +79,12 @@ public class ConnectionPoolTest {
     }
 
     public Object receive() throws IOException, ClassNotFoundException, RemoteException {
+      return "ACK";
+    }
+    
+    @Override
+    public Object receive(long timeout) throws IOException,
+        ClassNotFoundException, RemoteException, SocketTimeoutException {
       return "ACK";
     }
 

@@ -1,24 +1,30 @@
 package org.sapia.ubik.util;
 
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.Random;
 import java.util.StringTokenizer;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Models a time range, consisting of min and max {@link Time}s.
+ * Models a time range, consisting of min and max {@link TimeValue}s.
  *
  * @author yduchesne
  *
  */
-public class TimeRange {
+public class TimeRange implements Externalizable {
 
-  private Time min, max;
+  static final long serialVersionUID = 1L;
+  
+  private TimeValue min, max;
 
   /**
-   * @param min the {@link Time} to use as the lower bound.
-   * @param max the {@link Time} to use as the higher bound.
+   * @param min the {@link TimeValue} to use as the lower bound.
+   * @param max the {@link TimeValue} to use as the higher bound.
    */
-  public TimeRange(Time min, Time max) {
+  public TimeRange(TimeValue min, TimeValue max) {
     Assertions.isTrue(
         max.getValueInMillis() >= min.getValueInMillis(),
         "Max time must be greater than or equal to min time (max = %s, min = %s)",
@@ -31,28 +37,31 @@ public class TimeRange {
   /**
    * @return this range's lower bound.
    */
-  public Time getMin() {
+  public TimeValue getMin() {
     return min;
   }
 
   /**
    * @return this range's higher bound.
    */
-  public Time getMax() {
+  public TimeValue getMax() {
     return max;
   }
 
   /**
-   * @return a randomly created {@link Time}, calculated to be with this instance's
-   * min and max {@link Time}s.
+   * @return a randomly created {@link TimeValue}, calculated to be with this instance's
+   * min and max {@link TimeValue}s.
    */
-  public Time getRandomTime() {
+  public TimeValue getRandomTime() {
+    if (min.getValue() == 0 && max.getValue() == 0) {
+      return TimeValue.createMillis(0);
+    }
     Random r = new Random(System.currentTimeMillis());
     if (min.getValueInMillis() == max.getValueInMillis()) {
       return min;
     }
     int diff = r.nextInt((int) max.getValueInMillis() - (int) min.getValueInMillis());
-    return new Time(min.getValueInMillis() + diff, TimeUnit.MILLISECONDS);
+    return new TimeValue(min.getValueInMillis() + diff, TimeUnit.MILLISECONDS);
   }
 
   /**
@@ -81,16 +90,38 @@ public class TimeRange {
    */
   public static TimeRange valueOf(String timeRangeLiteral) {
     StringTokenizer tk = new StringTokenizer(timeRangeLiteral, "-|:,");
-    Time min, max;
+    TimeValue min, max;
     Assertions.isTrue(tk.hasMoreTokens(), "Expected time literal, got: '%s'", timeRangeLiteral);
-    min = Time.valueOf(tk.nextToken());
+    min = TimeValue.valueOf(tk.nextToken());
     if (tk.hasMoreTokens()) {
-      max = Time.valueOf(tk.nextToken());
+      max = TimeValue.valueOf(tk.nextToken());
     } else {
       max = min;
     }
+    if (min.getValueInMillis() > max.getValueInMillis()) {
+      throw new IllegalArgumentException("Invalid time range (min > max): " + timeRangeLiteral);
+    }
     return new TimeRange(min, max);
   }
+  
+  // --------------------------------------------------------------------------
+  // Externalizable
+  
+  @Override
+  public void readExternal(ObjectInput in) throws IOException,
+      ClassNotFoundException {
+    min = (TimeValue) in.readObject();
+    max = (TimeValue) in.readObject();
+  }
+  
+  @Override
+  public void writeExternal(ObjectOutput out) throws IOException {
+    out.writeObject(min);
+    out.writeObject(max);
+  }
+  
+  // --------------------------------------------------------------------------
+  // Object overriddes
 
   @Override
   public String toString() {

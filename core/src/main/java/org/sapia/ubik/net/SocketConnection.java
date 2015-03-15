@@ -12,6 +12,7 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.rmi.RemoteException;
 
 import org.sapia.ubik.serialization.SerializationStreams;
@@ -72,6 +73,21 @@ public class SocketConnection implements Connection {
    */
   public Object receive() throws IOException, ClassNotFoundException, RemoteException {
     try {
+      sock.setSoTimeout(0);
+      readHeader(sock.getInputStream(), loader);
+      return is.readObject();
+    } catch (EOFException e) {
+      throw new RemoteException("Communication with server interrupted; server probably disappeared", e);
+    } catch (SocketException e) {
+      throw new RemoteException("Connection could not be opened; server is probably down", e);
+    }
+  }
+  
+  @Override
+  public Object receive(long timeout) throws IOException,
+      ClassNotFoundException, RemoteException, SocketTimeoutException {
+    try {
+      sock.setSoTimeout((int) timeout);
       readHeader(sock.getInputStream(), loader);
       return is.readObject();
     } catch (EOFException e) {

@@ -21,12 +21,25 @@ public class Log {
    */
   public enum Level {
 
-    TRACE(0), DEBUG(1), INFO(2), WARNING(3), ERROR(4), OFF(5), REPORT(6);
+    TRACE(0, true), DEBUG(1, true), INFO(2, true), WARNING(3, true), ERROR(4, true), OFF(5, true), REPORT(6, false);
 
     private int value;
+    private boolean enabled = true;
 
-    private Level(int value) {
+    private Level(int value, boolean defaultEnabled) {
       this.value = value;
+      this.enabled = defaultEnabled;
+      
+      if (!enabled) {
+        String specificEnabled = System.getProperty(Consts.LOG_LEVEL + "." + name().toLowerCase() + ".enabled");
+        if (specificEnabled != null) {
+          enabled = specificEnabled.equalsIgnoreCase("true");
+        }
+      }
+    }
+    
+    public boolean isEnabled() {
+      return enabled;
     }
 
   }
@@ -242,7 +255,7 @@ public class Log {
   // --------------------------------------------------------------------------
   // is<Level>
   public static boolean isTrace() {
-    return lvl.value <= Level.TRACE.value;
+    return isLoggable(Level.TRACE);
   }
 
   public static boolean isDebug() {
@@ -264,13 +277,17 @@ public class Log {
   public static boolean isOff() {
     return isLoggable(Level.OFF);
   }
+  
+  public static boolean isReport() {
+    return isLoggable(Level.REPORT);
+  }
 
   public static Level getLevel() {
     return lvl;
   }
 
   public static boolean isLoggable(Level level) {
-    return lvl.value <= level.value;
+    return lvl.value <= level.value && level.enabled;
   }
 
   public static Category createCategory(String name) {
@@ -282,7 +299,7 @@ public class Log {
   }
 
   private static void display(String caller, Level level, Object msg) {
-    if (filter.accepts(caller)) {
+    if (level.enabled && filter.accepts(caller)) {
       if (msg instanceof Throwable) {
         output.log("[" + DATE_FORMAT.format(new java.util.Date()) + "][" + caller + "@" + Thread.currentThread().getName() + "]" 
             + "[" + level.name() +  "]"
@@ -299,7 +316,7 @@ public class Log {
   private static void display(String caller, Level level, Object msg, Throwable t) {
     if (msg == null) {
       display(caller, level, t);
-    } else if (filter.accepts(caller)) {
+    } else if (level.enabled && filter.accepts(caller)) {
       output.log("[" + DATE_FORMAT.format(new java.util.Date()) + "][" + caller + "@" + Thread.currentThread().getName() + "] "
           + "[" + level.name() +  "]"
           + msg + " - "

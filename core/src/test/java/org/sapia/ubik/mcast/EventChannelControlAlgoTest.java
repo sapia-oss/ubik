@@ -11,6 +11,7 @@ import java.util.Properties;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.EventChannel.Role;
 import org.sapia.ubik.mcast.control.ControllerContext;
 import org.sapia.ubik.mcast.control.EventChannelControllerListener;
@@ -28,12 +29,11 @@ public class EventChannelControlAlgoTest {
 
   @Before
   public void setUp() throws Exception {
-    //Log.setDebug();
     clock = SysClock.MutableClock.getInstance();
     channels = new ArrayList<EventChannel>();
     listener = new TestControllerListener();
 
-    for (int i = 0; i < 20; i++) {
+    for (int i = 0; i < 10; i++) {
       EventChannel channel = createChannel();
       channels.add(channel);
       channel.getController().getContext().addControllerListener(listener);

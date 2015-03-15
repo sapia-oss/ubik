@@ -1,6 +1,7 @@
 package org.sapia.ubik.rmi.server.transport.memory;
 
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.rmi.RemoteException;
 
 import org.sapia.ubik.net.ServerAddress;
@@ -49,6 +50,18 @@ public class InMemoryRequestConnection implements RmiConnection {
     } catch (InterruptedException e) {
       throw new RemoteException("Interrupted while waiting for response", e);
     }
+  }
+  
+  @Override
+  public Object receive(long timeout) throws IOException,
+      ClassNotFoundException, RemoteException, SocketTimeoutException {
+    if (request == null)
+      return null;
+    try {
+      return request.waitForResponse(timeout);
+    } catch (InterruptedException e) {
+      throw new RemoteException("Interrupted while waiting for response", e);
+    }  
   }
 
   @Override

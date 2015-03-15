@@ -3,6 +3,7 @@ package org.sapia.ubik.log;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -56,7 +57,7 @@ public class CategoryTest {
     cat.report("test");
     cat.report("test", new Object[] {});
 
-    verify(output, times(12)).log(anyString());
+    verify(output, times(10)).log(anyString());
   }
 
   @Test
@@ -81,7 +82,7 @@ public class CategoryTest {
     cat.report("test");
     cat.report("test", new Object[] {});
 
-    verify(output, times(10)).log(anyString());
+    verify(output, times(8)).log(anyString());
   }
 
   @Test
@@ -106,7 +107,7 @@ public class CategoryTest {
     cat.report("test");
     cat.report("test", new Object[] {});
 
-    verify(output, times(8)).log(anyString());
+    verify(output, times(6)).log(anyString());
   }
 
   @Test
@@ -131,7 +132,7 @@ public class CategoryTest {
     cat.report("test");
     cat.report("test", new Object[] {});
 
-    verify(output, times(6)).log(anyString());
+    verify(output, times(4)).log(anyString());
   }
 
   @Test
@@ -156,7 +157,7 @@ public class CategoryTest {
     cat.report("test");
     cat.report("test", new Object[] {});
 
-    verify(output, times(4)).log(anyString());
+    verify(output, times(2)).log(anyString());
   }
 
   @Test
@@ -181,7 +182,7 @@ public class CategoryTest {
     cat.report("test");
     cat.report("test", new Object[] {});
 
-    verify(output, times(2)).log(anyString());
+    verify(output, never()).log(anyString());
   }
 
   @Test

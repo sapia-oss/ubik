@@ -9,7 +9,7 @@ import java.util.Set;
  * @author yduchesne
  * 
  */
-public interface SplittableMessage {
+public interface SplitteableMessage {
 
   /**
    * @return the {@link Set} of identifiers corresponding to the nodes that are
@@ -21,9 +21,9 @@ public interface SplittableMessage {
    * 
    * @param batchSize
    *          the size of the batches into which this message should be split.
-   * @return the {@link List} of {@link SplittableMessage}s resulting from the
+   * @return the {@link List} of {@link SplitteableMessage}s resulting from the
    *         split.
    */
-  public List<SplittableMessage> split(int batchSize);
+  public List<SplitteableMessage> split(int batchSize);
 
 }

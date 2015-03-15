@@ -7,12 +7,10 @@ import org.sapia.ubik.util.Pause;
  * creation of an object.
  * 
  * @author yduchesne
- * 
- * @param <T>
  */
 public class BlockingRef<T> {
 
-  private T object;
+  private volatile T       object;
   private volatile boolean available;
 
   /**

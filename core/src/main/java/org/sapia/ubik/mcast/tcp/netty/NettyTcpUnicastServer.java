@@ -27,6 +27,8 @@ import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.netty.NettyRequestDecoder;
 import org.sapia.ubik.rmi.server.Server;
 import org.sapia.ubik.rmi.server.transport.netty.NettyRmiMessageEncoder;
+import org.sapia.ubik.util.Assertions;
+import org.sapia.ubik.util.Func;
 
 /**
  * A Netty-based implementation of the {@link Server} interface.
@@ -36,12 +38,11 @@ import org.sapia.ubik.rmi.server.transport.netty.NettyRmiMessageEncoder;
  */
 class NettyTcpUnicastServer implements Server {
 
-  private Category log = Log.createCategory(getClass());
-  private EventConsumer consumer;
+  private Category               log = Log.createCategory(getClass());
   private NettyTcpUnicastAddress serverAddress;
-  private ServerBootstrap bootstrap;
-  private ChannelGroup channels = new DefaultChannelGroup();
-  private ConfigurableExecutor workers;
+  private ServerBootstrap        bootstrap;
+  private ChannelGroup           channels = new DefaultChannelGroup();
+  private ConfigurableExecutor   workers;
 
   /**
    * @param the
@@ -57,7 +58,6 @@ class NettyTcpUnicastServer implements Server {
    *          the {@link ThreadingConfiguration} for the worker thread pool.
    */
   NettyTcpUnicastServer(EventConsumer consumer, NettyTcpUnicastAddress address, ThreadingConfiguration ioConf, ThreadingConfiguration workerConf) {
-    this.consumer = consumer;
     this.serverAddress = address;
 
     log.debug("Initializing Netty server %s", serverAddress);
@@ -75,6 +75,18 @@ class NettyTcpUnicastServer implements Server {
 
     bootstrap = new ServerBootstrap(factory);
 
+    final NettyTcpUnicastServerHandler handler = new NettyTcpUnicastServerHandler(
+        consumer, 
+        workers,
+        new Func<ServerAddress, Void>() {
+          @Override
+          public ServerAddress call(Void arg) {
+            Assertions.illegalState(serverAddress == null, "Server address not set");
+            return serverAddress;
+          }
+        }
+    );
+    
     bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
       public ChannelPipeline getPipeline() {
         return Channels.pipeline(new SimpleChannelHandler() {
@@ -82,7 +94,7 @@ class NettyTcpUnicastServer implements Server {
           public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent event) throws Exception {
             channels.add(event.getChannel());
           }
-        }, new NettyRequestDecoder(), new NettyRmiMessageEncoder(), new NettyTcpUnicastServerHandler(NettyTcpUnicastServer.this.consumer, workers));
+        }, new NettyRequestDecoder(), new NettyRmiMessageEncoder(), handler);
       }
     });
     bootstrap.setOption("child.tcpNoDelay", true);

@@ -35,7 +35,7 @@ import org.sapia.ubik.util.Assertions;
 import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.Func;
 import org.sapia.ubik.util.Localhost;
-import org.sapia.ubik.util.Time;
+import org.sapia.ubik.util.TimeValue;
 
 /**
  * This class implements an embeddable JNDI server.
@@ -63,7 +63,7 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
   private UbikRemoteContext root;
   private Context           local;
   private ThreadStartup     startBarrier = new ThreadStartup();
-  private Time              syncInterval = Conf.newInstance().getTimeRangeProperty(
+  private TimeValue              syncInterval = Conf.newInstance().getTimeRangeProperty(
       Consts.JNDI_SYNC_INTERVAL, Defaults.DEFAULT_JNDI_SYNC_INTERVAL
   ).getRandomTime();
 

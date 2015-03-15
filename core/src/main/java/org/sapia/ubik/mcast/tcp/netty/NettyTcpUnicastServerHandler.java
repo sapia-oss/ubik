@@ -11,7 +11,9 @@ import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.EventConsumer;
 import org.sapia.ubik.mcast.RemoteEvent;
 import org.sapia.ubik.mcast.Response;
+import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.netty.NettyResponse;
+import org.sapia.ubik.util.Func;
 
 /**
  * This handler expects {@link RemoteEvent}s and handles them by dispatching
@@ -23,9 +25,10 @@ import org.sapia.ubik.net.netty.NettyResponse;
  */
 public class NettyTcpUnicastServerHandler extends SimpleChannelHandler {
 
-  private Category log = Log.createCategory(getClass());
-  private EventConsumer consumer;
-  private ExecutorService workers;
+  private Category                  log = Log.createCategory(getClass());
+  private EventConsumer             consumer;
+  private ExecutorService           workers;
+  private Func<ServerAddress, Void> addressSupplier;
 
   /**
    * @param consumer
@@ -33,10 +36,14 @@ public class NettyTcpUnicastServerHandler extends SimpleChannelHandler {
    * @param workers
    *          the {@link ExecutorService} providing worker threads to this
    *          instance.
+   * @param addressSupplier
+   *          the function providing the {@link ServerAddress} of the server in the context of which this instance
+   *          is used.
    */
-  public NettyTcpUnicastServerHandler(EventConsumer consumer, ExecutorService workers) {
-    this.consumer = consumer;
-    this.workers = workers;
+  public NettyTcpUnicastServerHandler(EventConsumer consumer, ExecutorService workers, Func<ServerAddress, Void> addressSupplier) {
+    this.consumer        = consumer;
+    this.workers         = workers;
+    this.addressSupplier = addressSupplier;
   }
 
   @Override
@@ -67,13 +74,13 @@ public class NettyTcpUnicastServerHandler extends SimpleChannelHandler {
               if (consumer.hasSyncListener(evt.getType())) {
                 log.debug("Received sync remote event %s from %s, notifying listener", evt.getType(), evt.getNode());
                 Object response = consumer.onSyncEvent(evt);
-                ctx.getChannel().write(new NettyResponse(new Response(evt.getId(), response)));
+                ctx.getChannel().write(new NettyResponse(new Response(addressSupplier.call(null), evt.getId(), response)));
               } else {
                 log.debug("Received sync remote event %s from %s, no listener to notify", evt.getType(), evt.getNode());
-                ctx.getChannel().write(new NettyResponse(new Response(evt.getId(), null).setNone()));
+                ctx.getChannel().write(new NettyResponse(new Response(addressSupplier.call(null), evt.getId(), null).setNone()));
               }
             } else {
-              log.debug("Received async remote event %s from %s, no listener to notify", evt.getType(), evt.getNode());
+              log.debug("Received async remote event %s from %s, notifying listeners", evt.getType(), evt.getNode());
               consumer.onAsyncEvent(evt);
             }
           } else {

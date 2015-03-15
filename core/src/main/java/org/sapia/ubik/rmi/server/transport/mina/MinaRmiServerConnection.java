@@ -1,6 +1,7 @@
 package org.sapia.ubik.rmi.server.transport.mina;
 
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.rmi.RemoteException;
 
 import org.apache.mina.common.IoSession;
@@ -41,6 +42,14 @@ public class MinaRmiServerConnection implements RmiConnection {
    * @see org.sapia.ubik.net.Connection#receive()
    */
   public Object receive() throws IOException, ClassNotFoundException, RemoteException {
+    return received;
+  }
+  
+  /**
+   * @see org.sapia.ubik.net.Connection#receive(long)
+   */
+  public Object receive(long timeout) throws IOException,
+      ClassNotFoundException, RemoteException, SocketTimeoutException {
     return received;
   }
 

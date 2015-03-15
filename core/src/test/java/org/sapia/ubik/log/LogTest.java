@@ -45,7 +45,7 @@ public class LogTest {
     assertTrue(Log.isLoggable(Level.WARNING));
     assertTrue(Log.isLoggable(Level.ERROR));
     assertTrue(Log.isLoggable(Level.OFF));
-    assertTrue(Log.isLoggable(Level.REPORT));
+    assertFalse(Log.isLoggable(Level.REPORT));
   }
 
   @Test
@@ -57,7 +57,7 @@ public class LogTest {
     assertTrue(Log.isLoggable(Level.WARNING));
     assertTrue(Log.isLoggable(Level.ERROR));
     assertTrue(Log.isLoggable(Level.OFF));
-    assertTrue(Log.isLoggable(Level.REPORT));
+    assertFalse(Log.isLoggable(Level.REPORT));
   }
 
   @Test
@@ -69,7 +69,7 @@ public class LogTest {
     assertTrue(Log.isLoggable(Level.WARNING));
     assertTrue(Log.isLoggable(Level.ERROR));
     assertTrue(Log.isLoggable(Level.OFF));
-    assertTrue(Log.isLoggable(Level.REPORT));
+    assertFalse(Log.isLoggable(Level.REPORT));
   }
 
   @Test
@@ -81,7 +81,7 @@ public class LogTest {
     assertTrue(Log.isLoggable(Level.WARNING));
     assertTrue(Log.isLoggable(Level.ERROR));
     assertTrue(Log.isLoggable(Level.OFF));
-    assertTrue(Log.isLoggable(Level.REPORT));
+    assertFalse(Log.isLoggable(Level.REPORT));
   }
 
   @Test
@@ -93,7 +93,7 @@ public class LogTest {
     assertFalse(Log.isLoggable(Level.WARNING));
     assertTrue(Log.isLoggable(Level.ERROR));
     assertTrue(Log.isLoggable(Level.OFF));
-    assertTrue(Log.isLoggable(Level.REPORT));
+    assertFalse(Log.isLoggable(Level.REPORT));
   }
 
   @Test
@@ -105,7 +105,7 @@ public class LogTest {
     assertFalse(Log.isLoggable(Level.WARNING));
     assertFalse(Log.isLoggable(Level.ERROR));
     assertTrue(Log.isLoggable(Level.OFF));
-    assertTrue(Log.isLoggable(Level.REPORT));
+    assertFalse(Log.isLoggable(Level.REPORT));
   }
 
   @Test

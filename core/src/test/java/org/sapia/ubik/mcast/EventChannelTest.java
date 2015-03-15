@@ -7,6 +7,8 @@ import static org.mockito.Mockito.mock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.After;
@@ -14,6 +16,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.sapia.ubik.concurrent.BlockingRef;
 import org.sapia.ubik.log.Log;
+import org.sapia.ubik.mcast.memory.InMemoryDispatchChannel;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.util.PropUtil;
@@ -25,11 +28,13 @@ public class EventChannelTest {
 
   @Before
   public void setUp() {
+    EventChannel.closeCachedChannels();
+    InMemoryDispatchChannel.getInstance().clear();
     PropUtil.clearUbikSystemProperties();
   }
 
   @After
-  public void tearDown() {
+  public void tearDown() throws Exception {
     if (source != null)
       source.close();
     if (destination != null)
@@ -294,26 +299,38 @@ public class EventChannelTest {
   public void testSendToAllNodes() throws Exception {
     source = createEventChannel();
     source.start();
-    Thread.sleep(1000);
+    Thread.sleep(200);
+    
+    final CountDownLatch latch = new CountDownLatch(5);
 
     List<EventChannel> destinations = new ArrayList<EventChannel>();
+    List<SyncEventListener> syncListeners = new ArrayList<SyncEventListener>();
+
     final AtomicInteger eventCount = new AtomicInteger();
     for (int i = 0; i < 5; i++) {
       EventChannel destination = createEventChannel();
       destination.start();
-      destination.registerSyncListener("testEvent", new SyncEventListener() {
+      Thread.sleep(200);
+
+      SyncEventListener syncListener = new SyncEventListener() {
         @Override
         public Object onSyncEvent(RemoteEvent evt) {
-          eventCount.incrementAndGet();
+          int count =  eventCount.incrementAndGet();
+          latch.countDown();
           return "ALL_DESTINATIONS_RESPONSE";
         }
-      });
-      Thread.sleep(200);
+      };
+      syncListeners.add(syncListener);
+      destination.registerSyncListener("testEvent", syncListener);
       destinations.add(destination);
     }
+    
+    assertEquals("Expected 5 nodes in view", 5, source.getView().getNodeInfos().size());
 
     RespList responses = source.send("testEvent", "TEST");
 
+    latch.await(10000, TimeUnit.MILLISECONDS);
+    
     for (EventChannel destination : destinations) {
       destination.close();
     }
@@ -334,18 +351,26 @@ public class EventChannelTest {
     Thread.sleep(1000);
 
     List<EventChannel> destinations = new ArrayList<EventChannel>();
+    List<SyncEventListener> syncListeners = new ArrayList<SyncEventListener>();
+    
+    final CountDownLatch latch = new CountDownLatch(3);
+    
     for (int i = 0; i < 5; i++) {
       EventChannel destination = createEventChannel();
       destination.start();
-      destination.registerSyncListener("testEvent", new SyncEventListener() {
+      SyncEventListener syncListener = new SyncEventListener() {
         @Override
         public Object onSyncEvent(RemoteEvent evt) {
           return "SELECTED_DESTINATIONS_RESPONSE";
         }
-      });
+      };
+      syncListeners.add(syncListener);
+      destination.registerSyncListener("testEvent", syncListener);
       Thread.sleep(200);
       destinations.add(destination);
     }
+    
+    assertEquals("Expected 5 nodes in view", 5, source.getView().getNodeInfos().size());
 
     List<EventChannel> selectedDestinations = destinations.subList(0, 3);
     List<ServerAddress> selectedAddresses = new ArrayList<ServerAddress>();
@@ -354,6 +379,8 @@ public class EventChannelTest {
     }
 
     RespList responses = source.send(selectedAddresses, "testEvent", "TEST");
+
+    latch.await(10000, TimeUnit.MILLISECONDS);
 
     for (EventChannel destination : destinations) {
       destination.close();
@@ -408,7 +435,6 @@ public class EventChannelTest {
 
   private EventChannel createEventChannel(long heartBeatInterval, long heartBeatTimeout) throws Exception {
     Properties properties = new Properties();
-    properties.setProperty(Consts.MCAST_ADDR_KEY, "231.175.5.5");
     properties.setProperty(Consts.MCAST_HEARTBEAT_INTERVAL, Long.toString(heartBeatInterval));
     properties.setProperty(Consts.MCAST_HEARTBEAT_TIMEOUT, Long.toString(heartBeatTimeout));
     properties.setProperty(Consts.MCAST_CONTROL_RESPONSE_TIMEOUT, Long.toString(heartBeatInterval));
@@ -419,7 +445,6 @@ public class EventChannelTest {
 
   private EventChannel createEventChannel(String domain, long heartBeatInterval, long heartBeatTimeout) throws Exception {
     Properties properties = new Properties();
-    properties.setProperty(Consts.MCAST_ADDR_KEY, "231.175.5.5");
     properties.setProperty(Consts.MCAST_HEARTBEAT_INTERVAL, Long.toString(heartBeatInterval));
     properties.setProperty(Consts.MCAST_HEARTBEAT_TIMEOUT, Long.toString(heartBeatTimeout));
     properties.setProperty(Consts.MCAST_CONTROL_RESPONSE_TIMEOUT, Long.toString(heartBeatInterval));

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.List;
 
 import org.sapia.ubik.net.ServerAddress;
+import org.sapia.ubik.util.TimeValue;
 
 /**
  * Implementations of this interface dispatch objects over the wire in a
@@ -42,6 +43,8 @@ public interface UnicastDispatcher {
    *          perform logic according to the "type".
    * @param data
    *          the {@link Object} to send.
+   * @param timeout 
+   *          the {@link TimeValue} expressing the timeout to observe.
    * @return a {@link Response}.
    * @throws IOException
    *           if there was an IO issue performing this operation.
@@ -49,7 +52,7 @@ public interface UnicastDispatcher {
    *           if the calling thread is interrupted while internally waiting for
    *           the responses.
    */
-  public Response send(ServerAddress addr, String type, Object data) throws IOException;
+  public Response send(ServerAddress addr, String type, Object data, TimeValue timeout) throws IOException;
 
   /**
    * Sends the given data to the list of destinations specified, and returning
@@ -62,7 +65,8 @@ public interface UnicastDispatcher {
    *          perform logic according to the "type".
    * @param data
    *          the {@link Object} to send.
-   * 
+   * @param timeout 
+   *          the {@link TimeValue} expressing the timeout to observe.
    * @return a {@link RespList}.
    * @throws IOException
    *           if there was an IO issue performing this operation.
@@ -70,7 +74,29 @@ public interface UnicastDispatcher {
    *           if the calling thread is interrupted while internally waiting for
    *           the responses.
    */
-  public RespList send(java.util.List<ServerAddress> addresses, String type, Object data) throws IOException, InterruptedException;
+  public RespList send(java.util.List<ServerAddress> addresses, String type, Object data, TimeValue timeout) throws IOException, InterruptedException;
+  
+  /**
+   * Sends the given data to the list of destinations specified, and returning
+   * the responses received from each destination.
+   * 
+   * @param addresses
+   *          a {@link List} of {@link ServerAddress} instances.
+   * @param type
+   *          the logical type of the data that is sent - allows the receiver to
+   *          perform logic according to the "type".
+   * @param data
+   *          the array of objects to send - to each respective address.
+   * @param timeout 
+   *          the {@link TimeValue} expressing the timeout to observe.
+   * @return a {@link RespList}.
+   * @throws IOException
+   *           if there was an IO issue performing this operation.
+   * @throws InterruptedException
+   *           if the calling thread is interrupted while internally waiting for
+   *           the responses.
+   */
+  public RespList send(ServerAddress[] addresses, String type, Object[] data, TimeValue timeout) throws IOException, InterruptedException;
 
   /**
    * Starts this instance - should be called prior to using this instance.

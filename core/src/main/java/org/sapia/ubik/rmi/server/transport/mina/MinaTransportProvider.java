@@ -17,7 +17,7 @@ import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.TransportProvider;
 import org.sapia.ubik.util.Localhost;
 import org.sapia.ubik.util.Conf;
-import org.sapia.ubik.util.Time;
+import org.sapia.ubik.util.TimeValue;
 
 /**
  * This transport provider is implemented on top of the <a
@@ -127,7 +127,7 @@ public class MinaTransportProvider implements TransportProvider {
     int selectorThreads = fullProps.getIntProperty(MinaConsts.SERVER_IO_CORE_THREADS_KEY, Runtime.getRuntime().availableProcessors() + 1);
 
     ThreadingConfiguration threadConf = ThreadingConfiguration.newInstance().setCorePoolSize(coreThreads).setMaxPoolSize(maxThreads)
-        .setQueueSize(queueSize).setKeepAlive(Time.createSeconds(keepAlive));
+        .setQueueSize(queueSize).setKeepAlive(TimeValue.createSeconds(keepAlive));
 
     try {
       MinaServer server = new MinaServer(addr, specificBufsize, selectorThreads, threadConf);

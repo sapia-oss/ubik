@@ -7,18 +7,18 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;
 
-public class TimeTest {
+public class TimeValueTest {
 
-  private Time t;
+  private TimeValue t;
 
   @Before
   public void setUp() throws Exception {
-    t = new Time(30, TimeUnit.SECONDS);
+    t = new TimeValue(30, TimeUnit.SECONDS);
   }
 
   @Test
   public void testEquals() {
-    Time other = new Time(30000, TimeUnit.MILLISECONDS);
+    TimeValue other = new TimeValue(30000, TimeUnit.MILLISECONDS);
     assertEquals(t, other);
   }
 
@@ -29,43 +29,43 @@ public class TimeTest {
 
   @Test
   public void testGetValueInSeconds() {
-    t = new Time(30000, TimeUnit.MILLISECONDS);
+    t = new TimeValue(30000, TimeUnit.MILLISECONDS);
     assertEquals(30, t.getValueInSeconds());
   }
 
   @Test
   public void testCreateMillis() {
-    t = Time.createMillis(30);
+    t = TimeValue.createMillis(30);
     assertEquals(30, t.getValueInMillis());
   }
 
   @Test
   public void testCreateSeconds() {
-    t = Time.createSeconds(30);
+    t = TimeValue.createSeconds(30);
     assertEquals(30, t.getValueInSeconds());
   }
 
   @Test
   public void testValueOf_Hour() {
-    t = Time.valueOf("1h");
+    t = TimeValue.valueOf("1h");
     assertEquals(1000 * 60 * 60, t.getValueInMillis());
   }
 
   @Test
   public void testValueOf_Minute() {
-    t = Time.valueOf("1min");
+    t = TimeValue.valueOf("1min");
     assertEquals(1000 * 60, t.getValueInMillis());
   }
 
   @Test
   public void testValueOf_Second() {
-    t = Time.valueOf("1s");
+    t = TimeValue.valueOf("1s");
     assertEquals(1000, t.getValueInMillis());
   }
 
   @Test
   public void testValueOf_Millis() {
-    t = Time.valueOf("100ms");
+    t = TimeValue.valueOf("100ms");
     assertEquals(100, t.getValueInMillis());
   }
 }

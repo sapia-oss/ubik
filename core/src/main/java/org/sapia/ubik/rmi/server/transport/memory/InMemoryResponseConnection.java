@@ -1,6 +1,7 @@
 package org.sapia.ubik.rmi.server.transport.memory;
 
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.rmi.RemoteException;
 
 import org.sapia.ubik.net.ServerAddress;
@@ -32,6 +33,12 @@ public class InMemoryResponseConnection implements RmiConnection {
 
   @Override
   public Object receive() throws IOException, ClassNotFoundException, RemoteException {
+    return request.getData();
+  }
+  
+  @Override
+  public Object receive(long timeout) throws IOException,
+      ClassNotFoundException, RemoteException, SocketTimeoutException {
     return request.getData();
   }
 

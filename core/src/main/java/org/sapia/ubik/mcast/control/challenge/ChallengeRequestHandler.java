@@ -8,6 +8,7 @@ import org.sapia.ubik.mcast.control.ControlRequestHandler;
 import org.sapia.ubik.mcast.control.ControlResponseFactory;
 import org.sapia.ubik.mcast.control.ControllerContext;
 import org.sapia.ubik.mcast.control.challenge.ChallengeResponse.Code;
+import org.sapia.ubik.net.ServerAddress;
 
 /**
  * A handler of {@link ChallengeRequest}s.
@@ -31,11 +32,11 @@ public class ChallengeRequestHandler implements ControlRequestHandler {
    * challenge succeeds. A response to either effect is sent to the node
    * currently attempting to become the master.
    * 
-   * @see ControlRequestHandler#handle(String, ControlRequest)
+   * @see ControlRequestHandler#handle(String, org.sapia.ubik.net.ServerAddress, ControlRequest)
    */
   @Override
-  public void handle(String originNode, ControlRequest request) {
-    log.info("Received challenge request from %s (master is %s)", originNode, request.getMasterNode());
+  public void handle(String originNode, ServerAddress originAddress, ControlRequest request) {
+    log.info("Received challenge request from %s (master is %s)", request.getMasterNode(), context.getMasterNode());
     context.challengeRequestReceived();
     context.getChannelCallback().heartbeatRequest(originNode, request.getMasterAddress());
     if (context.getRole() == Role.MASTER || context.getRole() == Role.MASTER_CANDIDATE) {

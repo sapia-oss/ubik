@@ -18,7 +18,7 @@ import org.sapia.ubik.util.Collects;
  * @author yduchesne
  * 
  */
-public abstract class ControlNotification implements Externalizable, SplittableMessage {
+public abstract class ControlNotification implements Externalizable, SplitteableMessage {
 
   private Set<String> targetedNodes;
 
@@ -51,9 +51,9 @@ public abstract class ControlNotification implements Externalizable, SplittableM
    * 
    * @return a {@link List} of {@link ControlNotification}s.
    */
-  public List<SplittableMessage> split(int batchSize) {
+  public List<SplitteableMessage> split(int batchSize) {
     List<Set<String>> batches = Collects.divideAsSets(targetedNodes, batchSize);
-    List<SplittableMessage> notifications = new ArrayList<SplittableMessage>();
+    List<SplitteableMessage> notifications = new ArrayList<SplitteableMessage>();
     for (Set<String> batch : batches) {
       notifications.add(getCopy(batch));
     }

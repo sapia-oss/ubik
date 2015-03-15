@@ -11,7 +11,7 @@ import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.TcpPortSelector;
 import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.Localhost;
-import org.sapia.ubik.util.Time;
+import org.sapia.ubik.util.TimeValue;
 
 /**
  * Netty-based implementationf of the {@link UnicastDispatcher} interface.
@@ -63,13 +63,13 @@ public class NettyTcpUnicastDispatcher extends BaseTcpUnicastDispatcher implemen
         .setCorePoolSize(config.getIntProperty(SERVER_IO_CORE_THREADS_KEY, DEFAULT_SERVER_IO_CORE_THREADS))
         .setMaxPoolSize(config.getIntProperty(SERVER_IO_MAX_THREADS_KEY, DEFAULT_SERVER_IO_MAX_THREADS))
         .setQueueSize(config.getIntProperty(SERVER_IO_QUEUE_SIZE_KEY, DEFAULT_SERVER_IO_QUEUE_SIZE))
-        .setKeepAlive(Time.createSeconds(config.getLongProperty(SERVER_IO_KEEP_ALIVE_KEY, DEFAULT_SERVER_IO_KEEP_ALIVE)));
+        .setKeepAlive(TimeValue.createSeconds(config.getLongProperty(SERVER_IO_KEEP_ALIVE_KEY, DEFAULT_SERVER_IO_KEEP_ALIVE)));
 
     ThreadingConfiguration workerConf = ThreadingConfiguration.newInstance()
         .setCorePoolSize(config.getIntProperty(SERVER_WORKER_CORE_THREADS_KEY, DEFAULT_SERVER_WORKER_CORE_THREADS))
         .setMaxPoolSize(config.getIntProperty(SERVER_WORKER_MAX_THREADS_KEY, DEFAULT_SERVER_WORKER_MAX_THREADS))
         .setQueueSize(config.getIntProperty(SERVER_WORKER_QUEUE_SIZE_KEY, DEFAULT_SERVER_WORKER_QUEUE_SIZE))
-        .setKeepAlive(Time.createSeconds(config.getLongProperty(SERVER_WORKER_KEEP_ALIVE_KEY, DEFAULT_SERVER_WORKER_KEEP_ALIVE)));
+        .setKeepAlive(TimeValue.createSeconds(config.getLongProperty(SERVER_WORKER_KEEP_ALIVE_KEY, DEFAULT_SERVER_WORKER_KEEP_ALIVE)));
 
     server = new NettyTcpUnicastServer(consumer, address, ioConf, workerConf);
     server.start();
@@ -82,7 +82,7 @@ public class NettyTcpUnicastDispatcher extends BaseTcpUnicastDispatcher implemen
   }
 
   @Override
-  protected ConnectionFactory doGetConnectionFactory(int soTimeout) {
+  protected ConnectionFactory doGetConnectionFactory() {
     return new NettyTcpUnicastConnectionFactory(marshallingBufferSize);
   }
 

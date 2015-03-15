@@ -13,6 +13,7 @@ import org.sapia.ubik.mcast.RespList;
 import org.sapia.ubik.mcast.Response;
 import org.sapia.ubik.mcast.UnicastDispatcher;
 import org.sapia.ubik.net.ServerAddress;
+import org.sapia.ubik.util.TimeValue;
 
 /**
  * Implements an in-memory {@link UnicastDispatcher}.
@@ -25,7 +26,7 @@ public class InMemoryUnicastDispatcher implements UnicastDispatcher {
   private static final AtomicInteger INSTANCE_COUNTER = new AtomicInteger();
   
   private int instanceId = INSTANCE_COUNTER.incrementAndGet();
-  private Category log = Log.createCategory(getClass().getName() + "#" + instanceId);
+  private Category                log     = Log.createCategory(getClass().getName() + "#" + instanceId);
   private InMemoryDispatchChannel channel = InMemoryDispatchChannel.getInstance();
   private InMemoryUnicastAddress  address = new InMemoryUnicastAddress();
   private EventConsumer           consumer;
@@ -61,7 +62,7 @@ public class InMemoryUnicastDispatcher implements UnicastDispatcher {
   }
 
   @Override
-  public RespList send(List<ServerAddress> addresses, String type, Object data) throws IOException {
+  public RespList send(List<ServerAddress> addresses, String type, Object data, TimeValue timeout) throws IOException {
     RemoteEvent evt = new RemoteEvent(null, type, data).setNode(consumer.getNode()).setSync();
     evt.setUnicastAddress(getAddress());
 
@@ -76,9 +77,23 @@ public class InMemoryUnicastDispatcher implements UnicastDispatcher {
     }
     return resps;
   }
+  
+  @Override
+  public RespList send(ServerAddress[] addresses, String type, Object[] data, TimeValue timeout)
+      throws IOException, InterruptedException {
+    
+    RespList resps = new RespList(addresses.length);
+
+    for (int i = 0; i < addresses.length; i++) {
+      RemoteEvent evt = new RemoteEvent(null, type, data[i]).setNode(consumer.getNode()).setSync();
+      Response resp = (Response) doSend((InMemoryUnicastAddress) addresses[i], evt, true);
+      resps.addResponse(resp);
+    }
+    return resps;
+  }
 
   @Override
-  public Response send(ServerAddress addr, String type, Object data) throws IOException {
+  public Response send(ServerAddress addr, String type, Object data, TimeValue timeout) throws IOException {
     RemoteEvent evt = new RemoteEvent(null, type, data).setNode(consumer.getNode()).setSync();
     evt.setUnicastAddress(addr);
     return (Response) doSend((InMemoryUnicastAddress) addr, evt, true);

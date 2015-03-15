@@ -24,7 +24,7 @@ class ControlRequestFactory {
    */
   static ControlRequest createHeartbeatRequest(ControllerContext context) {
     ControlRequest req = new HeartbeatRequest(context.getClock(), createId(), context.getNode(), context.getChannelCallback().getAddress(), context
-        .getChannelCallback().getNodes());
+        .getChannelCallback().getNodes(), context.getConfig().getHeartbeatResponseDelay());
     return req;
   }
 

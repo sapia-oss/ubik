@@ -13,6 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.sapia.ubik.mcast.NodeInfo;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.util.SysClock;
+import org.sapia.ubik.util.TimeValue;
 
 public class TestChannelCallback implements ChannelCallback {
 
@@ -161,25 +162,38 @@ public class TestChannelCallback implements ChannelCallback {
         if (callback == null) {
           throw new IllegalArgumentException("No node for: " + targeted);
         }
-        callback.getController().onRequest(getNode(), req);
+        callback.getController().onRequest(getNode(), getAddress(), req);
       }
     }
   }
 
   @Override
-  public Set<SynchronousControlResponse> sendSynchronousRequest(Set<String> targetedNodes, SynchronousControlRequest request)
+  public Set<SynchronousControlResponse> sendSynchronousRequest(Set<String> targetedNodes, SynchronousControlRequest request, TimeValue timeout)
       throws InterruptedException, IOException {
-
     Set<SynchronousControlResponse> responses = new HashSet<SynchronousControlResponse>();
     if (!down) {
       for (String targeted : targetedNodes) {
         TestChannelCallback callback = getCallback(targeted);
         if (callback != null && !callback.down) {
-          responses.add(callback.getController().onSynchronousRequest(getNode(), request));
+          responses.add(callback.getController().onSynchronousRequest(getNode(), getAddress(), request));
         }
       }
     }
-
+    return responses;
+  }
+  
+  @Override
+  public Set<SynchronousControlResponse> sendSynchronousRequests(String[] targetedNodes, SynchronousControlRequest[] requests, TimeValue timeout)
+      throws InterruptedException, IOException {
+    Set<SynchronousControlResponse> responses = new HashSet<SynchronousControlResponse>();
+    if (!down) {
+      for (int i = 0; i < targetedNodes.length; i++) {
+        TestChannelCallback callback = getCallback(targetedNodes[i]);
+        if (callback != null && !callback.down) {
+          responses.add(callback.getController().onSynchronousRequest(getNode(), getAddress(), requests[i]));
+        }
+      }
+    }
     return responses;
   }
 

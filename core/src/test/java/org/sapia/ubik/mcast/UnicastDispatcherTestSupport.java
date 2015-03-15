@@ -12,9 +12,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.sapia.ubik.concurrent.BlockingCompletionQueue;
-import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.server.Hub;
+import org.sapia.ubik.util.TimeValue;
 
 public abstract class UnicastDispatcherTestSupport {
 
@@ -62,7 +62,7 @@ public abstract class UnicastDispatcherTestSupport {
   @Test
   public void testSendToSelectedDestinations() throws Exception {
     queue = new BlockingCompletionQueue<String>(3);
-    RespList responses = source.send(selectedDestinations(3), SYNC_EVENT_TYPE, "test");
+    RespList responses = source.send(selectedDestinations(3), SYNC_EVENT_TYPE, "test", TimeValue.createMillis(2000));
     assertEquals("Expected 3 responses", 3, responses.count());
     for (int i = 0; i < responses.count(); i++) {
       Response r = responses.get(i);
@@ -73,7 +73,7 @@ public abstract class UnicastDispatcherTestSupport {
   @Test
   public void testSendToSingleDestination() throws Exception {
     queue = new BlockingCompletionQueue<String>(1);
-    Response response = source.send(selectedDestinations(1).get(0), SYNC_EVENT_TYPE, "test");
+    Response response = source.send(selectedDestinations(1).get(0), SYNC_EVENT_TYPE, "test", TimeValue.createMillis(2000));
     assertTrue(response.getData() != null);
   }
 

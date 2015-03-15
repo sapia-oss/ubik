@@ -1,6 +1,8 @@
 package org.sapia.ubik.mcast;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -8,7 +10,7 @@ import java.util.List;
  * 
  * @author Yanick Duchesne
  */
-public class RespList {
+public class RespList implements Iterable<Response> {
   private List<Response> resps;
 
   /**
@@ -56,13 +58,13 @@ public class RespList {
    * @return <code>true</code> if this instance contains a {@link Response}
    *         object that holds a {@link Throwable}
    */
-  public boolean containsError() {
+  public boolean containsThrowable() {
     Response r;
 
     for (int i = 0; i < resps.size(); i++) {
       r = (Response) resps.get(i);
 
-      if (r.isError()) {
+      if (r.isThrowable()) {
         return true;
       }
     }
@@ -84,7 +86,7 @@ public class RespList {
     for (int i = 0; i < resps.size(); i++) {
       r = (Response) resps.get(i);
 
-      if (r.isError()) {
+      if (r.isThrowable()) {
         return true;
       }
     }
@@ -93,11 +95,14 @@ public class RespList {
   }
 
   /**
-   * Returns the number of responses within this instance.
-   * 
    * @return the number of responses within this instance.
    */
   public int count() {
     return resps.size();
+  }
+  
+  @Override
+  public Iterator<Response> iterator() {
+    return Collections.unmodifiableList(resps).iterator();
   }
 }

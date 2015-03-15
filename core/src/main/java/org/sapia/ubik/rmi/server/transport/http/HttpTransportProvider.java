@@ -16,7 +16,7 @@ import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.TransportProvider;
 import org.sapia.ubik.util.Localhost;
 import org.sapia.ubik.util.Conf;
-import org.sapia.ubik.util.Time;
+import org.sapia.ubik.util.TimeValue;
 
 /**
  * An instance of this class creates {@link HttpRmiServer} instances, as well as
@@ -133,7 +133,7 @@ public class HttpTransportProvider implements TransportProvider, HttpConsts {
     long keepAlive = configProps.getLongProperty(Consts.SERVER_THREADS_KEEP_ALIVE, ThreadingConfiguration.DEFAULT_KEEP_ALIVE.getValueInSeconds());
 
     ThreadingConfiguration threadConf = ThreadingConfiguration.newInstance().setCorePoolSize(coreThreads).setMaxPoolSize(maxThreads)
-        .setQueueSize(queueSize).setKeepAlive(Time.createSeconds(keepAlive));
+        .setQueueSize(queueSize).setKeepAlive(TimeValue.createSeconds(keepAlive));
 
     UbikHttpHandler handler = new UbikHttpHandler(serverUrl, threadConf);
     handlers.addHandler(CONTEXT_PATH, handler);

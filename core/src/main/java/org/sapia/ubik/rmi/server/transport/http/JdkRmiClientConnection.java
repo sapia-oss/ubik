@@ -7,6 +7,7 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.rmi.RemoteException;
 
@@ -109,6 +110,21 @@ public class JdkRmiClientConnection implements RmiConnection {
   public Object receive() throws IOException, ClassNotFoundException, RemoteException {
     Assertions.illegalState(conn == null, "Cannot receive; data was not posted");
 
+    ObjectInputStream is = MarshalStreamFactory.createInputStream(conn.getInputStream());
+
+    try {
+      return is.readObject();
+    } finally {
+      is.close();
+    }
+  }
+  
+  @Override
+  public Object receive(long timeout) throws IOException,
+      ClassNotFoundException, RemoteException, SocketTimeoutException {
+    Assertions.illegalState(conn == null, "Cannot receive; data was not posted");
+    
+    conn.setConnectTimeout((int) timeout);
     ObjectInputStream is = MarshalStreamFactory.createInputStream(conn.getInputStream());
 
     try {

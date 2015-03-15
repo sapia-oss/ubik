@@ -72,6 +72,7 @@ public final class DispatcherFactory {
           Defaults.DEFAULT_HANDLER_COUNT));
       dispatcher.setBufsize(props.getIntProperty(Consts.MCAST_BUFSIZE_KEY, Defaults.DEFAULT_UDP_PACKET_SIZE));
       dispatcher.setSenderCount(props.getIntProperty(Consts.MCAST_SENDER_COUNT, Defaults.DEFAULT_SENDER_COUNT));
+      dispatcher.setAsyncAckTimeout(props.getTimeProperty(Consts.MCAST_ASYNC_ACK_TIMEOUT, Defaults.DEFAULT_ASYNC_ACK_TIMEOUT));
       return dispatcher;
     } else {
       if (isNioEnabled) {
@@ -80,7 +81,7 @@ public final class DispatcherFactory {
             Defaults.DEFAULT_HANDLER_COUNT), props.getIntProperty(Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE));
         dispatcher.setSenderCount(props.getIntProperty(Consts.MCAST_SENDER_COUNT, Defaults.DEFAULT_SENDER_COUNT));
         dispatcher.setMaxConnectionsPerHost(props.getIntProperty(Consts.MCAST_MAX_CLIENT_CONNECTIONS, Defaults.DEFAULT_MAX_CONNECTIONS_PER_HOST));
-        dispatcher.setResponseTimeout(props.getTimeProperty(Consts.MCAST_SYNC_RESPONSE_TIMEOUT, Defaults.DEFAULT_SYNC_RESPONSE_TIMEOUT).getValueInMillis());
+        dispatcher.setAsyncAckTimeout(props.getTimeProperty(Consts.MCAST_ASYNC_ACK_TIMEOUT, Defaults.DEFAULT_ASYNC_ACK_TIMEOUT));
         return dispatcher;
       } else {
         log.info("Creating BIO TCP unicast provider");
@@ -90,7 +91,7 @@ public final class DispatcherFactory {
         TcpUnicastDispatcher dispatcher = new TcpUnicastDispatcher(consumer, threadingConfig);
         dispatcher.setSenderCount(props.getIntProperty(Consts.MCAST_SENDER_COUNT, Defaults.DEFAULT_SENDER_COUNT));
         dispatcher.setMaxConnectionsPerHost(props.getIntProperty(Consts.MCAST_MAX_CLIENT_CONNECTIONS, Defaults.DEFAULT_MAX_CONNECTIONS_PER_HOST));
-        dispatcher.setResponseTimeout(props.getTimeProperty(Consts.MCAST_SYNC_RESPONSE_TIMEOUT, Defaults.DEFAULT_SYNC_RESPONSE_TIMEOUT).getValueInMillis());
+        dispatcher.setAsyncAckTimeout(props.getTimeProperty(Consts.MCAST_ASYNC_ACK_TIMEOUT, Defaults.DEFAULT_ASYNC_ACK_TIMEOUT));
         return dispatcher;
       }
     }

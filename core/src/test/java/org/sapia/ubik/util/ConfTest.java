@@ -130,7 +130,7 @@ public class ConfTest {
 
   @Test
   public void testGetTimePropertyWithDefault() {
-    assertEquals(30, props.getTimeProperty("key", Time.createSeconds(30)).getValueInSeconds());
+    assertEquals(30, props.getTimeProperty("key", TimeValue.createSeconds(30)).getValueInSeconds());
   }
 
 

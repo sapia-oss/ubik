@@ -90,9 +90,8 @@ public class TcpUnicastDispatcher extends BaseTcpUnicastDispatcher {
   }
 
   @Override
-  protected ConnectionFactory doGetConnectionFactory(int soTimeout) {
+  protected ConnectionFactory doGetConnectionFactory() {
     SocketConnectionFactory connections = new SocketConnectionFactory(TRANSPORT_TYPE);
-    connections.setSoTimeout(soTimeout);
     return connections;
   }
 
@@ -142,13 +141,13 @@ public class TcpUnicastDispatcher extends BaseTcpUnicastDispatcher {
             if (consumer.hasSyncListener(evt.getType())) {
               log.debug("Received sync remote event %s from %s, notifying listener", evt.getType(), evt.getNode());
               Object response = consumer.onSyncEvent(evt);
-              req.getConnection().send(new Response(evt.getId(), response));
+              req.getConnection().send(new Response(req.getServerAddress(), evt.getId(), response));
             } else {
               log.debug("Received sync remote event %s from %s, no listener to notify", evt.getType(), evt.getNode());
-              req.getConnection().send(new Response(evt.getId(), null).setNone());
+              req.getConnection().send(new Response(req.getServerAddress(), evt.getId(), null).setNone());
             }
           } else {
-            log.debug("Received async remote event %s from %s, no listener to notify", evt.getType(), evt.getNode());
+            log.debug("Received async remote event %s from %s, notifying listeners", evt.getType(), evt.getNode());
             consumer.onAsyncEvent(evt);
           }
         } else {

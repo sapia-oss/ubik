@@ -19,12 +19,13 @@ public class ControllerContext {
 
   private List<EventChannelControllerListener> listeners = new CopyOnWriteArrayList<EventChannelControllerListener>();
 
-  private volatile Role          role;
-  private Purgatory              purgatory = new Purgatory();
-  private EventChannelController controller;
-  private ChannelCallback        channelCallback;
-  private SysClock               clock;
-  private volatile String        masterNode;
+  private volatile Role           role;
+  private Purgatory               purgatory = new Purgatory();
+  private EventChannelController  controller;
+  private ChannelCallback         channelCallback;
+  private SysClock                clock;
+  private ControllerConfiguration config;
+  private volatile String         masterNode;
   private AtomicLong lastHeartbeatReqRcvTime  = new AtomicLong();
   private AtomicLong lastHeartbeatReqSentTime = new AtomicLong();
   private AtomicLong lastChallengeReqRcvTime  = new AtomicLong();
@@ -41,13 +42,23 @@ public class ControllerContext {
    *          created.
    * @param clock
    *          the {@link SysClock} instance to use.
+   * @param conf
+   *          the {@link ControllerConfiguration} to use.
    */
-  ControllerContext(EventChannelController controller, ChannelCallback callback, SysClock clock) {
+  ControllerContext(EventChannelController controller, ChannelCallback callback, SysClock clock, ControllerConfiguration conf) {
     this.controller      = controller;
     this.role            = Role.UNDEFINED;
     this.channelCallback = callback;
     this.clock           = clock;
+    this.config          = conf;
     lastHeartbeatReqRcvTime.set(clock.currentTimeMillis());
+  }
+  
+  /**
+   * @return this instance's configuration.
+   */
+  public ControllerConfiguration getConfig() {
+    return config;
   }
 
   /**

@@ -313,11 +313,80 @@ public final class Collects {
    */
   public static <T> List<Set<T>> divideAsSets(Collection<T> toDivide, int divisor) {
     if (divisor == 0) {
-      splitAsSets(toDivide, 0);
-    } else {
+      return splitAsSets(toDivide, 0);
     }
     return splitAsSets(toDivide, divisor <= 0 ? 0 : (int) Math.round((double) toDivide.size() / divisor));
   }
   
+  /**
+   * @param toReturn
+   *          the {@link Set} to return, if it is not <code>null</code>.
+   * @return the given {@link Set}, or an empty {@link Set} if the given one is
+   *         empty.
+   */
+  public static <T> Set<T> emptyIfNull(Set<T> toReturn) {
+    if (toReturn == null) {
+      return new HashSet<T>();
+    }
+    return toReturn;
+  }
+
+  /**
+   * @param toReturn
+   *          the {@link List} to return, if it is not <code>null</code>.
+   * @return the given {@link List}, or an empty {@link List} if the given one
+   *         is empty.
+   */
+  public static <T> List<T> emptyIfNull(List<T> toReturn) {
+    if (toReturn == null) {
+      return new ArrayList<T>();
+    }
+    return toReturn;
+  }
   
+  /**
+   * @param toConvert
+   *          a {@link Collection} to convert.
+   * @param condition
+   *          a {@link Condition} to apply.
+   * @return a {@link List} containing the items for which the given
+   *         {@link Condition} returned <code>true</code>.
+   */
+  public static final <T> List<T> filterToArrayList(Collection<T> toFilter, Condition<T> condition) {
+    List<T> result = new ArrayList<T>();
+    for (T c : toFilter) {
+      if (condition.apply(c)) {
+        result.add(c);
+      }
+    }
+    return result;
+  }
+  
+  /**
+   * @param toConvert an {@link Iterator} of values to convert.
+   * @param converter the converter function to use for performing conversions.
+   * @return a {@link List} of converted objects.
+   */
+  public static final <R, T> List<R> convertAsList(Iterator<T> toConvert, Func<R, T> converter) {
+    List<R> converted = new ArrayList<R>();
+    while (toConvert.hasNext()) {
+      T tc = toConvert.next();
+      converted.add(converter.call(tc));
+    }
+    return converted;
+  }
+  
+  /**
+   * @param toConvert an {@link Iterator} of values to convert.
+   * @param converter the converter function to use for performing conversions.
+   * @return a {@link Set} of converted objects.
+   */
+  public static final <R, T> Set<R> convertAsSet(Iterator<T> toConvert, Func<R, T> converter) {
+    Set<R> converted = new HashSet<R>();
+    while (toConvert.hasNext()) {
+      T tc = toConvert.next();
+      converted.add(converter.call(tc));
+    }
+    return converted;
+  }  
 }

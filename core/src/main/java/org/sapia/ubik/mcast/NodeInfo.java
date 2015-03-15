@@ -6,8 +6,11 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
 import org.sapia.ubik.net.ServerAddress;
+import org.sapia.ubik.util.Strings;
 
 public class NodeInfo implements Externalizable {
+  
+  static final long serialVersionUID = 1L;
 
   ServerAddress addr;
   String node;
@@ -64,8 +67,14 @@ public class NodeInfo implements Externalizable {
     }
     return false;
   }
-
+  
   public int hashCode() {
     return addr.hashCode() * 31 + node.hashCode() * 31;
   }
+  
+  @Override
+  public String toString() {
+    return Strings.toString("node", node, "addr", addr);
+  }
+
 }

@@ -18,7 +18,7 @@ import org.sapia.ubik.util.Collects;
  * @author yduchesne
  * 
  */
-public abstract class ControlRequest implements Externalizable, SplittableMessage {
+public abstract class ControlRequest implements Externalizable, SplitteableMessage {
 
   private long requestId;
   private long creationTime;
@@ -61,6 +61,27 @@ public abstract class ControlRequest implements Externalizable, SplittableMessag
    */
   protected ControlRequest(SysClock clock, long requestId, String masterNode, ServerAddress masterAddress, Set<String> targetedNodes) {
     this.creationTime = clock.currentTimeMillis();
+    this.masterNode = masterNode;
+    this.masterAddress = masterAddress;
+    this.targetedNodes = targetedNodes;
+  }
+  
+  /**
+   * @param creationTime
+   *          the creation time, in millis.
+   * @param the
+   *          unique identifier that should be assigned to this request.
+   * @param masterNode
+   *          the identifier of the master node, which is initiating this
+   *          request.
+   * @param masterAddress
+   *          the unicast address of the master node.
+   * @param targetedNodes
+   *          the {@link Set} of identifiers of the nodes to which this request
+   *          should be sent.
+   */
+  protected ControlRequest(long creationTime, long requestId, String masterNode, ServerAddress masterAddress, Set<String> targetedNodes) {
+    this.creationTime = creationTime;
     this.masterNode = masterNode;
     this.masterAddress = masterAddress;
     this.targetedNodes = targetedNodes;
@@ -108,9 +129,9 @@ public abstract class ControlRequest implements Externalizable, SplittableMessag
    * @return a {@link List} of {@link ControlRequest}s.
    */
 
-  public List<SplittableMessage> split(int batchSize) {
+  public List<SplitteableMessage> split(int batchSize) {
     List<Set<String>> batches = Collects.divideAsSets(targetedNodes, batchSize);
-    List<SplittableMessage> requests = new ArrayList<SplittableMessage>();
+    List<SplitteableMessage> requests = new ArrayList<SplitteableMessage>();
     for (Set<String> batch : batches) {
       ControlRequest copy = getCopy(batch);
       copy.creationTime   = this.creationTime;

@@ -159,9 +159,17 @@ public class CollectsTest {
     assertEquals(2, splits.get(0).size());
     assertEquals(2, splits.get(1).size());
     assertEquals(2, splits.get(2).size());
-
   }
-
+  
+  @Test
+  public void testDivideAsSetsOdd() {
+    Set<String> toSplit = Collects.arrayToSet("1", "2", "3");
+    List<Set<String>> splits = Collects.divideAsSets(toSplit, 2);
+    assertEquals(2, splits.size());
+    assertEquals(2, splits.get(0).size());
+    assertEquals(1, splits.get(1).size());
+  }
+  
   @Test
   public void testDivideAsSetsWithZeroDivisor() {
     Set<String> toSplit = Collects.arrayToSet("1", "2", "3", "4", "5", "6");
@@ -202,6 +210,39 @@ public class CollectsTest {
     List<List<String>> splits = Collects.divideAsLists(toSplit, 6);
     assertEquals(6, splits.size());
     assertEquals(1, splits.get(0).size());
+  }
+  
+  @Test
+  public void testEmptyIfNullList() {
+    List<String> input = null;
+    List<String> lst = Collects.emptyIfNull(input);
+    assertNotNull("Expected non-null list", lst);
+  }
+
+  @Test
+  public void testEmptyIfNullSet() {
+    Set<String> input = null;
+    Set<String> set = Collects.emptyIfNull(input);
+    assertNotNull("Expected non-null set", set);
+  }
+  
+  @Test
+  public void testFilterToArrayList() {
+    Set<Integer> values = new HashSet<Integer>();
+    values.add(1);
+    values.add(2);
+    values.add(3);
+    values.add(4);
+    List<Integer> result = Collects.filterToArrayList(values, new Condition<Integer>() {
+      public boolean apply(Integer item) {
+        return item.intValue() % 2 == 0;
+        
+      }
+    });
+    
+    assertEquals(2, result.size());
+    assertTrue(values.contains(new Integer(2)));
+    assertTrue(values.contains(new Integer(4)));
   }
 
 }

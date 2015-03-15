@@ -191,18 +191,18 @@ public class Conf {
   /**
    * @param key
    *          the key of the desired property.
-   * @return the {@link Time} corresponding to the retrieved property
+   * @return the {@link TimeValue} corresponding to the retrieved property
    *         value (which is expected to be a time literal.
    * @throws IllegalArgumentException not value could be found for the
    *         the desired property.
    */
-  public Time getTimeProperty(String key) throws IllegalArgumentException {
+  public TimeValue getTimeProperty(String key) throws IllegalArgumentException {
     String val = lookup(key, false);
     if (val == null) {
       throw new IllegalArgumentException("No time specified for property: " + key);
     }
     val = val.toLowerCase();
-    return Time.valueOf(val);
+    return TimeValue.valueOf(val);
   }
 
   /**
@@ -240,16 +240,16 @@ public class Conf {
   /**
    * @param key
    *          the key of the desired property.
-   * @return the {@link Time} corresponding to the property value, which is
+   * @return the {@link TimeValue} corresponding to the property value, which is
    *         expected to be a time literal.
    */
-  public Time getTimeProperty(String key, Time defaultValue) {
+  public TimeValue getTimeProperty(String key, TimeValue defaultValue) {
     String val = lookup(key, false);
     if (val == null) {
       return defaultValue;
     }
     val = val.toLowerCase();
-    return Time.valueOf(val);
+    return TimeValue.valueOf(val);
   }
 
   /**

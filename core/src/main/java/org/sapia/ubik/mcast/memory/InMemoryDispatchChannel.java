@@ -43,8 +43,13 @@ public final class InMemoryDispatchChannel {
   private InMemoryDispatchChannel() {
   }
 
-  static InMemoryDispatchChannel getInstance() {
+  public static InMemoryDispatchChannel getInstance() {
     return instance;
+  }
+  
+  public void clear() {
+    broadcastDispatchers.clear();
+    unicastDispatchers.clear();
   }
 
   void registerDispatcher(InMemoryBroadcastDispatcher dispatcher) {
@@ -139,26 +144,26 @@ public final class InMemoryDispatchChannel {
             } else if (dispatcher.getAddress().equals(destination)) {
               if (dispatcher.getConsumer().hasSyncListener(event.getType())) {
                 log.debug("Dispatching to sync listener: %s", event.getType());
-                resp.set(new Response(event.getId(), dispatcher.getConsumer().onSyncEvent(event)));
+                Response r = new Response(destination, event.getId(), dispatcher.getConsumer().onSyncEvent(event));
+                resp.set(r);
                 return;
               } else {
                 log.debug("No listener found for %s", event.getType());
-                resp.set(new Response(event.getId(), null).setNone());
+                resp.set(new Response(destination, event.getId(), null).setNone());
                 return;
               }
             }
           }
         }
-        log.debug("Could not dispatch %s (no listener found)", event.getType());
-        resp.set(new Response(event.getId(), null).setNone().setStatusSuspect());
+        log.debug("Could not dispatch %s (no destination for address)", destination);
+        resp.set(new Response(destination, event.getId(), null).setNone().setStatusSuspect());
       }
 
     });
 
     Response r = resp.await(SYNC_RESPONSE_TIMEOUT);
-
     if (r == null) {
-      r = new Response(event.getId(), null).setNone().setStatusSuspect();
+      r = new Response(destination, event.getId(), null).setNone().setStatusSuspect();
     }
     return r;
   }

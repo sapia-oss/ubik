@@ -157,6 +157,10 @@ public class Category {
     return Log.isError();
   }
 
+  public boolean isReport() {
+    return Log.isReport();
+  }
+  
   public Object[] noArgs() {
     return EMPTY_ARGS;
   }

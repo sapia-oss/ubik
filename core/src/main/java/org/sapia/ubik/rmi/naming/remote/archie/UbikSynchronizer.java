@@ -88,7 +88,7 @@ public class UbikSynchronizer implements Synchronizer, AsyncEventListener, SyncE
           log.debug("Got %s results for %s", results.count(), nodeAbsolutePath);
           for (int i = 0; i < results.count(); i++) {
              Response res = results.get(i);
-             if (!res.isError() && !res.isNone()) {
+             if (!res.isThrowable() && !res.isNone()) {
                Object remote = res.getData();
                if (remote != null) {
                  return remote;

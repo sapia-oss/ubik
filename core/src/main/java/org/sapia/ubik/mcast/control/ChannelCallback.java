@@ -7,6 +7,7 @@ import java.util.Set;
 import org.sapia.ubik.mcast.EventChannel;
 import org.sapia.ubik.mcast.NodeInfo;
 import org.sapia.ubik.net.ServerAddress;
+import org.sapia.ubik.util.TimeValue;
 
 /**
  * This interface is meant to abstract the {@link EventChannel} class from the
@@ -63,14 +64,32 @@ public interface ChannelCallback {
    *          the set of node identifiers corresponding to the targeted nodes.
    * @param request
    *          the {@link SynchronousControlRequest} to send.
-   * @return the {@link Set} of {@link SynchronousControlResponse} that are
+   * @param timeout
+   *          the maximum time to block waiting for responses.
+   * @return the {@link Set} of {@link SynchronousControlResponse}s that are
    *         returned in response to the request.
    * @throws InterruptedException
    *           if the calling thread is interrupted while sending the request.
    * @throws IOException
    *           if an IO problem occurred while sending the request.
    */
-  public Set<SynchronousControlResponse> sendSynchronousRequest(Set<String> targetedNodes, SynchronousControlRequest request)
+  public Set<SynchronousControlResponse> sendSynchronousRequest(Set<String> targetedNodes, SynchronousControlRequest request, TimeValue timeout)
+      throws InterruptedException, IOException;
+  
+  /**
+   * @param targetedNodes 
+   *          the array of node identifiers corresponding to the nodes to target.
+   * @param requests 
+   *          the {@link SynchronousControlRequest}s to send to each node, respectively.
+   * @param timeout
+   *          the maximum time to block waiting for responses.
+   * @return the {@link Set} of {@link SynchronousControlResponse}s that are returned in response to the requests.
+   * @throws InterruptedException
+   *           if the calling thread is interrupted while sending the request.
+   * @throws IOException
+   *           if an IO problem occurred while sending the request.   
+   */
+  public Set<SynchronousControlResponse> sendSynchronousRequests(String[] targetedNodes, SynchronousControlRequest[] requests, TimeValue timeout)
       throws InterruptedException, IOException;
 
   /**

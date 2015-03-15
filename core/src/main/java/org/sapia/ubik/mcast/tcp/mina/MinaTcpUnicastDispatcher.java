@@ -16,6 +16,8 @@ import org.sapia.ubik.mcast.tcp.BaseTcpUnicastDispatcher;
 import org.sapia.ubik.net.ConnectionFactory;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.TcpPortSelector;
+import org.sapia.ubik.util.Assertions;
+import org.sapia.ubik.util.Func;
 import org.sapia.ubik.util.Localhost;
 
 /**
@@ -49,7 +51,14 @@ public class MinaTcpUnicastDispatcher extends BaseTcpUnicastDispatcher {
    */
   public MinaTcpUnicastDispatcher(EventConsumer consumer, int maxThreads, int marshallingBufferSize) throws IOException {
     super(consumer);
-    this.handler = new MinaTcpUnicastHandler(consumer);
+    this.handler = new MinaTcpUnicastHandler(consumer, new Func<ServerAddress, Void>() {
+      
+      @Override
+      public ServerAddress call(Void arg) {
+        Assertions.illegalState(address == null, "Server address not set");
+        return address;
+      }
+    });
     this.maxThreads = maxThreads;
     this.marshallingBufferSize = marshallingBufferSize;
     String host = Localhost.getPreferredLocalAddress().getHostAddress();
@@ -80,7 +89,7 @@ public class MinaTcpUnicastDispatcher extends BaseTcpUnicastDispatcher {
   }
 
   @Override
-  protected ConnectionFactory doGetConnectionFactory(int soTimeout) {
+  protected ConnectionFactory doGetConnectionFactory() {
     return new MinaTcpUnicastConnectionFactory(marshallingBufferSize);
   }
 

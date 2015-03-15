@@ -23,11 +23,11 @@ public class ControlRequestTest {
     }
     TestControlRequest req = new TestControlRequest(targetedNodes);
 
-    List<SplittableMessage> splits = req.split(10);
+    List<SplitteableMessage> splits = req.split(10);
     int total = 0;
     for (int i = 0; i < splits.size(); i++) {
       assertEquals(10, splits.get(i).getTargetedNodes().size());
-      List<SplittableMessage> nestedSplits = splits.get(i).split(5);
+      List<SplitteableMessage> nestedSplits = splits.get(i).split(5);
       for (int j = 0; j < nestedSplits.size(); j++) {
         assertEquals(2, nestedSplits.get(j).getTargetedNodes().size());
         total += nestedSplits.get(j).getTargetedNodes().size();

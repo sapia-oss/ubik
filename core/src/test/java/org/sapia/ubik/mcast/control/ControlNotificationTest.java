@@ -19,10 +19,10 @@ public class ControlNotificationTest {
     }
     TestControlNotification notif = new TestControlNotification(targetedNodes);
 
-    List<SplittableMessage> splits = notif.split(10);
+    List<SplitteableMessage> splits = notif.split(10);
     for (int i = 0; i < splits.size(); i++) {
       assertEquals(10, splits.get(i).getTargetedNodes().size());
-      List<SplittableMessage> nestedSplits = splits.get(i).split(5);
+      List<SplitteableMessage> nestedSplits = splits.get(i).split(5);
       for (int j = 0; j < nestedSplits.size(); j++) {
         assertEquals(2, nestedSplits.get(j).getTargetedNodes().size());
       }

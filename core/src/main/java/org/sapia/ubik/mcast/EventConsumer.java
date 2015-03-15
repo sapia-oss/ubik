@@ -49,7 +49,7 @@ public class EventConsumer {
    * a globally unique node identifier.
    */
   public EventConsumer(String domain) throws UnknownHostException {
-    this(UUID.randomUUID().toString(), domain);
+    this(UUID.randomUUID().toString().replace("-", ""), domain);
   }
 
   /**

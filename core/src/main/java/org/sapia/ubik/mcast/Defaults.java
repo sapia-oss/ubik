@@ -1,7 +1,7 @@
 package org.sapia.ubik.mcast;
 
 import org.sapia.ubik.rmi.Consts;
-import org.sapia.ubik.util.Time;
+import org.sapia.ubik.util.TimeValue;
 import org.sapia.ubik.util.TimeRange;
 
 /**
@@ -24,13 +24,13 @@ public class Defaults {
    * The default value of the timeout for client-side JNDI discovery. (see {@link Consts#JNDI_CLIENT_DISCO_TIMEOUT}).
    */
 
-  public static final Time DEFAULT_JNDI_CLIENT_DISCO_TIMEOUT = Time.createMillis(5000);
+  public static final TimeValue DEFAULT_JNDI_CLIENT_DISCO_TIMEOUT = TimeValue.createMillis(5000);
 
   /**
    * The default value for the batch size when looking up synchronously other JNDI nodes, from a
    * given node missing a stub (see {@link Consts#JNDI_LAZY_LOOKUP_INTERVAL}).
    */
-  public static final Time DEFAULT_LAZY_LOOKUP_INTERVAL = Time.createMillis(1000);
+  public static final TimeValue DEFAULT_LAZY_LOOKUP_INTERVAL = TimeValue.createMillis(1000);
 
   /**
    * The default UDP packet size (see {@link Consts#MCAST_BUFSIZE_KEY}).
@@ -45,31 +45,44 @@ public class Defaults {
   /**
    * The default sender count (see {@link Consts#MCAST_SENDER_COUNT}).
    */
-  public static final int DEFAULT_SENDER_COUNT = 3;
+  public static final int DEFAULT_SENDER_COUNT = 5;
 
   /**
    * The default number of worker threads for unicast dispatchers.
    *
    * (see {@link Consts#MCAST_HANDLER_COUNT}).
    */
-  public static final int DEFAULT_HANDLER_COUNT = 3;
+  public static final int DEFAULT_HANDLER_COUNT = 10;
 
   /**
    * The default synchronous response timeout (see
    * {@link Consts#MCAST_SYNC_RESPONSE_TIMEOUT}).
    */
-  public static final Time DEFAULT_SYNC_RESPONSE_TIMEOUT = Time.createMillis(10000);
+  public static final TimeValue DEFAULT_SYNC_RESPONSE_TIMEOUT = TimeValue.createMillis(10000);
+  
+  
+  /**
+   * The default synchronous response timeout (see
+   * {@link Consts#MCAST_ASYNC_ACK_TIMEOUT}).
+   */
+  public static final TimeValue DEFAULT_ASYNC_ACK_TIMEOUT = TimeValue.createMillis(3000);
+  
 
   /**
    * The default heartbeat timeout (see {@link Consts#MCAST_HEARTBEAT_TIMEOUT}).
    */
-  public static final Time DEFAULT_HEARTBEAT_TIMEOUT = Time.createMillis(90000);
+  public static final TimeValue DEFAULT_HEARTBEAT_TIMEOUT = TimeValue.createMillis(90000);
+  
+  /**
+   * The default heartbeat response delay (see {@link Consts#MCAST_HEARTBEAT_RESPONSE_DELAY}).
+   */
+  public static final TimeRange DEFAULT_HEARTBEAT_RESPONSE_DELAY = TimeRange.valueOf("2000ms:3000ms");
 
   /**
    * The default heartbeat interval (see {@link Consts#MCAST_HEARTBEAT_INTERVAL}
    * ).
    */
-  public static final Time DEFAULT_HEARTBEAT_INTERVAL = Time.createMillis(30000);
+  public static final TimeValue DEFAULT_HEARTBEAT_INTERVAL = TimeValue.createMillis(30000);
 
   /**
    * The interval at which a node will resync itself with the cluster by
@@ -78,7 +91,7 @@ public class Defaults {
    * @see #DEFAULT_RESYNC_NODE_COUNT
    * @see Consts#MCAST_RESYNC_INTERVAL
    */
-  public static final Time DEFAULT_RESYNC_INTERVAL = Time.createMillis(60000);
+  public static final TimeValue DEFAULT_RESYNC_INTERVAL = TimeValue.createMillis(60000);
 
   /**
    * The default minimum number of nodes in the cluster before a given node will
@@ -106,13 +119,28 @@ public class Defaults {
   /**
    * The default timeout for channel control responses.
    */
-  public static final Time DEFAULT_CONTROL_RESPONSE_TIMEOUT = Time.createMillis(60000);
+  public static final TimeValue DEFAULT_CONTROL_RESPONSE_TIMEOUT = TimeValue.createMillis(60000);
 
   /**
    * The size for the splits of control requests/notifications.
    */
   public static final int DEFAULT_CONTROL_SPLIT_SIZE = 5;
+  
+  /**
+   * The size for the splits of synchronous heartbeat requests/notifications.
+   */
+  public static final int DEFAULT_SYNC_HEARTBEAT_SPLIT_SIZE = 2;
+  
+  /**
+   * @see Consts#MCAST_CONTROL_SYNC_HEARTBEAT_ENABLED
+   */
+  public static boolean DEFAULT_SYNC_HEARTBEAT_ENABLED = true;
 
+  /**
+   * @see Consts#MCAST_CONTROL_SYNC_HEARTBEAT_RESPONSE_TIMEOUT
+   */
+  public static TimeValue DEFAULT_SYNC_HEARTBEAT_RESPONSE_TIMEOUT = TimeValue.createMillis(10000);
+  
   /**
    * The default number of maximum client connections for each remote peers.
    *
@@ -132,21 +160,21 @@ public class Defaults {
    *
    * @see Consts#MCAST_PING_INTERVAL
    */
-  public static final Time DEFAULT_PING_INTERVAL = Time.createMillis(2000);
+  public static final TimeValue DEFAULT_PING_INTERVAL = TimeValue.createMillis(2000);
 
   /**
    * The default master broadcast interval.
    *
    * @see Consts#MCAST_MASTER_BROADCAST_INTERVAL
    */
-  public static final Time DEFAULT_MASTER_BROADCAST_INTERVAL = Time.createMillis(120000);
+  public static final TimeValue DEFAULT_MASTER_BROADCAST_INTERVAL = TimeValue.createMillis(120000);
 
   /**
    * The default broadcast monitor reconnection interval.
    *
    * @see Consts#MCAST_BROADCAST_MONITOR_INTERVAL
    */
-  public static final Time DEFAULT_BROADCAST_MONITOR_INTERVAL = Time.createMillis(30000);
+  public static final TimeValue DEFAULT_BROADCAST_MONITOR_INTERVAL = TimeValue.createMillis(30000);
 
   /**
    * The default random time range specifying the interval used by the event channel to publish itself
@@ -184,7 +212,7 @@ public class Defaults {
    *
    * @see Consts#SPAWN_THREADS_KEEP_ALIVE
    */
-  public static final Time DEFAULT_SPAWN_KEEP_ALIVE = Time.createSeconds(30);
+  public static final TimeValue DEFAULT_SPAWN_KEEP_ALIVE = TimeValue.createSeconds(30);
 
   /**
    * The number of core threads in the spawning thread pool.
@@ -207,6 +235,7 @@ public class Defaults {
    * @see Consts#SPAWN_THREADS_QUEUE_SIZE
    */
   public static final int  DEFAULT_SPAWN_QUEUE_SIZE = 100;
+  
 
   private Defaults() {
   }

@@ -2,6 +2,7 @@ package org.sapia.ubik.mcast.control;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -24,17 +25,20 @@ import org.sapia.ubik.mcast.control.heartbeat.HeartbeatRequest;
 import org.sapia.ubik.mcast.control.heartbeat.HeartbeatRequestHandler;
 import org.sapia.ubik.mcast.control.heartbeat.PingRequest;
 import org.sapia.ubik.mcast.control.heartbeat.PingRequestHandler;
-import org.sapia.ubik.mcast.control.master.MasterBroadcastEventHandler;
+import org.sapia.ubik.mcast.control.heartbeat.SynchronousHeartbeatRequest;
+import org.sapia.ubik.mcast.control.heartbeat.SynchronousHeartbeatRequestHandler;
+import org.sapia.ubik.mcast.control.heartbeat.SynchronousHeartbeatRequestSender;
 import org.sapia.ubik.mcast.control.master.MasterBroadcastAckEvent;
 import org.sapia.ubik.mcast.control.master.MasterBroadcastAckEventHandler;
 import org.sapia.ubik.mcast.control.master.MasterBroadcastEvent;
+import org.sapia.ubik.mcast.control.master.MasterBroadcastEventHandler;
 import org.sapia.ubik.mcast.control.master.MasterSyncEvent;
 import org.sapia.ubik.mcast.control.master.MasterSyncEventHandler;
 import org.sapia.ubik.net.ServerAddress;
-import org.sapia.ubik.util.SysClock;
 import org.sapia.ubik.util.Collects;
-import org.sapia.ubik.util.Pause;
 import org.sapia.ubik.util.Func;
+import org.sapia.ubik.util.Pause;
+import org.sapia.ubik.util.SysClock;
 
 /**
  * Controls the state of an {@link EventChannel} and behaves accordingly. It is
@@ -93,15 +97,17 @@ public class EventChannelController {
 
   public EventChannelController(SysClock clock, ControllerConfiguration config, ChannelCallback callback) {
     this.config = config;
-    context = new ControllerContext(this, callback, clock);
+    context = new ControllerContext(this, callback, clock, config);
     requestHandlers.put(ChallengeRequest.class.getName(), new ChallengeRequestHandler(context));
     requestHandlers.put(HeartbeatRequest.class.getName(), new HeartbeatRequestHandler(context));
     syncRequestHandlers.put(PingRequest.class.getName(), new PingRequestHandler(context));
+    syncRequestHandlers.put(SynchronousHeartbeatRequest.class.getName(), new SynchronousHeartbeatRequestHandler(context));
     notificationHandlers.put(DownNotification.class.getName(), new DownNotificationHandler(context));
     notificationHandlers.put(ChallengeCompletionNotification.class.getName(), new ChallengeCompletionNotificationHandler(context));
     eventHandlers.put(MasterBroadcastEvent.class.getName(), new MasterBroadcastEventHandler(context));
     eventHandlers.put(MasterBroadcastAckEvent.class.getName(), new MasterBroadcastAckEventHandler(context));
     eventHandlers.put(MasterSyncEvent.class.getName(), new MasterSyncEventHandler(context));
+    
 
     autoResyncInterval      = new Pause(clock, config.getResyncInterval());
     masterBroadcastInterval = new Pause(clock, config.getMasterBroadcastInterval());
@@ -171,11 +177,11 @@ public class EventChannelController {
     }
   }
 
-  public synchronized void onRequest(String originNode, ControlRequest request) {
+  public synchronized void onRequest(String originNode, ServerAddress originAddress, ControlRequest request) {
     ControlRequestHandler handler = requestHandlers.get(request.getClass().getName());
     try {
       if (handler != null) {
-        handler.handle(originNode, request);
+        handler.handle(originNode, originAddress, request);
       } else {
         log.error("No request handler for request %s", request);
       }
@@ -196,10 +202,10 @@ public class EventChannelController {
     }
   }
 
-  public synchronized SynchronousControlResponse onSynchronousRequest(String originNode, SynchronousControlRequest request) {
+  public synchronized SynchronousControlResponse onSynchronousRequest(String originNode, ServerAddress originAddress, SynchronousControlRequest request) {
     SynchronousControlRequestHandler handler = syncRequestHandlers.get(request.getClass().getName());
     if (handler != null) {
-      return handler.handle(originNode, request);
+      return handler.handle(originNode, originAddress, request);
     } else {
       log.error("No request handler for request %s", request);
       return null;
@@ -222,7 +228,15 @@ public class EventChannelController {
   }
 
   private void performControl() {
-    log.debug("*********** Current role is %s ***********", context.getRole());
+    log.report("*********** Current role is %s ***********", context.getRole());
+    if (context.getRole() == Role.SLAVE && log.isReport()) {
+      log.report("Last heartbeat request received at: %s", new Date(context.getLastHeartbeatRequestReceivedTime()));
+      log.report("Heartbeat timeout set to: %s millis", context.getConfig().getHeartbeatTimeout());
+      log.report("Node identifier: %s", context.getChannelCallback().getNode());
+      if (context.getClock().currentTimeMillis() - context.getLastHeartbeatRequestReceivedTime() > context.getConfig().getHeartbeatTimeout()) {
+        log.report("Heartbeat request is due (has not been received at expected time)");
+      }
+    }
     switch (context.getRole()) {
 
     // Role is currently undefined, proceeding to challenge
@@ -245,45 +259,42 @@ public class EventChannelController {
     // matching
     // response handler.
     case MASTER:
+      // either resynching or sending master broadcast
+      if (masterBroadcastInterval.isOver()) {
+        context.getChannelCallback().triggerMasterBroadcast();
+        masterBroadcastInterval.reset();
+      }
 
-      // forcing resync of this node if need be
-      if (context.getChannelCallback().getNodes().isEmpty() && autoResyncInterval.isOver()) {
-        log.debug("Node appears alone in the cluster, forcing a resync");
-        context.getChannelCallback().resync();
-        autoResyncInterval.reset();
-      } else {
-
-        // either resynching or sending master broadcast
-        if (context.getChannelCallback().getNodes().size() <= config.getResyncNodeCount() && autoResyncInterval.isOver()) {
-          log.info("Number of peers deemed not enough, forcing a resync");
-          context.getChannelCallback().resync();
-          autoResyncInterval.reset();
-        } else if (masterBroadcastInterval.isOver()) {
-          context.getChannelCallback().triggerMasterBroadcast();
-        }
-
-        // broadcast "force resync" events to all nodes in the purgatory
-        if (context.getPurgatory().size() > 0) {
-          log.info("Got %s nodes in purgatory", context.getPurgatory().size());
-          List<Set<DownNode>> batches = Collects.splitAsSets(context.getPurgatory().getDownNodes(), config.getForceResyncBatchSize());
-          for (Set<DownNode> batch : batches) {
-            context.getChannelCallback().forceResyncOf(Collects.convertAsSet(batch, new Func<String, DownNode>() {
-              @Override
-              public String call(DownNode arg) {
-                log.debug("Forcing resync for node in purgatory: %s", arg.getNode());
-                arg.attempt();
-                return arg.getNode();
-              }
-            }));
-          }
-          Set<String> purged = context.getPurgatory().clear(config.getForceResyncAttempts());
-          if (!purged.isEmpty() && log.isInfo()) {
-            log.info("Purged nodes from purgatory (those are definitely lost):");
-            for (String p : purged) {
-              log.info(p);
+      // broadcast "force resync" events to all nodes in the purgatory
+      if (context.getPurgatory().size() > 0) {
+        log.info("Got %s nodes in purgatory", context.getPurgatory().size());
+        List<Set<DownNode>> batches = Collects.splitAsSets(context.getPurgatory().getDownNodes(), config.getForceResyncBatchSize());
+        for (Set<DownNode> batch : batches) {
+          context.getChannelCallback().forceResyncOf(Collects.convertAsSet(batch, new Func<String, DownNode>() {
+            @Override
+            public String call(DownNode arg) {
+              log.debug("Forcing resync for node in purgatory: %s", arg.getNode());
+              arg.attempt();
+              return arg.getNode();
             }
+          }));
+        }
+        Set<String> purged = context.getPurgatory().clear(config.getForceResyncAttempts());
+        if (!purged.isEmpty() && log.isInfo()) {
+          log.info("Purged nodes from purgatory (those are definitely lost):");
+          for (String p : purged) {
+            log.info(p);
           }
         }
+      }
+      
+      if (context.getConfig().isSyncHeartBeatEnabled()) {
+        SynchronousHeartbeatRequestSender sender = new SynchronousHeartbeatRequestSender(context);
+        log.report("Sending synchronous heartbeat request to %s nodes", context.getChannelCallback().getNodeCount());
+        sender.sendHearbeatRequest();
+        log.report("Finished sending heartbeat request", context.getChannelCallback().getNodeCount());
+
+      } else {
         ControlRequest heartbeatRq = ControlRequestFactory.createHeartbeatRequest(context);
         ControlResponseHandler heartbeatHandler = ControlResponseHandlerFactory
             .createHeartbeatResponseHandler(
@@ -293,10 +304,11 @@ public class EventChannelController {
 
         ref.set(new PendingResponseState(heartbeatHandler, heartbeatRq.getRequestId(), context.getClock().currentTimeMillis()));
         context.heartbeatRequestSent();
-        log.info("Sending heartbeat request to %s", heartbeatRq.getTargetedNodes());
+        log.info("Sending asynchronous heartbeat request to %s nodes", heartbeatRq.getTargetedNodes().size());
         context.getChannelCallback().sendRequest(heartbeatRq);
       }
-      break;
+   
+    break;
 
     // ----------------------------------------------------------------------
 
@@ -304,12 +316,12 @@ public class EventChannelController {
     // no, we're triggering a challenge: the master may be down.
     default: // SLAVE
       if (context.getChannelCallback().getNodes().isEmpty() && autoResyncInterval.isOver()) {
-        log.debug("Node appears alone in the cluster, forcing a resync");
+        log.report("Node appears alone in the cluster, forcing a resync");
         context.getChannelCallback().resync();
         autoResyncInterval.reset();
       } else if (context.getClock().currentTimeMillis() - context.getLastHeartbeatRequestReceivedTime() >= config.getHeartbeatTimeout()) {
         if (context.getChannelCallback().getNodes().size() <= config.getResyncNodeCount() && autoResyncInterval.isOver()) {
-          log.debug("Number of peers deemed not enough, forcing a resync");
+          log.report("Number of peers deemed not enough, forcing a resync");
           context.getChannelCallback().resync();
           autoResyncInterval.reset();
         }
