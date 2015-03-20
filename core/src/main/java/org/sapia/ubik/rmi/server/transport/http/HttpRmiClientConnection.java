@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.rmi.RemoteException;
 
@@ -15,6 +16,7 @@ import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.util.EntityUtils;
 import org.javasimon.Split;
 import org.javasimon.Stopwatch;
+import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
@@ -36,6 +38,8 @@ import org.sapia.ubik.util.Conf;
  * @author Yanick Duchesne
  */
 public class HttpRmiClientConnection implements RmiConnection {
+  
+  private Category log = Log.createCategory(getClass());
 
   private static Stopwatch serializationTime = Stats.createStopwatch(HttpRmiClientConnection.class, "SerializationDuration",
       "Time required to serialize an object");
@@ -69,6 +73,8 @@ public class HttpRmiClientConnection implements RmiConnection {
 
     ByteArrayOutputStream bos = new ByteArrayOutputStream(bufsz);
 
+    log.debug("Sending: %s", o);
+    
     Split split = serializationTime.start();
     ObjectOutputStream mos = MarshalStreamFactory.createOutputStream(bos);
     if ((associated != null) && (transportType != null)) {
@@ -88,12 +94,17 @@ public class HttpRmiClientConnection implements RmiConnection {
 
     post.setEntity(new ByteArrayEntity(data));
     try {
+      log.debug("Performing HTTP POST");
       HttpResponse response = client.execute(post);
+      log.debug("Got HTTP response");
+      
       if (response.getStatusLine().getStatusCode() != STATUS_OK) {
         throw new IOException("HTTP response error " + response.getStatusLine().getStatusCode() + " caught: "
             + response.getStatusLine().getReasonPhrase());
       }
       responsePayload = EntityUtils.toByteArray(response.getEntity());
+    } catch (SocketException e) {
+      throw new RemoteException("Connection error caught", e);
     } finally {
       post.releaseConnection();
     }
