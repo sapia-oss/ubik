@@ -51,7 +51,6 @@ public class HttpRmiClientConnection implements RmiConnection {
 
   private HttpAddress address;
   private HttpClient client;
-  private HttpPost post;
   private byte[] responsePayload;
   private int bufsz = Conf.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE);
 
@@ -69,7 +68,7 @@ public class HttpRmiClientConnection implements RmiConnection {
    *      org.sapia.ubik.rmi.server.VmId, java.lang.String)
    */
   public void send(Object o, VmId associated, String transportType) throws IOException, RemoteException {
-    post = new HttpPost(address.toString());
+    HttpPost post = new HttpPost(address.toString());
 
     ByteArrayOutputStream bos = new ByteArrayOutputStream(bufsz);
 
