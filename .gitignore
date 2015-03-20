@@ -41,6 +41,7 @@ Thumbs.db
 .project
 .classpath
 .settings/
+*.versionsBackup
 target/
 lib/
 bin/

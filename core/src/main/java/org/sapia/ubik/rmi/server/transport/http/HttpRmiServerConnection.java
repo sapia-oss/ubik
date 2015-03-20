@@ -65,20 +65,18 @@ class HttpRmiServerConnection implements RmiConnection {
 
       byte[] data = bos.toByteArray();
 
-      if (data.length > bufsz) {
-        bufsz = data.length;
-      }
-
       res.setContentLength(data.length);
-
+      res.commit();
       OutputStream os = res.getOutputStream(data.length);
       os.write(data);
       os.flush();
-      os.close();
+      
     } catch (java.net.SocketException e) {
       throw new RemoteException("Communication with server interrupted; server probably disappeared", e);
     } catch (Exception e) {
       throw new RemoteException("System exception occurred; server may have disappeared", e);
+    } finally {
+      res.close();
     }
   }
 
@@ -120,14 +118,26 @@ class HttpRmiServerConnection implements RmiConnection {
    */
   public void send(Object o) throws IOException, RemoteException {
     try {
-      ObjectOutputStream os = MarshalStreamFactory.createOutputStream(res.getOutputStream());
-      os.writeObject(o);
+      ByteArrayOutputStream bos = new ByteArrayOutputStream(bufsz);
+      ObjectOutputStream mos = MarshalStreamFactory.createOutputStream(bos);
+      mos.writeObject(o);
+      mos.flush();
+      mos.close();
+     
+      byte[] data = bos.toByteArray();
+
+      res.setContentLength(data.length);
+      res.commit();
+      OutputStream os = res.getOutputStream(data.length);
+      os.write(data);
       os.flush();
-      os.close();
+      
     } catch (java.net.SocketException e) {
       throw new RemoteException("Error writing response payload", e);
     } catch (Exception e) {
       throw new IOException(e);
+    } finally {
+      res.close();
     }
 
   }
