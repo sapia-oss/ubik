@@ -40,7 +40,11 @@ public class HttpTransportProvider implements TransportProvider, HttpConsts {
       usesJakarta = true;
     } catch (Exception e) {
     }
-  }
+    
+    if (System.getProperty(HttpConsts.HTTP_CLIENT_JDK) != null) {
+      usesJakarta = !System.getProperty(HttpConsts.HTTP_CLIENT_JDK).equalsIgnoreCase("true");
+    }
+  } 
 
   private String transportType;
   private Router handlers = new Router();

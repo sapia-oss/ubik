@@ -1,5 +1,9 @@
 package org.sapia.ubik.rmi.server.transport.http;
 
+import java.net.HttpURLConnection;
+
+import org.apache.http.client.HttpClient;
+
 /**
  * Holds constants.
  * 
@@ -36,6 +40,13 @@ public interface HttpConsts {
    * to specify the max number of connections that the HTTP client will pool.
    */
   public static final String HTTP_CLIENT_MAX_CONNECTIONS_KEY = "ubik.rmi.transport.http.client.max-connections";
+  
+  /**
+   * Corresponds to the
+   * <code>ubik.rmi.transport.http.client.jdk</code> property, used
+   * to specify if the JDK's {@link HttpURLConnection} should be used instead of {@link HttpClient}.
+   */
+  public static final String HTTP_CLIENT_JDK = "ubik.rmi.transport.http.client.jdk";
 
   /**
    * This constant specifies the default context path.
