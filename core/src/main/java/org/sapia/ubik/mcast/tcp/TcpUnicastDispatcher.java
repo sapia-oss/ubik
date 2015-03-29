@@ -3,10 +3,12 @@ package org.sapia.ubik.mcast.tcp;
 import java.io.IOException;
 
 import org.sapia.ubik.concurrent.ConfigurableExecutor;
+import org.sapia.ubik.concurrent.ConfigurableExecutor.ThreadingConfiguration;
 import org.sapia.ubik.concurrent.NamedThreadFactory;
 import org.sapia.ubik.concurrent.ThreadShutdown;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
+import org.sapia.ubik.mcast.Defaults;
 import org.sapia.ubik.mcast.EventConsumer;
 import org.sapia.ubik.mcast.RemoteEvent;
 import org.sapia.ubik.mcast.Response;
@@ -20,6 +22,9 @@ import org.sapia.ubik.net.SocketServer;
 import org.sapia.ubik.net.TCPAddress;
 import org.sapia.ubik.net.Worker;
 import org.sapia.ubik.net.WorkerPool;
+import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.util.Assertions;
+import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.Localhost;
 
 /**
@@ -34,24 +39,29 @@ public class TcpUnicastDispatcher extends BaseTcpUnicastDispatcher {
   public static final String TRANSPORT_TYPE = "tcp/unicast";
 
   private TCPUnicastSocketServer socketServer;
-  private ServerAddress address;
-  private Thread serverThread;
-
-  /**
-   * @param consumer
-   * @throws IOException
-   */
-  public TcpUnicastDispatcher(EventConsumer consumer, ConfigurableExecutor.ThreadingConfiguration conf) throws IOException {
-    super(consumer);
-    this.socketServer = new TCPUnicastSocketServer(Localhost.getPreferredLocalAddress().getHostAddress(), consumer, conf);
+  private ServerAddress          address;
+  private Thread                 serverThread;
+  private ThreadingConfiguration threadingConfig;
+  
+  // --------------------------------------------------------------------------
+  // Configurable interface
+  
+  @Override
+  public void initialize(EventConsumer consumer, Conf config) {
+    super.initialize(consumer, config);
+    threadingConfig = new ConfigurableExecutor.ThreadingConfiguration();
+    threadingConfig.setMaxPoolSize(config.getIntProperty(Consts.MCAST_HANDLER_COUNT, Defaults.DEFAULT_HANDLER_COUNT));
+    threadingConfig.setCorePoolSize(config.getIntProperty(Consts.MCAST_HANDLER_COUNT, Defaults.DEFAULT_HANDLER_COUNT));
   }
-
+  
   // --------------------------------------------------------------------------
   // UnicastDispatcher interface
 
   @Override
   public ServerAddress getAddress() throws IllegalStateException {
     if (address == null) {
+      Assertions.illegalState(socketServer == null, "Socket server not started");
+      
       address = new TCPAddress(doGetTransportType(), socketServer.getAddress(), socketServer.getPort());
       log.debug("Server address for node %s: %s", consumer.getNode(), address);
     }
@@ -63,6 +73,11 @@ public class TcpUnicastDispatcher extends BaseTcpUnicastDispatcher {
 
   @Override
   protected void doStart() {
+    try {
+      socketServer = new TCPUnicastSocketServer(Localhost.getPreferredLocalAddress().getHostAddress(), consumer, threadingConfig);
+    } catch (IOException e) {
+      throw new IllegalStateException("Could not start server", e);
+    }
     if (serverThread != null && serverThread.isAlive()) {
       throw new IllegalStateException("Server already started");
     }
@@ -80,7 +95,9 @@ public class TcpUnicastDispatcher extends BaseTcpUnicastDispatcher {
 
   @Override
   protected void doClose() {
-    socketServer.close();
+    if (socketServer != null) {
+      socketServer.close();
+    }
     ThreadShutdown.create(serverThread).shutdownLenient();
   }
 

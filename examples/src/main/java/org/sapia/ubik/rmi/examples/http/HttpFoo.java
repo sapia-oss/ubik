@@ -26,7 +26,7 @@ public class HttpFoo {
 			Log.setDebug();
       Properties props = new Properties();
       props.setProperty(Consts.TRANSPORT_TYPE,
-        HttpConsts.HTTP_TRANSPORT_TYPE);
+        HttpConsts.TRANSPORT_TYPE);
       props.setProperty(HttpConsts.HTTP_PORT_KEY, "8080");
       
 			// If Ubik server is behind a firewall 

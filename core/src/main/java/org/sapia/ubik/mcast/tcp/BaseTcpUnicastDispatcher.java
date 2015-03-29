@@ -31,8 +31,10 @@ import org.sapia.ubik.net.ConnectionPool;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.TCPAddress;
 import org.sapia.ubik.net.ThreadInterruptedException;
+import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.stats.Stats;
 import org.sapia.ubik.util.Assertions;
+import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.TimeValue;
 import org.sapia.ubik.util.pool.PooledObjectCreationException;
 
@@ -59,13 +61,15 @@ public abstract class BaseTcpUnicastDispatcher extends UnicastDispatcherSupport 
   private int               maxConnectionsPerHost = Defaults.DEFAULT_MAX_CONNECTIONS_PER_HOST;
   private ExecutorService   senders;
 
-  /**
-   * @param consumer
-   *          the {@link EventConsumer} to which incoming events should be
-   *          dispatched.
-   */
-  protected BaseTcpUnicastDispatcher(EventConsumer consumer) {
+  protected BaseTcpUnicastDispatcher() {
+  }
+
+  @Override
+  public void initialize(EventConsumer consumer, Conf config) {
     this.consumer = consumer;
+    setSenderCount(config.getIntProperty(Consts.MCAST_SENDER_COUNT, Defaults.DEFAULT_SENDER_COUNT));
+    setMaxConnectionsPerHost(config.getIntProperty(Consts.MCAST_MAX_CLIENT_CONNECTIONS, Defaults.DEFAULT_MAX_CONNECTIONS_PER_HOST));
+    setAsyncAckTimeout(config.getTimeProperty(Consts.MCAST_ASYNC_ACK_TIMEOUT, Defaults.DEFAULT_ASYNC_ACK_TIMEOUT));
   }
 
   /**
@@ -76,7 +80,7 @@ public abstract class BaseTcpUnicastDispatcher extends UnicastDispatcherSupport 
    *
    * @see #send(List, String, Object)
    */
-  public void setSenderCount(int senderCount) {
+  void setSenderCount(int senderCount) {
     Assertions.isTrue(senderCount > 0, "Sender count must be greater than 0: %s", senderCount);
     this.senderCount = senderCount;
   }
@@ -85,7 +89,7 @@ public abstract class BaseTcpUnicastDispatcher extends UnicastDispatcherSupport 
    * @param maxConnectionsPerHost
    *          the maximum number of connections to pool, by host.
    */
-  public void setMaxConnectionsPerHost(int maxConnectionsPerHost) {
+  void setMaxConnectionsPerHost(int maxConnectionsPerHost) {
     Assertions.isTrue(maxConnectionsPerHost > 0, "Max connections per host must be greater than 0: %s", maxConnectionsPerHost);
     this.maxConnectionsPerHost = maxConnectionsPerHost;
   }
@@ -93,13 +97,14 @@ public abstract class BaseTcpUnicastDispatcher extends UnicastDispatcherSupport 
   /**
    * @param asyncAckTimeout the timeout to observe when waiting for async event acknowledgement.
    */
-  public void setAsyncAckTimeout(TimeValue asyncAckTimeout) {
+  void setAsyncAckTimeout(TimeValue asyncAckTimeout) {
     Assertions.isTrue(asyncAckTimeout.getValue() >= 0, "Async ack must be equal to or greater than 0: %s", asyncAckTimeout);
     this.asyncAckTimeout = asyncAckTimeout;
   }
 
   @Override
   public void start() {
+    Assertions.illegalState(consumer == null, "EventConsumer not set");
     log.debug("Starting...");
     this.senders = Executors.newFixedThreadPool(senderCount, NamedThreadFactory.createWith("tcp.unicast.dispatcher.Sender").setDaemon(true));
     doStart();

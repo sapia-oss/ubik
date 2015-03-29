@@ -21,6 +21,7 @@ import org.sapia.ubik.net.ConnectionStateListenerList;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.util.Assertions;
+import org.sapia.ubik.util.Conf;
 
 /**
  * Dispatches objects using a multicast channel.
@@ -36,11 +37,35 @@ public class UDPBroadcastDispatcher implements BroadcastDispatcher {
   private UDPMulticastAddress address;
   private ConnectionStateListenerList stateListeners = new ConnectionStateListenerList();
 
-  public UDPBroadcastDispatcher(EventConsumer cons, String mcastHost, int mcastPort, int ttl) throws IOException {
-    server   = new BroadcastServer(cons, mcastHost, mcastPort, ttl);
-    server.setBufsize(bufsz);
-    consumer = cons;
+  public UDPBroadcastDispatcher() {
+  }
+  
+  @Override
+  public void initialize(EventConsumer consumer, Conf config) {
+    this.consumer = consumer;
+    String mcastHost = config.getProperty(Consts.MCAST_ADDR_KEY, Consts.DEFAULT_MCAST_ADDR);
+    int    mcastPort = config.getIntProperty(Consts.MCAST_PORT_KEY, Consts.DEFAULT_MCAST_PORT);
+    
+    try {
+      server   = new BroadcastServer(
+          consumer, 
+          mcastHost, 
+          mcastPort, 
+          config.getIntProperty(Consts.MCAST_TTL, Defaults.DEFAULT_TTL)
+      );
+    } catch (IOException e) {
+      throw new IllegalStateException("Could not create UDP server", e);
+    }
+    server.setBufsize(config.getIntProperty(Consts.MCAST_BUFSIZE_KEY, Defaults.DEFAULT_UDP_PACKET_SIZE));
     address  = new UDPMulticastAddress(mcastHost, mcastPort);
+  }
+  
+  @Override
+  public MulticastAddress getMulticastAddressFrom(Conf props) {
+    return new UDPBroadcastDispatcher.UDPMulticastAddress(
+        props.getProperty(Consts.MCAST_ADDR_KEY, Consts.DEFAULT_MCAST_ADDR),
+        props.getIntProperty(Consts.MCAST_PORT_KEY, Consts.DEFAULT_MCAST_PORT)
+    );
   }
 
   /**
@@ -73,6 +98,7 @@ public class UDPBroadcastDispatcher implements BroadcastDispatcher {
    */
   @Override
   public void start() {
+    Assertions.illegalState(consumer == null, "Consumer not set");
     Assertions.illegalState(server == null, "Instance was closed; cannot be started again");
     stateListeners.onConnected();
     server.start();

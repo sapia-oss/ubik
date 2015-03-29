@@ -192,32 +192,6 @@ public class EventChannel {
   );
 
   /**
-   * Creates an instance of this class that will use IP multicast and UDP
-   * unicast.
-   *
-   * @param domain
-   *          the domain name of this instance.
-   * @param mcastHost
-   *          the multicast address that this instance will use to broadcast
-   *          remote events.
-   * @param mcastPort
-   *          the multicast port that this instance will use to broadcast remote
-   *          events.
-   * @throws IOException
-   *           if a problem occurs creating this instance.
-   * @see DomainName
-   * @see UDPBroadcastDispatcher
-   * @see UDPUnicastDispatcher
-   */
-  public EventChannel(String domain, String mcastHost, int mcastPort) throws IOException {
-    Conf props = new Conf().addSystemProperties();
-    consumer = new EventConsumer(domain);
-    broadcast = new UDPBroadcastDispatcher(consumer, mcastHost, mcastPort, props.getIntProperty(Consts.MCAST_TTL, Defaults.DEFAULT_TTL));
-    unicast = new UDPUnicastDispatcher(consumer, props.getIntProperty(Consts.MCAST_HANDLER_COUNT, Defaults.DEFAULT_HANDLER_COUNT));
-    init(props);
-  }
-
-  /**
    * Creates an instance of this class which by default uses a
    * {@link UDPBroadcastDispatcher} and a {@link UDPUnicastDispatcher}. The
    * broadcast dispatcher will use the default multicast address and port.

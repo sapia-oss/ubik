@@ -1,13 +1,27 @@
 package org.sapia.ubik.mcast.memory;
 
+import static org.junit.Assert.assertTrue;
+
+import org.junit.Test;
+import org.sapia.ubik.mcast.DispatcherFactory;
 import org.sapia.ubik.mcast.EventConsumer;
 import org.sapia.ubik.mcast.UnicastDispatcher;
-import org.sapia.ubik.mcast.UnicastDispatcherTestSupport;
+import org.sapia.ubik.mcast.testing.UnicastDispatcherTestSupport;
+import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.util.Conf;
 
 public class InMemoryUnicastDispatcherTest extends UnicastDispatcherTestSupport {
 
+  @Test
+  public void testLoadDispatcher() {
+    UnicastDispatcher dispatcher = DispatcherFactory.loadUnicastDispatcher(Conf.newInstance().addProperties(Consts.UNICAST_PROVIDER, Consts.UNICAST_PROVIDER_MEMORY));
+    assertTrue(dispatcher instanceof InMemoryUnicastDispatcher);
+  }
+  
   @Override
   protected UnicastDispatcher createUnicastDispatcher(EventConsumer consumer) {
-    return new InMemoryUnicastDispatcher(consumer);
+    InMemoryUnicastDispatcher bd = new InMemoryUnicastDispatcher();
+    bd.initialize(consumer, Conf.newInstance());
+    return bd;
   }
 }

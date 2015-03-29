@@ -10,13 +10,15 @@ import org.apache.mina.filter.executor.ExecutorFilter;
 import org.apache.mina.transport.socket.nio.SocketAcceptor;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
+import org.sapia.ubik.mcast.Defaults;
 import org.sapia.ubik.mcast.EventConsumer;
-import org.sapia.ubik.mcast.RemoteEvent;
 import org.sapia.ubik.mcast.tcp.BaseTcpUnicastDispatcher;
 import org.sapia.ubik.net.ConnectionFactory;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.TcpPortSelector;
+import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.util.Assertions;
+import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.Func;
 import org.sapia.ubik.util.Localhost;
 
@@ -31,39 +33,37 @@ public class MinaTcpUnicastDispatcher extends BaseTcpUnicastDispatcher {
   private Category log = Log.createCategory(getClass());
 
   private MinaTcpUnicastHandler handler;
-  private SocketAcceptor acceptor;
-  private ExecutorService executor;
-  private ServerAddress address;
-  private InetSocketAddress socketAddress;
-  private int maxThreads;
-  private int marshallingBufferSize;
+  private SocketAcceptor        acceptor;
+  private ExecutorService       executor;
+  private ServerAddress         address;
+  private InetSocketAddress     socketAddress;
+  private int                   maxThreads;
+  private int                   marshallingBufferSize;
 
-  /**
-   * @param consumer
-   *          the {@link EventConsumer} to notify of incoming
-   *          {@link RemoteEvent}s.
-   * @param maxThreads
-   *          the maximum number of worker threads.
-   * @param marshallingBufferSize
-   *          the size of the buzzer used for serializing/deserializing.
-   * @throws IOException
-   *           if a problem occurs attempting to acquire a network address.
-   */
-  public MinaTcpUnicastDispatcher(EventConsumer consumer, int maxThreads, int marshallingBufferSize) throws IOException {
-    super(consumer);
+  public MinaTcpUnicastDispatcher(){
+  }
+
+  @Override
+  public void initialize(EventConsumer consumer, Conf config) {
+    super.initialize(consumer, config);
+    maxThreads = config.getIntProperty(Consts.MCAST_HANDLER_COUNT, Defaults.DEFAULT_HANDLER_COUNT);
+    marshallingBufferSize = config.getIntProperty(Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE);
+    
     this.handler = new MinaTcpUnicastHandler(consumer, new Func<ServerAddress, Void>() {
-      
       @Override
       public ServerAddress call(Void arg) {
         Assertions.illegalState(address == null, "Server address not set");
         return address;
       }
     });
-    this.maxThreads = maxThreads;
-    this.marshallingBufferSize = marshallingBufferSize;
-    String host = Localhost.getPreferredLocalAddress().getHostAddress();
-    log.debug("Will bind server to address: %s", host);
-    socketAddress = new InetSocketAddress(host, new TcpPortSelector().select());
+
+    try { 
+      String host = Localhost.getPreferredLocalAddress().getHostAddress();
+      log.debug("Will bind server to address: %s", host);
+      socketAddress = new InetSocketAddress(host, new TcpPortSelector().select());
+    } catch (IOException e) {
+      throw new IllegalStateException("Could not configure", e);
+    }
   }
 
   // --------------------------------------------------------------------------

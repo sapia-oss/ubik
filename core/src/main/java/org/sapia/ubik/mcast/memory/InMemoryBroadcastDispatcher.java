@@ -16,6 +16,8 @@ import org.sapia.ubik.net.ConnectionStateListener;
 import org.sapia.ubik.net.ConnectionStateListenerList;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.util.Assertions;
+import org.sapia.ubik.util.Conf;
 
 /**
  * An in-memory {@link BroadcastDispatcher}. An instance of this class
@@ -32,22 +34,28 @@ public class InMemoryBroadcastDispatcher implements BroadcastDispatcher {
   private int      instanceId = INSTANCE_COUNTER.incrementAndGet();
   private Category log        = Log.createCategory(getClass().getName() + "#" + instanceId);
   
-  private InMemoryDispatchChannel     channel = InMemoryDispatchChannel.getInstance();
+  private InMemoryDispatchChannel     channel        = InMemoryDispatchChannel.getInstance();
   private EventConsumer               consumer;
   private ConnectionStateListenerList stateListeners = new ConnectionStateListenerList();
   private InMemoryMulticastAddress    address;
 
-  /**
-   * @param consumer
-   *          the {@link EventConsumer} to notify of incoming remote events.
-   */
-  public InMemoryBroadcastDispatcher(EventConsumer consumer) {
+  public InMemoryBroadcastDispatcher() {
+  }
+  
+  @Override
+  public void initialize(EventConsumer consumer, Conf config) {
     this.consumer = consumer;
-    this.address = new InMemoryMulticastAddress(UUID.randomUUID().toString());
+    this.address  = new InMemoryMulticastAddress(UUID.randomUUID().toString());
+  }
+  
+  @Override
+  public MulticastAddress getMulticastAddressFrom(Conf props) {
+    return new InMemoryMulticastAddress(props.getNotNullProperty(Consts.BROADCAST_MEMORY_NODE));
   }
 
   @Override
   public void start() {
+    Assertions.illegalState(consumer == null, "EventConsumer not set");
     stateListeners.notifyConnected();
     channel.registerDispatcher(this);
   }

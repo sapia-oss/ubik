@@ -101,9 +101,12 @@ public class RemoteEvent implements Externalizable {
    *
    * @param addr
    *          a {@link ServerAddress}.
+   * @return this instance.
    */
-  public void setUnicastAddress(ServerAddress addr) {
+  public RemoteEvent setUnicastAddress(ServerAddress addr) {
     unicastAddress = addr;
+    
+    return this;
   }
 
   /**

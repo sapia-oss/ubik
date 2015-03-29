@@ -3,7 +3,6 @@ package org.sapia.ubik.mcast;
 import java.io.IOException;
 import java.util.Properties;
 
-import org.sapia.ubik.mcast.avis.AvisBroadcastDispatcher;
 import org.sapia.ubik.mcast.memory.InMemoryBroadcastDispatcher;
 import org.sapia.ubik.mcast.memory.InMemoryUnicastDispatcher;
 import org.sapia.ubik.mcast.tcp.TcpUnicastDispatcher;
@@ -35,7 +34,12 @@ public class EventChannels {
    * @see Consts#DEFAULT_MCAST_PORT
    */
   public static EventChannel createDefaultUdpEventChannel(String domain) throws IOException {
-    return new EventChannel(domain, Consts.DEFAULT_MCAST_ADDR, Consts.DEFAULT_MCAST_PORT);
+    Properties properties = new Properties();
+    properties.setProperty(Consts.UNICAST_PROVIDER, Consts.UNICAST_PROVIDER_UDP);
+    properties.setProperty(Consts.BROADCAST_PROVIDER, Consts.BROADCAST_PROVIDER_UDP);
+    properties.setProperty(Consts.MCAST_ADDR_KEY, Consts.DEFAULT_MCAST_ADDR);
+    properties.setProperty(Consts.MCAST_PORT_KEY, "" + Consts.DEFAULT_MCAST_PORT);
+    return new EventChannel(domain, Conf.newInstance().addProperties(properties).addSystemProperties());
   }
 
   /**
@@ -50,7 +54,12 @@ public class EventChannels {
    *           if a problem occurs creating the channel.
    */
   public static EventChannel createUdpEventChannel(String domain, String mcastAddr, int mcastPort) throws IOException {
-    return new EventChannel(domain, mcastAddr, mcastPort);
+    Properties properties = new Properties();
+    properties.setProperty(Consts.UNICAST_PROVIDER, Consts.UNICAST_PROVIDER_UDP);
+    properties.setProperty(Consts.BROADCAST_PROVIDER, Consts.BROADCAST_PROVIDER_UDP);
+    properties.setProperty(Consts.MCAST_ADDR_KEY, mcastAddr);
+    properties.setProperty(Consts.MCAST_PORT_KEY, "" + mcastPort);
+    return new EventChannel(domain, Conf.newInstance().addProperties(properties).addSystemProperties());
   }
 
   /**
@@ -66,7 +75,7 @@ public class EventChannels {
    */
   public static EventChannel createTcpEventChannel(String domain, String mcastAddr, int mcastPort) throws IOException {
     Properties properties = new Properties();
-    properties.setProperty(Consts.UNICAST_PROVIDER, Consts.UNICAST_PROVIDER_TCP);
+    properties.setProperty(Consts.UNICAST_PROVIDER, Consts.UNICAST_PROVIDER_TCP_NIO);
     return new EventChannel(domain, new Conf().addProperties(properties));
   }
 
@@ -84,7 +93,7 @@ public class EventChannels {
    */
   public static EventChannel createAvisEventChannel(String domain, String avisUrl) throws IOException {
     Properties properties = new Properties();
-    properties.setProperty(Consts.UNICAST_PROVIDER, Consts.UNICAST_PROVIDER_TCP);
+    properties.setProperty(Consts.UNICAST_PROVIDER, Consts.UNICAST_PROVIDER_TCP_NIO);
     properties.setProperty(Consts.BROADCAST_PROVIDER, Consts.BROADCAST_PROVIDER_AVIS);
     properties.setProperty(Consts.BROADCAST_AVIS_URL, avisUrl);
     return new EventChannel(domain, new Conf().addProperties(properties));
