@@ -1,9 +1,12 @@
 package org.sapia.ubik.util;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 /**
  * This class provides utility methods over a list of {@link Properties} or
@@ -27,6 +30,20 @@ public class Conf {
   public Conf addProperties(Properties props) {
     this.props.add(new PropertiesPropertyLookup(props));
     return this;
+  }
+  
+  /**
+   * @param nameValues one or more name/value pairs.
+   * @return this instance.
+   */
+  public Conf addProperties(String...nameValues) {
+    Properties props = new Properties();
+    Assertions.isTrue(nameValues.length % 2 == 0, "Properties should consist of array of name-value pairs "
+        + " of format [name-0,value-0,name-1,value-1,...,name-N,value-N");
+    for (int i = 0; i < nameValues.length; i+=2) {
+      props.setProperty(nameValues[i], nameValues[i + 1]);
+    }
+    return addProperties(props);
   }
 
   /**
@@ -320,6 +337,17 @@ public class Conf {
     }
     return Class.forName(className);
   }
+ 
+  /**
+   * @return the {@link Set} of property names corresponding to the properties held by this instance.
+   */
+  public Set<String> propertyNames() {
+    Set<String> toReturn = new HashSet<String>();
+    for (PropertyLookup p : props) {
+      toReturn.addAll(p.propertyNames());
+    }
+    return toReturn;
+  }
 
   /**
    * @return an instance of this class encapsulating system {@link Properties}.
@@ -365,6 +393,12 @@ public class Conf {
      *         if no such value was found.
      */
     public String getProperty(String name);
+    
+    /**
+     * @return the {@link Set} of property names corresponding to the properties
+     * encapsulated by this instance.
+     */
+    public Set<String> propertyNames();
 
   }
 
@@ -382,6 +416,11 @@ public class Conf {
     public String getProperty(String name) {
       return map.get(name);
     }
+    
+    @Override
+    public Set<String> propertyNames() {
+      return Collections.unmodifiableSet(map.keySet());
+    }
   }
 
   // --------------------------------------------------------------------------
@@ -397,6 +436,11 @@ public class Conf {
     @Override
     public String getProperty(String name) {
       return props.getProperty(name);
+    }
+    
+    @Override
+    public Set<String> propertyNames() {
+      return Collections.unmodifiableSet(props.stringPropertyNames());
     }
   }
 

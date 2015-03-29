@@ -3,18 +3,9 @@ package org.sapia.ubik.mcast;
 import java.io.IOException;
 import java.util.Properties;
 
-import org.sapia.ubik.concurrent.ConfigurableExecutor;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
-import org.sapia.ubik.mcast.avis.AvisBroadcastDispatcher;
-import org.sapia.ubik.mcast.hazelcast.HazelcastBroadcastDispatcher;
-import org.sapia.ubik.mcast.hazelcast.HazelcastMulticastAddress;
-import org.sapia.ubik.mcast.memory.InMemoryBroadcastDispatcher;
-import org.sapia.ubik.mcast.memory.InMemoryUnicastDispatcher;
-import org.sapia.ubik.mcast.tcp.TcpUnicastDispatcher;
-import org.sapia.ubik.mcast.tcp.mina.MinaTcpUnicastDispatcher;
-import org.sapia.ubik.mcast.udp.UDPBroadcastDispatcher;
-import org.sapia.ubik.mcast.udp.UDPUnicastDispatcher;
+import org.sapia.ubik.provider.Providers;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.util.Conf;
 
@@ -28,18 +19,6 @@ import org.sapia.ubik.util.Conf;
 public final class DispatcherFactory {
 
   private static Category log = Log.createCategory(DispatcherFactory.class);
-  private static boolean isNioEnabled;
-
-  static {
-    try {
-      Class.forName("org.apache.mina.filter.codec.ProtocolCodecFilter");
-      isNioEnabled = true;
-    } catch (Exception e) {
-      log.info("Netty not detected in classpath, will use non-NIO TCP unicast");
-      isNioEnabled = false;
-    }
-
-  }
 
   /**
    * Private constructor.
@@ -61,40 +40,20 @@ public final class DispatcherFactory {
    *           if a problem occurs creating the dispatcher.
    */
   public static UnicastDispatcher createUnicastDispatcher(EventConsumer consumer, Conf props) throws IOException {
-    String provider = props.getProperty(Consts.UNICAST_PROVIDER, Consts.UNICAST_PROVIDER_TCP);
+    UnicastDispatcher dispatcher = loadUnicastDispatcher(props);
+    dispatcher.initialize(consumer, props);
+    return dispatcher;
+  }
 
-    if (provider.equals(Consts.UNICAST_PROVIDER_MEMORY)) {
-      log.info("Creating in-memory unicast provider");
-      return new InMemoryUnicastDispatcher(consumer);
-    } else if (provider.equals(Consts.UNICAST_PROVIDER_UDP)) {
-      log.info("Creating UDP unicast provider");
-      UDPUnicastDispatcher dispatcher = new UDPUnicastDispatcher(consumer, props.getIntProperty(Consts.MCAST_HANDLER_COUNT,
-          Defaults.DEFAULT_HANDLER_COUNT));
-      dispatcher.setBufsize(props.getIntProperty(Consts.MCAST_BUFSIZE_KEY, Defaults.DEFAULT_UDP_PACKET_SIZE));
-      dispatcher.setSenderCount(props.getIntProperty(Consts.MCAST_SENDER_COUNT, Defaults.DEFAULT_SENDER_COUNT));
-      dispatcher.setAsyncAckTimeout(props.getTimeProperty(Consts.MCAST_ASYNC_ACK_TIMEOUT, Defaults.DEFAULT_ASYNC_ACK_TIMEOUT));
-      return dispatcher;
-    } else {
-      if (isNioEnabled) {
-        log.info("Creating NIO TCP unicast provider");
-        MinaTcpUnicastDispatcher dispatcher = new MinaTcpUnicastDispatcher(consumer, props.getIntProperty(Consts.MCAST_HANDLER_COUNT,
-            Defaults.DEFAULT_HANDLER_COUNT), props.getIntProperty(Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE));
-        dispatcher.setSenderCount(props.getIntProperty(Consts.MCAST_SENDER_COUNT, Defaults.DEFAULT_SENDER_COUNT));
-        dispatcher.setMaxConnectionsPerHost(props.getIntProperty(Consts.MCAST_MAX_CLIENT_CONNECTIONS, Defaults.DEFAULT_MAX_CONNECTIONS_PER_HOST));
-        dispatcher.setAsyncAckTimeout(props.getTimeProperty(Consts.MCAST_ASYNC_ACK_TIMEOUT, Defaults.DEFAULT_ASYNC_ACK_TIMEOUT));
-        return dispatcher;
-      } else {
-        log.info("Creating BIO TCP unicast provider");
-        ConfigurableExecutor.ThreadingConfiguration threadingConfig = new ConfigurableExecutor.ThreadingConfiguration();
-        threadingConfig.setMaxPoolSize(props.getIntProperty(Consts.MCAST_HANDLER_COUNT, Defaults.DEFAULT_HANDLER_COUNT));
-        threadingConfig.setCorePoolSize(props.getIntProperty(Consts.MCAST_HANDLER_COUNT, Defaults.DEFAULT_HANDLER_COUNT));
-        TcpUnicastDispatcher dispatcher = new TcpUnicastDispatcher(consumer, threadingConfig);
-        dispatcher.setSenderCount(props.getIntProperty(Consts.MCAST_SENDER_COUNT, Defaults.DEFAULT_SENDER_COUNT));
-        dispatcher.setMaxConnectionsPerHost(props.getIntProperty(Consts.MCAST_MAX_CLIENT_CONNECTIONS, Defaults.DEFAULT_MAX_CONNECTIONS_PER_HOST));
-        dispatcher.setAsyncAckTimeout(props.getTimeProperty(Consts.MCAST_ASYNC_ACK_TIMEOUT, Defaults.DEFAULT_ASYNC_ACK_TIMEOUT));
-        return dispatcher;
-      }
-    }
+  /**
+   * @param props a {@link Conf} instance containing configuration values.
+   * @return the {@link UnicastDispatcher} that is configured.
+   * @see Consts#UNICAST_PROVIDER
+   */
+  public static UnicastDispatcher loadUnicastDispatcher(Conf props) {
+    String provider = props.getProperty(Consts.UNICAST_PROVIDER, Consts.UNICAST_PROVIDER_TCP_NIO);
+    log.info("Creating unicast dispatcher %s", provider);
+    return Providers.get().load(UnicastDispatcher.class, provider);
   }
 
   /**
@@ -111,28 +70,20 @@ public final class DispatcherFactory {
    *           if a problem occurs creating the dispatcher.
    */
   public static BroadcastDispatcher createBroadcastDispatcher(EventConsumer consumer, Conf props) throws IOException {
+    BroadcastDispatcher dispatcher = loadBroadcastDispatcher(props);
+    dispatcher.initialize(consumer, props);
+    return dispatcher;
+  }
+  
+  /**
+   * @param props a {@link Conf} instance containing configuration values.
+   * @return the {@link BroadcastDispatcher} that is configured.
+   * @see Consts#BROADCAST_PROVIDER
+   */
+  public static BroadcastDispatcher loadBroadcastDispatcher(Conf props) {
     String provider = props.getProperty(Consts.BROADCAST_PROVIDER, Consts.BROADCAST_PROVIDER_UDP);
-    if (provider.equals(Consts.BROADCAST_PROVIDER_MEMORY)) {
-      log.info("Creating in-memory broadcast provider");
-      return new InMemoryBroadcastDispatcher(consumer);
-    } else if (provider.equals(Consts.BROADCAST_PROVIDER_AVIS)) {
-      log.info("Creating AVIS broadcast provider");
-      String avisUrl = props.getNotNullProperty(Consts.BROADCAST_AVIS_URL);
-      AvisBroadcastDispatcher dispatcher = new AvisBroadcastDispatcher(consumer, avisUrl);
-      dispatcher.setBufsize(props.getIntProperty(Consts.MCAST_BUFSIZE_KEY, AvisBroadcastDispatcher.DEFAULT_BUFSZ));
-      return dispatcher;
-    } else if (provider.equals(Consts.BROADCAST_PROVIDER_HAZELCAST)) {
-      log.info("Creating HAZELCAST broadcast provider");
-      String topic = props.getNotNullProperty(Consts.BROADCAST_HAZELCAST_TOPIC);
-      HazelcastBroadcastDispatcher dispatcher = new HazelcastBroadcastDispatcher(consumer, topic);
-      return dispatcher;
-    } else {
-      log.info("Creating UDP broadcast provider");
-      UDPBroadcastDispatcher dispatcher = new UDPBroadcastDispatcher(consumer, props.getProperty(Consts.MCAST_ADDR_KEY, Consts.DEFAULT_MCAST_ADDR),
-          props.getIntProperty(Consts.MCAST_PORT_KEY, Consts.DEFAULT_MCAST_PORT), props.getIntProperty(Consts.MCAST_TTL, Defaults.DEFAULT_TTL));
-      dispatcher.setBufsize(props.getIntProperty(Consts.MCAST_BUFSIZE_KEY, Defaults.DEFAULT_UDP_PACKET_SIZE));
-      return dispatcher;
-    }
+    log.info("Creating broadcast dispatcher %s", provider);
+    return Providers.get().load(BroadcastDispatcher.class, provider);
   }
 
   /**
@@ -145,17 +96,8 @@ public final class DispatcherFactory {
   public static MulticastAddress getMulticastAddress(Properties from) {
     Conf props = new Conf().addProperties(from);
     String provider = props.getProperty(Consts.BROADCAST_PROVIDER, Consts.BROADCAST_PROVIDER_UDP);
-    if (provider.equals(Consts.BROADCAST_PROVIDER_MEMORY)) {
-      return new InMemoryBroadcastDispatcher.InMemoryMulticastAddress(props.getNotNullProperty(Consts.BROADCAST_MEMORY_NODE));
-    } else if (provider.equals(Consts.BROADCAST_PROVIDER_AVIS)) {
-      String avisUrl = props.getProperty(Consts.BROADCAST_AVIS_URL);
-      return new AvisBroadcastDispatcher.AvisAddress(avisUrl);
-    } else if (provider.equals(Consts.BROADCAST_PROVIDER_HAZELCAST)) {
-      return new HazelcastMulticastAddress(props.getNotNullProperty(Consts.BROADCAST_HAZELCAST_TOPIC));
-    } else {
-      return new UDPBroadcastDispatcher.UDPMulticastAddress(props.getProperty(Consts.MCAST_ADDR_KEY, Consts.DEFAULT_MCAST_ADDR),
-          props.getIntProperty(Consts.MCAST_PORT_KEY, Consts.DEFAULT_MCAST_PORT));
-    }
+    BroadcastDispatcher dispatcher = Providers.get().load(BroadcastDispatcher.class, provider);
+    return dispatcher.getMulticastAddressFrom(props);
   }
 
 }

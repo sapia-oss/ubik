@@ -1,6 +1,5 @@
 package org.sapia.ubik.rmi.examples.site.groupcomm;
 
-import java.io.IOException;
 import java.util.Properties;
 
 import org.sapia.ubik.mcast.EventChannel;
@@ -11,7 +10,7 @@ import org.sapia.ubik.util.Conf;
 
 /**
  * Creates an {@link EventChannel} which does broadcast using the default mechanism (IP multicast
- * through the {@link UDPBroadcastDispatcher}) and uses TCP for point-to-point communication
+ * for the {@link UDPBroadcastDispatcher}) and uses TCP for point-to-point communication
  * (through the {@link MinaTcpUnicastDispatcher}.
  *
  * @author yduchesne
@@ -19,9 +18,22 @@ import org.sapia.ubik.util.Conf;
  */
 public class TCPUnicastEventChannel {
 
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) throws Exception {
 		Properties properties = new Properties();
-		properties.setProperty(Consts.UNICAST_PROVIDER, Consts.UNICAST_PROVIDER_TCP);
-		EventChannel channel = new EventChannel("myDomain", new Conf().addProperties(properties));
+		properties.setProperty(Consts.UNICAST_PROVIDER, Consts.UNICAST_PROVIDER_TCP_NIO);
+		final EventChannel channel = new EventChannel("myDomain", new Conf().addProperties(properties));
+		channel.start();
+		
+		
+		Runtime.getRuntime().addShutdownHook(new Thread() {
+		  @Override
+		  public void run() {
+		    channel.close();
+		  }
+		});
+		
+		while (true) {
+		  Thread.sleep(Integer.MAX_VALUE);
+		}
   }
 }

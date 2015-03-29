@@ -1,25 +1,62 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <name>Sapia Ubik Examples</name>
-  <description>A RMI-like distributed computing framework</description>
-  <url>http://www.sapia-oss.org/projects/console/index.html</url>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<name>Sapia Ubik Examples</name>
+	<description>A RMI-like distributed computing framework</description>
+	<url>http://www.sapia-oss.org/projects/console/index.html</url>
 
-  <artifactId>sapia_ubik_example</artifactId>
+	<artifactId>sapia_ubik_example</artifactId>
 
-  <parent>
-    <groupId>org.sapia</groupId>
-    <artifactId>sapia_ubik_parent</artifactId>
-    <version>develop-SNAPSHOT</version>
-    <relativePath>../</relativePath>
-  </parent>
- 
-  <dependencies>
-    <dependency>
-      <groupId>org.sapia</groupId>
-      <artifactId>sapia_ubik</artifactId>    
-    </dependency>
-  </dependencies>
+	<packaging>jar</packaging>
 
-  <packaging>jar</packaging>
+	<parent>
+		<groupId>org.sapia</groupId>
+		<artifactId>sapia_ubik_parent</artifactId>
+		<version>develop-SNAPSHOT</version>
+		<relativePath>../</relativePath>
+	</parent>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.sapia</groupId>
+			<artifactId>sapia_ubik</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.sapia</groupId>
+			<artifactId>sapia_ubik_http</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.sapia</groupId>
+			<artifactId>sapia_ubik_avis</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.sapia</groupId>
+			<artifactId>sapia_ubik_netty</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.sapia</groupId>
+			<artifactId>sapia_ubik_hazelcast</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.sapia</groupId>
+			<artifactId>sapia_ubik_camel</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.sapia</groupId>
+			<artifactId>sapia_ubik_amqp</artifactId>
+		</dependency>
+				
+		<dependency>
+			<groupId>org.apache.camel</groupId>
+			<artifactId>camel-rabbitmq</artifactId>
+			<version>${camel.version}</version>
+		</dependency>
+		<dependency>
+		    <groupId>org.apache.camel</groupId>
+		    <artifactId>camel-amqp</artifactId>
+		    <version>${camel.version}</version>
+		</dependency>
+
+	</dependencies>
 
 </project>

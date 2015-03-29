@@ -13,6 +13,8 @@ import org.sapia.ubik.mcast.RespList;
 import org.sapia.ubik.mcast.Response;
 import org.sapia.ubik.mcast.UnicastDispatcher;
 import org.sapia.ubik.net.ServerAddress;
+import org.sapia.ubik.util.Assertions;
+import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.TimeValue;
 
 /**
@@ -31,12 +33,17 @@ public class InMemoryUnicastDispatcher implements UnicastDispatcher {
   private InMemoryUnicastAddress  address = new InMemoryUnicastAddress();
   private EventConsumer           consumer;
 
-  public InMemoryUnicastDispatcher(EventConsumer consumer) {
+  public InMemoryUnicastDispatcher() {
+  }
+  
+  @Override
+  public void initialize(EventConsumer consumer, Conf config) {
     this.consumer = consumer;
   }
-
+  
   @Override
   public void start() {
+    Assertions.illegalState(consumer == null, "EventConsumer not set");
     channel.registerDispatcher(this);
   }
 
@@ -46,6 +53,7 @@ public class InMemoryUnicastDispatcher implements UnicastDispatcher {
   }
 
   EventConsumer getConsumer() {
+    Assertions.illegalState(consumer == null, "EventConsumer not set");
     return consumer;
   }
 

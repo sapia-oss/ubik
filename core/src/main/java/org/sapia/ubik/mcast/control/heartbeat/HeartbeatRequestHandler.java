@@ -1,6 +1,5 @@
 package org.sapia.ubik.mcast.control.heartbeat;
 
-import org.avis.common.RuntimeInterruptedException;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.EventChannel.Role;
@@ -56,7 +55,7 @@ public class HeartbeatRequestHandler implements ControlRequestHandler {
         try {
           Thread.sleep(pause);
         } catch (InterruptedException e) {
-          throw new RuntimeInterruptedException(e);
+          throw new org.sapia.ubik.concurrent.RuntimeInterruptedException("Thread interrupted while pausing",  e);
         }
       }
       log.debug("Sending back heartbeat response to: %s", req.getMasterAddress());

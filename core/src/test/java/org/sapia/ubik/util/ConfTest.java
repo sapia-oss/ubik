@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -47,6 +48,11 @@ public class ConfTest {
       @Override
       public String getProperty(String name) {
         return System.getProperty(name);
+      }
+      
+      @Override
+      public Set<String> propertyNames() {
+        return System.getProperties().stringPropertyNames();
       }
     });
     assertEquals(System.getProperty("user.name"), props.getProperty("user.name"));

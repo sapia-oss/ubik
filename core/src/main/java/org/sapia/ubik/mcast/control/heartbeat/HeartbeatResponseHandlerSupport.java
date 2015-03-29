@@ -3,7 +3,6 @@ package org.sapia.ubik.mcast.control.heartbeat;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.avis.common.RuntimeInterruptedException;
 import org.javasimon.Split;
 import org.javasimon.Stopwatch;
 import org.sapia.ubik.log.Category;
@@ -149,7 +148,7 @@ public abstract class HeartbeatResponseHandlerSupport {
           Thread.sleep(context.getConfig().getPingInterval().getValueInMillis());
         } catch (InterruptedException e) {
           log.warning("Thread interrupted, exiting");
-          throw new RuntimeInterruptedException(e);
+          throw new org.sapia.ubik.concurrent.RuntimeInterruptedException("Thread interrupted while pausing", e);
         }
       }
     }

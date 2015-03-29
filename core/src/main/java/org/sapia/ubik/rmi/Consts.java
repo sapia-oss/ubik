@@ -142,6 +142,14 @@ public interface Consts {
 
   /**
    * This constant corresponds to the
+   * <code>ubik.rmi.naming.mcast.handler.queue.size</code> property. It is used
+   * to set the size of the queue that buffers incoming requests in
+   * {@link UnicastDispatcher} or {@link BroadcastDispatcher} implementations.
+   */
+  public static final String MCAST_HANDLER_QUEUE_SIZE = "ubik.rmi.naming.mcast.handler.queue.size";
+  
+  /**
+   * This constant corresponds to the
    * <code>ubik.rmi.naming.mcast.response.timeout</code> property. The value
    * is expected to indicate the timeout (in millis) when waiting for
    * synchronous responses.
@@ -361,17 +369,22 @@ public interface Consts {
   /**
    * Identifies the UPD unicast provider.
    */
-  public static final String UNICAST_PROVIDER_UDP = "ubik.rmi.naming.unicast.udp";
+  public static final String UNICAST_PROVIDER_UDP = "udp";
 
   /**
-   * Identifies the TCP unicast provider.
+   * Identifies the TCP/blocking I/O unicast provider.
    */
-  public static final String UNICAST_PROVIDER_TCP = "ubik.rmi.naming.unicast.tcp";
+  public static final String UNICAST_PROVIDER_TCP_BIO = "tcp-bio";
+  
+  /**
+   * Identifies the TCP/non-blocking I/O unicast provider (based on Mina).
+   */
+  public static final String UNICAST_PROVIDER_TCP_NIO = "tcp-nio";
 
   /**
    * Identifies the in-memory unicast provider.
    */
-  public static final String UNICAST_PROVIDER_MEMORY = "ubik.rmi.naming.unicast.memory";
+  public static final String UNICAST_PROVIDER_MEMORY = "memory";
 
   /**
    * Identifies the broadcast provider to use as part of {@link EventChannel}s.
@@ -381,12 +394,12 @@ public interface Consts {
   /**
    * Identifies the UPD broadcast provider.
    */
-  public static final String BROADCAST_PROVIDER_UDP = "ubik.rmi.naming.broadcast.udp";
+  public static final String BROADCAST_PROVIDER_UDP = "udp";
 
   /**
    * Identifies the Avis broadcast provider.
    */
-  public static final String BROADCAST_PROVIDER_AVIS = "ubik.rmi.naming.broadcast.avis";
+  public static final String BROADCAST_PROVIDER_AVIS = "avis";
 
   /**
    * Identifies the Avis URL.
@@ -394,9 +407,24 @@ public interface Consts {
   public static final String BROADCAST_AVIS_URL = "ubik.rmi.naming.broadcast.avis.url";
 
   /**
+   * Identifies the Camel broadcast provider.
+   */
+  public static final String BROADCAST_PROVIDER_CAMEL = "camel";
+  
+  /**
+   * Identifies the AMQP broadcast provider.
+   */
+  public static final String BROADCAST_PROVIDER_AMQP = "amqp";
+  
+  /**
+   * Identifies the Camel endpoint URI for broadcast messages.
+   */
+  public static final String BROADCAST_CAMEL_ENDPOINT_URI = "ubik.rmi.naming.broadcast.camel.endpoint.uri";
+
+  /**
    * Identifies the Hazelcast broadcast provider.
    */
-  public static final String BROADCAST_PROVIDER_HAZELCAST = "ubik.rmi.naming.broadcast.hazelcast";
+  public static final String BROADCAST_PROVIDER_HAZELCAST = "hazelcast";
 
   /**
    * Identifies the Halzecast topic name.
@@ -406,7 +434,7 @@ public interface Consts {
   /**
    * Identifies the in-memory broadcast provider.
    */
-  public static final String BROADCAST_PROVIDER_MEMORY = "ubik.rmi.naming.broadcast.mem";
+  public static final String BROADCAST_PROVIDER_MEMORY = "memory";
 
   /**
    * Identifies the node of the broadcast memory address.

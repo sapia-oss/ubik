@@ -70,7 +70,7 @@ public class BaseFileLogOutput implements LogOutput {
 
   protected BaseFileLogOutput(Config config) {
     this.conf = config;
-    log.info("Will perform stats logging using: %s", config);
+    log.info("Will perform logging using: %s", config);
   }
 
   public void addFileArchivingListener(FileArchivingListener listener) {
