@@ -1,0 +1,49 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <name>Sapia Ubik HTTP Transport</name>
+  <description>A HTTP-based transport for Ubik</description>
+  <url>http://www.sapia-oss.org/projects/ubik/index.html</url>
+
+  <artifactId>sapia_ubik_http</artifactId>
+
+  <parent>
+    <groupId>org.sapia</groupId>
+    <artifactId>sapia_ubik_parent</artifactId>
+    <version>4.3</version>
+    <relativePath>../</relativePath>
+  </parent>
+
+  <packaging>jar</packaging>
+  
+  <dependencies>
+    <dependency>
+      <groupId>org.sapia</groupId>
+      <artifactId>sapia_ubik</artifactId>
+    </dependency>
+    
+    <!-- http client -->
+
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+      <version>4.4</version>
+      <optional>true</optional>
+    </dependency>
+
+    <dependency>
+      <groupId>commons-logging</groupId>
+      <artifactId>commons-logging</artifactId>
+      <version>1.1.2</version>
+      <optional>true</optional>
+    </dependency>
+
+    <!-- simple web server integration -->
+
+    <dependency>
+      <groupId>org.simpleframework</groupId>
+      <artifactId>simple</artifactId>
+      <version>5.1.1</version>
+    </dependency>    
+  </dependencies>
+  
+</project>

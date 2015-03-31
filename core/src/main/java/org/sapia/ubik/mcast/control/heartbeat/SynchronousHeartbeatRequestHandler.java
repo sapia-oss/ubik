@@ -4,13 +4,12 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
-import org.avis.common.RuntimeInterruptedException;
 import org.javasimon.Split;
 import org.javasimon.Stopwatch;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
-import org.sapia.ubik.mcast.NodeInfo;
 import org.sapia.ubik.mcast.EventChannel.Role;
+import org.sapia.ubik.mcast.NodeInfo;
 import org.sapia.ubik.mcast.control.ControlRequest;
 import org.sapia.ubik.mcast.control.ControllerContext;
 import org.sapia.ubik.mcast.control.SplitteableMessage;
@@ -106,7 +105,7 @@ public class SynchronousHeartbeatRequestHandler implements SynchronousControlReq
         } catch (IOException e) {
           log.error("Could not send heartbeat requests", e);
         } catch (InterruptedException e) {
-          throw new RuntimeInterruptedException(e);
+          throw new org.sapia.ubik.concurrent.RuntimeInterruptedException("Thread interrupted while pausing", e);
         } finally{
           split.stop();
         }

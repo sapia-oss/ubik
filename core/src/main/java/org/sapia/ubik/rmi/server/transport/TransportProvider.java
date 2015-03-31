@@ -12,6 +12,7 @@ import org.sapia.ubik.rmi.server.Server;
  * @author Yanick Duchesne
  */
 public interface TransportProvider {
+ 
   /**
    * Returns a client connection pool to the given server address.
    * 

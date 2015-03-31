@@ -1,7 +1,6 @@
 package org.sapia.ubik.mcast.tcp.mina;
 
 import org.sapia.ubik.net.TCPAddress;
-import org.sapia.ubik.net.netty.NettyAddress;
 
 /**
  * The {@link NettyAddress} implementation used for the Mina-based unicast

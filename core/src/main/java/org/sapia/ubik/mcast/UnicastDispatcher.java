@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.List;
 
 import org.sapia.ubik.net.ServerAddress;
+import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.TimeValue;
 
 /**
@@ -15,6 +16,15 @@ import org.sapia.ubik.util.TimeValue;
  * @author Yanick Duchesne
  */
 public interface UnicastDispatcher {
+  
+  /**
+   * @param consumer the {@link EventConsumer} that this instance should
+   * notify when it receives {@link RemoteEvent}s.
+   * @param config the {@link Conf} instance to use for retrieving configuration properties.
+   */
+  public void initialize(EventConsumer consumer, Conf config);
+  
+  
   /**
    * Dispatches the given data to the node whose address is given.
    * 

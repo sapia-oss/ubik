@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
-import org.avis.common.RuntimeInterruptedException;
 import org.javasimon.Split;
 import org.javasimon.Stopwatch;
 import org.sapia.ubik.mcast.NodeInfo;
@@ -93,7 +92,7 @@ public class SynchronousHeartbeatRequestSender extends HeartbeatResponseHandlerS
     } catch (IOException e) {
       log.error("Error caught sending synchronous ping request", e);
     } catch (InterruptedException e) {
-      throw new RuntimeInterruptedException(e);
+      throw new org.sapia.ubik.concurrent.RuntimeInterruptedException("Thread interrupted while pausing", e);
     }
   }
 }

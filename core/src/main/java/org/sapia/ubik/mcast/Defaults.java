@@ -48,12 +48,20 @@ public class Defaults {
   public static final int DEFAULT_SENDER_COUNT = 5;
 
   /**
-   * The default number of worker threads for unicast dispatchers.
+   * The default number of worker threads for unicast and broadcast dispatchers.
    *
    * (see {@link Consts#MCAST_HANDLER_COUNT}).
    */
   public static final int DEFAULT_HANDLER_COUNT = 10;
 
+  /**
+   * The default queue size for unicast and broadcast dispatchers.
+   *
+   * (see {@link Consts#MCAST_HANDLER_QUEUE_SIZE}).
+   */
+  public static final int DEFAULT_HANDLER_QUEUE_SIZE = 100;
+
+  
   /**
    * The default synchronous response timeout (see
    * {@link Consts#MCAST_SYNC_RESPONSE_TIMEOUT}).

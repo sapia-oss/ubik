@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.List;
@@ -25,7 +24,10 @@ import org.sapia.ubik.mcast.TimeoutException;
 import org.sapia.ubik.mcast.UnicastDispatcher;
 import org.sapia.ubik.mcast.server.UDPServer;
 import org.sapia.ubik.net.ServerAddress;
+import org.sapia.ubik.net.TcpPortSelector;
+import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.util.Assertions;
+import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.Localhost;
 import org.sapia.ubik.util.TimeValue;
 
@@ -34,7 +36,7 @@ import org.sapia.ubik.util.TimeValue;
  *
  * @author Yanick Duchesne
  */
-public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher {
+public class UDPUnicastDispatcher implements UnicastDispatcher {
 
   private static final long STARTUP_TIMEOUT = 5000;
 
@@ -42,42 +44,54 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
   private EventConsumer     consumer;
   private TimeValue         asyncAckTimeout = Defaults.DEFAULT_ASYNC_ACK_TIMEOUT;
   private int               senderCount     = Defaults.DEFAULT_SENDER_COUNT;
+  private int               handlerCount    = Defaults.DEFAULT_HANDLER_COUNT;
   private ExecutorService   senders;
   private ExecutorService   handlers;
   private UDPUnicastAddress addr;
+  private UDPServer         server;
 
-  public UDPUnicastDispatcher(EventConsumer consumer, int maxThreads) throws SocketException {
-    super(consumer.getNode() + "Unicast@" + consumer.getDomainName().toString());
-    this.consumer = consumer;
-    handlers = Executors.newFixedThreadPool(maxThreads, NamedThreadFactory.createWith("udp.unicast.dispatcher.Handler").setDaemon(true));
-  }
-
-  public UDPUnicastDispatcher(int soTimeout, int port, EventConsumer consumer, int maxThreads) throws SocketException {
-    super(consumer.getNode() + "@" + consumer.getDomainName().toString(), port);
-    this.consumer = consumer;
-    handlers = Executors.newFixedThreadPool(maxThreads, NamedThreadFactory.createWith("udp.unicast.dispatcher.Handler").setDaemon(true));
-  }
-
-  /**
-   * @param senderCount the number of threads in the sender thread pool. Defaults to {@link Defaults#DEFAULT_SENDER_COUNT}.
-   */
-  public void setSenderCount(int senderCount) {
-    this.senderCount = senderCount;
-  }
-  
-  /**
-   * @param asyncAckTimeout the timeout to use when awaiting async event acks. Defaults to {@link Defaults#DEFAULT_ASYNC_ACK_TIMEOUT}.
-   */
-  public void setAsyncAckTimeout(TimeValue asyncAckTimeout) {
-    this.asyncAckTimeout = asyncAckTimeout;
+  public UDPUnicastDispatcher() {
   }
 
   @Override
-  public void start() {
-    super.start();
+  public void initialize(EventConsumer consumer, Conf config) {
+    this.consumer   = consumer;
+    senderCount     = config.getIntProperty(Consts.MCAST_SENDER_COUNT, Defaults.DEFAULT_SENDER_COUNT);
+    asyncAckTimeout = config.getTimeProperty(Consts.MCAST_ASYNC_ACK_TIMEOUT, Defaults.DEFAULT_ASYNC_ACK_TIMEOUT);
+    handlerCount    = config.getIntProperty(Consts.MCAST_HANDLER_COUNT, Defaults.DEFAULT_HANDLER_COUNT);
+  }
+ 
+  @Override
+  public void start()  {
+    Assertions.illegalState(consumer == null, "EventConsumer not set");
+    handlers = Executors.newFixedThreadPool(handlerCount, NamedThreadFactory.createWith("udp.unicast.dispatcher.Handler").setDaemon(true));
 
     try {
-      super.startupBarrier.await(STARTUP_TIMEOUT);
+      server = new UDPServer(consumer.getNode(), new TcpPortSelector().select()) {
+        
+        @Override
+        protected void handle(final DatagramPacket pack, final DatagramSocket sock) {
+          handlers.execute(new Runnable() {
+            @Override
+            public void run() {
+              doHandle(pack, sock);
+            }
+          });
+        }
+        
+        @Override
+        protected void handlePacketSizeToShort(DatagramPacket pack) {
+          log.error("Buffer size to short; set to: %s. This size is not enough to receive some incoming packets", server.getBufSize());
+        }
+        
+      };
+      server.start();
+    } catch (IOException e) {
+      throw new IllegalStateException("Could not start UDP server", e);
+    }
+   
+    try {
+      server.getStartupBarrier().await(STARTUP_TIMEOUT);
     } catch (InterruptedException e) {
       throw new IllegalStateException("Thread interrupted while waiting for startup", e);
     } catch (Exception e) {
@@ -86,7 +100,7 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
 
     senders = Executors.newFixedThreadPool(senderCount, NamedThreadFactory.createWith("udp.unicast.dispatcher.Sender").setDaemon(true));
 
-    InetAddress inetAddr = sock.getLocalAddress();
+    InetAddress inetAddr = server.getLocalAddress();
     if (inetAddr == null) {
       try {
         inetAddr = Localhost.getPreferredLocalAddress();
@@ -95,13 +109,13 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
       }
     }
     log.debug("Local address: %s", inetAddr.getHostAddress());
-    addr = new UDPUnicastAddress(inetAddr, getPort());
+    addr = new UDPUnicastAddress(inetAddr, server.getPort());
   }
 
   @Override
   public void close() {
-    if (sock != null) {
-      sock.close();
+    if (server != null) {
+      server.close();
     }
   }
 
@@ -117,7 +131,7 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
       evt.setUnicastAddress(addr);
       log.debug("dispatch() : %s, type: %s, data: %s", addr, type, data);
       UDPUnicastAddress inet = (UDPUnicastAddress) addr;
-      doSend(inet.getInetAddress(), inet.getPort(), sock, McastUtil.toBytes(evt, bufSize()), false, type);
+      doSend(inet.getInetAddress(), inet.getPort(), sock, McastUtil.toBytes(evt, server.getBufSize()), false, type);
     } catch (TimeoutException e) {
       // will not occur - see doSend();
     } finally {
@@ -138,7 +152,7 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
     UDPUnicastAddress inet = (UDPUnicastAddress) addr;
 
     try {
-      return (Response) doSend(inet.getInetAddress(), inet.getPort(), sock, McastUtil.toBytes(evt, bufSize()), true, type);
+      return (Response) doSend(inet.getInetAddress(), inet.getPort(), sock, McastUtil.toBytes(evt, server.getBufSize()), true, type);
     } catch (TimeoutException e) {
       return new Response(addr, evt.getId(), e).setStatusSuspect();
     } finally {
@@ -156,7 +170,7 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
 
     final RemoteEvent evt = new RemoteEvent(consumer.getDomainName().toString(), type, data).setNode(consumer.getNode()).setSync();
     evt.setUnicastAddress(addr);
-    final byte[] bytes = McastUtil.toBytes(evt, bufSize());
+    final byte[] bytes = McastUtil.toBytes(evt, server.getBufSize());
 
     for (int i = 0; i < addresses.size(); i++) {
 
@@ -203,7 +217,7 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
       final UDPUnicastAddress addr = (UDPUnicastAddress) addresses[i];
       final RemoteEvent evt = new RemoteEvent(null, type, data[i]).setNode(consumer.getNode()).setSync();
       evt.setUnicastAddress(addr);
-      final byte[] bytes = McastUtil.toBytes(evt, bufSize());
+      final byte[] bytes = McastUtil.toBytes(evt, server.getBufSize());
 
       senders.execute(new Runnable() {
 
@@ -233,33 +247,14 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
       });
     }
 
-    return new RespList(queue.await(timeout.getValueInMillis()));  }
+    return new RespList(queue.await(timeout.getValueInMillis()));  
+  }
   
 
   @Override
   public ServerAddress getAddress() throws IllegalStateException {
     Assertions.illegalState(addr == null, "The address of this instance is not yet available");
     return addr;
-  }
-
-  @Override
-  protected void handlePacketSizeToShort(DatagramPacket pack) {
-    log.error("Buffer size to short; set to: %s. This size is not enough to receive some incoming packets", bufSize());
-  }
-
-  @Override
-  protected int bufSize() {
-    return super.bufSize();
-  }
-
-  @Override
-  protected void handle(final DatagramPacket pack, final DatagramSocket sock) {
-    handlers.execute(new Runnable() {
-      @Override
-      public void run() {
-        doHandle(pack, sock);
-      }
-    });
   }
 
   private void doHandle(DatagramPacket pack, DatagramSocket sock) {
@@ -279,7 +274,7 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
             Object response = consumer.onSyncEvent(evt);
 
             try {
-              doSend(addr, port, sock, McastUtil.toBytes(new Response(UDPUnicastDispatcher.this.getAddress(), evt.getId(), response), bufSize()), false, evt.getType());
+              doSend(addr, port, sock, McastUtil.toBytes(new Response(UDPUnicastDispatcher.this.getAddress(), evt.getId(), response), server.getBufSize()), false, evt.getType());
             } catch (TimeoutException e) {
               // will not occur - see doSend()
             }
@@ -288,7 +283,7 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
 
           } else {
             try {
-              doSend(addr, port, sock, McastUtil.toBytes(new Response(UDPUnicastDispatcher.this.getAddress(), evt.getId(), null).setNone(), bufSize()), false, evt.getType());
+              doSend(addr, port, sock, McastUtil.toBytes(new Response(UDPUnicastDispatcher.this.getAddress(), evt.getId(), null).setNone(), server.getBufSize()), false, evt.getType());
             } catch (TimeoutException e) {
               // will not occur - see doSend()
             }
@@ -308,7 +303,7 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
 
   private Object doSend(InetAddress addr, int port, DatagramSocket sock, byte[] bytes, boolean synchro, String type) throws IOException,
       TimeoutException {
-    if (bytes.length > bufSize()) {
+    if (bytes.length > server.getBufSize()) {
       throw new IOException("Size of data larger than buffer size; increase this instance's buffer size through the setBufsize() method");
     }
 
@@ -318,7 +313,7 @@ public class UDPUnicastDispatcher extends UDPServer implements UnicastDispatcher
     sock.send(pack);
 
     if (synchro) {
-      bytes = new byte[bufSize()];
+      bytes = new byte[server.getBufSize()];
       pack = new DatagramPacket(bytes, bytes.length);
 
       try {

@@ -1,0 +1,63 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <name>Sapia Ubik Avis Transport</name>
+  <description>A Avis-based broadcast dispatcher for Ubik</description>
+  <url>http://www.sapia-oss.org/projects/ubik/index.html</url>
+
+  <artifactId>sapia_ubik_avis</artifactId>
+
+  <parent>
+    <groupId>org.sapia</groupId>
+    <artifactId>sapia_ubik_parent</artifactId>
+    <version>4.3</version>
+    <relativePath>../</relativePath>
+  </parent>
+
+  <packaging>jar</packaging>
+  
+  <dependencies>
+    <dependency>
+      <groupId>org.sapia</groupId>
+      <artifactId>sapia_ubik</artifactId>
+    </dependency>
+    
+    <!-- The following are used for only for starting an in-memory Avis router for testing -->
+    <!-- NOTE: also uses mina core lib, declared previously as part of NIO transport dependencies -->
+    <dependency>
+      <groupId>org.apache.mina</groupId>
+      <artifactId>mina-filter-ssl</artifactId>
+      <version>1.1.7</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>mantara</groupId>
+      <artifactId>avis-router</artifactId>
+      <version>1.2.2</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>mantara</groupId>
+      <artifactId>fastutil-subset</artifactId>
+      <version>1.2.2</version>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- The following are necessary for using Ubik's Avis BroadcastDispatcher -->
+
+    <dependency>
+      <groupId>mantara</groupId>
+      <artifactId>avis-client</artifactId>
+      <version>1.2.2</version>
+    </dependency>
+
+    <dependency>
+      <groupId>mantara</groupId>
+      <artifactId>avis-common</artifactId>
+      <version>1.2.2</version>
+    </dependency>    
+    
+  </dependencies>
+  
+</project>
