@@ -2,7 +2,6 @@ package org.sapia.ubik.rmi.naming.remote.discovery;
 
 import static org.junit.Assert.assertNotNull;
 
-import java.rmi.Remote;
 import java.rmi.RemoteException;
 
 import javax.naming.Context;
@@ -40,23 +39,23 @@ public class DiscoveryHelperTest {
 
   @Test
   public void testServiceDiscovery() throws Exception {
-    final BlockingRef<TestService> ref = new BlockingRef<DiscoveryHelperTest.TestService>();
+    final BlockingRef<DiscoveryTestService> ref = new BlockingRef<DiscoveryTestService>();
     helper.addServiceDiscoListener(new ServiceDiscoListener() {
       @Override
       public void onServiceDiscovered(ServiceDiscoveryEvent evt) {
         try {
-          ref.set((TestService) evt.getService());
+          ref.set((DiscoveryTestService) evt.getService());
         } catch (RemoteException e) {
           e.printStackTrace();
         }
       }
     });
 
-    TestService toBind = new TestService() {
-    };
+    DiscoveryTestService toBind = new DiscoveryTestServiceImpl();
+    
     jndi.getRootContext().bind("test", Hub.exportObject(toBind));
 
-    TestService service = ref.await(3000);
+    DiscoveryTestService service = ref.await(3000);
     assertNotNull("Service not discovered", service);
   }
 
@@ -72,9 +71,5 @@ public class DiscoveryHelperTest {
 
     Boolean discovered = ref.await(3000);
     assertNotNull("JNDI not discovered", discovered);
-  }
-
-  interface TestService extends Remote {
-
   }
 }
