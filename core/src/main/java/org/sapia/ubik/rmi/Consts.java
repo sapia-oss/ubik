@@ -52,6 +52,11 @@ public interface Consts {
   public static final String DEFAULT_DOMAIN = "default";
 
   /**
+   * The default TCP port range, for selecting random ports.
+   */
+  public static final String DEFAULT_TCP_PORT_RANGE = "[1025 - 32000]";
+  
+  /**
    * This constant corresponds to the <code>ubik.rmi.address-pattern</code>
    * property. The property should be used to specify a regular expression
    * based upon which the address of this host is chosen (if this host has more
@@ -61,6 +66,14 @@ public interface Consts {
    */
   public static final String IP_PATTERN_KEY = "ubik.rmi.address-pattern";
 
+  
+  /**
+   * This constant corresponds to the <code>ubik.rmi.tcp.port-range</code>
+   * property. The property should be used to specify a port range literal of the form <code>[min_port - max_port]</code>.
+   * Random ports will be selected within that range (the default is <code>[1025 - 32000]</code>).
+   */
+  public static final String TCP_PORT_RANGE = "ubik.rmi.tcp.port-range";
+  
   /**
    * This constant corresponds to the <code>ubik.rmi.naming.sync.lookup.batch-size</code>
    * property. It is used to bind a multicast port value in a properties/map

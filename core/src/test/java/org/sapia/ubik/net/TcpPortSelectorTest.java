@@ -1,11 +1,27 @@
 package org.sapia.ubik.net;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.IOException;
 import java.net.UnknownHostException;
 
+import org.junit.After;
 import org.junit.Test;
+import org.sapia.ubik.rmi.Consts;
 
 public class TcpPortSelectorTest {
+  
+  @After
+  public void tearDown() {
+    System.clearProperty(Consts.TCP_PORT_RANGE);
+    TcpPortSelector.assignDefaultPortRange();
+  }
+  
+  public void testAssignDefaultPortRange() {
+    System.setProperty(Consts.TCP_PORT_RANGE, "[10000-20000]");
+    PortRange newRange = TcpPortSelector.assignDefaultPortRange();
+    assertEquals(new PortRange(10000, 20000), newRange);
+  }
 
   @Test
   public void testSelect() throws Exception {
