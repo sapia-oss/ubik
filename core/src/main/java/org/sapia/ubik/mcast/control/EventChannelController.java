@@ -1,42 +1,28 @@
 package org.sapia.ubik.mcast.control;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.sapia.ubik.concurrent.SynchronizedRef;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.EventChannel;
-import org.sapia.ubik.mcast.EventChannel.Role;
-import org.sapia.ubik.mcast.control.Purgatory.DownNode;
-import org.sapia.ubik.mcast.control.challenge.ChallengeCompletionNotification;
-import org.sapia.ubik.mcast.control.challenge.ChallengeCompletionNotificationHandler;
-import org.sapia.ubik.mcast.control.challenge.ChallengeRequest;
-import org.sapia.ubik.mcast.control.challenge.ChallengeRequestHandler;
-import org.sapia.ubik.mcast.control.heartbeat.DownNotification;
-import org.sapia.ubik.mcast.control.heartbeat.DownNotificationHandler;
-import org.sapia.ubik.mcast.control.heartbeat.HeartbeatRequest;
-import org.sapia.ubik.mcast.control.heartbeat.HeartbeatRequestHandler;
-import org.sapia.ubik.mcast.control.heartbeat.PingRequest;
-import org.sapia.ubik.mcast.control.heartbeat.PingRequestHandler;
-import org.sapia.ubik.mcast.control.heartbeat.SynchronousHeartbeatRequest;
-import org.sapia.ubik.mcast.control.heartbeat.SynchronousHeartbeatRequestHandler;
-import org.sapia.ubik.mcast.control.heartbeat.SynchronousHeartbeatRequestSender;
-import org.sapia.ubik.mcast.control.master.MasterBroadcastAckEvent;
-import org.sapia.ubik.mcast.control.master.MasterBroadcastAckEventHandler;
-import org.sapia.ubik.mcast.control.master.MasterBroadcastEvent;
-import org.sapia.ubik.mcast.control.master.MasterBroadcastEventHandler;
-import org.sapia.ubik.mcast.control.master.MasterSyncEvent;
-import org.sapia.ubik.mcast.control.master.MasterSyncEventHandler;
+import org.sapia.ubik.mcast.NodeInfo;
+import org.sapia.ubik.mcast.NodeInfo.State;
+import org.sapia.ubik.mcast.control.gossip.GossipSyncAckControlEvent;
+import org.sapia.ubik.mcast.control.gossip.GossipSyncAckControlEventHandler;
+import org.sapia.ubik.mcast.control.gossip.GossipSyncNotification;
+import org.sapia.ubik.mcast.control.gossip.GossipSyncNotificationHandler;
+import org.sapia.ubik.mcast.control.health.DelegatedHealthCheckControlEvent;
+import org.sapia.ubik.mcast.control.health.DelegatedHealthCheckControlEventHandler;
+import org.sapia.ubik.mcast.control.health.HealtchCheckConfirmationControlEventHandler;
+import org.sapia.ubik.mcast.control.health.HealthCheckConfirmationControlEvent;
+import org.sapia.ubik.mcast.control.health.SynchronousHealthCheckRequest;
+import org.sapia.ubik.mcast.control.health.SynchronousHealthCheckRequestHandler;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.util.Collects;
-import org.sapia.ubik.util.Func;
 import org.sapia.ubik.util.Pause;
 import org.sapia.ubik.util.SysClock;
 
@@ -49,68 +35,37 @@ import org.sapia.ubik.util.SysClock;
  */
 public class EventChannelController {
 
-  // --------------------------------------------------------------------------
-
-  static class PendingResponseState {
-
-    private ControlResponseHandler handler;
-    private long requestId;
-    private long requestTime;
-
-    public PendingResponseState(ControlResponseHandler handler, long requestId, long requestTime) {
-      this.handler     = handler;
-      this.requestId   = requestId;
-      this.requestTime = requestTime;
-    }
-
-    ControlResponseHandler getHandler() {
-      return handler;
-    }
-
-    long getRequestId() {
-      return requestId;
-    }
-
-    public long getRequestTime() {
-      return requestTime;
-    }
-
-  }
-
   // ==========================================================================
-
+  
   private Category log = Log.createCategory(getClass());
 
   private ControllerConfiguration config;
   private ControllerContext context;
 
-  private SynchronizedRef<PendingResponseState> ref = new SynchronizedRef<PendingResponseState>();
-  private Map<String, ControlRequestHandler> requestHandlers = new HashMap<String, ControlRequestHandler>();
+  private static final long DEFAULT_CTRL_INTERVAL = 15000;
+  
   private Map<String, ControlEventHandler> eventHandlers = new HashMap<String, ControlEventHandler>();
+  private Map<String, GossipNotificationHandler> gossipHandlers = new HashMap<String, GossipNotificationHandler>();
   private Map<String, ControlNotificationHandler> notificationHandlers = new HashMap<String, ControlNotificationHandler>();
   private Map<String, SynchronousControlRequestHandler> syncRequestHandlers = new HashMap<String, SynchronousControlRequestHandler>();
-  private Pause autoResyncInterval, masterBroadcastInterval;
+  private Pause controlInterval, gossipInterval;
 
-  public EventChannelController(ControllerConfiguration config, ChannelCallback callback) {
+  public EventChannelController(ControllerConfiguration config, EventChannelFacade callback) {
     this(SysClock.RealtimeClock.getInstance(), config, callback);
   }
 
-  public EventChannelController(SysClock clock, ControllerConfiguration config, ChannelCallback callback) {
+  public EventChannelController(SysClock clock, ControllerConfiguration config, EventChannelFacade callback) {
     this.config = config;
-    context = new ControllerContext(this, callback, clock, config);
-    requestHandlers.put(ChallengeRequest.class.getName(), new ChallengeRequestHandler(context));
-    requestHandlers.put(HeartbeatRequest.class.getName(), new HeartbeatRequestHandler(context));
-    syncRequestHandlers.put(PingRequest.class.getName(), new PingRequestHandler(context));
-    syncRequestHandlers.put(SynchronousHeartbeatRequest.class.getName(), new SynchronousHeartbeatRequestHandler(context));
-    notificationHandlers.put(DownNotification.class.getName(), new DownNotificationHandler(context));
-    notificationHandlers.put(ChallengeCompletionNotification.class.getName(), new ChallengeCompletionNotificationHandler(context));
-    eventHandlers.put(MasterBroadcastEvent.class.getName(), new MasterBroadcastEventHandler(context));
-    eventHandlers.put(MasterBroadcastAckEvent.class.getName(), new MasterBroadcastAckEventHandler(context));
-    eventHandlers.put(MasterSyncEvent.class.getName(), new MasterSyncEventHandler(context));
-    
+    context = new ControllerContext(callback, clock, config);
 
-    autoResyncInterval      = new Pause(clock, config.getResyncInterval());
-    masterBroadcastInterval = new Pause(clock, config.getMasterBroadcastInterval());
+    syncRequestHandlers.put(SynchronousHealthCheckRequest.class.getName(), new SynchronousHealthCheckRequestHandler(context));
+    gossipHandlers.put(GossipSyncNotification.class.getName(), new GossipSyncNotificationHandler(context));
+    eventHandlers.put(GossipSyncAckControlEvent.class.getName(), new GossipSyncAckControlEventHandler(context));
+    eventHandlers.put(DelegatedHealthCheckControlEvent.class.getName(), new DelegatedHealthCheckControlEventHandler(context));
+    eventHandlers.put(HealthCheckConfirmationControlEvent.class.getName(), new HealtchCheckConfirmationControlEventHandler(context));
+    
+    controlInterval = new Pause(clock, DEFAULT_CTRL_INTERVAL);
+    gossipInterval  = new Pause(clock, config.getGossipInterval().getValueInMillis());   
   }
 
   ControllerConfiguration getConfig() {
@@ -121,77 +76,16 @@ public class EventChannelController {
     return context;
   }
 
-  /**
-   * Resets this instance to this original state (makes it a {@link Role#SLAVE}).
-   */
-  public synchronized void reset() {
-    synchronized (ref) {
-      context.setRole(Role.SLAVE);
-      ref.unset();
-    }
-  }
-
   public void checkStatus() {
-
-    synchronized (ref) {
-
-      // Are there responses pending ? If yes, this check will evaluate to true
-      if (ref.isSet()) {
-        log.debug("There is already a response handler that is active");
-        // checking if pending responses have timed out: if yes, we're
-        // discarding the current
-        // response handler
-        if (context.getClock().currentTimeMillis() - ref.get().getRequestTime() >= config.getResponseTimeout()) {
-          log.debug("Response timeout detected, cancelling handling of responses");
-          ref.get().getHandler().onResponseTimeOut();
-          ref.unset();
-          performControl();
-        }
-      } else {
-        log.debug("No response handler currently set, performing control");
-        performControl();
-      }
+    if (gossipInterval.isOver()) {
+      doGossip();
+      gossipInterval.reset();
     }
-
-  }
-
-  public synchronized void onResponse(String originNode, ControlResponse response) {
-    synchronized (ref) {
-      if (ref.isUnset()) {
-        log.debug("No response handler currently present, discarding response %s", response);
-      } else {
-        PendingResponseState state = ref.get();
-        if (state.getRequestId() != response.getRequestId()) {
-          log.debug("Request ID does not match response ID (%s vs %s); discarding response %s", state.getRequestId(), response.getRequestId(),
-              response);
-        }
-        try {
-          if (state.getHandler().handle(originNode, response)) {
-            ref.set(null);
-          }
-        } catch (RuntimeException e) {
-          log.error("Error caught handling response; discarding response handler", e);
-          ref.unset();
-        }
-      }
+    if (controlInterval.isOver()) {
+      performControl();
+      controlInterval.reset();
     }
   }
-
-  public synchronized void onRequest(String originNode, ServerAddress originAddress, ControlRequest request) {
-    ControlRequestHandler handler = requestHandlers.get(request.getClass().getName());
-    try {
-      if (handler != null) {
-        handler.handle(originNode, originAddress, request);
-      } else {
-        log.error("No request handler for request %s", request);
-      }
-    } finally {
-      // cascading the request
-      request.getTargetedNodes().remove(context.getNode());
-      context.getChannelCallback().sendRequest(request);
-    }
-  }
-  
   
   public synchronized void onEvent(String originNode, ServerAddress originAddress, ControlEvent event) {
     ControlEventHandler handler = eventHandlers.get(event.getClass().getName());
@@ -212,172 +106,98 @@ public class EventChannelController {
     }
   }
 
-  public synchronized void onNotification(String originNode, ControlNotification notification) {
+  public synchronized void onNotification(String originNode, ServerAddress originAddress, ControlNotification notification) {
     ControlNotificationHandler handler = notificationHandlers.get(notification.getClass().getName());
     try {
       if (handler != null) {
-        handler.handle(originNode, notification);
+        handler.handle(originNode, originAddress, notification);
       } else {
         log.error("No notification handler for notification %s; got: %s", notification, notificationHandlers);
       }
     } finally {
       // cascading the notification
       notification.getTargetedNodes().remove(context.getNode());
-      context.getChannelCallback().sendNotification(notification);
+      context.getEventChannel().sendNotification(notification);
+    }
+  }
+  
+  public synchronized void onGossipNotification(String originNode, ServerAddress originAddress, GossipNotification notification) {
+    GossipNotificationHandler handler = gossipHandlers.get(notification.getClass().getName());
+    if (handler != null) {
+      handler.handle(originNode, originAddress, notification);
+    } else {
+      log.error("No notification handler for notification %s; got: %s", notification, gossipHandlers);
     }
   }
 
   private void performControl() {
-    log.report("*********** Current role is %s ***********", context.getRole());
-    if (context.getRole() == Role.SLAVE && log.isReport()) {
-      log.report("Last heartbeat request received at: %s", new Date(context.getLastHeartbeatRequestReceivedTime()));
+    if (log.isReport()) {
       log.report("Heartbeat timeout set to: %s millis", context.getConfig().getHeartbeatTimeout());
-      log.report("Node identifier: %s", context.getChannelCallback().getNode());
-      if (context.getClock().currentTimeMillis() - context.getLastHeartbeatRequestReceivedTime() > context.getConfig().getHeartbeatTimeout()) {
-        log.report("Heartbeat request is due (has not been received at expected time)");
+      log.report("Node identifier: %s", context.getEventChannel().getNode());
+    }
+    doHealth();
+  }
+
+  // --------------------------------------------------------------------------
+  // gossip
+  
+  private void doGossip() {
+    if (config.isGossipEnabled()) {
+      context.getEventChannel().sendGossipNotification(
+          new GossipSyncNotification(context.getEventChannel().getView(GossipSyncNotification.NON_SUSPECT_NODES_FILTER))
+      );
+    }
+  }
+  
+  // --------------------------------------------------------------------------
+  // health check
+  
+  private void doHealth() {
+    for (NodeInfo n : context.getEventChannel().getView()) {
+      if (n.checkState(context.getConfig().getHeartbeatTimeout().getValueInMillis(), context.getClock()) == State.SUSPECT) {
+        doSendTriggerHealthCheckFor(n);
       }
     }
-    switch (context.getRole()) {
-
-    // Role is currently undefined, proceeding to challenge
-    case UNDEFINED:
-      doTriggerChallenge(false);
-      break;
-
-    // ----------------------------------------------------------------------
-
-    // Challenge is on-going: this node has deemed it's the master, it has sent
-    // a ChallengeRequest and is waiting for the corresponding
-    // ChallengeResponses.
-    // We're not doing anything until the current response handler completes.
-    case MASTER_CANDIDATE:
-      break;
-
-    // ----------------------------------------------------------------------
-
-    // This is the master: it is sending a heartbeat request and creating a
-    // matching
-    // response handler.
-    case MASTER:
-      // either resynching or sending master broadcast
-      if (masterBroadcastInterval.isOver()) {
-        context.getChannelCallback().triggerMasterBroadcast();
-        masterBroadcastInterval.reset();
-      }
-
-      // broadcast "force resync" events to all nodes in the purgatory
-      if (context.getPurgatory().size() > 0) {
-        log.info("Got %s nodes in purgatory", context.getPurgatory().size());
-        List<Set<DownNode>> batches = Collects.splitAsSets(context.getPurgatory().getDownNodes(), config.getForceResyncBatchSize());
-        for (Set<DownNode> batch : batches) {
-          context.getChannelCallback().forceResyncOf(Collects.convertAsSet(batch, new Func<String, DownNode>() {
-            @Override
-            public String call(DownNode arg) {
-              log.debug("Forcing resync for node in purgatory: %s", arg.getNode());
-              arg.attempt();
-              return arg.getNode();
-            }
-          }));
-        }
-        Set<String> purged = context.getPurgatory().clear(config.getForceResyncAttempts());
-        if (!purged.isEmpty() && log.isInfo()) {
-          log.info("Purged nodes from purgatory (those are definitely lost):");
-          for (String p : purged) {
-            log.info(p);
-          }
+  }
+  
+  private void doSendTriggerHealthCheckFor(NodeInfo suspect) {
+    List<NodeInfo> currentNodes = context.getEventChannel().getView();
+    Set<NodeInfo>  delegates    = new HashSet<>();
+    int counter = 0;
+    for (NodeInfo n : currentNodes) {
+      if (n.getState() != NodeInfo.State.SUSPECT) {
+        delegates.add(n);
+        counter++;
+        if (counter == context.getConfig().getHealthCheckDelegateCount()) {
+          break;
         }
       }
+    }
+    if (delegates.isEmpty()) {
+      log.info("Node %s is suspect: performing healthcheck", suspect);
       
-      if (context.getConfig().isSyncHeartBeatEnabled()) {
-        SynchronousHeartbeatRequestSender sender = new SynchronousHeartbeatRequestSender(context);
-        log.report("Sending synchronous heartbeat request to %s nodes", context.getChannelCallback().getNodeCount());
-        sender.sendHearbeatRequest();
-        log.report("Finished sending heartbeat request", context.getChannelCallback().getNodeCount());
-
-      } else {
-        ControlRequest heartbeatRq = ControlRequestFactory.createHeartbeatRequest(context);
-        ControlResponseHandler heartbeatHandler = ControlResponseHandlerFactory
-            .createHeartbeatResponseHandler(
-                context, 
-                new HashSet<String>(context.getChannelCallback().getNodes())
-            );
-
-        ref.set(new PendingResponseState(heartbeatHandler, heartbeatRq.getRequestId(), context.getClock().currentTimeMillis()));
-        context.heartbeatRequestSent();
-        log.info("Sending asynchronous heartbeat request to %s nodes", heartbeatRq.getTargetedNodes().size());
-        context.getChannelCallback().sendRequest(heartbeatRq);
-      }
-   
-    break;
-
-    // ----------------------------------------------------------------------
-
-    // This node is a slave: has it received a heartbeat request "lately" ? If
-    // no, we're triggering a challenge: the master may be down.
-    default: // SLAVE
-      if (context.getChannelCallback().getNodes().isEmpty() && autoResyncInterval.isOver()) {
-        log.report("Node appears alone in the cluster, forcing a resync");
-        context.getChannelCallback().resync();
-        autoResyncInterval.reset();
-      } else if (context.getClock().currentTimeMillis() - context.getLastHeartbeatRequestReceivedTime() >= config.getHeartbeatTimeout()) {
-        if (context.getChannelCallback().getNodes().size() <= config.getResyncNodeCount() && autoResyncInterval.isOver()) {
-          log.report("Number of peers deemed not enough, forcing a resync");
-          context.getChannelCallback().resync();
-          autoResyncInterval.reset();
+      try {
+        Set<SynchronousControlResponse> responses = context.getEventChannel().sendSynchronousRequest(
+            Collects.arrayToSet(suspect.getNode()), 
+            new SynchronousHealthCheckRequest(), 
+            context.getConfig().getHealthCheckDelegateTimeout()
+        );
+        if (responses.isEmpty()) {
+          log.info("Received no response for healthcheck on %s (removing from view)", suspect);
+          context.getEventChannel().down(suspect.getNode());
+        } else {
+          suspect.reset(context.getClock());
         }
-        log.info("Heartbeat request has not been received in timely manner since last time, triggering challenge");
-        doTriggerChallenge(true);
+      } catch (Exception e) {
+        log.info("Unexpected error caught during healthcheck of %s (removing from view) - %s", suspect, e.getMessage());
+        context.getEventChannel().down(suspect.getNode());
+      }
+    } else {
+      log.info("Node %s is suspect: delegating healthcheck", suspect);
+      DelegatedHealthCheckControlEvent event = new DelegatedHealthCheckControlEvent(suspect);
+      for (NodeInfo d : delegates) {
+        context.getEventChannel().sendUnicastEvent(d.getAddr(), event);
       }
     }
   }
-
-  void triggerChallenge() {
-    context.setRole(Role.MASTER_CANDIDATE);
-    log.info("Node %s triggering challenge", context.getNode());
-    ControlRequest challengeRq = ControlRequestFactory.createChallengeRequest(context);
-    ControlResponseHandler challengeHandler = ControlResponseHandlerFactory.createChallengeResponseHandler(context, context.getChannelCallback()
-        .getNodes());
-    ref.set(new PendingResponseState(challengeHandler, challengeRq.getRequestId(), context.getClock().currentTimeMillis()));
-    context.challengeRequestSent();
-    String masterNode = context.getMasterNode();
-    if (masterNode != null) {
-      challengeRq.getTargetedNodes().remove(context.getMasterNode());
-      ControlRequest challengeRqCopy = ControlRequestFactory.createChallengeRequestCopy(context, challengeRq,
-          Collects.arrayToSet(context.getMasterNode()));
-      context.getChannelCallback().sendRequest(challengeRqCopy);
-      context.getChannelCallback().sendRequest(challengeRq);
-    } else {
-      context.getChannelCallback().sendRequest(challengeRq);
-    }
-  }
-
-  private void doTriggerChallenge(boolean force) {
-    List<String> nodes = new ArrayList<String>(context.getChannelCallback().getNodes());
-
-    // Sorting the node identifiers and comparing them to this node's. In the
-    // end, the node that comes "first" becomes the master.
-    Collections.sort(nodes);
-    if (!nodes.isEmpty()) {
-      log.debug("Node %s has %s sibling node(s): %s", context.getNode(), nodes.size(), nodes);
-      if (force || context.getNode().compareTo(nodes.get(0)) <= 0) {
-        // Master role not yet confirmed, upgrading to candidate for now.
-        log.info("Setting self (%s) to candidate for master", context.getNode());
-        context.setRole(Role.MASTER_CANDIDATE);
-      } else {
-        context.getChannelCallback().resync();
-      }
-    // Lonely node: automatically becomes the master
-    } else {
-      log.info("No other nodes found, setting self to candidate for master", nodes.size());
-      context.setRole(Role.MASTER_CANDIDATE);
-    }
-
-    if (context.getRole() == Role.MASTER_CANDIDATE) {
-      triggerChallenge();
-    } else {
-      log.info("Node %s is setting itelf to slave", context.getNode());
-      context.setRole(Role.SLAVE);
-    }
-  }
-
 }

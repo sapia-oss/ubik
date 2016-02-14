@@ -1,7 +1,7 @@
 package org.sapia.ubik.taskman;
 
-import static org.mockito.Mockito.*;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 import org.junit.After;
 import org.junit.Before;

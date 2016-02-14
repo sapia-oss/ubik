@@ -63,10 +63,11 @@ public class InMemoryUnicastDispatcher implements UnicastDispatcher {
   }
 
   @Override
-  public void dispatch(ServerAddress addr, String type, Object data) throws IOException {
+  public boolean dispatch(ServerAddress addr, String type, Object data) throws IOException {
     RemoteEvent evt = new RemoteEvent(null, type, data).setNode(consumer.getNode()).setSync();
     evt.setUnicastAddress(addr);
     doSend((InMemoryUnicastAddress) addr, evt, false);
+    return true;
   }
 
   @Override

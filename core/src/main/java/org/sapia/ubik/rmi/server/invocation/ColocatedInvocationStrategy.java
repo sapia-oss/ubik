@@ -10,8 +10,8 @@ import org.sapia.ubik.module.ModuleContext;
 import org.sapia.ubik.rmi.server.ObjectTable;
 import org.sapia.ubik.rmi.server.ServerRuntime;
 import org.sapia.ubik.rmi.server.command.InvokeCommand;
-import org.sapia.ubik.rmi.server.invocation.InvocationDispatcher.InvocationStrategy;
 import org.sapia.ubik.rmi.server.invocation.InvocationDispatcher.InvocationStats;
+import org.sapia.ubik.rmi.server.invocation.InvocationDispatcher.InvocationStrategy;
 import org.sapia.ubik.rmi.server.transport.Connections;
 
 public class ColocatedInvocationStrategy implements InvocationStrategy {

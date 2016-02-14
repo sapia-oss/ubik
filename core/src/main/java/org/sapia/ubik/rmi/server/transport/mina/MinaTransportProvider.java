@@ -15,8 +15,8 @@ import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.Server;
 import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.TransportProvider;
-import org.sapia.ubik.util.Localhost;
 import org.sapia.ubik.util.Conf;
+import org.sapia.ubik.util.Localhost;
 import org.sapia.ubik.util.TimeValue;
 
 /**

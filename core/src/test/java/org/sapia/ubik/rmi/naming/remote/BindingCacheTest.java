@@ -7,11 +7,11 @@ import java.io.ObjectOutputStream;
 
 import javax.naming.NameParser;
 
-import junit.framework.TestCase;
-
 import org.sapia.archie.impl.DefaultNameParser;
 import org.sapia.archie.jndi.JndiNameParser;
 import org.sapia.ubik.rmi.naming.remote.proxy.BindingCache;
+
+import junit.framework.TestCase;
 
 /**
  * @author Yanick Duchesne

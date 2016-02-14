@@ -1,7 +1,7 @@
 package org.sapia.ubik.rmi.server.stub;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.when;
 
 import java.rmi.RemoteException;
 import java.util.ArrayList;

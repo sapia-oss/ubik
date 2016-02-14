@@ -120,19 +120,21 @@ public class UDPUnicastDispatcher implements UnicastDispatcher {
   }
 
   @Override
-  public void dispatch(ServerAddress addr, String type, Object data) throws IOException {
+  public boolean dispatch(ServerAddress addr, String type, Object data) throws IOException {
 
     DatagramSocket sock = new DatagramSocket();
 
     sock.setSoTimeout((int) asyncAckTimeout.getValueInMillis());
+    RemoteEvent evt = new RemoteEvent(consumer.getDomainName().toString(), type, data).setNode(consumer.getNode());
+    evt.setUnicastAddress(addr);
 
     try {
-      RemoteEvent evt = new RemoteEvent(consumer.getDomainName().toString(), type, data).setNode(consumer.getNode());
-      evt.setUnicastAddress(addr);
       log.debug("dispatch() : %s, type: %s, data: %s", addr, type, data);
       UDPUnicastAddress inet = (UDPUnicastAddress) addr;
       doSend(inet.getInetAddress(), inet.getPort(), sock, McastUtil.toBytes(evt, server.getBufSize()), false, type);
+      return true;
     } catch (TimeoutException e) {
+      return false;
       // will not occur - see doSend();
     } finally {
       try {

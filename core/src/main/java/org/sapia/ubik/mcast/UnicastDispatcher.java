@@ -36,10 +36,12 @@ public interface UnicastDispatcher {
    *          perform logic according to the "type".
    * @param data
    *          the {@link Object} to send.
-   * @throws IOException
-   *           if there was an IO issue performing this operation.
+   * @return <code>true</code> if no error occurred while attempting to send over 
+   *          the network, <code>false</code> otherwise.
+   * @throws IOException if there was an I/O issue attempting to serialize the given data before
+   *          sending it over the network.
    */
-  public void dispatch(ServerAddress addr, String type, Object data) throws IOException;
+  public boolean dispatch(ServerAddress addr, String type, Object data) throws IOException;
 
   /**
    * Sends the given data to the node whose address is given, returning the

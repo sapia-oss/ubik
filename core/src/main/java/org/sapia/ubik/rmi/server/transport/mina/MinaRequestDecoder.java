@@ -9,8 +9,8 @@ import org.apache.mina.filter.codec.CumulativeProtocolDecoder;
 import org.apache.mina.filter.codec.ProtocolDecoderOutput;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.transport.MarshalStreamFactory;
-import org.sapia.ubik.util.MinaByteBufferInputStream;
 import org.sapia.ubik.util.Conf;
+import org.sapia.ubik.util.MinaByteBufferInputStream;
 
 /**
  * A decoder for incoming Ubik client requests.

@@ -1,7 +1,8 @@
 package org.sapia.ubik.rmi.server.stub;
 
-import static org.mockito.Mockito.*;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
+
 import java.lang.reflect.Proxy;
 
 import org.junit.After;
@@ -12,8 +13,6 @@ import org.sapia.ubik.rmi.server.Hub;
 import org.sapia.ubik.rmi.server.TestInMemoryTransportSetup;
 import org.sapia.ubik.rmi.server.TestRemoteInterface;
 import org.sapia.ubik.rmi.server.oid.DefaultOID;
-import org.sapia.ubik.rmi.server.stub.RemoteRefContext;
-import org.sapia.ubik.rmi.server.stub.RemoteRefEx;
 import org.sapia.ubik.test.TestUtils;
 
 public class RemoteRefExTest {

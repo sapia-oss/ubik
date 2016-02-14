@@ -10,11 +10,10 @@ import javax.naming.NameNotFoundException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.EventChannel;
 import org.sapia.ubik.rmi.Consts;
-import org.sapia.ubik.util.PropUtil;
 import org.sapia.ubik.util.Conf;
+import org.sapia.ubik.util.PropUtil;
 
 public class RemoteInitialContextFactoryTest {
 

@@ -10,8 +10,8 @@ import java.util.UUID;
 import org.junit.Test;
 import org.sapia.ubik.mcast.McastUtil;
 import org.sapia.ubik.rmi.server.transport.socket.MultiplexSocketAddress;
-import org.sapia.ubik.util.SysClock;
 import org.sapia.ubik.util.Collects;
+import org.sapia.ubik.util.SysClock;
 
 public class ControlRequestTest {
 

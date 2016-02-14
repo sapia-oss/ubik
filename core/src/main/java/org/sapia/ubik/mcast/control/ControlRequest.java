@@ -9,8 +9,8 @@ import java.util.List;
 import java.util.Set;
 
 import org.sapia.ubik.net.ServerAddress;
-import org.sapia.ubik.util.SysClock;
 import org.sapia.ubik.util.Collects;
+import org.sapia.ubik.util.SysClock;
 
 /**
  * The base class for control requests.

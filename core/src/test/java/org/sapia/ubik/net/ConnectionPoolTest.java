@@ -1,6 +1,6 @@
 package org.sapia.ubik.net;
 
-import static junit.framework.Assert.*;
+import static junit.framework.Assert.assertEquals;
 
 import java.io.IOException;
 import java.net.Socket;

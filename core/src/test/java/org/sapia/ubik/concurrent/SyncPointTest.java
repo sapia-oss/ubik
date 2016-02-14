@@ -1,6 +1,6 @@
 package org.sapia.ubik.concurrent;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;

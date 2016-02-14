@@ -11,7 +11,6 @@ import javax.naming.NamingException;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.naming.ServiceHandler;
 import org.sapia.ubik.rmi.naming.ServiceLocator;
-import org.sapia.ubik.rmi.server.Hub;
 import org.sapia.ubik.rmi.server.transport.memory.InMemoryAddress;
 import org.sapia.ubik.rmi.server.transport.memory.InMemoryTransportProvider;
 

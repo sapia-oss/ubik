@@ -5,9 +5,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Pattern;
 
 import org.junit.After;
 import org.junit.Test;
