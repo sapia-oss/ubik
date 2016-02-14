@@ -220,7 +220,7 @@ public abstract class BaseTcpUnicastDispatcher extends UnicastDispatcherSupport 
   }
 
   @Override
-  public void dispatch(ServerAddress addr, String type, Object data) throws IOException {
+  public boolean dispatch(ServerAddress addr, String type, Object data) throws IOException {
 
     Split split = asyncDispatch.start();
 
@@ -229,12 +229,16 @@ public abstract class BaseTcpUnicastDispatcher extends UnicastDispatcherSupport 
       evt.setUnicastAddress(getAddress());
       log.debug("dispatch() to %s, type: %s, data: %s", addr, type, data);
       doSend(addr, evt, false, type, this.asyncAckTimeout);
+      return true;
     } catch (RemoteException e) {
-      log.warning("Could not send to %s", e, addr);
+      log.warning("Could not send: node probably down %s", e, addr);
+      return false;
     } catch (ClassNotFoundException e) {
       log.warning("Could not deserialize response", e);
+      return false;
     } catch (TimeoutException e) {
       log.warning("Did not receive ack from peer", e);
+      return false;
     } catch (InterruptedException e) {
       ThreadInterruptedException tie = new ThreadInterruptedException();
       throw tie;

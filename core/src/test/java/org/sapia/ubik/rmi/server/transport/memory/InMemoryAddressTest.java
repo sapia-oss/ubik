@@ -1,6 +1,7 @@
 package org.sapia.ubik.rmi.server.transport.memory;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotSame;
 
 import org.junit.Before;
 import org.junit.Test;

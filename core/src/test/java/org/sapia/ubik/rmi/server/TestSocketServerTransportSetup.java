@@ -5,7 +5,6 @@ import java.util.Properties;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 
-import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.EventChannel;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.naming.remote.EmbeddableJNDIServer;

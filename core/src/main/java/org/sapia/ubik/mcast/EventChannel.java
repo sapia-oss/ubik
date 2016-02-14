@@ -15,13 +15,13 @@ import java.util.concurrent.Executors;
 import org.sapia.ubik.concurrent.NamedThreadFactory;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
-import org.sapia.ubik.mcast.control.ChannelCallback;
 import org.sapia.ubik.mcast.control.ControlEvent;
 import org.sapia.ubik.mcast.control.ControlNotification;
-import org.sapia.ubik.mcast.control.ControlRequest;
-import org.sapia.ubik.mcast.control.ControlResponse;
 import org.sapia.ubik.mcast.control.ControllerConfiguration;
 import org.sapia.ubik.mcast.control.EventChannelController;
+import org.sapia.ubik.mcast.control.EventChannelFacade;
+import org.sapia.ubik.mcast.control.GossipMessage;
+import org.sapia.ubik.mcast.control.GossipNotification;
 import org.sapia.ubik.mcast.control.SplitteableMessage;
 import org.sapia.ubik.mcast.control.SynchronousControlRequest;
 import org.sapia.ubik.mcast.control.SynchronousControlResponse;
@@ -55,20 +55,7 @@ import org.sapia.ubik.util.TimeValue;
  * @author Yanick Duchesne
  */
 public class EventChannel {
-
-  /**
-   * This enum holds constants pertaining to an {@link EventChannel}'s role in a
-   * domain/cluster.
-   */
-  public enum Role {
-
-    UNDEFINED, MASTER_CANDIDATE, MASTER, SLAVE;
-
-    public boolean isMaster() {
-      return this == MASTER;
-    }
-  }
-
+  
   /** Internal state */
   private enum State {
     CREATED, STARTED, CLOSED;
@@ -163,33 +150,35 @@ public class EventChannel {
    * Corresponds to all types of control events.
    */
   static final String CONTROL_EVT          = "ubik/mcast/control";
-
-  private static final int       DEFAULT_MAX_PUB_ATTEMPTS = 3;
-  private static final TimeValue DEFAULT_READ_TIMEOUT     = TimeValue.createMillis(10000);
+  
+  private static final int       DEFAULT_MAX_PUB_ATTEMPTS  = 3;
+  private static final TimeValue DEFAULT_READ_TIMEOUT      = TimeValue.createMillis(10000);
 
   private static Set<EventChannel> CHANNELS_BY_DOMAIN = Collections.synchronizedSet(new HashSet<EventChannel>());
 
   private Category log = Log.createCategory(getClass());
-  private static boolean         eventChannelReuse = Conf.getSystemProperties().getBooleanProperty(Consts.MCAST_REUSE_EXISTINC_CHANNELS, true);
-  private Timer                  heartbeatTimer = new Timer("Ubik.EventChannel.Timer", true);
-  private BroadcastDispatcher    broadcast;
-  private UnicastDispatcher      unicast;
-  private EventConsumer          consumer;
-  private ChannelEventListener   listener;
-  private View                   view = new View();
-  private EventChannelController controller;
-  private int                    controlBatchSize;
-  private ServerAddress          address;
-  private SoftReferenceList<DiscoveryListener> discoListeners     = new SoftReferenceList<DiscoveryListener>();
-  private volatile State         state              = State.CREATED;
-  private int                    maxPublishAttempts = DEFAULT_MAX_PUB_ATTEMPTS;
-  private TimeRange              startDelayRange;
-  private TimeRange              publishIntervalRange;
-  private TimeValue              defaultReadTimeout = DEFAULT_READ_TIMEOUT;
+  private static boolean              eventChannelReuse = Conf.getSystemProperties()
+      .getBooleanProperty(Consts.MCAST_REUSE_EXISTINC_CHANNELS, true);
+  private Timer                       heartbeatTimer = new Timer("Ubik.EventChannel.Timer", true);
+  private BroadcastDispatcher         broadcast;
+  private UnicastDispatcher           unicast;
+  private EventConsumer               consumer;
+  private ChannelEventListener        listener;
+  private View                        view;
+  private EventChannelController      controller;
+  private int                         controlBatchSize;
+  private ServerAddress               address;
+  private volatile State              state                  = State.CREATED;
+  private int                         maxPublishAttempts     = DEFAULT_MAX_PUB_ATTEMPTS;
+  private TimeRange                   startDelayRange;
+  private TimeRange                   publishIntervalRange;
+  private TimeValue                   defaultReadTimeout     = DEFAULT_READ_TIMEOUT;
   private ConnectionStateListenerList stateListeners = new ConnectionStateListenerList();
   private ExecutorService             publishExecutor = Executors.newSingleThreadExecutor(
       NamedThreadFactory.createWith("Ubik.EventChannel.Publish").setDaemon(true)
   );
+  
+  private SoftReferenceList<DiscoveryListener> discoListeners = new SoftReferenceList<DiscoveryListener>();
 
   /**
    * Creates an instance of this class which by default uses a
@@ -233,6 +222,7 @@ public class EventChannel {
     consumer  = new EventConsumer(domain);
     unicast   = DispatcherFactory.createUnicastDispatcher(consumer, config);
     broadcast = DispatcherFactory.createBroadcastDispatcher(consumer, config);
+    view      = new View(consumer.getNode());
     init(config);
   }
 
@@ -248,14 +238,8 @@ public class EventChannel {
     this.consumer = consumer;
     this.unicast = unicast;
     this.broadcast = broadcast;
+    view      = new View(consumer.getNode());
     init(new Conf().addSystemProperties());
-  }
-
-  /**
-   * @return this instance's {@link Role}
-   */
-  public Role getRole() {
-    return controller.getContext().getRole();
   }
 
   /**
@@ -772,6 +756,37 @@ public class EventChannel {
     }
   }
   
+  void sendGossipMessage(final GossipMessage msg) {
+    publishExecutor.execute(new Runnable() {
+      @Override
+      public void run() {
+        List<NodeInfo> candidates = controller.getContext().getEventChannel().getView(new Condition<NodeInfo>() {
+          @Override
+          public boolean apply(NodeInfo node) {
+            return node.getState().isNormal();
+          }
+        });        
+        Collections.shuffle(candidates);
+        int counter = 0;
+        log.debug("Sending gossip notification: %s (got %s candidates)", msg, candidates.size());
+        for (NodeInfo c : candidates) {
+          try {
+            log.debug("Sending to : %s", c);
+            if (unicast.dispatch(c.getAddr(), CONTROL_EVT, msg)) {
+              counter++;
+              if(counter == controller.getContext().getConfig().getGossipNodeCount()) {
+                break;
+              }
+            }
+          } catch (Exception e) {
+            log.info("Could not send control message to %s", e, c.getAddr());
+            c.suspect();
+          }
+        }
+      }
+    });      
+  }
+  
   /**
    * Closes the statically cached event channels, and clears the cache.
    */
@@ -835,7 +850,7 @@ public class EventChannel {
 
   // ==========================================================================
 
-  private class ChannelCallbackImpl implements ChannelCallback {
+  private class ChannelCallbackImpl implements EventChannelFacade {
 
     @Override
     public ServerAddress getAddress() {
@@ -845,6 +860,11 @@ public class EventChannel {
     @Override
     public String getNode() {
       return EventChannel.this.getNode();
+    }
+    
+    @Override
+    public NodeInfo getNodeInfoFor(String node) {
+      return view.getNodeInfo(node);
     }
 
     @Override
@@ -863,9 +883,8 @@ public class EventChannel {
     }
     
     @Override
-    public void updateView(List<NodeInfo> nodes) {
-      view.update(nodes);
-      resync();
+    public List<NodeInfo> getView(Condition<NodeInfo> filter) {
+      return view.getNodeInfos(filter);
     }
     
     @Override
@@ -874,15 +893,10 @@ public class EventChannel {
     }
 
     @Override
-    public void heartbeatResponse(String node, ServerAddress addr) {
-      view.heartbeatResponse(addr, node);
+    public void heartbeat(String node, ServerAddress addr) {
+      view.heartbeat(addr, node, controller.getContext().getClock());
     }
     
-    @Override
-    public void heartbeatRequest(String node, ServerAddress addr) {
-      view.heartbeatRequest(addr, node);
-    }
-
     @Override
     public void resync() {
       EventChannel.this.resync();
@@ -899,6 +913,11 @@ public class EventChannel {
     }
     
     @Override
+    public void sendGossipNotification(GossipNotification notif) {
+      sendGossipMessage(notif);
+    }
+
+    @Override
     public void sendBroadcastEvent(final ControlEvent event) {
       publishExecutor.execute(new Runnable() {
         @Override
@@ -913,12 +932,12 @@ public class EventChannel {
     }
     
     @Override
-    public void sendUnicastEvent(ServerAddress destination, final ControlEvent event) {
+    public void sendUnicastEvent(final ServerAddress destination, final ControlEvent event) {
       publishExecutor.execute(new Runnable() {
         @Override
         public void run() {
           try {
-            unicast.dispatch(getUnicastAddress(), CONTROL_EVT, event);
+            unicast.dispatch(destination, CONTROL_EVT, event);
           } catch (IOException e) {
             log.error("Could not dispatch control event", e);
           }
@@ -952,11 +971,11 @@ public class EventChannel {
       Set<SynchronousControlResponse> toReturn = new HashSet<SynchronousControlResponse>();
       for (int i = 0; i < responses.count(); i++) {
         Response r = responses.get(i);
-        SynchronousControlResponse sr = (SynchronousControlResponse) r.getData();
-        if (!r.isNone() && !r.isThrowable() && sr != null) {
+        if (!r.isNone() && !r.isThrowable()) {
+          SynchronousControlResponse sr = (SynchronousControlResponse) r.getData();
           toReturn.add(sr);
         } else {
-          log.debug("Discarding response: %s => ", r.getStatus(), sr);
+          log.debug("Discarding response: %s", r.getStatus());
         }
       }
       
@@ -968,7 +987,6 @@ public class EventChannel {
     public Set<SynchronousControlResponse> sendSynchronousRequests(
         String[] targetedNodes, SynchronousControlRequest[] requests, TimeValue timeout) throws InterruptedException,
         IOException {
-      
       
       log.debug("Sending sync requests to %s target nodes", targetedNodes.length);
       
@@ -989,57 +1007,18 @@ public class EventChannel {
       Set<SynchronousControlResponse> toReturn = new HashSet<SynchronousControlResponse>();
       for (int i = 0; i < responses.count(); i++) {
         Response r = responses.get(i);
-        SynchronousControlResponse sr = (SynchronousControlResponse) r.getData();
-        if (!r.isNone() && !r.isThrowable() && sr != null) {
-          toReturn.add(sr);
+        if (!r.isNone() && !r.isThrowable()) {
+          SynchronousControlResponse sr = (SynchronousControlResponse) r.getData();
+          if (sr != null) {
+            toReturn.add(sr);
+          }
         } else {
-          log.debug("Discarding response: %s => ", r.getStatus(), sr);
+          log.debug("Discarding response: %s", r.getStatus());
         }
       }
       
       log.debug("Returning %s responses", toReturn.size());
       return toReturn;
-    }
-
-    @Override
-    public void sendRequest(ControlRequest req) {
-      sendControlMessage(req);
-    }
-
-    @Override
-    public void sendResponse(String masterNode, ControlResponse res) {
-      try {
-        ServerAddress addr = view.getAddressFor(masterNode);
-        if (addr != null) {
-          unicast.dispatch(addr, CONTROL_EVT, res);
-        } else {
-          log.debug("Address for master node %s not found. Currently have nodes: %s", masterNode, view.getNodes());
-        }
-      } catch (IOException e) {
-        log.error("Could not send control response", e);
-      }
-    }
-
-    @Override
-    public void triggerMasterBroadcast() {
-      log.info("Triggering master broadcast");
-      publishExecutor.execute(new Runnable() {
-        @Override
-        public void run() {
-          for (int i = 0; i < maxPublishAttempts; i++) {
-            try {
-              broadcast.dispatch(address, false, MASTER_BROADCAST, new BroadcastData(view.getNodes().size()));
-            } catch (IOException e) {
-              log.warning("Error performing master broadcast presence to cluster", e);
-            }
-            try {
-              Thread.sleep(publishIntervalRange.getRandomTime().getValueInMillis());
-            } catch (InterruptedException e) {
-              break;
-            }
-          }
-        }
-      });
     }
 
     @Override
@@ -1092,9 +1071,6 @@ public class EventChannel {
           view.addHost(addr, evt.getNode());
           unicast.dispatch(addr, DISCOVER_EVT, address);
           notifyDiscoListeners(addr, evt);
-          if (controller.getContext().getPurgatory().remove(evt.getNode())) {
-            log.debug("Removed node from purgatory: %s", evt.getNode());
-          }
         } catch (IOException e) {
           log.error("Error caught while trying to process event " + evt.getType(), e);
         }
@@ -1125,9 +1101,6 @@ public class EventChannel {
           if (view.addHost(addr, evt.getNode())) {
             notifyDiscoListeners(addr, evt);
           }
-          if (controller.getContext().getPurgatory().remove(evt.getNode())) {
-            log.debug("Removed node from purgatory: %s", evt.getNode());
-          }
         } catch (IOException e) {
           log.error("Error caught while trying to process event" + evt.getType(), e);
         }
@@ -1147,13 +1120,14 @@ public class EventChannel {
       } else if (evt.getType().equals(CONTROL_EVT)) {
         try {
           Object data = evt.getData();
-          view.addHost(getUnicastAddress(), evt.getNode());
-          if (data instanceof ControlRequest) {
-            controller.onRequest(evt.getNode(), evt.getUnicastAddress(), (ControlRequest) data);
-          } else if (data instanceof ControlNotification) {
-            controller.onNotification(evt.getNode(), (ControlNotification) data);
-          } else if (data instanceof ControlResponse) {
-            controller.onResponse(evt.getNode(), (ControlResponse) data);
+          if (data instanceof ControlNotification) {
+            controller.onNotification(evt.getNode(), evt.getUnicastAddress(), (ControlNotification) data);
+          } else if (data instanceof GossipNotification) {
+            controller.onGossipNotification(evt.getNode(), evt.getUnicastAddress(), (GossipNotification) data);
+          } else if (data instanceof ControlEvent) {
+            controller.onEvent(evt.getNode(), evt.getUnicastAddress(), (ControlEvent) data);
+          } else {
+            log.warning("Undnown event type: %s", data.getClass().getName());
           }
         } catch (IOException e) {
           log.error("Error caught while trying to process control event", e);
@@ -1183,66 +1157,50 @@ public class EventChannel {
     } catch (ListenerAlreadyRegisteredException e) {
       throw new IllegalStateException("Could not register sync event listener", e);
     }
-    
-    long resyncInterval = props.getTimeProperty(Consts.MCAST_RESYNC_INTERVAL, Defaults.DEFAULT_RESYNC_INTERVAL).getValueInMillis();
-    long heartbeatTimeout = props.getTimeProperty(Consts.MCAST_HEARTBEAT_TIMEOUT, Defaults.DEFAULT_HEARTBEAT_TIMEOUT).getValueInMillis();
-    long heartbeatInterval = props.getTimeProperty(Consts.MCAST_HEARTBEAT_INTERVAL, Defaults.DEFAULT_HEARTBEAT_INTERVAL).getValueInMillis();
-    long controlResponseTimeout = props.getTimeProperty(Consts.MCAST_CONTROL_RESPONSE_TIMEOUT, Defaults.DEFAULT_CONTROL_RESPONSE_TIMEOUT).getValueInMillis();
-    int forceResyncAttempts = props.getIntProperty(Consts.MCAST_HEARTBEAT_FORCE_RESYNC_ATTEMPTS, Defaults.DEFAULT_FORCE_RESYNC_ATTEMPTS);
-    int forceResyncBatchSize = props.getIntProperty(Consts.MCAST_HEARTBEAT_FORCE_RESYNC_BATCH_SIZE, Defaults.DEFAULT_FORCE_RESYNC_BATCH_SIZE);
-    long masterBroadcastInterval = props.getTimeProperty(Consts.MCAST_MASTER_BROADCAST_INTERVAL, Defaults.DEFAULT_MASTER_BROADCAST_INTERVAL).getValueInMillis();
-    int heartbeatSplitSize = props.getIntProperty(Consts.MCAST_CONTROL_SYNC_HEARTBEAT_SPLIT_SIZE, Defaults.DEFAULT_SYNC_HEARTBEAT_SPLIT_SIZE);
-    boolean syncHeartbeanEnabled = props.getBooleanProperty(Consts.MCAST_CONTROL_SYNC_HEARTBEAT_ENABLED, Defaults.DEFAULT_SYNC_HEARTBEAT_ENABLED);
-    TimeRange heartbeatResponseDelay = props.getTimeRangeProperty(Consts.MCAST_HEARTBEAT_RESPONSE_DELAY, Defaults.DEFAULT_HEARTBEAT_RESPONSE_DELAY);
-    boolean ignoreHeartbeatRequests = props.getBooleanProperty(Consts.MCAST_HEARBEAT_REQUEST_ENABLED, false);
-    int maxPingAttempts = props.getIntProperty(Consts.MCAST_MAX_PING_ATTEMPTS, Defaults.DEFAULT_PING_ATTEMPTS);
-    TimeValue pingInterval = props.getTimeProperty(Consts.MCAST_PING_INTERVAL, Defaults.DEFAULT_PING_INTERVAL);
-    TimeValue syncHeartBeatResponseTimeout = props.getTimeProperty(Consts.MCAST_CONTROL_SYNC_HEARTBEAT_RESPONSE_TIMEOUT, Defaults.DEFAULT_SYNC_HEARTBEAT_RESPONSE_TIMEOUT);
-    TimeValue syncResponseTimeout = props.getTimeProperty(Consts.MCAST_SYNC_RESPONSE_TIMEOUT, Defaults.DEFAULT_SYNC_RESPONSE_TIMEOUT);
-    
-    this.startDelayRange = props.getTimeRangeProperty(Consts.MCAST_CHANNEL_START_DELAY, Defaults.DEFAULT_CHANNEL_START_DELAY);
-    this.publishIntervalRange = props.getTimeRangeProperty(Consts.MCAST_CHANNEL_PUBLISH_INTERVAL, Defaults.DEFAULT_CHANNEL_PUBLISH_INTERVAL);
-    this.controlBatchSize = props.getIntProperty(Consts.MCAST_CONTROL_SPLIT_SIZE, Defaults.DEFAULT_CONTROL_SPLIT_SIZE);
 
-    log.debug("Resync interval set to %s", resyncInterval);
+    TimeValue controlThreadInterval      = props.getTimeProperty(
+        Consts.MCAST_CONTROL_THREAD_INTERVAL, Defaults.DEFAULT_CONTROL_THREAD_INTERVAL
+    );
+    TimeValue heartbeatTimeout           = props.getTimeProperty(
+        Consts.MCAST_HEARTBEAT_TIMEOUT, Defaults.DEFAULT_HEARTBEAT_TIMEOUT
+    );
+
+    int       healthCheckDelegateCount   = props.getIntProperty(
+        Consts.MCAST_HEALTHCHECK_DELEGATE_COUNT, Defaults.DEFAULT_HEALTCHCHECK_DELEGATE_COUNT
+    );
+    TimeValue healthCheckDelegateTimeOut = props.getTimeProperty(
+        Consts.MCAST_HEALTHCHECK_DELEGATE_TIMEOUT, Defaults.DEFAULT_HEALTCHCHECK_DELEGATE_TIMEOUT
+    );
+    boolean   gossipEnabled              = props.getBooleanProperty(Consts.MCAST_GOSSIP_ENABLED, true);
+    
+    this.startDelayRange                 = props.getTimeRangeProperty(
+        Consts.MCAST_CHANNEL_START_DELAY, Defaults.DEFAULT_CHANNEL_START_DELAY
+    );
+    this.publishIntervalRange            = props.getTimeRangeProperty(
+        Consts.MCAST_CHANNEL_PUBLISH_INTERVAL, Defaults.DEFAULT_CHANNEL_PUBLISH_INTERVAL
+    );
+    this.controlBatchSize                 = props.getIntProperty(
+        Consts.MCAST_CONTROL_SPLIT_SIZE, Defaults.DEFAULT_CONTROL_SPLIT_SIZE
+    );
+
+    log.debug("Control thread interval %s", controlThreadInterval);
     log.debug("Heartbeat timeout set to %s", heartbeatTimeout);
-    log.debug("Heartbeat interval set to %s", heartbeatInterval);
-    log.debug("Control response timeout set to %s", controlResponseTimeout);
-    log.debug("Forced resync attempts set to %s", forceResyncAttempts);
-    log.debug("Forced resync batch size set to %s", forceResyncBatchSize);
-    log.debug("Master broadcast interval set to %s", masterBroadcastInterval);
-    log.debug("Sync heartbeat split size set to %s", heartbeatSplitSize);
-    log.debug("Sync heartbeat enabled set to: %s", syncHeartbeanEnabled);
-    log.debug("Heartbeat reponse delay time range set to: %s", heartbeatResponseDelay);
-    log.debug("Ignore heartbeat requests set to (SHOULD BE DISABLED FOR TESTING ONLY): %s", ignoreHeartbeatRequests);
-    log.debug("Max ping attempts set to: %s", maxPingAttempts);
-    log.debug("Ping interval set to: %s", pingInterval);
-    log.debug("Sync response timeout set to: %s", syncResponseTimeout);
-    log.debug("Heartbeat sync response timeout set to: %s", syncHeartBeatResponseTimeout);
+    log.debug("Health check delegate node count set to %s", healthCheckDelegateCount);
+    log.debug("Health check delegate timeout set to %s", healthCheckDelegateTimeOut);
+    log.debug("Gossip enabled(SHOULD BE DISABLED FOR TESTING ONLY): %s", gossipEnabled);
 
     ControllerConfiguration config = new ControllerConfiguration();
-    config.setResyncInterval(resyncInterval);
-    config.setHeartbeatInterval(heartbeatInterval);
+    config.setGossipEnabled(gossipEnabled);
+    config.setHealthCheckDelegateCount(healthCheckDelegateCount);
+    config.setHealthCheckDelegateTimeout(healthCheckDelegateTimeOut);
     config.setHeartbeatTimeout(heartbeatTimeout);
-    config.setResponseTimeout(controlResponseTimeout);
-    config.setForceResyncAttempts(forceResyncAttempts);
-    config.setForceResyncBatchSize(forceResyncBatchSize);
-    config.setMasterBroadcastInterval(masterBroadcastInterval);
-    config.setHeartbeatControllMessageSplitSize(heartbeatSplitSize);
-    config.setSyncHeartBeatEnabled(syncHeartbeanEnabled);
-    config.setHeartbeatResponseDelay(heartbeatResponseDelay);
-    config.setIgnoreHeartbeatRequests(ignoreHeartbeatRequests);
-    config.setMaxPingAttempts(maxPingAttempts);
-    config.setPingInterval(pingInterval);
-    config.setSyncHeartBeatResponseTimeout(syncHeartBeatResponseTimeout);
-    config.setSyncResponseTimeout(syncResponseTimeout);
     
     controller = new EventChannelController(createClock(), config, new ChannelCallbackImpl());
 
-    startTimer(heartbeatInterval);
+    startTimer(controlThreadInterval);
   }
 
-  protected void startTimer(long heartbeatInterval) {
+  protected void startTimer(TimeValue controlThreadInterval) {
     heartbeatTimer.schedule(new TimerTask() {
       @Override
       public void run() {
@@ -1250,7 +1208,7 @@ public class EventChannel {
           controller.checkStatus();
         }
       }
-    }, startDelayRange.getRandomTime().getValueInMillis(), heartbeatInterval);
+    }, startDelayRange.getRandomTime().getValueInMillis(), controlThreadInterval.getValueInMillis());
   }
 
   protected SysClock createClock() {

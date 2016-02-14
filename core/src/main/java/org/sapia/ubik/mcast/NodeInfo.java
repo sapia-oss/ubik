@@ -7,13 +7,37 @@ import java.io.ObjectOutput;
 
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.util.Strings;
+import org.sapia.ubik.util.SysClock;
 
-public class NodeInfo implements Externalizable {
+/**
+ * Holds state corresponding to a member node in the cluster.
+ * 
+ * @author yduchesne
+ *
+ */
+public class NodeInfo implements Externalizable, Comparable<NodeInfo> {
+  
+  private static final int PRIME_NUMBER = 31;
   
   static final long serialVersionUID = 1L;
 
-  ServerAddress addr;
-  String node;
+  public enum State {
+    NORMAL, SUSPECT;
+    
+    public boolean isNormal() {
+      return this == NORMAL;
+    }
+    
+    public boolean isSuspect() {
+      return this == SUSPECT;
+    }
+  }
+  
+  private State         state     = State.NORMAL;
+  private long          touches;
+  private long          timestamp = System.currentTimeMillis();
+  private ServerAddress addr;
+  private String        node;
 
   /**
    * Meant for externalization.
@@ -46,19 +70,110 @@ public class NodeInfo implements Externalizable {
   public String getNode() {
     return node;
   }
+  
+  /**
+   * @return this instance's timestamp.
+   */
+  public synchronized long getTimestamp() {
+    return timestamp;
+  }
+  
+  /**
+   * @return this instance's state.
+   */
+  public synchronized State getState() {
+    return state;
+  }
+  
+  /**
+   * @return this instance.
+   */
+  public synchronized NodeInfo reset(SysClock clock) {
+    state = State.NORMAL;
+    return touch(clock);
+  }
+  
+  /**
+   * Sets this instance's state to {@link State#SUSPECT}.
+   * @return this instance.
+   */
+  public synchronized NodeInfo suspect() {
+    state = State.SUSPECT;
+    return this;
+  }
+  
+  /**
+   * Internally checks this instance's state, setting it to {@link State#SUSPECT}
+   * if appropriate.
+   * 
+   * @return this instance's state.
+   */
+  public synchronized State checkState(long heartbeatTimeout, SysClock clock) {
+    if (clock.currentTimeMillis() - timestamp >= heartbeatTimeout) {
+      state = State.SUSPECT;
+    }
+    return state;
+  }
+  
+  /**
+   * Modifies this instance's timestamp and touch count.
+   * 
+   * @return this instance.
+   */
+  public synchronized NodeInfo touch(SysClock clock) {
+    timestamp = clock.currentTimeMillis();
+    if (touches == Long.MAX_VALUE) {
+      touches = 1;
+    } else {
+      touches++;
+    }
+    return this;
+  }
+  
+  /**
+   * @return the number of touches done on this instance so far.
+   */
+  public synchronized long getTouches() {
+    return touches;
+  }
 
+  // --------------------------------------------------------------------------
+  // Comparable 
+  
+  @Override
+  public int compareTo(NodeInfo o) {
+    int c = 0;
+    if (timestamp < o.timestamp) {
+      c = -1;
+    } else if (timestamp > o.timestamp) {
+      c = 1;
+    } 
+    return c;
+  }
+
+  // --------------------------------------------------------------------------
+  // Externalizable
+  
   @Override
   public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-    addr = (ServerAddress) in.readObject();
-    node = in.readUTF();
+    touches   = in.readLong();
+    timestamp = in.readLong();
+    addr      = (ServerAddress) in.readObject();
+    node      = in.readUTF();
   }
 
   @Override
   public void writeExternal(ObjectOutput out) throws IOException {
+    out.writeLong(touches);
+    out.writeLong(timestamp);
     out.writeObject(addr);
     out.writeUTF(node);
   }
-
+  
+  // --------------------------------------------------------------------------
+  // Object overrides
+  
+  @Override
   public boolean equals(Object obj) {
     if (obj instanceof NodeInfo) {
       NodeInfo inf = (NodeInfo) obj;
@@ -68,8 +183,9 @@ public class NodeInfo implements Externalizable {
     return false;
   }
   
+  @Override
   public int hashCode() {
-    return addr.hashCode() * 31 + node.hashCode() * 31;
+    return addr.hashCode() * PRIME_NUMBER + node.hashCode() * PRIME_NUMBER;
   }
   
   @Override

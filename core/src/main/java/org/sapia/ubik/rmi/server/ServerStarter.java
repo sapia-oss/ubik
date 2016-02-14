@@ -8,8 +8,8 @@ import java.util.Properties;
 
 import org.sapia.ubik.util.PropUtil;
 import org.sapia.ubik.util.cli.Cmd;
-import org.sapia.ubik.util.cli.Opt;
 import org.sapia.ubik.util.cli.Cmd.OptionFilter;
+import org.sapia.ubik.util.cli.Opt;
 
 /**
  * Helper class to start <code>main()</code> classes from the command-line in a

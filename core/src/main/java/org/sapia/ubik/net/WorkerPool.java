@@ -4,8 +4,8 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.sapia.ubik.concurrent.ConfigurableExecutor;
-import org.sapia.ubik.concurrent.NamedThreadFactory;
 import org.sapia.ubik.concurrent.ConfigurableExecutor.ThreadingConfiguration;
+import org.sapia.ubik.concurrent.NamedThreadFactory;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 

@@ -10,8 +10,8 @@ import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.EventChannel;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.Hub;
-import org.sapia.ubik.util.PropUtil;
 import org.sapia.ubik.util.Conf;
+import org.sapia.ubik.util.PropUtil;
 import org.sapia.ubik.util.cli.Cmd;
 
 /**

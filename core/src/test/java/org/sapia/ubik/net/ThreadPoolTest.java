@@ -3,8 +3,8 @@ package org.sapia.ubik.net;
 import static junit.framework.Assert.assertTrue;
 
 import org.junit.Test;
-import org.sapia.ubik.concurrent.SyncPoint;
 import org.sapia.ubik.concurrent.ConfigurableExecutor.ThreadingConfiguration;
+import org.sapia.ubik.concurrent.SyncPoint;
 
 public class ThreadPoolTest {
 

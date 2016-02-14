@@ -18,8 +18,6 @@ import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.sapia.ubik.rmi.server.transport.MarshalStreamFactory;
-import org.sapia.ubik.rmi.server.transport.mina.MinaResponse;
-import org.sapia.ubik.rmi.server.transport.mina.MinaResponseEncoder;
 
 public class MinaResponseEncoderTest {
 

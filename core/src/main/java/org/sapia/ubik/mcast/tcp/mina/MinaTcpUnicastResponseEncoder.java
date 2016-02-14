@@ -9,8 +9,8 @@ import org.apache.mina.filter.codec.ProtocolEncoder;
 import org.apache.mina.filter.codec.ProtocolEncoderOutput;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.serialization.SerializationStreams;
-import org.sapia.ubik.util.MinaByteBufferOutputStream;
 import org.sapia.ubik.util.Conf;
+import org.sapia.ubik.util.MinaByteBufferOutputStream;
 
 /**
  * An encoder of unicast responses.

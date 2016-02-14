@@ -10,8 +10,8 @@ import org.apache.mina.filter.codec.ProtocolEncoderOutput;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.transport.MarshalStreamFactory;
 import org.sapia.ubik.rmi.server.transport.RmiObjectOutput;
-import org.sapia.ubik.util.MinaByteBufferOutputStream;
 import org.sapia.ubik.util.Conf;
+import org.sapia.ubik.util.MinaByteBufferOutputStream;
 
 /**
  * An encoder of Ubik server responses.

@@ -1,9 +1,9 @@
 package org.sapia.ubik.mcast.control;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 
-import org.sapia.ubik.util.SysClock.MutableClock;
 import org.sapia.ubik.util.Collects;
+import org.sapia.ubik.util.SysClock.MutableClock;
 
 public abstract class EventChannelControllerTestSupport {
 
@@ -13,9 +13,9 @@ public abstract class EventChannelControllerTestSupport {
 
   public void setUp() {
     config = new ControllerConfiguration();
-    config.setHeartbeatInterval(5000);
-    config.setHeartbeatTimeout(10000);
-    config.setResponseTimeout(20000);
+    //config.setHeartbeatInterval(5000);
+    //config.setHeartbeatTimeout(10000);
+    //config.setResponseTimeout(20000);
     clock = new MutableClock();
     master = new TestChannelCallback("DA", clock, config);
     slave1 = new TestChannelCallback("DB", clock, config);

@@ -12,10 +12,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.sapia.ubik.mcast.NodeInfo;
 import org.sapia.ubik.net.ServerAddress;
+import org.sapia.ubik.util.Condition;
 import org.sapia.ubik.util.SysClock;
 import org.sapia.ubik.util.TimeValue;
 
-public class TestChannelCallback implements ChannelCallback {
+public class TestChannelCallback implements EventChannelFacade {
 
   class NodeRegistration {
     long lastHeartbeatTime;
@@ -71,10 +72,6 @@ public class TestChannelCallback implements ChannelCallback {
   }
 
   @Override
-  public void triggerMasterBroadcast() {
-  }
-
-  @Override
   public void down(String node) {
     deadSiblings.put(node, siblings.remove(node));
   }
@@ -105,6 +102,16 @@ public class TestChannelCallback implements ChannelCallback {
   }
   
   @Override
+  public NodeInfo getNodeInfoFor(String node) {
+    NodeRegistration reg = siblings.get(node);
+    if (reg != null) {
+      return new NodeInfo(reg.node.getAddress(), reg.node.getNode());
+    }
+    return null;
+  }
+  
+  
+  @Override
   public int getNodeCount() {
     return siblings.size();
   }
@@ -115,27 +122,22 @@ public class TestChannelCallback implements ChannelCallback {
   }
   
   @Override
+  public List<NodeInfo> getView(Condition<NodeInfo> filter) {
+    return getView();
+  }
+  
+  @Override
   public void sendBroadcastEvent(ControlEvent event) {
   }
   
   @Override
   public void sendUnicastEvent(ServerAddress destination, ControlEvent event) {
   }
-  
-  @Override
-  public void updateView(List<NodeInfo> nodes) {
-  }
 
   @Override
-  public void heartbeatRequest(String node, ServerAddress address) {
-    siblings.get(node).lastHeartbeatTime = this.controller.getContext().getClock().currentTimeMillis();
+  public void heartbeat(String node, ServerAddress unicastAddress) {
   }
   
-  @Override
-  public void heartbeatResponse(String node, ServerAddress unicastAddress) {
-    heartbeatRequest(node, unicastAddress);
-  }
-
   @Override
   public void sendNotification(ControlNotification notif) {
     if (!down) {
@@ -147,26 +149,17 @@ public class TestChannelCallback implements ChannelCallback {
         if (callback == null) {
           throw new IllegalArgumentException("No node for: " + targeted);
         }
-        callback.getController().onNotification(getNode(), notif);
+        callback.getController().onNotification(getNode(), getAddress(), notif);
       }
     }
   }
-
+  
   @Override
-  public void sendRequest(ControlRequest req) {
-    if (!down) {
-      req.getTargetedNodes().remove(node);
-      if (!req.getTargetedNodes().isEmpty()) {
-        String targeted = req.getTargetedNodes().iterator().next();
-        TestChannelCallback callback = getCallback(targeted);
-        if (callback == null) {
-          throw new IllegalArgumentException("No node for: " + targeted);
-        }
-        callback.getController().onRequest(getNode(), getAddress(), req);
-      }
-    }
+  public void sendGossipNotification(GossipNotification notif) {
+    // TODO Auto-generated method stub
+    
   }
-
+  
   @Override
   public Set<SynchronousControlResponse> sendSynchronousRequest(Set<String> targetedNodes, SynchronousControlRequest request, TimeValue timeout)
       throws InterruptedException, IOException {
@@ -196,15 +189,7 @@ public class TestChannelCallback implements ChannelCallback {
     }
     return responses;
   }
-
-  @Override
-  public void sendResponse(String masterNode, ControlResponse res) {
-    if (!down) {
-      TestChannelCallback callback = getCallback(masterNode);
-      callback.getController().onResponse(getNode(), res);
-    }
-  }
-
+  
   public EventChannelController getController() {
     return controller;
   }
