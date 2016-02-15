@@ -777,7 +777,10 @@ public class EventChannel {
               if(counter == controller.getContext().getConfig().getGossipNodeCount()) {
                 break;
               }
+            } else {
+              c.suspect();
             }
+           
           } catch (Exception e) {
             log.info("Could not send control message to %s", e, c.getAddr());
             c.suspect();
