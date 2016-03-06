@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentSkipListSet;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.nodes.GroupMember;
-import org.apache.curator.retry.RetryForever;
+import org.apache.curator.retry.RetryUntilElapsed;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.group.GroupMembershipListener;
@@ -35,19 +35,26 @@ import org.sapia.ubik.util.TimeValue;
  */
 public class ZkGroupMembershipService implements GroupMembershipService {
     
-  public static final String CONNECTION_RETRY_INTERVAL         = "ubik.rmi.naming.mcast.zk.connection.retry-interval";
+  public static final String CONNECTION_RETRY_INTERVAL         = "ubik.rmi.naming.mcast.zk.connection.retry.interval";
 
+  public static final String CONNECTION_RETRY_MAX_TIME         = "ubik.rmi.naming.mcast.zk.connection.retry.max-time";
+  
   public static final String MEMBERSHIP_CHECK_INTERVAL         = "ubik.rmi.naming.mcast.zk.members.check-interval";
 
   public static final String CONNECTION_TIMEOUT                = "ubik.rmi.naming.mcast.zk.connection.timeout";
 
+  public static final String SESSION_TIMEOUT                   = "ubik.rmi.naming.mcast.zk.session.timeout";
+  
   public static final String SERVER_LIST                       = "ubik.rmi.naming.mcast.zk.server-list";
 
   public static final String NAMESPACE                         = "ubik.rmi.naming.mcast.zk.namespace";
 
   
   public static final TimeValue DEFAULT_CONNECTION_RETRY_INTERVAL = TimeValue.valueOf("5s");
+  public static final TimeValue DEFAULT_CONNECTION_RETRY_MAX_TIME = TimeValue.valueOf("1min");
+
   public static final TimeValue DEFAULT_CONNECTION_TIMEOUT        = TimeValue.valueOf("1s");
+  public static final TimeValue DEFAULT_SESSION_TIMEOUT           = TimeValue.valueOf("10s");
   public static final TimeValue DEFAULT_MEMBERSHIP_CHECK_INTERVAL = TimeValue.valueOf("1s");
 
   public static final int       DEFAULT_RETRY_MAX_ATTEMPTS = 5;
@@ -70,21 +77,26 @@ public class ZkGroupMembershipService implements GroupMembershipService {
   @Override
   public void initialize(Conf config) {
     int    connectionRetryInterval = (int) config.getTimeProperty(CONNECTION_RETRY_INTERVAL, DEFAULT_CONNECTION_RETRY_INTERVAL).getValueInMillis();
+    int    connectionRetryMaxTime  = (int) config.getTimeProperty(CONNECTION_RETRY_MAX_TIME, DEFAULT_CONNECTION_RETRY_MAX_TIME).getValueInMillis();
     int    connectionTimeOut       = (int) config.getTimeProperty(CONNECTION_TIMEOUT, DEFAULT_CONNECTION_TIMEOUT).getValueInMillis();
+    int    sessionTimeout          = (int) config.getTimeProperty(SESSION_TIMEOUT, DEFAULT_SESSION_TIMEOUT).getValueInMillis();
     String namespace               = config.getProperty(NAMESPACE, DEFAULT_ZK_NAMESPACE);
     String serverList              = config.getNotNullProperty(SERVER_LIST);
     membershipCheckInterval        = config.getTimeProperty(MEMBERSHIP_CHECK_INTERVAL, DEFAULT_MEMBERSHIP_CHECK_INTERVAL);
      
     log.info("Initializing Zookeeper connection:");
     log.info("  Connection retry interval: %s ms", connectionRetryInterval);
+    log.info("  Connection retry max time: %s ms", connectionRetryMaxTime);
     log.info("  Connection timeout.......: %s ms", connectionTimeOut);
+    log.info("  Session timeout..........: %s ms", sessionTimeout);
     log.info("  Namespace................: %s ms", namespace);
     log.info("  Server list..............: %s", serverList);
     
     client = CuratorFrameworkFactory.builder()
       .namespace(namespace)
-      .retryPolicy(new RetryForever(connectionRetryInterval))
+      .retryPolicy(new RetryUntilElapsed(connectionRetryMaxTime, connectionRetryInterval))
       .connectionTimeoutMs(connectionTimeOut)
+      .sessionTimeoutMs(sessionTimeout)
       .connectString(serverList)
       .build();
       

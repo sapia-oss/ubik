@@ -2,6 +2,7 @@ package org.sapia.ubik.rmi.examples.zookeeper;
 
 import java.util.UUID;
 
+import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.AsyncEventListener;
 import org.sapia.ubik.mcast.GroupMembershipBootstrap;
 import org.sapia.ubik.mcast.RemoteEvent;
@@ -12,10 +13,12 @@ import org.sapia.ubik.util.Conf;
 public class ZkGroupMembershipBootstrap {
   
   public static void main(String[] args) throws Exception {
+    Log.setDebug();
     String nodeId = UUID.randomUUID().toString();
     Conf config = Conf.newInstance()
       .addProperties(Consts.UNICAST_PROVIDER, Consts.UNICAST_PROVIDER_TCP_NIO)
       .addProperties(Consts.MCAST_CONTROL_SPLIT_SIZE, "2")
+      .addProperties(ZkGroupMembershipService.CONNECTION_RETRY_MAX_TIME, "5s")
       .addProperties(Consts.GROUP_MEMBERSHIP_PROVIDER, Consts.GROUP_MEMBERSHIP_PROVIDER_ZOOKEEPER)
       .addProperties(ZkGroupMembershipService.SERVER_LIST, "localhost:2181");
     
