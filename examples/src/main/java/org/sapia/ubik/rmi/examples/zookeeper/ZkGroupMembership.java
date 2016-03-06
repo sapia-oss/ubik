@@ -20,7 +20,8 @@ public class ZkGroupMembership {
     Conf config = Conf.newInstance()
       .addProperties(Consts.UNICAST_PROVIDER, Consts.UNICAST_PROVIDER_TCP_NIO)
       .addProperties(Consts.GROUP_MEMBERSHIP_PROVIDER, Consts.GROUP_MEMBERSHIP_PROVIDER_ZOOKEEPER)
-      .addProperties(ZkGroupMembershipService.SERVER_LIST, "localhost:2181");
+      .addProperties(ZkGroupMembershipService.SERVER_LIST, "localhost:2181")
+      .addProperties(ZkGroupMembershipService.CONNECTION_RETRY_MAX_TIME, "5s");
     final GroupMembershipService svc = GroupMembershipServiceFactory.createGroupMemberShipService(config);
     svc.start();
     svc.joinGroup("test-group", UUID.randomUUID().toString(), "payload-1".getBytes(), new GroupMembershipListener() {
