@@ -73,6 +73,13 @@ public class RemoteEvent implements Externalizable {
       this.data = bos.toByteArray();
     }
   }
+  
+  protected RemoteEvent(String domain, String type, byte[] data, boolean isBytes) {
+    this.domain  = domain;
+    this.type    = type;
+    this.data     = data;
+    this.wasBytes = isBytes;
+  }
 
   /**
    * Creates an instance of this class that is targeted at all domains.
@@ -205,6 +212,14 @@ public class RemoteEvent implements Externalizable {
     this.node = node;
 
     return this;
+  }
+  
+  /**
+   * @param newDomain a new domain name.
+   * @return a copy of this instance, with the new domain name.
+   */
+  public RemoteEvent getCopy(String newDomain) {
+    return new RemoteEvent(newDomain, type, data, wasBytes);
   }
 
   @Override

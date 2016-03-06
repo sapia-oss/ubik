@@ -353,6 +353,31 @@ public interface Consts {
    * Identifies the node of the broadcast memory address.
    */
   public static final String BROADCAST_MEMORY_NODE = "ubik.rmi.naming.broadcast.memory.node";
+  
+  /**
+   * Identifies the broadcast over multicast provider.
+   */
+  public static final String BROADCAST_PROVIDER_UNICAST = "broacast-unicast";
+  
+  /**
+   * Identifies the value of the delegate unicast address.
+   */
+  public static final String BROADCAST_UNICAST_ADDRESS = "ubik.rmi.naming.broadcast.unicast.address";
+
+  /**
+   * Identifies the group membership provider.
+   */
+  public static final String GROUP_MEMBERSHIP_PROVIDER = "ubik.rmi.naming.group.membership.provider";
+
+  /**
+   * Identifies the in-memory group membership provider.
+   */
+  public static final String GROUP_MEMBERSHIP_PROVIDER_MEMORY    = "memory";
+
+  /**
+   * Identifies the zookeeper group membership provider.
+   */
+  public static final String GROUP_MEMBERSHIP_PROVIDER_ZOOKEEPER = "zk";
 
   /**
    * This constant corresponds to the <code>ubik.rmi.marshalling</code> property

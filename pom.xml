@@ -6,7 +6,7 @@
 	<url>http://www.sapia-oss.org/projects/ubik/index.html</url>
 
 	<artifactId>sapia_ubik_parent</artifactId>
-	<version>4.5.1</version>
+	<version>develop-SNAPSHOT</version>
 
 	<parent>
 		<groupId>org.sapia</groupId>
@@ -39,6 +39,7 @@
 		<module>hazelcast</module>
 		<module>camel</module>
 		<module>amqp</module>
+		<module>zookeeper</module>
 		<module>examples</module>
 	</modules>
 
@@ -126,7 +127,11 @@
 				<artifactId>sapia_ubik_amqp</artifactId>
 				<version>${project.version}</version>
 			</dependency>
-
+            <dependency>
+              <groupId>org.sapia</groupId>
+              <artifactId>sapia_ubik_zk</artifactId>
+              <version>${project.version}</version>
+            </dependency>
 			<!-- sapia archie (used for naming service) -->
 
 			<dependency>
@@ -191,7 +196,15 @@
 				<artifactId>camel-core</artifactId>
 			    <version>${camel.version}</version>
 			</dependency>
+      
+            <!-- =========== zookeeper =========== -->
 
+            <dependency>
+            	<groupId>org.apache.curator</groupId>
+            	<artifactId>curator-recipes</artifactId>
+            	<version>2.10.0</version>
+            </dependency>
+            
 		</dependencies>
 	</dependencyManagement>
 </project>
