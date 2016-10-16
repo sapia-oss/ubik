@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.rmi.RemoteException;
 
-import org.apache.mina.common.IoSession;
+import org.apache.mina.core.session.IoSession;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.server.VmId;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;

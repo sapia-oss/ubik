@@ -21,6 +21,13 @@
       <artifactId>sapia_ubik</artifactId>
     </dependency>
     
+    <dependency>
+      <groupId>org.apache.mina</groupId>
+      <artifactId>mina-core</artifactId>
+      <version>1.1.7</version>
+    </dependency>
+    
+    
     <!-- The following are used for only for starting an in-memory Avis router for testing -->
     <!-- NOTE: also uses mina core lib, declared previously as part of NIO transport dependencies -->
     <dependency>

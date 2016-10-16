@@ -11,8 +11,7 @@ import java.io.ObjectInputStream;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.mina.common.IoSession;
-import org.junit.After;
+import org.apache.mina.core.session.IoSession;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
@@ -46,11 +45,6 @@ public class MinaResponseEncoderTest {
       }
     });
     output = new TestEncoderOutput();
-  }
-
-  @After
-  public void tearDown() {
-    output.close();
   }
 
   @Test

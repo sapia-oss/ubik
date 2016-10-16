@@ -14,7 +14,7 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.rmi.RemoteException;
 
-import org.apache.mina.common.ByteBuffer;
+import org.apache.mina.core.buffer.IoBuffer;
 import org.sapia.ubik.net.Connection;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.serialization.SerializationStreams;
@@ -28,14 +28,15 @@ public class MinaTcpUnicastConnection implements Connection {
   private Socket sock;
   private int bufsize;
   private ServerAddress address;
-  private ByteBuffer byteBuffer;
+  private IoBuffer byteBuffer;
 
   public MinaTcpUnicastConnection(Socket sock, int bufsize) throws IOException {
     this.sock = sock;
     this.address = new MinaTcpUnicastAddress(sock.getInetAddress().getHostAddress(), sock.getPort());
     this.bufsize = bufsize;
-    this.byteBuffer = ByteBuffer.allocate(bufsize);
+    this.byteBuffer = IoBuffer.allocate(bufsize);
     byteBuffer.setAutoExpand(true);
+    byteBuffer.setAutoShrink(true);
   }
 
   @Override
@@ -96,7 +97,7 @@ public class MinaTcpUnicastConnection implements Connection {
     } catch (Exception e) {
       // noop
     }
-    byteBuffer.release();
+    byteBuffer.free();
   }
 
   private void doSend() throws IOException {

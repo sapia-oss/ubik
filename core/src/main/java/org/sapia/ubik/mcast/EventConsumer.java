@@ -226,13 +226,13 @@ public class EventConsumer {
       Chrono chrono = new Chrono();
       log.debug("Notifying async listeners...");
       notifyAsyncListeners(evt);
-      log.info("Completed async notification of event %s in %s millis", evt.getType(), chrono.getElapsed());
+      log.debug("Completed async notification of event %s in %s millis", evt.getType(), chrono.getElapsed());
 
     } else if (matchesThis(dn, evt.getNode())) {
       Chrono chrono = new Chrono();
       log.debug("Notifying async listeners...");
       notifyAsyncListeners(evt);
-      log.info("Completed async notification of event %s in %s millis", evt.getType(), chrono.getElapsed());
+      log.debug("Completed async notification of event %s in %s millis", evt.getType(), chrono.getElapsed());
 
     } else {
       log.debug("Event was not matched: %s", evt.getType());
@@ -278,7 +278,7 @@ public class EventConsumer {
 
         Chrono chrono = new Chrono();
         Object result = sync.onSyncEvent(evt);
-        log.info("Completed sync notification of event %s in %s millis", evt.getType(), chrono.getElapsed());
+        log.debug("Completed sync notification of event %s in %s millis", evt.getType(), chrono.getElapsed());
         return result;
       } else {
         log.debug("No listener for event: %s", evt.getType());
@@ -292,7 +292,7 @@ public class EventConsumer {
         log.debug("Dispatching sync event to: %s", sync);
         Chrono chrono = new Chrono();
         Object result = sync.onSyncEvent(evt);
-        log.info("Completed sync notification of event %s in %s millis", evt.getType(), chrono.getElapsed());
+        log.debug("Completed sync notification of event %s in %s millis", evt.getType(), chrono.getElapsed());
         return result;
       } else {
         log.debug("No listener for event: %s", evt.getType());
@@ -313,10 +313,9 @@ public class EventConsumer {
 
   private void notifyAsyncListeners(RemoteEvent evt) {
     SoftReferenceList<AsyncEventListener> lst = getAsyncListenersFor(evt.getType(), false);
-// AVOID SYNC CALL ON LIST
-//    if (lst.getApproximateSize() == 0) {
-//      log.debug("No listener for event: %s", evt.getType());
-//    }
+    if (lst.getApproximateSize() == 0) {
+      log.debug("No listener for event: %s", evt.getType());
+    }
     int counter = 0;
     synchronized (lst) {
       for (AsyncEventListener listener : lst) {

@@ -1,5 +1,6 @@
 package org.sapia.ubik.mcast.tcp.mina;
 
+import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.ProtocolCodecFactory;
 import org.apache.mina.filter.codec.ProtocolDecoder;
 import org.apache.mina.filter.codec.ProtocolEncoder;
@@ -15,11 +16,11 @@ public class MinaTcpUnicastCodecFactory implements ProtocolCodecFactory {
 
   public static final int PREFIX_LEN = 4;
 
-  public ProtocolDecoder getDecoder() throws Exception {
+  public ProtocolDecoder getDecoder(IoSession session) throws Exception {
     return new MinaTcpUnicastRequestDecoder();
   }
 
-  public ProtocolEncoder getEncoder() throws Exception {
+  public ProtocolEncoder getEncoder(IoSession session) throws Exception {
     return new MinaTcpUnicastResponseEncoder();
   }
 

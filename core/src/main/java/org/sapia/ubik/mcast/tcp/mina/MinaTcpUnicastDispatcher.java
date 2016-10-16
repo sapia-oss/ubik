@@ -5,9 +5,11 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.apache.mina.core.session.IdleStatus;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.filter.executor.ExecutorFilter;
-import org.apache.mina.transport.socket.nio.SocketAcceptor;
+import org.apache.mina.transport.socket.SocketAcceptor;
+import org.apache.mina.transport.socket.nio.NioSocketAcceptor;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.Defaults;
@@ -95,7 +97,7 @@ public class MinaTcpUnicastDispatcher extends BaseTcpUnicastDispatcher {
 
   @Override
   protected void doStart() {
-    acceptor = new SocketAcceptor(Runtime.getRuntime().availableProcessors() + 1, Executors.newCachedThreadPool());
+    acceptor = new NioSocketAcceptor(Runtime.getRuntime().availableProcessors() + 1);
     if (maxThreads <= 0) {
       log.info("Using a cached thread pool (no max threads)");
       this.executor = Executors.newCachedThreadPool();
@@ -106,11 +108,13 @@ public class MinaTcpUnicastDispatcher extends BaseTcpUnicastDispatcher {
 
     acceptor.getFilterChain().addLast("protocol", new ProtocolCodecFilter(new MinaTcpUnicastCodecFactory()));
     acceptor.getFilterChain().addLast("threads", new ExecutorFilter(executor));
-
+    acceptor.setHandler(handler);
+    acceptor.getSessionConfig().setIdleTime(IdleStatus.BOTH_IDLE, (int) Defaults.DEFAULT_MINA_IDLE_TIME.getValueInSeconds());
+    acceptor.getSessionConfig().setReadBufferSize(marshallingBufferSize);
     log.info("Binding to address: %s", socketAddress);
     this.address = new MinaTcpUnicastAddress(socketAddress.getAddress().getHostAddress(), socketAddress.getPort());
     try {
-      acceptor.bind(socketAddress, handler);
+      acceptor.bind(socketAddress);
     } catch (IOException e) {
       throw new IllegalStateException("Could not bind server to address " + socketAddress, e);
     }

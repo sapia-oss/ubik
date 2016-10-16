@@ -3,8 +3,8 @@ package org.sapia.ubik.rmi.server.transport.mina;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 
-import org.apache.mina.common.ByteBuffer;
-import org.apache.mina.common.IoSession;
+import org.apache.mina.core.session.IoSession;
+import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.filter.codec.CumulativeProtocolDecoder;
 import org.apache.mina.filter.codec.ProtocolDecoderOutput;
 import org.sapia.ubik.rmi.Consts;
@@ -32,11 +32,11 @@ public class MinaRequestDecoder extends CumulativeProtocolDecoder {
   private static class DecoderState {
     private DecodingStatus status = DecodingStatus.INITIAL;
     private int payloadSize;
-    private ByteBuffer incoming;
+    private IoBuffer incoming;
     private ObjectInputStream stream;
 
     private DecoderState() throws IOException {
-      incoming = ByteBuffer.allocate(BUFSIZE);
+      incoming = IoBuffer.allocate(BUFSIZE);
       incoming.setAutoExpand(true);
     }
 
@@ -77,7 +77,7 @@ public class MinaRequestDecoder extends CumulativeProtocolDecoder {
   // ==========================================================================
   // methods
 
-  protected boolean doDecode(IoSession sess, ByteBuffer buf, ProtocolDecoderOutput output) throws Exception {
+  protected boolean doDecode(IoSession sess, IoBuffer buf, ProtocolDecoderOutput output) throws Exception {
 
     if (buf.prefixedDataAvailable(MinaCodecFactory.PREFIX_LEN)) {
       DecoderState ds = (DecoderState) sess.getAttribute(DECODER_STATE);
@@ -115,7 +115,7 @@ public class MinaRequestDecoder extends CumulativeProtocolDecoder {
     super.dispose(sess);
     DecoderState ds = (DecoderState) sess.getAttribute(DECODER_STATE);
     if (ds != null) {
-      ds.incoming.release();
+      ds.incoming.free();
     }
   }
 

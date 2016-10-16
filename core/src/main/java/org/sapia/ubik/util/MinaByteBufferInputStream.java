@@ -3,7 +3,7 @@ package org.sapia.ubik.util;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.apache.mina.common.ByteBuffer;
+import org.apache.mina.core.buffer.IoBuffer;
 
 /**
  * Implements an {@link InputStream} over a {@link ByteBuffer}.
@@ -13,9 +13,9 @@ import org.apache.mina.common.ByteBuffer;
  */
 public class MinaByteBufferInputStream extends InputStream {
 
-  private ByteBuffer buf;
+  private IoBuffer buf;
 
-  public MinaByteBufferInputStream(ByteBuffer buf) {
+  public MinaByteBufferInputStream(IoBuffer buf) {
     this.buf = buf;
   }
 

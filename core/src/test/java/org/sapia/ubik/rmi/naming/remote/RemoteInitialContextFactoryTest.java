@@ -9,6 +9,7 @@ import javax.naming.NameNotFoundException;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.sapia.ubik.mcast.EventChannel;
 import org.sapia.ubik.rmi.Consts;
@@ -39,6 +40,7 @@ public class RemoteInitialContextFactoryTest {
   }
 
   @Test
+  @Ignore
   public void testJndiDiscovery() throws Exception {
     Hashtable props = new Hashtable();
     props.put(InitialContext.PROVIDER_URL, "ubik://localhost:9999/");

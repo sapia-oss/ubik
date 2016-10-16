@@ -3,8 +3,8 @@ package org.sapia.ubik.mcast.tcp.mina;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 
-import org.apache.mina.common.ByteBuffer;
-import org.apache.mina.common.IoSession;
+import org.apache.mina.core.buffer.IoBuffer;
+import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.ProtocolEncoder;
 import org.apache.mina.filter.codec.ProtocolEncoderOutput;
 import org.sapia.ubik.rmi.Consts;
@@ -30,11 +30,12 @@ public class MinaTcpUnicastResponseEncoder implements ProtocolEncoder {
 
   private static class EncoderState {
 
-    private ByteBuffer outgoing;
+    private IoBuffer outgoing;
 
     private EncoderState() throws IOException {
-      outgoing = ByteBuffer.allocate(BUFSIZE);
+      outgoing = IoBuffer.allocate(BUFSIZE);
       outgoing.setAutoExpand(true);
+      outgoing.setAutoShrink(true);
     }
 
   }
@@ -53,16 +54,14 @@ public class MinaTcpUnicastResponseEncoder implements ProtocolEncoder {
     doEncode(toEncode, es.outgoing, output);
   }
 
-  void doEncode(Object toEncode, ByteBuffer outputBuffer, ProtocolEncoderOutput output) throws Exception {
+  void doEncode(Object toEncode, IoBuffer outputBuffer, ProtocolEncoderOutput output) throws Exception {
     ObjectOutputStream oos = SerializationStreams.createObjectOutputStream(new MinaByteBufferOutputStream(outputBuffer));
     oos.writeObject(toEncode);
     oos.flush();
     oos.close();
-    outputBuffer.putInt(0, outputBuffer.position() - BYTES_PER_INT); // setting
-                                                                     // length
-                                                                     // at
-                                                                     // reserved
-                                                                     // space
+    // setting length at reserved space
+    outputBuffer.putInt(0, outputBuffer.position() - BYTES_PER_INT);
+
     outputBuffer.flip();
     output.write(outputBuffer);
   }
@@ -70,7 +69,7 @@ public class MinaTcpUnicastResponseEncoder implements ProtocolEncoder {
   public void dispose(IoSession sess) throws Exception {
     EncoderState es = (EncoderState) sess.getAttribute(ENCODER_STATE);
     if (es != null) {
-      es.outgoing.release();
+      es.outgoing.free();
     }
   }
 }

@@ -160,6 +160,11 @@ public class Defaults {
    * @see Consts#MCAST_AUTO_BROADCAST_THRESHOLD
    */
   public static final int DEFAULT_AUTO_BROADCAST_THRESHOLD = 0;
+  
+  /**
+   * The default idle time to set on the IoSessionConfig.
+   */
+  public static final TimeValue DEFAULT_MINA_IDLE_TIME = TimeValue.createSeconds(10);
 
   /**
    * The time range used to determine the default interval at which JNDI servers synchronize their state with others.

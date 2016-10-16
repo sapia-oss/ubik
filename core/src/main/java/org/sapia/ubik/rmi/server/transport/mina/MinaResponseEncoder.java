@@ -3,8 +3,8 @@ package org.sapia.ubik.rmi.server.transport.mina;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 
-import org.apache.mina.common.ByteBuffer;
-import org.apache.mina.common.IoSession;
+import org.apache.mina.core.buffer.IoBuffer;
+import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.ProtocolEncoder;
 import org.apache.mina.filter.codec.ProtocolEncoderOutput;
 import org.sapia.ubik.rmi.Consts;
@@ -31,12 +31,13 @@ public class MinaResponseEncoder implements ProtocolEncoder {
 
   private static class EncoderState {
 
-    private ByteBuffer outgoing;
+    private IoBuffer outgoing;
     private ObjectOutputStream stream;
 
     private EncoderState() throws IOException {
-      outgoing = ByteBuffer.allocate(BUFSIZE);
+      outgoing = IoBuffer.allocate(BUFSIZE);
       outgoing.setAutoExpand(true);
+      outgoing.setAutoShrink(true);
     }
 
     private ObjectOutputStream getObjectOutputStream() throws IOException {
@@ -63,15 +64,14 @@ public class MinaResponseEncoder implements ProtocolEncoder {
     doEncode(resp, es.outgoing, es.getObjectOutputStream(), output);
   }
 
-  void doEncode(MinaResponse toEncode, ByteBuffer outputBuffer, ObjectOutputStream outputStream, ProtocolEncoderOutput output) throws Exception {
+  void doEncode(MinaResponse toEncode, IoBuffer outputBuffer, ObjectOutputStream outputStream, ProtocolEncoderOutput output) throws Exception {
     ((RmiObjectOutput) outputStream).setUp(toEncode.getAssociatedVmId(), toEncode.getTransportType());
     outputStream.writeObject(toEncode.getObject());
     outputStream.flush();
-    outputBuffer.putInt(0, outputBuffer.position() - BYTES_PER_INT); // setting
-                                                                     // length
-                                                                     // at
-                                                                     // reserved
-                                                                     // space
+    
+    // setting length at reserved space
+    outputBuffer.putInt(0, outputBuffer.position() - BYTES_PER_INT); 
+    
     outputBuffer.flip();
     output.write(outputBuffer);
   }
@@ -79,7 +79,7 @@ public class MinaResponseEncoder implements ProtocolEncoder {
   public void dispose(IoSession sess) throws Exception {
     EncoderState es = (EncoderState) sess.getAttribute(ENCODER_STATE);
     if (es != null) {
-      es.outgoing.release();
+      es.outgoing.free();
     }
   }
 }
