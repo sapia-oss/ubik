@@ -16,6 +16,9 @@ public class ControllerConfiguration {
   private int       healthCheckDelegateCount   = Defaults.DEFAULT_HEALTCHCHECK_DELEGATE_COUNT;
   private TimeValue gossipInterval             = Defaults.DEFAULT_GOSSIP_INTERVAL;
   private int       gossipNodeCount            = Defaults.DEFAULT_GOSSIP_NODE_COUNT;
+  private TimeValue autoBroadcastInterval      = Defaults.DEFAULT_AUTO_BROADCAST_INTERVAL;
+  private int       autoBroadcastThreshold;
+  private boolean   autoBroadcastEnabled       = true;
   
   private boolean gossipEnabled = true;
   
@@ -65,6 +68,30 @@ public class ControllerConfiguration {
   
   public int getGossipNodeCount() {
     return gossipNodeCount;
+  }
+  
+  public void setAutoBroadcastEnabled(boolean autoBroadcastEnabled) {
+    this.autoBroadcastEnabled = autoBroadcastEnabled;
+  }
+  
+  public boolean isAutoBroadcastEnabled() {
+    return autoBroadcastEnabled;
+  }
+  
+  public void setAutoBroadcastInterval(TimeValue autoBroadcastInterval) {
+    this.autoBroadcastInterval = autoBroadcastInterval;
+  }
+  
+  public TimeValue getAutoBroadcastInterval() {
+    return autoBroadcastInterval;
+  }
+  
+  public void setAutoBroadcastThreshold(int autoBroadcastThreshold) {
+    this.autoBroadcastThreshold = autoBroadcastThreshold;
+  }
+  
+  public int getAutoBroadcastThreshold() {
+    return autoBroadcastThreshold;
   }
   
 }

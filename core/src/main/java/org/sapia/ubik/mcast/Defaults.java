@@ -140,11 +140,26 @@ public class Defaults {
   public static final TimeRange DEFAULT_CHANNEL_START_DELAY = TimeRange.valueOf("500ms-3000ms");
   
   /**
-   * The default broacast monitor interval.
+   * The default broadcast monitor interval.
    * 
    * @see Consts#MCAST_BROADCAST_MONITOR_INTERVAL
    */
   public static final TimeValue DEFAULT_BROADCAST_MONITOR_INTERVAL = TimeValue.createMillis(5000);
+  
+  /**
+   * The default auto-broadcast interval.
+   * 
+   * @see Consts#MCAST_AUTO_BROADCAST_INTERVAL
+   */
+  public static final TimeValue DEFAULT_AUTO_BROADCAST_INTERVAL = TimeValue.createMillis(15000);
+  
+  
+  /**
+   * The default auto-broadcast threshold.
+   * 
+   * @see Consts#MCAST_AUTO_BROADCAST_THRESHOLD
+   */
+  public static final int DEFAULT_AUTO_BROADCAST_THRESHOLD = 0;
 
   /**
    * The time range used to determine the default interval at which JNDI servers synchronize their state with others.

@@ -275,6 +275,24 @@ public interface Consts {
   public static final String MCAST_REUSE_EXISTINC_CHANNELS = "ubik.rmi.naming.mcast.channel.reuse";
 
   /**
+   * This constant corresponds to the <code>ubik.rmi.naming.mcast.channel.auto-broadcast.enabled</code> flag: enables/disables auto-broadcast
+   * (true by default).
+   */
+  public static final String MCAST_AUTO_BROADCAST_ENABLED = "ubik.rmi.naming.mcast.channel.auto-broadcast.enabled";
+  
+  /**
+   * This constant corresponds to the <code>ubik.rmi.naming.mcast.channel.auto-broadcast.threshold</code>: determines the number of nodes
+   * in the cluster below or equal to which auto-broadcast is activated (defaults to 0).
+   */
+  public static final String MCAST_AUTO_BROADCAST_THRESHOLD = "ubik.rmi.naming.mcast.channel.auto-broadcast.threshold";
+
+  /**
+   * This constant corresponds to the <code>ubik.rmi.naming.mcast.channel.auto-broadcast.interval</code>: determines
+   * the interval at which auto-broadcast is run (defaults to 15000 millis).
+   */
+  public static final String MCAST_AUTO_BROADCAST_INTERVAL = "ubik.rmi.naming.mcast.channel.auto-broadcast.interval";
+ 
+  /**
    * Identifies the unicast provider to use as part of {@link EventChannel}s.
    */
   public static final String UNICAST_PROVIDER = "ubik.rmi.naming.unicast.provider";

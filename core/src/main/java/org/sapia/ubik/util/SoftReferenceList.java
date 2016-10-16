@@ -23,8 +23,10 @@ public class SoftReferenceList<T> implements Iterable<T> {
    * @param item
    *          an item to add to this list.
    */
-  public synchronized void add(T item) {
-    delegate.add(new SoftReference<T>(item));
+  public void add(T item) {
+    synchronized (delegate) {
+      delegate.add(new SoftReference<T>(item));
+    }
   }
 
   /**
@@ -34,7 +36,7 @@ public class SoftReferenceList<T> implements Iterable<T> {
    *         <code>false</code> if it is not contained in this instance and
    *         therefore could not be removed.
    */
-  public synchronized boolean remove(T toRemove) {
+  public boolean remove(T toRemove) {
     synchronized (delegate) {
       for (int i = 0; i < delegate.size(); i++) {
         SoftReference<T> itemRef = delegate.get(i);
@@ -52,7 +54,7 @@ public class SoftReferenceList<T> implements Iterable<T> {
    * @return this instance's approximate size (calculated without checking for
    *         <code>null</code> soft references).
    */
-  public synchronized int getApproximateSize() {
+  public int getApproximateSize() {
     return delegate.size();
   }
 
@@ -62,7 +64,7 @@ public class SoftReferenceList<T> implements Iterable<T> {
    * @return <code>true</code> if the given object is contained in this
    *         instance.
    */
-  public synchronized boolean contains(T toCheck) {
+  public boolean contains(T toCheck) {
     synchronized (delegate) {
       for (int i = 0; i < delegate.size(); i++) {
         SoftReference<T> itemRef = delegate.get(i);
