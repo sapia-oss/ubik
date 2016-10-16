@@ -78,7 +78,7 @@ public class Defaults {
   /**
    * The default healtcheck delegate timeout (see {@link Consts#MCAST_HEALTHCHECK_DELEGATE_TIMEOUT}).
    */
-  public static final TimeValue DEFAULT_HEALTCHCHECK_DELEGATE_TIMEOUT = TimeValue.createMillis(1000);
+  public static final TimeValue DEFAULT_HEALTCHCHECK_DELEGATE_TIMEOUT = TimeValue.createMillis(200);
 
   /**
    * The default healtcheck delegate node count (see {@link Consts#MCAST_HEALTHCHECK_DELEGATE_COUNT}).

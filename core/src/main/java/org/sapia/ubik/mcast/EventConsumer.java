@@ -135,10 +135,10 @@ public class EventConsumer {
    *          the {@link AsyncEventListener} to remove.
    */
   public void unregisterListener(AsyncEventListener listener) {
-    String evtId = (String) reverseMap.remove(listener);
+    String type = reverseMap.remove(listener);
 
-    if (evtId != null) {
-      SoftReferenceList<AsyncEventListener> lst = getAsyncListenersFor(evtId, false);
+    if (type != null) {
+      SoftReferenceList<AsyncEventListener> lst = getAsyncListenersFor(type, false);
       if (lst != null) {
         lst.remove(listener);
       }
@@ -155,7 +155,7 @@ public class EventConsumer {
    *         instance.
    */
   public boolean containsAsyncListener(AsyncEventListener listener) {
-    String type = (String) reverseMap.get(listener);
+    String type = reverseMap.get(listener);
     if (type != null) {
       SoftReferenceList<AsyncEventListener> listeners = asyncListenersByEvent.get(type);
       if (listeners != null) {

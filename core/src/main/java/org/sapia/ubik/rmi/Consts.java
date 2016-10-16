@@ -181,7 +181,7 @@ public interface Consts {
    * This constant corresponds to the
    * <code>ubik.rmi.naming.mcast.healthcheck.delegate.timeout</code> property. It is
    * used to determine amount of time to wait for (in millis) on synchronous health
-   * check requests (defaults to 1000).
+   * check requests (defaults to 200).
    */
   public static final String MCAST_HEALTHCHECK_DELEGATE_TIMEOUT = "ubik.rmi.naming.mcast.healthcheck.delegate.timeout";
 
