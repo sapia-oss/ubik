@@ -14,7 +14,7 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.rmi.RemoteException;
 
-import org.apache.mina.common.ByteBuffer;
+import org.apache.mina.core.buffer.IoBuffer;
 import org.javasimon.Split;
 import org.javasimon.Stopwatch;
 import org.sapia.ubik.net.ServerAddress;
@@ -41,7 +41,7 @@ public class MinaRmiClientConnection implements RmiConnection {
   private Socket sock;
   private int bufsize;
   private ServerAddress address;
-  private ByteBuffer byteBuffer;
+  private IoBuffer byteBuffer;
   private ObjectOutputStream oos;
   private ObjectInputStream ois;
 
@@ -49,7 +49,7 @@ public class MinaRmiClientConnection implements RmiConnection {
     this.sock = sock;
     this.address = new MinaAddress(sock.getInetAddress().getHostAddress(), sock.getPort());
     this.bufsize = bufsize;
-    this.byteBuffer = ByteBuffer.allocate(bufsize);
+    this.byteBuffer = IoBuffer.allocate(bufsize);
     byteBuffer.setAutoExpand(true);
   }
 
@@ -153,7 +153,7 @@ public class MinaRmiClientConnection implements RmiConnection {
     } catch (Throwable t) {
       // noop
     }
-    byteBuffer.release();
+    byteBuffer.free();
   }
 
   private void doSend() throws IOException {

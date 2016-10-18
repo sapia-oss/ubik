@@ -3,16 +3,18 @@ package org.sapia.ubik.rmi.server.transport.mina;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.rmi.RemoteException;
-import java.util.concurrent.Executors;
 
+import org.apache.mina.core.session.IdleStatus;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.filter.executor.ExecutorFilter;
-import org.apache.mina.transport.socket.nio.SocketAcceptor;
+import org.apache.mina.transport.socket.SocketAcceptor;
+import org.apache.mina.transport.socket.nio.NioSocketAcceptor;
 import org.sapia.ubik.concurrent.ConfigurableExecutor;
 import org.sapia.ubik.concurrent.ConfigurableExecutor.ThreadingConfiguration;
 import org.sapia.ubik.concurrent.NamedThreadFactory;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
+import org.sapia.ubik.mcast.Defaults;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.TcpPortSelector;
 import org.sapia.ubik.rmi.server.Hub;
@@ -57,12 +59,14 @@ class MinaServer implements Server {
    * @throws IOException
    *           if a problem occurs while creating this instance.
    */
-  MinaServer(InetSocketAddress inetAddr, int bufsize, int numAcceptorThreads, ThreadingConfiguration conf) throws IOException {
-    this.acceptor = new SocketAcceptor(numAcceptorThreads, Executors.newCachedThreadPool());
-    executor = new ConfigurableExecutor(conf, NamedThreadFactory.createWith("Ubik.NioServer").setDaemon(true));
+  MinaServer(InetSocketAddress inetAddr, int bufsize, int numAcceptorThreads, ThreadingConfiguration threadingConf) throws IOException {
+    this.acceptor = new NioSocketAcceptor(numAcceptorThreads);
+    executor = new ConfigurableExecutor(threadingConf, NamedThreadFactory.createWith("Ubik.NioServer").setDaemon(true));
     acceptor.getFilterChain().addLast("protocol", new ProtocolCodecFilter(new MinaCodecFactory()));
     acceptor.getFilterChain().addLast("threads", new ExecutorFilter(executor));
-
+    acceptor.getSessionConfig().setIdleTime(IdleStatus.BOTH_IDLE, (int) Defaults.DEFAULT_MINA_IDLE_TIME.getValueInSeconds());
+    acceptor.getSessionConfig().setReadBufferSize(bufsize);
+    
     if (inetAddr.getPort() != 0) {
       log.info("Using port %s", inetAddr.getPort());
       this.inetAddr = inetAddr;
@@ -74,6 +78,8 @@ class MinaServer implements Server {
     log.info("Binding to address: %s", this.inetAddr);
     addr = new MinaAddress(this.inetAddr.getAddress().getHostAddress(), this.inetAddr.getPort());
     handler = new MinaServerHandler(Hub.getModules().getServerRuntime().getDispatcher(), addr);
+    
+    acceptor.setHandler(handler);
   }
 
   /**
@@ -98,7 +104,7 @@ class MinaServer implements Server {
   public void start() throws RemoteException {
     try {
       log.info("Starting NIO TCP server on %s", inetAddr);
-      acceptor.bind(inetAddr, handler);
+      acceptor.bind(inetAddr);
     } catch (IOException e) {
       throw new RemoteException("Could not start acceptor", e);
     }

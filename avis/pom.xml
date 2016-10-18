@@ -9,7 +9,7 @@
   <parent>
     <groupId>org.sapia</groupId>
     <artifactId>sapia_ubik_parent</artifactId>
-    <version>4.5.3</version>
+    <version>4.5.4</version>
     <relativePath>../</relativePath>
   </parent>
 
@@ -20,6 +20,13 @@
       <groupId>org.sapia</groupId>
       <artifactId>sapia_ubik</artifactId>
     </dependency>
+    
+    <dependency>
+      <groupId>org.apache.mina</groupId>
+      <artifactId>mina-core</artifactId>
+      <version>1.1.7</version>
+    </dependency>
+    
     
     <!-- The following are used for only for starting an in-memory Avis router for testing -->
     <!-- NOTE: also uses mina core lib, declared previously as part of NIO transport dependencies -->

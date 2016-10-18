@@ -4,14 +4,14 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 
-import org.apache.mina.common.ByteBuffer;
+import org.apache.mina.core.buffer.IoBuffer;
 import org.junit.Test;
 
 public class MinaByteBufferOutputStreamTest {
 
   @Test
   public void testWriteInt() throws IOException {
-    ByteBuffer buf = ByteBuffer.allocate(10);
+    IoBuffer buf = IoBuffer.allocate(10);
     MinaByteBufferOutputStream os = new MinaByteBufferOutputStream(buf);
     os.write(1);
     buf.flip();
@@ -21,7 +21,7 @@ public class MinaByteBufferOutputStreamTest {
 
   @Test
   public void testWriteByteArray() throws IOException {
-    ByteBuffer buf = ByteBuffer.allocate(10);
+    IoBuffer buf = IoBuffer.allocate(10);
     MinaByteBufferOutputStream os = new MinaByteBufferOutputStream(buf);
     byte[] bytes = new byte[] { (byte) 1, (byte) 2, (byte) 3 };
     os.write(bytes);
@@ -35,7 +35,7 @@ public class MinaByteBufferOutputStreamTest {
 
   @Test
   public void testWriteByteArrayWithStartAndOffset() throws IOException {
-    ByteBuffer buf = ByteBuffer.allocate(10);
+    IoBuffer buf = IoBuffer.allocate(10);
     MinaByteBufferOutputStream os = new MinaByteBufferOutputStream(buf);
     byte[] bytes = new byte[] { (byte) 1, (byte) 2, (byte) 3, (byte) 4, (byte) 5, (byte) 6, };
     os.write(bytes);

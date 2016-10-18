@@ -12,8 +12,8 @@ import java.io.ObjectOutputStream;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.mina.common.ByteBuffer;
-import org.apache.mina.common.IoSession;
+import org.apache.mina.core.buffer.IoBuffer;
+import org.apache.mina.core.session.IoSession;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
@@ -66,7 +66,7 @@ public class MinaRequestDecoderTest {
     TestDecoderOutput out = new TestDecoderOutput();
 
     bytes = bos.toByteArray();
-    ByteBuffer buf = ByteBuffer.allocate(4 + bytes.length, true);
+    IoBuffer buf = IoBuffer.allocate(4 + bytes.length, true);
     buf.put(bytes);
     buf.flip();
     decoder.doDecode(session, buf, out);

@@ -1198,6 +1198,10 @@ public class EventChannel {
     config.setHealthCheckDelegateTimeout(healthCheckDelegateTimeOut);
     config.setHeartbeatTimeout(heartbeatTimeout);
     
+    config.setAutoBroadcastInterval(props.getTimeProperty(Consts.MCAST_AUTO_BROADCAST_INTERVAL, Defaults.DEFAULT_AUTO_BROADCAST_INTERVAL));
+    config.setAutoBroadcastEnabled(props.getBooleanProperty(Consts.MCAST_AUTO_BROADCAST_ENABLED, true));
+    config.setAutoBroadcastThreshold(props.getIntProperty(Consts.MCAST_AUTO_BROADCAST_THRESHOLD, Defaults.DEFAULT_AUTO_BROADCAST_THRESHOLD));
+    
     controller = new EventChannelController(createClock(), config, new ChannelCallbackImpl());
 
     startTimer(controlThreadInterval);

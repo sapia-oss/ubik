@@ -2,8 +2,8 @@ package org.sapia.ubik.rmi.server.transport.mina;
 
 import java.net.InetSocketAddress;
 
-import org.apache.mina.common.IoHandlerAdapter;
-import org.apache.mina.common.IoSession;
+import org.apache.mina.core.service.IoHandlerAdapter;
+import org.apache.mina.core.session.IoSession;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.Request;
@@ -37,7 +37,7 @@ public class MinaServerHandler extends IoHandlerAdapter {
 
   public void exceptionCaught(IoSession sess, Throwable err) throws Exception {
     log.error("Exception caught", err);
-    sess.close();
+    sess.closeNow();
   }
 
   public void messageReceived(IoSession sess, Object msg) throws Exception {

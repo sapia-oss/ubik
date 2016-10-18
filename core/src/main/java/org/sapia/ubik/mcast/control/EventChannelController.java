@@ -48,7 +48,7 @@ public class EventChannelController {
   private Map<String, GossipNotificationHandler> gossipHandlers = new HashMap<String, GossipNotificationHandler>();
   private Map<String, ControlNotificationHandler> notificationHandlers = new HashMap<String, ControlNotificationHandler>();
   private Map<String, SynchronousControlRequestHandler> syncRequestHandlers = new HashMap<String, SynchronousControlRequestHandler>();
-  private Pause controlInterval, gossipInterval;
+  private Pause controlInterval, gossipInterval, autoBroadcastInterval;
 
   public EventChannelController(ControllerConfiguration config, EventChannelFacade callback) {
     this(SysClock.RealtimeClock.getInstance(), config, callback);
@@ -66,6 +66,7 @@ public class EventChannelController {
     
     controlInterval = new Pause(clock, DEFAULT_CTRL_INTERVAL);
     gossipInterval  = new Pause(clock, config.getGossipInterval().getValueInMillis());   
+    autoBroadcastInterval = new Pause(clock, config.getAutoBroadcastInterval().getValueInMillis());
   }
 
   ControllerConfiguration getConfig() {
@@ -84,6 +85,11 @@ public class EventChannelController {
     if (controlInterval.isOver()) {
       performControl();
       controlInterval.reset();
+    }
+    if (config.isAutoBroadcastEnabled() && autoBroadcastInterval.isOver() && context.getEventChannel().getNodeCount() <= config.getAutoBroadcastThreshold()) {
+      log.info("Performing auto-broadcast");
+      context.getEventChannel().resync();
+      autoBroadcastInterval.reset();
     }
   }
   
