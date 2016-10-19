@@ -24,20 +24,19 @@
     <dependency>
       <groupId>org.apache.mina</groupId>
       <artifactId>mina-core</artifactId>
-      <version>1.1.7</version>
     </dependency>
     
     
     <!-- The following are used for only for starting an in-memory Avis router for testing -->
     <!-- NOTE: also uses mina core lib, declared previously as part of NIO transport dependencies -->
-    <dependency>
+    <!-- dependency>
       <groupId>org.apache.mina</groupId>
       <artifactId>mina-filter-ssl</artifactId>
       <version>1.1.7</version>
       <scope>test</scope>
-    </dependency>
+    </dependency-->
 
-    <dependency>
+    <!-- dependency>
       <groupId>mantara</groupId>
       <artifactId>avis-router</artifactId>
       <version>1.2.2</version>
@@ -49,11 +48,11 @@
       <artifactId>fastutil-subset</artifactId>
       <version>1.2.2</version>
       <scope>test</scope>
-    </dependency>
+    </dependency-->
 
     <!-- The following are necessary for using Ubik's Avis BroadcastDispatcher -->
 
-    <dependency>
+    <!-- dependency>
       <groupId>mantara</groupId>
       <artifactId>avis-client</artifactId>
       <version>1.2.2</version>
@@ -63,7 +62,7 @@
       <groupId>mantara</groupId>
       <artifactId>avis-common</artifactId>
       <version>1.2.2</version>
-    </dependency>    
+    </dependency-->    
     
   </dependencies>
   
