@@ -2,7 +2,7 @@ package org.sapia.ubik.mcast.avis;
 
 import java.io.IOException;
 
-import org.avis.client.Elvin;
+import org.sapia.ubik.mcast.avis.client.Elvin;
 
 /**
  * Encapsulates direct interaction with the connection to the Avis router.
