@@ -1,6 +1,7 @@
 package org.sapia.ubik.net;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.rmi.server.RMIClientSocketFactory;
 
@@ -19,6 +20,7 @@ public class SocketConnectionFactory implements ConnectionFactory {
   private static final int NO_SO_TIMEOUT = 0;
 
   private int bufsize = Conf.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE);
+  private int connectionTimeout = Conf.getSystemProperties().getIntProperty(Consts.CLIENT_CONNECTION_TIMEOUT, Consts.DEFAULT_CLIENT_CONNECTION_TIMEOUT);
 
   protected String transportType;
   protected ClassLoader loader;
@@ -85,7 +87,7 @@ public class SocketConnectionFactory implements ConnectionFactory {
   public Connection newConnection(String host, int port) throws IOException {
     Socket socket;
     if (clientSocketFactory == null) {
-      socket = new Socket(host, port);
+      socket = newSocket(host, port);
     } else {
       socket = clientSocketFactory.createSocket(host, port);
     }
@@ -108,5 +110,11 @@ public class SocketConnectionFactory implements ConnectionFactory {
   @Override
   public String getTransportType() {
     return transportType;
+  }
+  
+  protected Socket newSocket(String host, int port) throws IOException {
+    Socket socket = new Socket();
+    socket.connect(new InetSocketAddress(host, port), connectionTimeout);
+    return socket;
   }
 }

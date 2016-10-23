@@ -57,6 +57,11 @@ public interface Consts {
   public static final String DEFAULT_TCP_PORT_RANGE = "[1025 - 32000]";
   
   /**
+   * The default client socket connection timeout.
+   */
+  public static final int DEFAULT_CLIENT_CONNECTION_TIMEOUT = 2000;
+  
+  /**
    * This constant corresponds to the <code>ubik.rmi.address-pattern</code>
    * property. The property should be used to specify a regular expression
    * based upon which the address of this host is chosen (if this host has more
@@ -550,6 +555,11 @@ public interface Consts {
    * batches whose size corresponds to the property defined by this constant).
    */
   public static final String CLIENT_CALLBACK_TIMEOUT = "ubik.rmi.client.callback.timeout";
+
+  /**
+   * Specifies the client socket connection timeout.
+   */
+  public static final String CLIENT_CONNECTION_TIMEOUT = "ubik.rmi.client.connection.timeout";
 
   /**
    * Specifies if colocated calls should be supported or not (defaults to
