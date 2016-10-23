@@ -12,6 +12,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.sapia.ubik.concurrent.BlockingRef;
+import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.BroadcastDispatcher;
 import org.sapia.ubik.mcast.EventChannel;
 import org.sapia.ubik.mcast.EventConsumer;
@@ -33,6 +34,7 @@ public class EmbeddableJNDIServerTest  {
   
   @Before
   public void setUp() throws Exception {
+    Log.setDebug();
     EventChannel.disableReuse();
     EventConsumer cons1 = new EventConsumer("test");
     
@@ -53,6 +55,7 @@ public class EmbeddableJNDIServerTest  {
   
   @After
   public void tearDown() {
+    Log.setError();
     EventChannel.enableReuse();
     channel1.close();
     channel2.close();

@@ -282,9 +282,7 @@ public abstract class BaseTcpUnicastDispatcher extends UnicastDispatcherSupport 
       if (exe.getCause() instanceof RuntimeCheckedException) {
         RuntimeCheckedException rte = (RuntimeCheckedException) exe.getCause();
         if (rte.getCause() instanceof IOException) {
-          throw (ClassNotFoundException) rte.getCause();
-        } else if (rte.getCause() instanceof RemoteException) {
-          throw (RemoteException) rte.getCause();
+          throw (IOException) rte.getCause();
         } else if (rte.getCause() instanceof TimeoutException) {
           throw (TimeoutException) rte.getCause();
         } else if (rte.getCause() instanceof ClassNotFoundException) {

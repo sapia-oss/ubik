@@ -59,7 +59,12 @@ public interface Consts {
   /**
    * The default client socket connection timeout.
    */
-  public static final int DEFAULT_CLIENT_CONNECTION_TIMEOUT = 2000;
+  public static final int DEFAULT_CLIENT_CONNECTION_TIMEOUT = 1000;
+
+  /**
+   * The default client socket connection max retry.
+   */
+  public static final int DEFAULT_CLIENT_CONNECTION_MAX_RETRY = 3;
   
   /**
    * This constant corresponds to the <code>ubik.rmi.address-pattern</code>
@@ -561,6 +566,11 @@ public interface Consts {
    */
   public static final String CLIENT_CONNECTION_TIMEOUT = "ubik.rmi.client.connection.timeout";
 
+  /**
+   * Specifies the number of times establish client connections should be retried.
+   */
+  public static final String CLIENT_CONNECTION_MAX_RETRY = "ubik.rmi.client.connection.max-retry";
+  
   /**
    * Specifies if colocated calls should be supported or not (defaults to
    * <code>true</code>). System property: System property:

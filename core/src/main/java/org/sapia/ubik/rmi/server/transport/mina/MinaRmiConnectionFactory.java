@@ -1,10 +1,7 @@
 package org.sapia.ubik.rmi.server.transport.mina;
 
 import java.io.IOException;
-import java.net.ConnectException;
 import java.net.Socket;
-import java.net.SocketException;
-import java.rmi.RemoteException;
 
 import org.sapia.ubik.net.Connection;
 import org.sapia.ubik.net.SocketConnectionFactory;
@@ -32,12 +29,6 @@ public class MinaRmiConnectionFactory extends SocketConnectionFactory {
    * @see org.sapia.ubik.net.SocketConnectionFactory#newConnection(String, int)
    */
   public Connection newConnection(String host, int port) throws IOException {
-    try {
       return new MinaRmiClientConnection(newSocket(host, port), bufsize);
-    } catch (ConnectException e) {
-      throw new RemoteException(String.format("Could not connect to %s:%s", host, port));
-    } catch (SocketException e) {
-      throw new RemoteException(String.format("Could not connect to %s:%s", host, port));
-    }
   }
 }

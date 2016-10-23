@@ -1,15 +1,10 @@
 package org.sapia.ubik.rmi.server.transport.socket;
 
 import java.io.IOException;
-import java.net.ConnectException;
 import java.net.Socket;
-import java.net.SocketException;
-import java.rmi.RemoteException;
 
 import org.sapia.ubik.net.Connection;
 import org.sapia.ubik.net.SocketConnectionFactory;
-import org.sapia.ubik.rmi.Consts;
-import org.sapia.ubik.util.Conf;
 
 /**
  * Implements a factory of {@link SocketRmiConnection} instances.
@@ -17,8 +12,6 @@ import org.sapia.ubik.util.Conf;
  * @author Yanick Duchesne
  */
 public class SocketRmiConnectionFactory extends SocketConnectionFactory {
-
-  private int bufsize = Conf.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE);
 
   private long resetInterval;
 
@@ -47,12 +40,6 @@ public class SocketRmiConnectionFactory extends SocketConnectionFactory {
    * @see org.sapia.ubik.net.SocketConnectionFactory#newConnection(String, int)
    */
   public Connection newConnection(String host, int port) throws IOException {
-    try {
-      return new SocketRmiConnection(transportType, newSocket(host, port), loader, bufsize);
-    } catch (ConnectException e) {
-      throw new RemoteException(String.format("Could not connect to %s:%s", host, port), e);
-    } catch (SocketException e) {
-      throw new RemoteException(String.format("Could not connect to %s:%s", host, port), e);
-    }
+    return new SocketRmiConnection(transportType, newSocket(host, port), loader, bufsize);
   }
 }
