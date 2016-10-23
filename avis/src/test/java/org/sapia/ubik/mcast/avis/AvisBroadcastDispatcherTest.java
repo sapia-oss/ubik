@@ -14,11 +14,11 @@ import org.sapia.ubik.mcast.testing.BroadcastDispatcherTestSupport;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.util.Conf;
 
+@Ignore
 public class AvisBroadcastDispatcherTest extends BroadcastDispatcherTestSupport {
 
   
   @Test
-  @Ignore
   public void testLoadDispatcher() {
     BroadcastDispatcher dispatcher = DispatcherFactory.loadBroadcastDispatcher(Conf.newInstance().addProperties(Consts.BROADCAST_PROVIDER, Consts.BROADCAST_PROVIDER_AVIS));
     assertTrue(dispatcher instanceof AvisBroadcastDispatcher);
