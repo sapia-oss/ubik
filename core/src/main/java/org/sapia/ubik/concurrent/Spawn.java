@@ -1,6 +1,8 @@
 package org.sapia.ubik.concurrent;
 
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -55,5 +57,21 @@ public class Spawn {
    */
   public static void run(Runnable runnable) {
     executor.submit(runnable);
+  }
+  
+  /**
+   * @param runnable a {@link Runnable} to submit.
+   * @return the {@link Future} to block on for task completion.
+   */
+  public static Future<?> submit(Runnable runnable) {
+    return executor.submit(runnable);
+  }
+  
+  /**
+   * @param task a {@link Callable} to submit.
+   * @return the {@link Future} to block on for the task's result.
+   */
+  public static <T> Future<T> submit(Callable<T> task) {
+    return executor.submit(task);
   }
 }

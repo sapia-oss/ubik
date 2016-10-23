@@ -115,7 +115,8 @@ class MinaServer implements Server {
    */
   @Override
   public void close() {
-    acceptor.unbind(inetAddr);
-    executor.shutdown();
+    acceptor.dispose();
+    executor.shutdownNow();
   }
+  
 }
