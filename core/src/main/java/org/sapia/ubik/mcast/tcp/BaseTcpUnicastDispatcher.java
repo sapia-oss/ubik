@@ -7,9 +7,12 @@ import java.net.SocketTimeoutException;
 import java.rmi.RemoteException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.javasimon.Split;
 import org.javasimon.Stopwatch;
@@ -36,6 +39,8 @@ import org.sapia.ubik.rmi.server.stats.Stats;
 import org.sapia.ubik.util.Assertions;
 import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.TimeValue;
+import org.sapia.ubik.util.exception.RuntimeCheckedException;
+import org.sapia.ubik.util.exception.RuntimeIoException;
 import org.sapia.ubik.util.pool.PooledObjectCreationException;
 
 /**
@@ -139,7 +144,7 @@ public abstract class BaseTcpUnicastDispatcher extends UnicastDispatcherSupport 
         public void run() {
           Split split = syncSend.start();
           try {
-            queue.add((Response) doSend(addr, evt, true, type, timeout));
+            queue.add((Response) doSendAsync(addr, evt, true, type, timeout));
           } catch (Exception e) {
             handleException(queue, e, evt, addr);
           } finally {
@@ -171,7 +176,7 @@ public abstract class BaseTcpUnicastDispatcher extends UnicastDispatcherSupport 
         public void run() {
           Split split = syncSend.start();
           try {
-            queue.add((Response) doSend(addr, evt, true, type, timeout));
+            queue.add((Response) doSendAsync(addr, evt, true, type, timeout));
           } catch (Exception e) {
             handleException(queue, e, evt, addr);
           } finally {
@@ -195,7 +200,7 @@ public abstract class BaseTcpUnicastDispatcher extends UnicastDispatcherSupport 
     Split split = syncSend.start();
 
     try {
-      return (Response) doSend(addr, evt, true, type, timeout);
+      return (Response) doSendAsync(addr, evt, true, type, timeout);
     } catch (ClassNotFoundException e) {
       log.warning("Could not deserialize response from %s", e, addr);
       return new Response(addr, evt.getId(), e);
@@ -220,15 +225,14 @@ public abstract class BaseTcpUnicastDispatcher extends UnicastDispatcherSupport 
   }
 
   @Override
-  public boolean dispatch(ServerAddress addr, String type, Object data) throws IOException {
-
+  public boolean dispatch(final ServerAddress addr, final String type, final Object data) throws IOException {
     Split split = asyncDispatch.start();
-
     try {
       RemoteEvent evt = new RemoteEvent(null, type, data).setNode(consumer.getNode());
       evt.setUnicastAddress(getAddress());
       log.debug("dispatch() to %s, type: %s, data: %s", addr, type, data);
-      doSend(addr, evt, false, type, this.asyncAckTimeout);
+      
+      doSendAsync(addr, evt, false, type, asyncAckTimeout);
       return true;
     } catch (RemoteException e) {
       log.warning("Could not send: node probably down %s", e, addr);
@@ -240,14 +244,67 @@ public abstract class BaseTcpUnicastDispatcher extends UnicastDispatcherSupport 
       log.warning("Did not receive ack from peer", e);
       return false;
     } catch (InterruptedException e) {
-      ThreadInterruptedException tie = new ThreadInterruptedException();
-      throw tie;
+      throw new ThreadInterruptedException();
+    } catch (IOException e) {
+      throw new RuntimeIoException(e);
     } finally {
       split.stop();
     }
-  }
 
-  private Object doSend(ServerAddress addr, Serializable toSend, boolean synchro, String type, TimeValue timeout) throws IOException, ClassNotFoundException,
+  }
+  
+  private Object doSendAsync(
+      final ServerAddress addr, 
+      final Serializable toSend, 
+      final boolean synchro, 
+      final String type, 
+      final TimeValue timeout) 
+      throws 
+        IOException, ClassNotFoundException, TimeoutException, 
+        InterruptedException, RemoteException {
+    
+    Callable<Object> task = new Callable<Object>() {
+      public Object call() {
+        try {
+          return doSendSync(addr, toSend, synchro, type, timeout);
+        } catch (RuntimeException e) {
+          throw e;
+        } catch (Exception e) {
+          throw new RuntimeCheckedException(e);
+        }
+      }
+    };
+    
+    Future<Object> result = senders.submit(task);
+    try {
+      return result.get(asyncAckTimeout.getValue(), asyncAckTimeout.getUnit());
+    } catch (ExecutionException exe) {
+      if (exe.getCause() instanceof RuntimeCheckedException) {
+        RuntimeCheckedException rte = (RuntimeCheckedException) exe.getCause();
+        if (rte.getCause() instanceof IOException) {
+          throw (ClassNotFoundException) rte.getCause();
+        } else if (rte.getCause() instanceof RemoteException) {
+          throw (RemoteException) rte.getCause();
+        } else if (rte.getCause() instanceof TimeoutException) {
+          throw (TimeoutException) rte.getCause();
+        } else if (rte.getCause() instanceof ClassNotFoundException) {
+          throw (ClassNotFoundException) rte.getCause();
+        } else {
+          throw new IllegalStateException("Unexpected error occurred", rte.getCause());
+        }
+      } else if (exe.getCause() instanceof RuntimeException) {
+        throw (RuntimeException) exe.getCause();
+      } else {
+        throw new IllegalStateException("Unexpected error occurred", exe.getCause());
+      }
+    } catch (java.util.concurrent.TimeoutException e) {
+      throw new TimeoutException();
+    } catch (InterruptedException e) {
+      throw e;
+    }
+  }
+  
+  private Object doSendSync(ServerAddress addr, Serializable toSend, boolean synchro, String type, TimeValue timeout) throws IOException, ClassNotFoundException,
       TimeoutException, InterruptedException, RemoteException {
     log.debug("doSend() : %s, event type: %s", addr, type);
     ConnectionPool pool = connections.getPoolFor(addr);

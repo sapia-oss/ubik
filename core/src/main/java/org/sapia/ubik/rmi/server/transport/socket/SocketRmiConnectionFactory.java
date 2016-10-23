@@ -48,7 +48,7 @@ public class SocketRmiConnectionFactory extends SocketConnectionFactory {
    */
   public Connection newConnection(String host, int port) throws IOException {
     try {
-      return new SocketRmiConnection(transportType, new Socket(host, port), loader, bufsize);
+      return new SocketRmiConnection(transportType, newSocket(host, port), loader, bufsize);
     } catch (ConnectException e) {
       throw new RemoteException(String.format("Could not connect to %s:%s", host, port), e);
     } catch (SocketException e) {

@@ -30,7 +30,7 @@ public class NettyTcpUnicastConnectionFactory extends SocketConnectionFactory {
   @Override
   public Connection newConnection(String host, int port) throws IOException {
     try {
-      return new NettyTcpUnicastConnection(new Socket(host, port), bufsize);
+      return new NettyTcpUnicastConnection(newSocket(host, port), bufsize);
     } catch (ConnectException e) {
       throw new RemoteException(String.format("Could not connect to %s:%s", host, port));
     } catch (SocketException e) {
