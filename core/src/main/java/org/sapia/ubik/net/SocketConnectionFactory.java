@@ -129,7 +129,7 @@ public class SocketConnectionFactory implements ConnectionFactory {
   protected Socket newSocket(String host, int port) throws RemoteException {
     Socket toReturn = null;
     int retryCount = 0;
-    IOException lastException = null;
+    Exception lastException = null;
     do {
       log.debug("Attempting client socket connection to %s:%s (retry attempt: %s)", host, port, retryCount + 1);
       
@@ -137,13 +137,16 @@ public class SocketConnectionFactory implements ConnectionFactory {
         Socket tmp = newSocketAsync(host, port);
         toReturn = tmp;
         log.debug("Connection established to %s:%s", host, port);
-      } catch (IOException e) {
+      } catch (Exception e) {
         log.warning("Error attempting to connect to %s:%s. Retry count currently is: %s. Max retries set to: %s", e, retryCount, connectionMaxRetry);
         lastException = e;        
       }
       retryCount++;
     } while (toReturn == null && retryCount < connectionMaxRetry);
     if (lastException != null) {
+      if (lastException instanceof RemoteException) {
+        throw (RemoteException) lastException;
+      }
       throw new RemoteException(String.format("Could not establish client connection to %s:%s (retried %s times)", host, port, retryCount), lastException);
     }
     if (toReturn == null) {
@@ -170,6 +173,8 @@ public class SocketConnectionFactory implements ConnectionFactory {
     } catch (ExecutionException e) {
       if (e.getCause() instanceof IOException) {
         throw (IOException) e.getCause();
+      } else {
+        throw new IllegalStateException("Unexpected error occurred", e);
       }
     } catch (TimeoutException e) {
       socketRef.get().close();

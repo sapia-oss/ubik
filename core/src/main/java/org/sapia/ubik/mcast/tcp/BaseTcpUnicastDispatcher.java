@@ -40,7 +40,6 @@ import org.sapia.ubik.util.Assertions;
 import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.TimeValue;
 import org.sapia.ubik.util.exception.RuntimeCheckedException;
-import org.sapia.ubik.util.exception.RuntimeIoException;
 import org.sapia.ubik.util.pool.PooledObjectCreationException;
 
 /**
@@ -144,7 +143,7 @@ public abstract class BaseTcpUnicastDispatcher extends UnicastDispatcherSupport 
         public void run() {
           Split split = syncSend.start();
           try {
-            queue.add((Response) doSendAsync(addr, evt, true, type, timeout));
+            queue.add((Response) doSendSync(addr, evt, true, type, timeout));
           } catch (Exception e) {
             handleException(queue, e, evt, addr);
           } finally {
@@ -176,7 +175,7 @@ public abstract class BaseTcpUnicastDispatcher extends UnicastDispatcherSupport 
         public void run() {
           Split split = syncSend.start();
           try {
-            queue.add((Response) doSendAsync(addr, evt, true, type, timeout));
+            queue.add((Response) doSendSync(addr, evt, true, type, timeout));
           } catch (Exception e) {
             handleException(queue, e, evt, addr);
           } finally {
@@ -245,8 +244,6 @@ public abstract class BaseTcpUnicastDispatcher extends UnicastDispatcherSupport 
       return false;
     } catch (InterruptedException e) {
       throw new ThreadInterruptedException();
-    } catch (IOException e) {
-      throw new RuntimeIoException(e);
     } finally {
       split.stop();
     }
@@ -310,7 +307,7 @@ public abstract class BaseTcpUnicastDispatcher extends UnicastDispatcherSupport 
     try {
       connection = pool.acquire();
     } catch (PooledObjectCreationException e) {
-      if (e.getCause() instanceof ConnectException || e.getCause() instanceof RemoteException) {
+      if (e.getCause() instanceof IOException) {
         pool.clear();
         try {
           connection = pool.acquire();
@@ -320,9 +317,11 @@ public abstract class BaseTcpUnicastDispatcher extends UnicastDispatcherSupport 
           } else if (e2.getCause() instanceof RemoteException) {
             throw (RemoteException) e.getCause();
           } else {
-            throw new RemoteException("Undetermined error caught connecting to " + addr, e.getCause());
+            throw new RemoteException("Network error caught connecting to " + addr, e.getCause());
           }
         }
+      } else {
+        throw new RemoteException("Undetermined error caught connecting to " + addr, e.getCause());
       }
     }
 
