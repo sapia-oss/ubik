@@ -138,7 +138,7 @@ public class SocketConnectionFactory implements ConnectionFactory {
         toReturn = tmp;
         log.debug("Connection established to %s:%s", host, port);
       } catch (Exception e) {
-        log.warning("Error attempting to connect to %s:%s. Retry count currently is: %s. Max retries set to: %s", e, retryCount, connectionMaxRetry);
+        log.warning("Error attempting to connect to %s:%s. Retry count currently is: %s. Max retries set to: %s", host, port, retryCount, connectionMaxRetry);
         lastException = e;        
       }
       retryCount++;
