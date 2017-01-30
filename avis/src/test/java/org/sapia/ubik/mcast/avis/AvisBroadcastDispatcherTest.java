@@ -26,9 +26,9 @@ public class AvisBroadcastDispatcherTest extends BroadcastDispatcherTestSupport 
 
   @Override
   public BroadcastDispatcher createDispatcher(EventConsumer consumer) throws IOException {
-    BroadcastDispatcher bd = new AvisBroadcastDispatcher();
-    bd.initialize(consumer, Conf.newInstance().addProperties(Consts.BROADCAST_AVIS_URL, "elvin://localhost").addSystemProperties());
-    return bd;
+    AvisBroadcastDispatcher abd = new AvisBroadcastDispatcher();
+    abd.initialize(consumer, Conf.newInstance().addProperties(Consts.BROADCAST_AVIS_URL, "elvin://localhost").addSystemProperties());
+    return abd;
   }
 
   @After

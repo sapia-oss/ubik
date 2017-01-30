@@ -42,9 +42,9 @@ public abstract class BroadcastOverUnicastDispatcherTestSupport {
     addressesByNode = new HashMap<>();
     doSetup();
   
-    sourceConsumer = new EventConsumer("broadcast/01");
-    domainConsumer = new EventConsumer("broadcast/01");
-    nonDomainConsumer = new EventConsumer("broadcast/02");
+    sourceConsumer = new EventConsumer("broadcast/01", 1);
+    domainConsumer = new EventConsumer("broadcast/01", 1);
+    nonDomainConsumer = new EventConsumer("broadcast/02", 1);
     
     source = createDispatcher(sourceConsumer, createViewCallback(sourceConsumer));
     domainDestination = createDispatcher(domainConsumer, createViewCallback(domainConsumer));

@@ -35,18 +35,17 @@ public class HealtchCheckConfirmationControlEventHandler implements ControlEvent
     HealthCheckConfirmationControlEvent confirmation = (HealthCheckConfirmationControlEvent) event;
     NodeInfo                            suspect      = context.getEventChannel().getNodeInfoFor(confirmation.getSuspect().getNode());
     
+    context.getEventChannel().heartbeat(originNode, originAddress);
+
     // might have been removed already
     if (suspect != null) {
-      context.getEventChannel().heartbeat(originNode, originAddress);
-      if (suspect != null) {
-        if (confirmation.isUp()) {
-          log.info("Healtch check successful on node %s", suspect);
-          suspect.reset(context.getClock());
-        } else {
-          log.info("Healtch check failed on node %s (removing from view)", suspect);
-          context.getEventChannel().down(confirmation.getSuspect().getNode());
-        }
-      }
+  	  if (confirmation.isUp()) {
+  	    log.info("Healtch check successful on node %s", suspect);
+  	    suspect.reset(context.getClock());
+  	  } else {
+  	    log.info("Healtch check failed on node %s (removing from view)", suspect);
+  	    context.getEventChannel().down(confirmation.getSuspect().getNode());
+  	  }
     }
   }
 

@@ -14,7 +14,7 @@ public class EventConsumerTest {
 
   @Test
   public void testMatchesAll() throws Exception {
-    EventConsumer cons = new EventConsumer("123", "default");
+    EventConsumer cons = new EventConsumer("123", "default", 1);
     DomainName other = DomainName.parse("local");
     DomainName thisDomain = DomainName.parse("default");
     assertTrue(!cons.matchesAll(other, "456"));
@@ -25,7 +25,7 @@ public class EventConsumerTest {
 
   @Test
   public void testMatchesThis() throws Exception {
-    EventConsumer cons = new EventConsumer("123", "default");
+    EventConsumer cons = new EventConsumer("123", "default", 1);
     DomainName other = DomainName.parse("local");
     DomainName thisDomain = DomainName.parse("default");
     assertTrue(!cons.matchesThis(other, "456"));
@@ -35,7 +35,7 @@ public class EventConsumerTest {
 
   @Test
   public void testRegisterAsyncListener() throws Exception {
-    EventConsumer cons = new EventConsumer("node", "domain");
+    EventConsumer cons = new EventConsumer("node", "domain", 1);
     TestEventListener listener = new TestEventListener();
     cons.registerAsyncListener("test", listener);
     assertTrue("Should contain AsyncEventListener", cons.containsAsyncListener(listener));
@@ -43,7 +43,7 @@ public class EventConsumerTest {
   
   @Test
   public void testUnregisterAsyncListener() throws Exception {
-    EventConsumer cons = new EventConsumer("node", "domain");
+    EventConsumer cons = new EventConsumer("node", "domain", 1);
     TestEventListener listener = new TestEventListener();
     cons.registerAsyncListener("test", listener);
     cons.unregisterListener((AsyncEventListener) listener);
@@ -52,7 +52,7 @@ public class EventConsumerTest {
 
   @Test
   public void testRegisterSyncListener() throws Exception {
-    EventConsumer cons = new EventConsumer("node", "domain");
+    EventConsumer cons = new EventConsumer("node", "domain", 1);
     SyncEventListener listener = new TestEventListener();
     cons.registerSyncListener("test", listener);
     assertTrue("Should contain AsyncEventListener", cons.containsSyncListener(listener));
@@ -60,7 +60,7 @@ public class EventConsumerTest {
   
   @Test
   public void testUnregisterSyncListener() throws Exception {
-    EventConsumer cons = new EventConsumer("node", "domain");
+    EventConsumer cons = new EventConsumer("node", "domain", 1);
     SyncEventListener listener = new TestEventListener();
     cons.registerSyncListener("test", listener);
     cons.unregisterListener(listener);
@@ -70,7 +70,7 @@ public class EventConsumerTest {
 
   @Test
   public void testOnAsyncEvent() throws Exception {
-    EventConsumer cons = new EventConsumer("node", "domain");
+    EventConsumer cons = new EventConsumer("node", "domain", 1);
     final BlockingCompletionQueue<String> queue = new BlockingCompletionQueue<String>(5);
     for (int i = 0; i < queue.getExpectedCount(); i++) {
       cons.registerAsyncListener("test", new AsyncEventListener() {
@@ -86,7 +86,7 @@ public class EventConsumerTest {
 
   @Test
   public void testOnSyncEvent() throws Exception {
-    EventConsumer cons = new EventConsumer("node", "domain");
+    EventConsumer cons = new EventConsumer("node", "domain", 1);
     cons.registerSyncListener("test", new SyncEventListener() {
       @Override
       public Object onSyncEvent(RemoteEvent evt) {

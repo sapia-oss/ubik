@@ -60,7 +60,7 @@ public abstract class BaseTcpUnicastDispatcher extends UnicastDispatcherSupport 
   protected Category log = Log.createCategory(getClass());
   protected EventConsumer   consumer;
   protected ConnectionPools connections           = new ConnectionPools();
-  private TimeValue         asyncAckTimeout       = Defaults.DEFAULT_SYNC_RESPONSE_TIMEOUT;
+  private TimeValue         asyncAckTimeout       = Defaults.DEFAULT_ASYNC_ACK_TIMEOUT;
   private int               senderCount           = Defaults.DEFAULT_SENDER_COUNT;
   private int               maxConnectionsPerHost = Defaults.DEFAULT_MAX_CONNECTIONS_PER_HOST;
   private ExecutorService   senders;

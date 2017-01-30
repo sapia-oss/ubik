@@ -25,8 +25,8 @@ public abstract class GroupMembershipBootstrapTestSupport {
   @Before
   public void setUp() throws Exception {
     doSetUp();
-    consumer1  = new EventConsumer("domain01");
-    consumer2  = new EventConsumer("domain01");
+    consumer1  = new EventConsumer("domain01", 1);
+    consumer2  = new EventConsumer("domain01", 1);
     bootstrap1 = new GroupMembershipBootstrap(consumer1, Conf.newInstance());
     bootstrap2 = new GroupMembershipBootstrap(consumer2, Conf.newInstance());
     

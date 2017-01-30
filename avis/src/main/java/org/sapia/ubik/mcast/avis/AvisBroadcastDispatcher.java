@@ -4,7 +4,13 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
+import org.sapia.ubik.concurrent.NamedThreadFactory;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.BroadcastDispatcher;
@@ -41,15 +47,20 @@ public class AvisBroadcastDispatcher implements BroadcastDispatcher {
   private static final String NOTIF_TYPE = "ubik.broadcast.avis";
   private static final String ANY_DOMAIN = "*";
   public static final int DEFAULT_BUFSZ = 1024;
+  public static final int DEFAULT_HANDLER_COUNT = 5;
+  public static final int DEFAULT_HANDLER_QUEUE_SIZE = 1000;
 
   private Category      log = Log.createCategory(getClass());
   private EventConsumer consumer;
   private AvisConnector connector;
   private AvisAddress   address;
   private int           bufsize;
+  private int           handlerThreadCount;
+  private int           maxHandlerQueueSize;
   private ConnectionStateListenerList listeners = new ConnectionStateListenerList();
   private volatile ConnectionState    state     = ConnectionState.UP;
   private ConnectionMonitor           monitor;
+  private ExecutorService             executor;
 
   public AvisBroadcastDispatcher() {
   }
@@ -58,6 +69,8 @@ public class AvisBroadcastDispatcher implements BroadcastDispatcher {
   public void initialize(EventConsumer consumer, Conf config) {
     this.consumer = consumer;
     bufsize = config.getIntProperty(Consts.MCAST_BUFSIZE_KEY, AvisBroadcastDispatcher.DEFAULT_BUFSZ);
+    handlerThreadCount = config.getIntProperty(Consts.MCAST_HANDLER_COUNT, AvisBroadcastDispatcher.DEFAULT_HANDLER_COUNT);
+    maxHandlerQueueSize = config.getIntProperty(Consts.MCAST_HANDLER_QUEUE_SIZE, AvisBroadcastDispatcher.DEFAULT_HANDLER_QUEUE_SIZE);
     String avisUrl = config.getNotNullProperty(Consts.BROADCAST_AVIS_URL);
     connector     = new AvisConnector(avisUrl);
     address       = new AvisAddress(avisUrl);
@@ -127,7 +140,17 @@ public class AvisBroadcastDispatcher implements BroadcastDispatcher {
   @Override
   public void start() {
     Assertions.illegalState(consumer == null, "EventConsumer not set");
+    Assertions.illegalState(handlerThreadCount <= 0, "Handler thread count must be greater than 0");
+    Assertions.illegalState(maxHandlerQueueSize <= 0, "Maximum handler queue size must be greater than 0");
+    
     try {
+      log.info("Creating executor with %s threads and queue of size %s", handlerThreadCount, maxHandlerQueueSize);
+      executor = new ThreadPoolExecutor(
+    		  handlerThreadCount, handlerThreadCount,
+    		  120, TimeUnit.SECONDS,
+    		  new LinkedBlockingQueue<>(maxHandlerQueueSize),
+    		  NamedThreadFactory.createWith("Ubik.AvisBroadcastDispatcher.Handler").setDaemon(true));
+    	
       doConnect();
       listeners.onConnected();
     } catch (IOException e) {
@@ -141,6 +164,9 @@ public class AvisBroadcastDispatcher implements BroadcastDispatcher {
     connector.disconnect();
     if (monitor != null) {
       monitor.stop();
+    }
+    if (executor != null) {
+    	executor.shutdownNow();
     }
   }
 
@@ -166,10 +192,10 @@ public class AvisBroadcastDispatcher implements BroadcastDispatcher {
           byte[] bytes = Base64.decode(((String) event.notification.get("Payload")).getBytes());
           Object data = McastUtil.fromBytes(bytes);
           if (data instanceof RemoteEvent) {
-            consumer.onAsyncEvent((RemoteEvent) data);
+            executor.execute(() -> consumer.onAsyncEvent((RemoteEvent) data));
           }
         } catch (Exception e) {
-          log.error("Could not deserialize data", e);
+          log.error("Error handling notification received from node " + getValueOr(event.notification, "Node", "?"), e);
         }
       }
     });
@@ -206,6 +232,18 @@ public class AvisBroadcastDispatcher implements BroadcastDispatcher {
     notification.set("Domain", domain);
     notification.set("Node", consumer.getNode());
     return notification;
+  }
+  
+  private String getValueOr(Notification notification, String name, String defaultValue) {
+    String result = defaultValue;
+    if (notification != null) {
+      Object value = notification.get(name);
+      if (value != null) {
+        result = String.valueOf(value);
+      }
+    }
+    
+    return result;
   }
 
   // --------------------------------------------------------------------------

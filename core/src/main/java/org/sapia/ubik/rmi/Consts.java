@@ -277,6 +277,22 @@ public interface Consts {
   public static final String MCAST_CHANNEL_PUBLISH_INTERVAL = "ubik.rmi.naming.mcast.channel.pub-interval";
 
   /**
+   * Property to configure the number of consumer thread of the event channel.
+   */
+  public static final String MCAST_CHANNEL_CONSUMER_THREAD_COUNT = "ubik.rmi.naming.mcast.channel.consumer.thread";
+
+  /**
+   * Property that corresponds to the number of thread used by the event channel to process outgoing
+   * publish tasks.
+   */
+  public static final String MCAST_CHANNEL_PUBLISH_THREAD_COUNT = "ubik.rmi.naming.mcast.channel.publisher.thread";
+
+  /**
+   * Correspond to the queue size of pending outgoing publish task of the event channel. 
+   */
+  public static final String MCAST_CHANNEL_PUBLISH_QUEUE_SIZE = "ubik.rmi.naming.mcast.channel.publisher.queue";
+
+  /**
    * This constant corresponds to the <code>ubik.rmi.naming.mcast.channel.reuse</code>
    * property. It is used in test to indicate if {@link EventChannel} instance reuse should be enabled.
    * <p>
