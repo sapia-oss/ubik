@@ -10,6 +10,7 @@ import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.filter.executor.ExecutorFilter;
 import org.apache.mina.transport.socket.SocketAcceptor;
 import org.apache.mina.transport.socket.nio.NioSocketAcceptor;
+import org.sapia.ubik.concurrent.NamedThreadFactory;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.Defaults;
@@ -100,10 +101,10 @@ public class MinaTcpUnicastDispatcher extends BaseTcpUnicastDispatcher {
     acceptor = new NioSocketAcceptor(Runtime.getRuntime().availableProcessors() + 1);
     if (maxThreads <= 0) {
       log.info("Using a cached thread pool (no max threads)");
-      this.executor = Executors.newCachedThreadPool();
+      this.executor = Executors.newCachedThreadPool(NamedThreadFactory.createWith("Ubik.MinaTcpUnicastDispatcher.HandlerThread").setDaemon(true));
     } else {
       log.info("Using maximum number of threads: %s", maxThreads);
-      this.executor = Executors.newFixedThreadPool(maxThreads);
+      this.executor = Executors.newFixedThreadPool(maxThreads, NamedThreadFactory.createWith("Ubik.MinaTcpUnicastDispatcher.HandlerThread").setDaemon(true));
     }
 
     acceptor.getFilterChain().addLast("protocol", new ProtocolCodecFilter(new MinaTcpUnicastCodecFactory()));

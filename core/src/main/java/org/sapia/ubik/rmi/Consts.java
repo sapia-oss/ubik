@@ -277,6 +277,11 @@ public interface Consts {
   public static final String MCAST_CHANNEL_PUBLISH_INTERVAL = "ubik.rmi.naming.mcast.channel.pub-interval";
 
   /**
+   * Property to configure the number of consumer thread of the event channel.
+   */
+  public static final String MCAST_CHANNEL_CONSUMER_THREAD_COUNT = "ubik.rmi.naming.mcast.channel.consumer.thread";
+
+  /**
    * Property that corresponds to the number of thread used by the event channel to process outgoing
    * publish tasks.
    */

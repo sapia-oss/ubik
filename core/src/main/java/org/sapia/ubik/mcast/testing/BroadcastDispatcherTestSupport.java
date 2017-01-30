@@ -32,10 +32,10 @@ public abstract class BroadcastDispatcherTestSupport {
   @Before
   public void setUp() throws Exception {
     doSetup();
-    source = createDispatcher(sourceConsumer = new EventConsumer("broadcast/01"));
-    domainDestination = createDispatcher(domainConsumer = new EventConsumer("broadcast/01"));
-    nonDomainDestination = createDispatcher(nonDomainConsumer = new EventConsumer("broadcast/02"));
-    allDomainDestination = createDispatcher(allDomainConsumer = new EventConsumer("broadcast"));
+    source = createDispatcher(sourceConsumer = new EventConsumer("broadcast/01", 1));
+    domainDestination = createDispatcher(domainConsumer = new EventConsumer("broadcast/01", 1));
+    nonDomainDestination = createDispatcher(nonDomainConsumer = new EventConsumer("broadcast/02", 1));
+    allDomainDestination = createDispatcher(allDomainConsumer = new EventConsumer("broadcast", 1));
 
     source.start();
     domainDestination.start();

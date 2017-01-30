@@ -36,7 +36,7 @@ public class EmbeddableJNDIServerTest  {
   public void setUp() throws Exception {
     Log.setDebug();
     EventChannel.disableReuse();
-    EventConsumer cons1 = new EventConsumer("test");
+    EventConsumer cons1 = new EventConsumer("test", 1);
     
     
     channel1 = new EventChannel(
@@ -44,7 +44,7 @@ public class EmbeddableJNDIServerTest  {
         createUnicastDispatcher(cons1), createBroadcastDispatcher(cons1)
     );
 
-    EventConsumer cons2 = new EventConsumer("test");
+    EventConsumer cons2 = new EventConsumer("test", 1);
     channel2 = new EventChannel(
         cons2, 
         createUnicastDispatcher(cons2), createBroadcastDispatcher(cons2)

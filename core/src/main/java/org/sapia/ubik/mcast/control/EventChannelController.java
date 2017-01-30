@@ -167,18 +167,17 @@ public class EventChannelController {
   }
   
   private void doSendTriggerHealthCheckFor(NodeInfo suspect) {
-    List<NodeInfo> currentNodes = context.getEventChannel().getView();
+    List<NodeInfo> currentNodes = context.getEventChannel().getView(n -> n.getState() != NodeInfo.State.SUSPECT);
     Set<NodeInfo>  delegates    = new HashSet<>();
     int counter = 0;
     for (NodeInfo n : currentNodes) {
-      if (n.getState() != NodeInfo.State.SUSPECT) {
-        delegates.add(n);
-        counter++;
-        if (counter == context.getConfig().getHealthCheckDelegateCount()) {
-          break;
-        }
+      delegates.add(n);
+      counter++;
+      if (counter == context.getConfig().getHealthCheckDelegateCount()) {
+        break;
       }
     }
+    
     if (delegates.isEmpty()) {
       log.info("Node %s is suspect: performing healthcheck", suspect);
       

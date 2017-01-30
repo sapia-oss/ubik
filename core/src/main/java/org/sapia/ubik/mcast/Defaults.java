@@ -60,7 +60,6 @@ public class Defaults {
    * (see {@link Consts#MCAST_HANDLER_QUEUE_SIZE}).
    */
   public static final int DEFAULT_HANDLER_QUEUE_SIZE = 100;
-
   
   /**
    * The default synchronous response timeout (see
@@ -93,7 +92,7 @@ public class Defaults {
   /**
    * The default heartbeat interval (see {@link Consts#MCAST_HEARTBEAT_TIMEOUT}).
    */
-  public static final TimeValue DEFAULT_HEARTBEAT_TIMEOUT = TimeValue.createMillis(90000);
+  public static final TimeValue DEFAULT_HEARTBEAT_TIMEOUT = TimeValue.createMillis(60000);
   
   /**
    * The default gossip interval (see {@link Consts#MCAST_HEARTBEAT_INTERVAL}).
@@ -121,6 +120,13 @@ public class Defaults {
    * @see Consts#MCAST_MAX_CLIENT_CONNECTIONS
    */
   public static final int DEFAULT_MAX_CONNECTIONS_PER_HOST = 3;
+
+  /**
+   * The default number of consumer thread of the channel consumer.
+   * 
+   * @see Consts#MCAST_CHANNEL_CONSUMER_THREAD_COUNT
+   */
+  public static final int DEFAULT_CHANNEL_CONSUMER_COUNT = 10;
 
   /**
    * The default random time range specifying the interval used by the event channel to publish itself

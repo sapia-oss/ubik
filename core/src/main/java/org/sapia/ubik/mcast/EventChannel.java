@@ -10,8 +10,6 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -226,7 +224,7 @@ public class EventChannel {
    */
   public EventChannel(String domain, Conf config) throws IOException {
     config.addSystemProperties();
-    consumer  = new EventConsumer(domain);
+    consumer  = new EventConsumer(domain, config.getIntProperty(Consts.MCAST_CHANNEL_CONSUMER_THREAD_COUNT, Defaults.DEFAULT_CHANNEL_CONSUMER_COUNT));
     unicast   = DispatcherFactory.createUnicastDispatcher(consumer, config);
     broadcast = DispatcherFactory.createBroadcastDispatcher(consumer, config);
     view      = new View(consumer.getNode());
@@ -436,6 +434,7 @@ public class EventChannel {
       } catch (IOException e) {
         log.info("Could not send shutdown event", e, new Object[] {});
       }
+      consumer.stop();
       publishExecutor.shutdownNow();
       heartbeatTimer.cancel();
       broadcast.close();
@@ -744,31 +743,33 @@ public class EventChannel {
   }
 
   void sendControlMessage(SplitteableMessage msg) {
-    msg.getTargetedNodes().remove(getNode());
-    if (!msg.getTargetedNodes().isEmpty()) {
-      log.debug("Sending control message %s to nodes: %s", msg.getClass().getSimpleName(), msg.getTargetedNodes());
-      List<SplitteableMessage> splits = msg.split(controlBatchSize);
-      for (SplitteableMessage toSend : splits) {
-        ServerAddress address = null;
-        while (address == null && !toSend.getTargetedNodes().isEmpty()) {
-          try {
-            String next = toSend.getTargetedNodes().iterator().next();
-            log.debug("Sending control message %s with %s targeted nodes to next node %s", toSend.getClass().getSimpleName(), toSend
-                .getTargetedNodes().size() - 1, next);
-            toSend.getTargetedNodes().remove(next);
-            address = view.getAddressFor(next);
-            if (address != null) {
-              unicast.dispatch(address, CONTROL_EVT, toSend);
+    publishExecutor.execute(() -> {
+        msg.getTargetedNodes().remove(getNode());
+        if (!msg.getTargetedNodes().isEmpty()) {
+          log.debug("Sending control message %s to nodes: %s", msg.getClass().getSimpleName(), msg.getTargetedNodes());
+          List<SplitteableMessage> splits = msg.split(controlBatchSize);
+          for (SplitteableMessage toSend : splits) {
+            ServerAddress address = null;
+            while (address == null && !toSend.getTargetedNodes().isEmpty()) {
+              try {
+                String next = toSend.getTargetedNodes().iterator().next();
+                log.debug("Sending control message %s with %s targeted nodes to next node %s", toSend.getClass().getSimpleName(), toSend
+                    .getTargetedNodes().size() - 1, next);
+                toSend.getTargetedNodes().remove(next);
+                address = view.getAddressFor(next);
+                if (address != null) {
+                  unicast.dispatch(address, CONTROL_EVT, toSend);
+                }
+                Thread.yield();
+                break;
+              } catch (Exception e) {
+                log.info("Could not send control message to %s", e, address);
+                address = null;
+              }
             }
-            Thread.yield();
-            break;
-          } catch (Exception e) {
-            log.info("Could not send control message to %s", e, address);
-            address = null;
           }
         }
-      }
-    }
+    });
   }
   
   void sendGossipMessage(final GossipMessage msg) {
@@ -930,27 +931,24 @@ public class EventChannel {
 
     @Override
     public void sendBroadcastEvent(final ControlEvent event) {
-      publishExecutor.execute(new Runnable() {
-        @Override
-        public void run() {
+      publishExecutor.execute(() -> {
           try {
             broadcast.dispatch(getUnicastAddress(), false, CONTROL_EVT, event);
           } catch (IOException e) {
             log.error("Could not dispatch control event", e);
           }
-        }
-      });
+        });
     }
     
     @Override
     public void sendUnicastEvent(final ServerAddress destination, final ControlEvent event) {
       publishExecutor.execute(() -> {
-        try {
-          unicast.dispatch(destination, CONTROL_EVT, event);
-        } catch (IOException e) {
-          log.error("Could not dispatch control event", e);
-        }
-      });
+          try {
+            unicast.dispatch(destination, CONTROL_EVT, event);
+          } catch (IOException e) {
+            log.error("Could not dispatch control event", e);
+          }
+        });
     }
     
     @Override

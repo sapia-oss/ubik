@@ -7,7 +7,10 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
+import org.sapia.ubik.concurrent.NamedThreadFactory;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.util.Chrono;
@@ -34,25 +37,33 @@ public class EventConsumer {
   private Map<Object, String> reverseMap = Collections.synchronizedMap(new WeakHashMap<Object, String>());
   private volatile DomainName domain;
   private String node;
+  private ExecutorService executor;
 
   /**
    * Creates an instance of this class, with the given node identifier, and the
    * given domain.
    */
-  public EventConsumer(String node, String domain) {
+  public EventConsumer(String node, String domain, int threadCount) {
     this.domain = DomainName.parse(domain);
     this.node = node;
+    this.executor = Executors.newFixedThreadPool(threadCount, NamedThreadFactory.createWith("Ubik.EventConsumer.Consumer").setDaemon(true));
     log.debug("Starting node: %s@%s", node, domain);
   }
-
+  
   /**
    * Creates an instance of this class with the given domain. Internally creates
    * a globally unique node identifier.
    */
-  public EventConsumer(String domain) throws UnknownHostException {
-    this(UUID.randomUUID().toString().replace("-", ""), domain);
+  public EventConsumer(String domain, int threadCount) throws UnknownHostException {
+    this(UUID.randomUUID().toString().replace("-", ""), domain, threadCount);
   }
 
+  public void stop() {
+    if (executor != null) {
+      executor.shutdownNow();
+    }
+  }
+  
   /**
    * Returns the node identifier of this instance.
    *
@@ -203,8 +214,7 @@ public class EventConsumer {
    * Notification callback that internally dispatches the given remote event to
    * this instance's appropriate event {@link AsyncEventListener}s.
    * <p>
-   * <b>IMPORTANT</b>: this method dispatches the event in the thread that is
-   * performing the call.
+   * <b>IMPORTANT</b>: this method dispatches the event in a new consumer thread.
    *
    * @param evt
    *          a {@link RemoteEvent}.
@@ -316,21 +326,17 @@ public class EventConsumer {
     if (lst.getApproximateSize() == 0) {
       log.debug("No listener for event: %s", evt.getType());
     }
-    int counter = 0;
     synchronized (lst) {
       for (AsyncEventListener listener : lst) {
         log.debug("Notifying async listener for: %s -> %s", evt.getType(), listener);
-        counter++;
-        try {
-          listener.onAsyncEvent(evt);
-        } catch (Exception e) {
-          log.warning("System error notifiying listener of async event %s -> &s", e, evt.getType(), listener);
-        }
+        executor.execute(() -> {
+          try {
+            listener.onAsyncEvent(evt);
+          } catch (Exception e) {
+            log.warning("System error notifiying listener of async event %s -> &s", e, evt.getType(), listener);
+          }
+        });
       }
-    }
-
-    if (counter == 0) {
-      log.info("No listener for event: %s", evt.getType());
     }
   }
 
