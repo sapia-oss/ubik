@@ -11,6 +11,10 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import org.sapia.ubik.concurrent.NamedThreadFactory;
 import org.sapia.ubik.log.Category;
@@ -25,6 +29,7 @@ import org.sapia.ubik.mcast.control.GossipNotification;
 import org.sapia.ubik.mcast.control.SplitteableMessage;
 import org.sapia.ubik.mcast.control.SynchronousControlRequest;
 import org.sapia.ubik.mcast.control.SynchronousControlResponse;
+import org.sapia.ubik.mcast.control.gossip.GossipSyncNotification;
 import org.sapia.ubik.mcast.udp.UDPBroadcastDispatcher;
 import org.sapia.ubik.mcast.udp.UDPUnicastDispatcher;
 import org.sapia.ubik.net.ConnectionStateListener;
@@ -151,8 +156,10 @@ public class EventChannel {
    */
   static final String CONTROL_EVT          = "ubik/mcast/control";
   
-  private static final int       DEFAULT_MAX_PUB_ATTEMPTS  = 3;
-  private static final TimeValue DEFAULT_READ_TIMEOUT      = TimeValue.createMillis(10000);
+  private static final int       DEFAULT_MAX_PUB_ATTEMPTS     = 3;
+  private static final TimeValue DEFAULT_READ_TIMEOUT         = TimeValue.createMillis(10000);
+  private static final int       DEFAULT_PUBLISH_THREAD_COUNT = 5;
+  private static final int       DEFAULT_PUBLISH_QUEUE_SIZE   = 1000;
 
   private static Set<EventChannel> CHANNELS_BY_DOMAIN = Collections.synchronizedSet(new HashSet<EventChannel>());
 
@@ -173,10 +180,10 @@ public class EventChannel {
   private TimeRange                   startDelayRange;
   private TimeRange                   publishIntervalRange;
   private TimeValue                   defaultReadTimeout     = DEFAULT_READ_TIMEOUT;
-  private ConnectionStateListenerList stateListeners = new ConnectionStateListenerList();
-  private ExecutorService             publishExecutor = Executors.newSingleThreadExecutor(
-      NamedThreadFactory.createWith("Ubik.EventChannel.Publish").setDaemon(true)
-  );
+  private ConnectionStateListenerList stateListeners         = new ConnectionStateListenerList();
+  private int                         publishThreadCount;
+  private int                         publishQueueSize;
+  private ExecutorService             publishExecutor;
   
   private SoftReferenceList<DiscoveryListener> discoListeners = new SoftReferenceList<DiscoveryListener>();
 
@@ -308,6 +315,11 @@ public class EventChannel {
   public synchronized void start() throws IOException {
     if (state == State.CREATED) {
 
+      publishExecutor = new ThreadPoolExecutor(0, publishThreadCount,
+          60, TimeUnit.SECONDS,
+          new LinkedBlockingQueue<Runnable>(publishQueueSize),
+          NamedThreadFactory.createWith("Ubik.EventChannel.Publish").setDaemon(true));
+      
       broadcast.addConnectionStateListener(new ConnectionStateListener() {
 
         @Override
@@ -364,23 +376,29 @@ public class EventChannel {
    * Forces a resync of this instance with the cluster.
    */
   public synchronized void resync() {
-    publishExecutor.execute(new Runnable() {
+    publishExecutor.execute(
+        doCreateTaskForPublishBraodcastEvent(maxPublishAttempts));
+  }
+  
+  private TimerTask doCreateTaskForPublishBraodcastEvent(final int attemptCount) {
+    return new TimerTask() {
       @Override
       public void run() {
-        for (int i = 0; i < maxPublishAttempts; i++) {
-          try {
-            broadcast.dispatch(address, false, PUBLISH_EVT, address);
-          } catch (IOException e) {
-            log.warning("Error publishing presence to cluster", e);
-          }
-          try {
-            Thread.sleep(publishIntervalRange.getRandomTime().getValueInMillis());
-          } catch (InterruptedException e) {
-            break;
-          }
+        log.info("Publishing presence of this node (%s) to cluster (attempt count %s)", address, attemptCount);
+        try {
+          broadcast.dispatch(address, false, PUBLISH_EVT, address);
+        } catch (IOException e) {
+          log.warning("Error publishing presence to cluster", e);
+        }
+        
+        int attemptLeft = attemptCount - 1;
+        if (attemptLeft > 0) {
+          heartbeatTimer.schedule(
+              doCreateTaskForPublishBraodcastEvent(attemptLeft),
+              publishIntervalRange.getRandomTime().getValueInMillis());
         }
       }
-    });
+    };
   }
 
   /**
@@ -389,14 +407,11 @@ public class EventChannel {
    *          them to attempt resyncing with the cluster.
    */
   public synchronized void forceResyncOf(final Set<String> targetedNodes) {
-    publishExecutor.execute(new Runnable() {
-      @Override
-      public void run() {
-        try {
-          broadcast.dispatch(address, false, FORCE_RESYNC_EVT, targetedNodes);
-        } catch (IOException e) {
-          log.warning("Error sending force resync event to cluster", e);
-        }
+    publishExecutor.execute(() -> {
+      try {
+        broadcast.dispatch(address, false, FORCE_RESYNC_EVT, targetedNodes);
+      } catch (IOException e) {
+        log.warning("Error sending force resync event to cluster", e);
       }
     });
   }
@@ -757,34 +772,27 @@ public class EventChannel {
   }
   
   void sendGossipMessage(final GossipMessage msg) {
-    publishExecutor.execute(new Runnable() {
-      @Override
-      public void run() {
-        List<NodeInfo> candidates = controller.getContext().getEventChannel().getView(new Condition<NodeInfo>() {
-          @Override
-          public boolean apply(NodeInfo node) {
-            return node.getState().isNormal();
-          }
-        });        
-        Collections.shuffle(candidates);
-        int counter = 0;
-        log.debug("Sending gossip notification: %s (got %s candidates)", msg, candidates.size());
-        for (NodeInfo c : candidates) {
-          try {
-            log.debug("Sending to : %s", c);
-            if (unicast.dispatch(c.getAddr(), CONTROL_EVT, msg)) {
-              counter++;
-              if(counter == controller.getContext().getConfig().getGossipNodeCount()) {
-                break;
-              }
-            } else {
-              c.suspect();
+    publishExecutor.execute(() -> {
+      List<NodeInfo> candidates = controller.getContext().getEventChannel().getView(GossipSyncNotification.NON_SUSPECT_NODES_FILTER);        
+      Collections.shuffle(candidates);
+      
+      int counter = 0;
+      log.debug("Sending gossip notification: %s (got %s candidates)", msg, candidates.size());
+      for (NodeInfo c : candidates) {
+        try {
+          log.debug("Sending to : %s", c);
+          if (unicast.dispatch(c.getAddr(), CONTROL_EVT, msg)) {
+            counter++;
+            if(counter == controller.getContext().getConfig().getGossipNodeCount()) {
+              break;
             }
-           
-          } catch (Exception e) {
-            log.info("Could not send control message to %s", e, c.getAddr());
+          } else {
             c.suspect();
           }
+         
+        } catch (Exception e) {
+          log.info("Could not send control message to %s", e, c.getAddr());
+          c.suspect();
         }
       }
     });      
@@ -936,14 +944,11 @@ public class EventChannel {
     
     @Override
     public void sendUnicastEvent(final ServerAddress destination, final ControlEvent event) {
-      publishExecutor.execute(new Runnable() {
-        @Override
-        public void run() {
-          try {
-            unicast.dispatch(destination, CONTROL_EVT, event);
-          } catch (IOException e) {
-            log.error("Could not dispatch control event", e);
-          }
+      publishExecutor.execute(() -> {
+        try {
+          unicast.dispatch(destination, CONTROL_EVT, event);
+        } catch (IOException e) {
+          log.error("Could not dispatch control event", e);
         }
       });
     }
@@ -1161,6 +1166,11 @@ public class EventChannel {
       throw new IllegalStateException("Could not register sync event listener", e);
     }
 
+    this.publishThreadCount = props.getIntProperty(
+        Consts.MCAST_CHANNEL_PUBLISH_THREAD_COUNT, DEFAULT_PUBLISH_THREAD_COUNT);
+    this.publishQueueSize = props.getIntProperty(
+        Consts.MCAST_CHANNEL_PUBLISH_QUEUE_SIZE, DEFAULT_PUBLISH_QUEUE_SIZE);
+    
     TimeValue controlThreadInterval      = props.getTimeProperty(
         Consts.MCAST_CONTROL_THREAD_INTERVAL, Defaults.DEFAULT_CONTROL_THREAD_INTERVAL
     );
@@ -1175,6 +1185,7 @@ public class EventChannel {
         Consts.MCAST_HEALTHCHECK_DELEGATE_TIMEOUT, Defaults.DEFAULT_HEALTCHCHECK_DELEGATE_TIMEOUT
     );
     boolean   gossipEnabled              = props.getBooleanProperty(Consts.MCAST_GOSSIP_ENABLED, true);
+    TimeValue gossipInterval             = props.getTimeProperty(Consts.MCAST_GOSSIP_INTERVAL, Defaults.DEFAULT_GOSSIP_INTERVAL);
     
     this.startDelayRange                 = props.getTimeRangeProperty(
         Consts.MCAST_CHANNEL_START_DELAY, Defaults.DEFAULT_CHANNEL_START_DELAY
@@ -1190,10 +1201,12 @@ public class EventChannel {
     log.debug("Heartbeat timeout set to %s", heartbeatTimeout);
     log.debug("Health check delegate node count set to %s", healthCheckDelegateCount);
     log.debug("Health check delegate timeout set to %s", healthCheckDelegateTimeOut);
-    log.debug("Gossip enabled(SHOULD BE DISABLED FOR TESTING ONLY): %s", gossipEnabled);
+    log.debug("Gossip enabled (SHOULD BE DISABLED FOR TESTING ONLY): %s", gossipEnabled);
+    log.debug("Gossip interval %s", gossipInterval);
 
     ControllerConfiguration config = new ControllerConfiguration();
     config.setGossipEnabled(gossipEnabled);
+    config.setGossipInterval(gossipInterval);
     config.setHealthCheckDelegateCount(healthCheckDelegateCount);
     config.setHealthCheckDelegateTimeout(healthCheckDelegateTimeOut);
     config.setHeartbeatTimeout(heartbeatTimeout);
