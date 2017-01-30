@@ -30,6 +30,8 @@ import org.sapia.ubik.util.Conf;
  */
 public class UDPBroadcastDispatcher implements BroadcastDispatcher {
 
+  private static final int DEFAULT_MCAST_UDP_HANDLER_COUNT = 3;
+  
   private static Category     log       = Log.createCategory(UDPBroadcastDispatcher.class);
   private EventConsumer       consumer;
   private BroadcastServer     server;
@@ -51,6 +53,7 @@ public class UDPBroadcastDispatcher implements BroadcastDispatcher {
           consumer, 
           mcastHost, 
           mcastPort, 
+          config.getIntProperty(Consts.MCAST_HANDLER_COUNT, DEFAULT_MCAST_UDP_HANDLER_COUNT),
           config.getIntProperty(Consts.MCAST_TTL, Defaults.DEFAULT_TTL)
       );
     } catch (IOException e) {
@@ -217,8 +220,8 @@ public class UDPBroadcastDispatcher implements BroadcastDispatcher {
 
     EventConsumer consumer;
 
-    private BroadcastServer(EventConsumer consumer, String mcastAddress, int mcastPort, int ttl) throws IOException {
-      super("mcast.BroadcastServer", mcastAddress, mcastPort, ttl);
+    private BroadcastServer(EventConsumer consumer, String mcastAddress, int mcastPort, int threadCount, int ttl) throws IOException {
+      super("mcast.BroadcastServer", mcastAddress, mcastPort, threadCount, ttl);
       this.consumer = consumer;
     }
 
