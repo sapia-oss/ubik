@@ -194,7 +194,7 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
           NamePart name = path.last();
           log.debug("Dispatching synchronized put for %s (node %s (%s) not in sync)", e.getKey(), evt.getUnicastAddress(), evt.getNode());
           SyncPutEvent put = new SyncPutEvent(path.getTo(path.count() - 1), name, root.lookup(e.getKey()), true);
-          channel.get().dispatch(SyncPutEvent.class.getName(), put);
+          channel.get().dispatch(SyncPutEvent.class.getName(), put).get();
         } catch (Exception err) {
           log.warning("Could not send event %s", err, SyncPutEvent.class.getName());
         }
@@ -203,12 +203,8 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
       }
     }
     if (toSend != null) {
-      try {
-        log.debug("Sending synchronization request to %s (%s)", evt.getUnicastAddress(), evt.getNode());
-        channel.get().dispatch(evt.getUnicastAddress(), JndiSyncRequest.class.getName(), toSend);
-      } catch (IOException err) {
-        log.warning("Could not send event %s to %s (%s)", err, JndiSyncRequest.class.getName(), evt.getUnicastAddress(), evt.getNode());
-      }
+      log.debug("Sending synchronization request to %s (%s)", evt.getUnicastAddress(), evt.getNode());
+      channel.get().dispatch(evt.getUnicastAddress(), JndiSyncRequest.class.getName(), toSend);
     }
   }
 
@@ -329,8 +325,8 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
             public Void call(JndiSyncRequest request) {
               try {
                 log.debug("Dispatching sync request");
-                channel.get().dispatch(JndiSyncRequest.class.getName(), request);
-              } catch (IOException e) {
+                channel.get().dispatch(JndiSyncRequest.class.getName(), request).get();
+              } catch (Exception e) {
                 log.warning("Could not dispatch event %s", e, JndiSyncRequest.class.getName());
               }
               return null;

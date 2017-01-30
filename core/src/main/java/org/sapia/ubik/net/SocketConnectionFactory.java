@@ -178,6 +178,7 @@ public class SocketConnectionFactory implements ConnectionFactory {
       }
     } catch (TimeoutException e) {
       socketRef.get().close();
+      result.cancel(true);
       throw new IOException("Could not connect within specified timeout");
     } catch (InterruptedException e) {
       throw new ThreadInterruptedException();

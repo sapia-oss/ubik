@@ -293,6 +293,7 @@ public abstract class BaseTcpUnicastDispatcher extends UnicastDispatcherSupport 
         throw new IllegalStateException("Unexpected error occurred", exe.getCause());
       }
     } catch (java.util.concurrent.TimeoutException e) {
+      result.cancel(true);
       throw new TimeoutException();
     } catch (InterruptedException e) {
       throw e;

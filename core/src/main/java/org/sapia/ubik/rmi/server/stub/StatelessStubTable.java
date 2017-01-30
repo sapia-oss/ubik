@@ -180,7 +180,7 @@ public class StatelessStubTable implements Module {
               try {
                 StatelessRefSyncEvent statelessRef = new StatelessRefSyncEvent(ref.getName(), ref.getDomain(), ref.getMulticastAddress(), contextsToSync);
                 channel.dispatch(event.getUnicastAddress(), StatelessRefSyncEvent.class.getName(), statelessRef);
-              } catch (IOException e) {
+              } catch (Exception e) {
                 log.warning("Could not send stateless stub update to %s", event.getNode());
               }              
             }

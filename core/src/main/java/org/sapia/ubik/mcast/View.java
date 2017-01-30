@@ -256,16 +256,20 @@ public class View {
   private void notifyListeners(EventChannelEvent event, ViewEventType eventType) {
     synchronized (listeners) {
       for (EventChannelStateListener listener : listeners) {
-        if (eventType == ViewEventType.ADDED) {
-          log.debug("Node %s is up", event.getNode());
-          listener.onUp(event);
-        } else if (eventType == ViewEventType.REMOVED) {
-          log.debug("Node %s is down", event.getNode());
-          listener.onDown(event);
-        } else if (eventType == ViewEventType.LEFT) {
-          listener.onLeft(event);
-        } else {
-          log.error("Unknown view event type: %s", eventType);
+        try {
+          if (eventType == ViewEventType.ADDED) {
+            log.debug("Node %s is up", event.getNode());
+            listener.onUp(event);
+          } else if (eventType == ViewEventType.REMOVED) {
+            log.debug("Node %s is down", event.getNode());
+            listener.onDown(event);
+          } else if (eventType == ViewEventType.LEFT) {
+            listener.onLeft(event);
+          } else {
+            log.error("Unknown view event type: %s", eventType);
+          }
+        } catch (Exception e) {
+          log.warning("System error notifying listeners of view event " + eventType, e);
         }
       }
     }

@@ -3,6 +3,7 @@ package org.sapia.ubik.mcast.control;
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Future;
 
 import org.sapia.ubik.mcast.EventChannel;
 import org.sapia.ubik.mcast.NodeInfo;
@@ -106,12 +107,12 @@ public interface EventChannelFacade {
    * @param destination the {@link ServerAddress} to which to even should be sent.
    * @param event the {@link ControlEvent} to send.
    */
-  public void sendUnicastEvent(ServerAddress destination, ControlEvent event);
+  public Future<Void> sendUnicastEvent(ServerAddress destination, ControlEvent event);
   
   /**
    * @param event a {@link ControlEvent} to broadcast across the domain.
    */
-  public void sendBroadcastEvent(ControlEvent event);
+  public Future<Void> sendBroadcastEvent(ControlEvent event);
   
   /**
    * This method is meant to notify the underlying event channel that a given
