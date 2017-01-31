@@ -121,10 +121,7 @@ public class DiscoveryHelper implements AsyncEventListener {
   public synchronized void addJndiDiscoListener(JndiDiscoListener listener) {
     if (!jndiListeners.contains(listener)) {
       jndiListeners.add(listener);
-      try {
-        channelRef.get().dispatch(JNDIConsts.JNDI_CLIENT_PUBLISH, "");
-      } catch (IOException e) {
-      }
+      channelRef.get().dispatch(JNDIConsts.JNDI_CLIENT_PUBLISH, "");
     }
   }
 

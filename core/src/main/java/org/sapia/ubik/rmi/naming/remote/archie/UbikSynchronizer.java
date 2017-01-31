@@ -119,8 +119,8 @@ public class UbikSynchronizer implements Synchronizer, AsyncEventListener, SyncE
     SyncPutEvent evt = new SyncPutEvent(nodeAbsolutePath, valueName, value, overwrite);
 
     try {
-      channel.get().dispatch(SyncPutEvent.class.getName(), evt);
-    } catch (IOException e) {
+      channel.get().dispatch(SyncPutEvent.class.getName(), evt).get();
+    } catch (Exception e) {
       log.error("I/O error dispatching SyncPutEvent", e);
     }
   }
@@ -135,8 +135,8 @@ public class UbikSynchronizer implements Synchronizer, AsyncEventListener, SyncE
 
     try {
       log.debug("Dispatching remove  for %s", name);
-      channel.get().dispatch(SyncRemoveEvent.class.getName(), evt);
-    } catch (IOException e) {
+      channel.get().dispatch(SyncRemoveEvent.class.getName(), evt).get();
+    } catch (Exception e) {
       log.error("I/O error dispatching SyncRemoteEvent", e);
     }
   }

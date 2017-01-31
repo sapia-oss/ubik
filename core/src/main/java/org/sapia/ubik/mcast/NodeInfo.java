@@ -19,6 +19,8 @@ public class NodeInfo implements Externalizable, Comparable<NodeInfo> {
   
   private static final int PRIME_NUMBER = 31;
   
+  public static final long FAILED_DISPATCH_THRESHOLD = 10;
+  
   static final long serialVersionUID = 1L;
 
   public enum State {
@@ -38,6 +40,7 @@ public class NodeInfo implements Externalizable, Comparable<NodeInfo> {
   private long          timestamp = System.currentTimeMillis();
   private ServerAddress addr;
   private String        node;
+  private long          failedDispatchCounter;
 
   /**
    * Meant for externalization.
@@ -103,6 +106,13 @@ public class NodeInfo implements Externalizable, Comparable<NodeInfo> {
   }
   
   /**
+   * Increments the counter of failed dispatch calls by one.
+   */
+  public synchronized void incrementFailedDispatch() {
+    failedDispatchCounter++;
+  }
+  
+  /**
    * Internally checks this instance's state, setting it to {@link State#SUSPECT}
    * if appropriate.
    * 
@@ -110,6 +120,8 @@ public class NodeInfo implements Externalizable, Comparable<NodeInfo> {
    */
   public synchronized State checkState(long heartbeatTimeout, SysClock clock) {
     if (clock.currentTimeMillis() - timestamp >= heartbeatTimeout) {
+      state = State.SUSPECT;
+    } else if (failedDispatchCounter > FAILED_DISPATCH_THRESHOLD) {
       state = State.SUSPECT;
     }
     return state;
@@ -122,6 +134,7 @@ public class NodeInfo implements Externalizable, Comparable<NodeInfo> {
    */
   public synchronized NodeInfo touch(SysClock clock) {
     timestamp = clock.currentTimeMillis();
+    failedDispatchCounter = 0;
     if (touches == Long.MAX_VALUE) {
       touches = 1;
     } else {
@@ -160,6 +173,7 @@ public class NodeInfo implements Externalizable, Comparable<NodeInfo> {
     timestamp = in.readLong();
     addr      = (ServerAddress) in.readObject();
     node      = in.readUTF();
+    failedDispatchCounter = in.readLong();
   }
 
   @Override
@@ -168,6 +182,7 @@ public class NodeInfo implements Externalizable, Comparable<NodeInfo> {
     out.writeLong(timestamp);
     out.writeObject(addr);
     out.writeUTF(node);
+    out.writeLong(failedDispatchCounter);
   }
   
   // --------------------------------------------------------------------------

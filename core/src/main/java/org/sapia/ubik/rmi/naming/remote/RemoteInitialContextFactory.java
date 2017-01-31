@@ -167,7 +167,7 @@ public class RemoteInitialContextFactory implements InitialContextFactory, JNDIC
       channel.get().registerAsyncListener(JNDI_SERVER_DISCO, listener);
       TCPAddress addr = null;
       try {
-        channel.get().dispatch(JNDI_CLIENT_PUBLISH, "");
+        channel.get().dispatch(JNDI_CLIENT_PUBLISH, "").get();
 
         long discoTimeout = allProps.getTimeProperty(Consts.JNDI_CLIENT_DISCO_TIMEOUT, Defaults.DEFAULT_JNDI_CLIENT_DISCO_TIMEOUT).getValueInMillis();
         RemoteEvent evt = listener.waitForEvent(discoTimeout);

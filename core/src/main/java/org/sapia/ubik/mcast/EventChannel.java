@@ -9,7 +9,9 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -34,6 +36,7 @@ import org.sapia.ubik.net.ConnectionStateListener;
 import org.sapia.ubik.net.ConnectionStateListenerList;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.naming.remote.JndiSyncRequest;
 import org.sapia.ubik.util.Collects;
 import org.sapia.ubik.util.Condition;
 import org.sapia.ubik.util.Conf;
@@ -313,7 +316,7 @@ public class EventChannel {
   public synchronized void start() throws IOException {
     if (state == State.CREATED) {
 
-      publishExecutor = new ThreadPoolExecutor(0, publishThreadCount,
+      publishExecutor = new ThreadPoolExecutor(publishThreadCount, publishThreadCount,
           60, TimeUnit.SECONDS,
           new LinkedBlockingQueue<Runnable>(publishQueueSize),
           NamedThreadFactory.createWith("Ubik.EventChannel.Publish").setDaemon(true));
@@ -496,16 +499,34 @@ public class EventChannel {
    * @see org.sapia.ubik.mcast.BroadcastDispatcher#dispatch(boolean, String,
    *      Object)
    */
-  public void dispatch(boolean alldomains, String type, Object data) throws IOException {
-    broadcast.dispatch(unicast.getAddress(), alldomains, type, data);
+  public Future<Void> dispatch(boolean alldomains, String type, Object data) {
+    log.debug("Broadcasting async event %s to all domains - %s", type, data);
+     return publishExecutor.<Void>submit(() -> {
+        try {
+          broadcast.dispatch(unicast.getAddress(), alldomains, type, data);
+        } catch (Exception e) {
+          log.warning("Could not broadcast async event %s to all domains (%s)", e, type, data);
+          throw new ExecutionException("System error dispatching event", e);
+        }
+        return null;
+      });
   }
 
   /**
    * @see org.sapia.ubik.mcast.UnicastDispatcher#dispatch(ServerAddress, String,
    *      Object)
    */
-  public void dispatch(ServerAddress addr, String type, Object data) throws IOException {
-    unicast.dispatch(addr, type, data);
+  public Future<Void> dispatch(ServerAddress addr, String type, Object data) {
+    log.debug("Sending async event %s - %s", type, data);
+    return publishExecutor.<Void>submit(() -> {
+      try {
+        unicast.dispatch(addr, type, data);
+      } catch (Exception e) {
+        log.warning("Could not send async event %s to %s (%s)", e, type, addr, data);
+        throw new ExecutionException("System error dispatching event", e);
+      }
+      return null;
+    });
   }
 
   /**
@@ -514,9 +535,17 @@ public class EventChannel {
    * @see org.sapia.ubik.mcast.BroadcastDispatcher#dispatch(String, String,
    *      Object)
    */
-  public void dispatch(String type, Object data) throws IOException {
-    log.debug("Sending event %s - %s", type, data);
-    broadcast.dispatch(unicast.getAddress(), consumer.getDomainName().toString(), type, data);
+  public Future<Void> dispatch(String type, Object data) {
+    log.debug("Broadcasting async event %s - %s", type, data);
+    return publishExecutor.<Void>submit(() -> {
+      try {
+        broadcast.dispatch(unicast.getAddress(), consumer.getDomainName().toString(), type, data);
+      } catch (Exception e) {
+        log.warning("Could not broadcast async event %s (%s)", e, type, data);
+        throw new ExecutionException("System error dispatching event", e);
+      }
+      return null;
+    });
   }
 
   /**
@@ -930,24 +959,30 @@ public class EventChannel {
     }
 
     @Override
-    public void sendBroadcastEvent(final ControlEvent event) {
-      publishExecutor.execute(() -> {
+    public Future<Void> sendBroadcastEvent(final ControlEvent event) {
+      return publishExecutor.<Void>submit(() -> {
           try {
             broadcast.dispatch(getUnicastAddress(), false, CONTROL_EVT, event);
-          } catch (IOException e) {
-            log.error("Could not dispatch control event", e);
+          } catch (Exception e) {
+            log.warning("Could not broadcast async control event %s (%s)", e, CONTROL_EVT, event);
+            throw new ExecutionException("System error dispatching control event", e);
           }
+          return null;
         });
     }
     
     @Override
-    public void sendUnicastEvent(final ServerAddress destination, final ControlEvent event) {
-      publishExecutor.execute(() -> {
+    public Future<Void> sendUnicastEvent(final ServerAddress destination, final ControlEvent event) {
+      return publishExecutor.<Void>submit(() -> {
           try {
             unicast.dispatch(destination, CONTROL_EVT, event);
           } catch (IOException e) {
             log.error("Could not dispatch control event", e);
+          } catch (Exception e) {
+            log.warning("Could not send async event %s to %s (%s)", e, CONTROL_EVT, destination, event);
+            throw new ExecutionException("System error dispatching control event", e);
           }
+          return null;
         });
     }
     

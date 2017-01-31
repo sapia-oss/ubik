@@ -8,7 +8,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Future;
 
 import org.sapia.ubik.mcast.NodeInfo;
 import org.sapia.ubik.net.ServerAddress;
@@ -127,11 +129,13 @@ public class TestChannelCallback implements EventChannelFacade {
   }
   
   @Override
-  public void sendBroadcastEvent(ControlEvent event) {
+  public Future<Void> sendBroadcastEvent(ControlEvent event) {
+    return CompletableFuture.completedFuture(null);
   }
   
   @Override
-  public void sendUnicastEvent(ServerAddress destination, ControlEvent event) {
+  public Future<Void> sendUnicastEvent(ServerAddress destination, ControlEvent event) {
+    return CompletableFuture.completedFuture(null);
   }
 
   @Override
