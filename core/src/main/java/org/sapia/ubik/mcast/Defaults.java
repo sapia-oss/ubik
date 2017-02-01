@@ -72,7 +72,7 @@ public class Defaults {
    * The default synchronous response timeout (see
    * {@link Consts#MCAST_ASYNC_ACK_TIMEOUT}).
    */
-  public static final TimeValue DEFAULT_ASYNC_ACK_TIMEOUT = TimeValue.createMillis(3000);
+  public static final TimeValue DEFAULT_ASYNC_ACK_TIMEOUT = TimeValue.createMillis(500);
   
   /**
    * The default healtcheck delegate timeout (see {@link Consts#MCAST_HEALTHCHECK_DELEGATE_TIMEOUT}).
