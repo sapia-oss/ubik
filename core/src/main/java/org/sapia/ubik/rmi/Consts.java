@@ -59,7 +59,7 @@ public interface Consts {
   /**
    * The default client socket connection timeout.
    */
-  public static final int DEFAULT_CLIENT_CONNECTION_TIMEOUT = 1000;
+  public static final int DEFAULT_CLIENT_CONNECTION_TIMEOUT = 200;
 
   /**
    * The default client socket connection max retry.
