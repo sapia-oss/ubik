@@ -159,7 +159,7 @@ public class EventChannel {
   
   private static final int       DEFAULT_MAX_PUB_ATTEMPTS     = 3;
   private static final TimeValue DEFAULT_READ_TIMEOUT         = TimeValue.createMillis(10000);
-  private static final int       DEFAULT_PUBLISH_THREAD_COUNT = 5;
+  private static final int       DEFAULT_PUBLISH_THREAD_COUNT = 20;
   private static final int       DEFAULT_PUBLISH_QUEUE_SIZE   = 1000;
 
   private static Set<EventChannel> CHANNELS_BY_DOMAIN = Collections.synchronizedSet(new HashSet<EventChannel>());
@@ -227,7 +227,9 @@ public class EventChannel {
    */
   public EventChannel(String domain, Conf config) throws IOException {
     config.addSystemProperties();
-    consumer  = new EventConsumer(domain, config.getIntProperty(Consts.MCAST_CHANNEL_CONSUMER_THREAD_COUNT, Defaults.DEFAULT_CHANNEL_CONSUMER_COUNT));
+    consumer  = new EventConsumer(domain,
+        config.getIntProperty(Consts.MCAST_CHANNEL_CONSUMER_THREAD_COUNT, Defaults.DEFAULT_CHANNEL_CONSUMER_THREAD_COUNT),
+        config.getIntProperty(Consts.MCAST_CHANNEL_CONSUMER_QUEUE_SIZE, Defaults.DEFAULT_CHANNEL_CONSUMER_QUEUE_SIZE));
     unicast   = DispatcherFactory.createUnicastDispatcher(consumer, config);
     broadcast = DispatcherFactory.createBroadcastDispatcher(consumer, config);
     view      = new View(consumer.getNode());

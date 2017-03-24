@@ -9,6 +9,9 @@ import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import org.sapia.ubik.concurrent.NamedThreadFactory;
 import org.sapia.ubik.log.Category;
@@ -43,10 +46,13 @@ public class EventConsumer {
    * Creates an instance of this class, with the given node identifier, and the
    * given domain.
    */
-  public EventConsumer(String node, String domain, int threadCount) {
+  public EventConsumer(String node, String domain, int threadCount, int queueSize) {
     this.domain = DomainName.parse(domain);
     this.node = node;
-    this.executor = Executors.newFixedThreadPool(threadCount, NamedThreadFactory.createWith("Ubik.EventConsumer.Consumer").setDaemon(true));
+    this.executor = new ThreadPoolExecutor(threadCount, threadCount,
+        60, TimeUnit.SECONDS,
+        new LinkedBlockingQueue<Runnable>(queueSize),
+        NamedThreadFactory.createWith("Ubik.EventChannel.Consumer").setDaemon(true));
     log.debug("Starting node: %s@%s", node, domain);
   }
   
@@ -54,8 +60,8 @@ public class EventConsumer {
    * Creates an instance of this class with the given domain. Internally creates
    * a globally unique node identifier.
    */
-  public EventConsumer(String domain, int threadCount) throws UnknownHostException {
-    this(UUID.randomUUID().toString().replace("-", ""), domain, threadCount);
+  public EventConsumer(String domain, int threadCount, int queueSize) throws UnknownHostException {
+    this(UUID.randomUUID().toString().replace("-", ""), domain, threadCount, queueSize);
   }
 
   public void stop() {

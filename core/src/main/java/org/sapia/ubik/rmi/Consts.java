@@ -282,6 +282,11 @@ public interface Consts {
   public static final String MCAST_CHANNEL_CONSUMER_THREAD_COUNT = "ubik.rmi.naming.mcast.channel.consumer.thread";
 
   /**
+   * Property to configure the size of the consumer task queue size of the event channel.
+   */
+  public static final String MCAST_CHANNEL_CONSUMER_QUEUE_SIZE = "ubik.rmi.naming.mcast.channel.consumer.queue";
+
+  /**
    * Property that corresponds to the number of thread used by the event channel to process outgoing
    * publish tasks.
    */

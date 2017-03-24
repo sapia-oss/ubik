@@ -126,7 +126,14 @@ public class Defaults {
    * 
    * @see Consts#MCAST_CHANNEL_CONSUMER_THREAD_COUNT
    */
-  public static final int DEFAULT_CHANNEL_CONSUMER_COUNT = 10;
+  public static final int DEFAULT_CHANNEL_CONSUMER_THREAD_COUNT = 20;
+
+  /**
+   * The default size of consumer task queue size of the channel consumer.
+   * 
+   * @see Consts#MCAST_CHANNEL_CONSUMER_QUEUE_SIZE
+   */
+  public static final int DEFAULT_CHANNEL_CONSUMER_QUEUE_SIZE = 1000;
 
   /**
    * The default random time range specifying the interval used by the event channel to publish itself
