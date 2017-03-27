@@ -165,11 +165,5 @@ public interface EventChannelFacade {
    * the underlying {@link EventChannel} "sees".
    */
   public List<NodeInfo> getView(Condition<NodeInfo> filter);
-  
-  /**
-   * @param targetedNodes
-   *          a {@link Set} of nodes that are targeted for a forced resync.
-   */
-  public void forceResyncOf(Set<String> targetedNodes);
 
 }

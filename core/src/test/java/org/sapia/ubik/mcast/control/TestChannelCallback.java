@@ -198,11 +198,6 @@ public class TestChannelCallback implements EventChannelFacade {
     return controller;
   }
 
-  @Override
-  public void forceResyncOf(Set<String> targetedNodes) {
-    forceResync = targetedNodes;
-  }
-
   private TestChannelCallback getCallback(String node) {
     NodeRegistration reg = siblings.get(node);
     if (reg == null) {
