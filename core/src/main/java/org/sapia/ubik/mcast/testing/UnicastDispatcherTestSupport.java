@@ -35,11 +35,11 @@ public abstract class UnicastDispatcherTestSupport {
   @Before
   public void setUp() throws Exception {
     Hub.start();
-    source = createUnicastDispatcher(new EventConsumer("testDomain", 1));
+    source = createUnicastDispatcher(new EventConsumer("testDomain", 1, 10));
     source.start();
     destinations = new ArrayList<UnicastDispatcher>(5);
     for (int i = 0; i < 5; i++) {
-      EventConsumer consumer = new EventConsumer("testDomain", 1);
+      EventConsumer consumer = new EventConsumer("testDomain", 1, 10);
       UnicastDispatcher dispatcher = createUnicastDispatcher(consumer);
       dispatcher.start();
       consumer.registerAsyncListener(ASYNC_EVENT_TYPE, createAsyncListener("listener" + i));

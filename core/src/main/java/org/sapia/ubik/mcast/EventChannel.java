@@ -159,7 +159,7 @@ public class EventChannel {
   
   private static final int       DEFAULT_MAX_PUB_ATTEMPTS     = 3;
   private static final TimeValue DEFAULT_READ_TIMEOUT         = TimeValue.createMillis(10000);
-  private static final int       DEFAULT_PUBLISH_THREAD_COUNT = 5;
+  private static final int       DEFAULT_PUBLISH_THREAD_COUNT = 20;
   private static final int       DEFAULT_PUBLISH_QUEUE_SIZE   = 1000;
 
   private static Set<EventChannel> CHANNELS_BY_DOMAIN = Collections.synchronizedSet(new HashSet<EventChannel>());
@@ -227,7 +227,9 @@ public class EventChannel {
    */
   public EventChannel(String domain, Conf config) throws IOException {
     config.addSystemProperties();
-    consumer  = new EventConsumer(domain, config.getIntProperty(Consts.MCAST_CHANNEL_CONSUMER_THREAD_COUNT, Defaults.DEFAULT_CHANNEL_CONSUMER_COUNT));
+    consumer  = new EventConsumer(domain,
+        config.getIntProperty(Consts.MCAST_CHANNEL_CONSUMER_THREAD_COUNT, Defaults.DEFAULT_CHANNEL_CONSUMER_THREAD_COUNT),
+        config.getIntProperty(Consts.MCAST_CHANNEL_CONSUMER_QUEUE_SIZE, Defaults.DEFAULT_CHANNEL_CONSUMER_QUEUE_SIZE));
     unicast   = DispatcherFactory.createUnicastDispatcher(consumer, config);
     broadcast = DispatcherFactory.createBroadcastDispatcher(consumer, config);
     view      = new View(consumer.getNode());
@@ -366,7 +368,7 @@ public class EventChannel {
       } catch (IOException e) {
         log.warning("Error broadcasting domain leave event");
       }
-      view.removedFromDomain();
+      view.clearView();
       consumer.changeDomain(newDomain);
       CHANNELS_BY_DOMAIN.add(this); 
       resync();
@@ -377,6 +379,9 @@ public class EventChannel {
    * Forces a resync of this instance with the cluster.
    */
   public synchronized void resync() {
+    log.info("Performing resync: clearing view and publishing presence to cluster");
+    view.clearView();
+    
     publishExecutor.execute(
         doCreateTaskForPublishBraodcastEvent(maxPublishAttempts));
   }
@@ -400,30 +405,6 @@ public class EventChannel {
         }
       }
     };
-  }
-
-  /**
-   * @param targetedNodes
-   *          sends a "force resync" event to the targeted nodes, in order for
-   *          them to attempt resyncing with the cluster.
-   */
-  public synchronized void forceResyncOf(final Set<String> targetedNodes) {
-    publishExecutor.execute(() -> {
-      try {
-        broadcast.dispatch(address, false, FORCE_RESYNC_EVT, targetedNodes);
-      } catch (IOException e) {
-        log.warning("Error sending force resync event to cluster", e);
-      }
-    });
-  }
-
-  /**
-   * @param targetedNodes
-   *          sends a "force resync" event to all nodes, in order for them to
-   *          attempt resyncing with the cluster.
-   */
-  public synchronized void forceResync() {
-    forceResyncOf(null);
   }
 
   /**
@@ -1060,11 +1041,6 @@ public class EventChannel {
       
       log.debug("Returning %s responses", toReturn.size());
       return toReturn;
-    }
-
-    @Override
-    public void forceResyncOf(Set<String> targetedNodes) {
-      EventChannel.this.forceResyncOf(targetedNodes);
     }
 
   }

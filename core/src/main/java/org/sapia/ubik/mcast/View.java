@@ -246,9 +246,9 @@ public class View {
    * Invoked when it is actually the node corresponding to this view
    * that leaves the domain.
    */
-  void removedFromDomain() {
+  void clearView() {
     for (NodeInfo removed : nodeToNodeInfo.values()) {
-      log.debug("Removing leaving node %s", removed.getNode());
+      log.debug("Removing node %s from view", removed.getNode());
       notifyListeners(new EventChannelEvent(removed.getNode(), removed.getAddr()), ViewEventType.LEFT);
     }
   }
