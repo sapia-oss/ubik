@@ -1,6 +1,7 @@
 package org.sapia.ubik.concurrent;
 
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -32,6 +33,7 @@ public class ConfigurableExecutor extends ThreadPoolExecutor {
     private int maxPoolSize     = DEFAULT_MAX_POOL_SIZE;
     private int queueSize       = DEFAULT_QUEUE_SIZE;
     private TimeValue keepAlive = DEFAULT_KEEP_ALIVE;
+    private RejectedExecutionHandler rejectionHandler = new ThreadPoolExecutor.AbortPolicy();
 
     /**
      * @param corePoolSize
@@ -72,6 +74,15 @@ public class ConfigurableExecutor extends ThreadPoolExecutor {
       this.queueSize = queueSize;
       return this;
     }
+    
+    /**
+     * @param handler the {@link RejectedExecutionHandler} to use.
+     * @return this instance.
+     */
+    public ThreadingConfiguration setRejectionHandler(RejectedExecutionHandler handler) {
+      this.rejectionHandler = handler;
+      return this;
+    }
 
     /**
      * @return a new instance of this class.
@@ -93,7 +104,7 @@ public class ConfigurableExecutor extends ThreadPoolExecutor {
    *          a {@link ThreadingConfiguration}.
    */
   public ConfigurableExecutor(ThreadingConfiguration conf) {
-    super(conf.corePoolSize, conf.maxPoolSize, conf.keepAlive.getValue(), conf.keepAlive.getUnit(), new ArrayBlockingQueue<Runnable>(conf.queueSize));
+    super(conf.corePoolSize, conf.maxPoolSize, conf.keepAlive.getValue(), conf.keepAlive.getUnit(), new ArrayBlockingQueue<Runnable>(conf.queueSize), conf.rejectionHandler);
   }
 
   /**
@@ -104,6 +115,6 @@ public class ConfigurableExecutor extends ThreadPoolExecutor {
    */
   public ConfigurableExecutor(ThreadingConfiguration conf, ThreadFactory threads) {
     super(conf.corePoolSize, conf.maxPoolSize, conf.keepAlive.getValue(), conf.keepAlive.getUnit(), new ArrayBlockingQueue<Runnable>(conf.queueSize),
-        threads);
+        threads, conf.rejectionHandler);
   }
 }

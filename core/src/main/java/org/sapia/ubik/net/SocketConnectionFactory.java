@@ -5,19 +5,12 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.rmi.RemoteException;
 import java.rmi.server.RMIClientSocketFactory;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicReference;
 
-import org.sapia.ubik.concurrent.Spawn;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.util.Conf;
-import org.sapia.ubik.util.IoUtils;
 
 /**
  * Implements a factory of {@link SocketConnection} instances. An instance of
@@ -39,7 +32,7 @@ public class SocketConnectionFactory implements ConnectionFactory {
   protected String transportType;
   protected ClassLoader loader;
   private int soTimeout;
-  protected RMIClientSocketFactory clientSocketFactory;
+  protected RMIClientSocketFactoryExt clientSocketFactory;
 
   /**
    * Creates an instance of this class with the current thread's
@@ -56,8 +49,8 @@ public class SocketConnectionFactory implements ConnectionFactory {
    * @param client
    *          a {@link RMIClientSocketFactory}.
    */
-  public SocketConnectionFactory(String transportType, RMIClientSocketFactory client) {
-    this(transportType, client, Thread.currentThread().getContextClassLoader());
+  public SocketConnectionFactory(String transportType, RMIClientSocketFactoryExt socketFactory) {
+    this(transportType, socketFactory, Thread.currentThread().getContextClassLoader());
   }
 
   /**
@@ -69,10 +62,9 @@ public class SocketConnectionFactory implements ConnectionFactory {
    * @param loader
    *          a {@link ClassLoader}
    */
-  public SocketConnectionFactory(String transportType, RMIClientSocketFactory client, ClassLoader loader) {
-    this(loader);
+  public SocketConnectionFactory(String transportType, RMIClientSocketFactoryExt socketFactory, ClassLoader loader) {
+    this(loader, socketFactory);
     this.transportType = transportType;
-    clientSocketFactory = client;
   }
 
   /**
@@ -81,8 +73,9 @@ public class SocketConnectionFactory implements ConnectionFactory {
    * @param loader
    *          a {@link ClassLoader}.
    */
-  public SocketConnectionFactory(ClassLoader loader) {
-    this.loader = loader;
+  public SocketConnectionFactory(ClassLoader loader, RMIClientSocketFactoryExt socketFactory) {
+    this.loader              = loader;
+    this.clientSocketFactory = socketFactory;
   }
 
   /**
@@ -157,38 +150,7 @@ public class SocketConnectionFactory implements ConnectionFactory {
   }
   
   private Socket newSocketAsync(final String host, final int port) throws IOException {
-    final AtomicReference<Socket> socketRef = new AtomicReference<Socket>(new Socket());
-    Future<Void> result = Spawn.submit(new Callable<Void>() {
-      @Override
-      public Void call() throws Exception {
-        Socket socket = socketRef.get();
-        socket.connect(new InetSocketAddress(host, port), connectionTimeout);
-        log.debug("Connection established to %s:%s", host, port);
-        return null;
-      }
-    });
-    
-    try {
-      result.get(connectionTimeout, TimeUnit.MILLISECONDS);
-    } catch (ExecutionException e) {
-      if (e.getCause() instanceof IOException) {
-        throw (IOException) e.getCause();
-      } else {
-        throw new IllegalStateException("Unexpected error occurred", e);
-      }
-    } catch (TimeoutException e) {
-      socketRef.get().close();
-      result.cancel(true);
-      throw new IOException("Could not connect within specified timeout");
-    } catch (InterruptedException e) {
-      throw new ThreadInterruptedException();
-    }
-    
-    // safety check
-    if (!socketRef.get().isConnected() || !socketRef.get().isBound()) {
-      IoUtils.closeSilently(socketRef.get());
-      throw new IOException("Socket not bound/connected: closing");
-    }
-    return socketRef.get();
+    ClientSocketConnector connector = new ClientSocketConnector(new InetSocketAddress(host, port), clientSocketFactory);
+    return connector.connect(this.connectionTimeout, TimeUnit.MILLISECONDS);
   }
 }

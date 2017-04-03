@@ -59,9 +59,7 @@ public class GroupMembershipBootstrap {
    * @throws IOException if an I/O error internally occurs.
    */
   public GroupMembershipBootstrap(String domain, Conf config) throws IOException {
-    this(new EventConsumer(domain,
-        config.getIntProperty(Consts.MCAST_CHANNEL_CONSUMER_THREAD_COUNT, Defaults.DEFAULT_CHANNEL_CONSUMER_THREAD_COUNT),
-        config.getIntProperty(Consts.MCAST_CHANNEL_CONSUMER_QUEUE_SIZE, Defaults.DEFAULT_CHANNEL_CONSUMER_QUEUE_SIZE)), config);
+    this(new EventConsumer(domain, config), config);
   }
   
   /**

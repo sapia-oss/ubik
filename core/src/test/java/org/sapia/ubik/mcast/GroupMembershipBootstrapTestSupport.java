@@ -2,6 +2,8 @@ package org.sapia.ubik.mcast;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.Properties;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -9,6 +11,7 @@ import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.sapia.ubik.concurrent.BlockingRef;
 import org.sapia.ubik.mcast.group.GroupMembershipService;
+import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.util.Conf;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -21,12 +24,18 @@ public abstract class GroupMembershipBootstrapTestSupport {
   private BlockingRef<RemoteEvent> disco2;
   
   private AsyncEventListener listener1, listener2;
-  
+    
   @Before
   public void setUp() throws Exception {
     doSetUp();
-    consumer1  = new EventConsumer("domain01", 1, 10);
-    consumer2  = new EventConsumer("domain01", 1, 10);
+
+    Properties props = new Properties();
+    props.setProperty(Consts.MCAST_CONSUMER_MIN_COUNT, "1");
+    props.setProperty(Consts.MCAST_CONSUMER_MAX_COUNT, "1");
+    Conf conf = Conf.newInstance().addProperties(props);
+    
+    consumer1  = new EventConsumer("domain01", conf);
+    consumer2  = new EventConsumer("domain01", conf);
     bootstrap1 = new GroupMembershipBootstrap(consumer1, Conf.newInstance());
     bootstrap2 = new GroupMembershipBootstrap(consumer2, Conf.newInstance());
     
@@ -66,6 +75,8 @@ public abstract class GroupMembershipBootstrapTestSupport {
     if (bootstrap2 != null) {
       bootstrap2.close();
     }
+    consumer1.stop();
+    consumer2.stop();
     doTearDown();
   }
 

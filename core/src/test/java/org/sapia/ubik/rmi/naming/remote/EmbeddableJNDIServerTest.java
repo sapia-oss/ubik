@@ -25,6 +25,7 @@ import org.sapia.ubik.rmi.naming.remote.discovery.ServiceDiscoListener;
 import org.sapia.ubik.rmi.naming.remote.discovery.ServiceDiscoveryEvent;
 import org.sapia.ubik.rmi.server.Hub;
 import org.sapia.ubik.util.Conf;
+import org.sapia.ubik.util.ExtendedProperties;
 import org.sapia.ubik.util.PropUtil;
 
 public class EmbeddableJNDIServerTest  {
@@ -36,15 +37,19 @@ public class EmbeddableJNDIServerTest  {
   public void setUp() throws Exception {
     Log.setDebug();
     EventChannel.disableReuse();
-    EventConsumer cons1 = new EventConsumer("test", 1, 10);
     
+    Conf conf = new ExtendedProperties()
+        .setInt(Consts.MCAST_CONSUMER_MIN_COUNT, 1)
+        .setInt(Consts.MCAST_CONSUMER_MAX_COUNT, 10).toConf();
+    
+    EventConsumer cons1 = new EventConsumer("test", conf);
     
     channel1 = new EventChannel(
         cons1, 
         createUnicastDispatcher(cons1), createBroadcastDispatcher(cons1)
     );
 
-    EventConsumer cons2 = new EventConsumer("test", 1, 10);
+    EventConsumer cons2 = new EventConsumer("test", conf);
     channel2 = new EventChannel(
         cons2, 
         createUnicastDispatcher(cons2), createBroadcastDispatcher(cons2)

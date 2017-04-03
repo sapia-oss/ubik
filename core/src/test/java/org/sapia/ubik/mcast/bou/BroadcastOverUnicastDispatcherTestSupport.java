@@ -21,6 +21,9 @@ import org.sapia.ubik.mcast.RemoteEvent;
 import org.sapia.ubik.mcast.bou.BroadcastOverUnicastDispatcher.ViewCallback;
 import org.sapia.ubik.mcast.memory.InMemoryUnicastDispatcher;
 import org.sapia.ubik.net.ServerAddress;
+import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.util.Conf;
+import org.sapia.ubik.util.ExtendedProperties;
 
 public abstract class BroadcastOverUnicastDispatcherTestSupport {
 
@@ -41,10 +44,14 @@ public abstract class BroadcastOverUnicastDispatcherTestSupport {
   public void setUp() throws Exception {
     addressesByNode = new HashMap<>();
     doSetup();
+    
+    Conf conf = new ExtendedProperties()
+        .setInt(Consts.MCAST_CONSUMER_MIN_COUNT, 1)
+        .setInt(Consts.MCAST_CONSUMER_MAX_COUNT, 10).toConf();
   
-    sourceConsumer = new EventConsumer("broadcast/01", 1, 10);
-    domainConsumer = new EventConsumer("broadcast/01", 1, 10);
-    nonDomainConsumer = new EventConsumer("broadcast/02", 1, 10);
+    sourceConsumer = new EventConsumer("broadcast/01", conf);
+    domainConsumer = new EventConsumer("broadcast/01", conf);
+    nonDomainConsumer = new EventConsumer("broadcast/02", conf);
     
     source = createDispatcher(sourceConsumer, createViewCallback(sourceConsumer));
     domainDestination = createDispatcher(domainConsumer, createViewCallback(domainConsumer));
@@ -53,6 +60,14 @@ public abstract class BroadcastOverUnicastDispatcherTestSupport {
     source.start();
     domainDestination.start();
     nonDomainDestination.start();
+  }
+  
+  @After
+  public void tearDown() throws Exception {
+    doTearDown();
+    if (source != null) source.close();
+    if (domainDestination != null) domainDestination.close();
+    if (nonDomainDestination != null) nonDomainDestination.close();
   }
   
   private ViewCallback createViewCallback(final EventConsumer consumer) {
@@ -89,14 +104,6 @@ public abstract class BroadcastOverUnicastDispatcherTestSupport {
       }
     };
     
-  }
-
-  @After
-  public void tearDown() throws Exception {
-    doTearDown();
-    if (source != null) source.close();
-    if (domainDestination != null) domainDestination.close();
-    if (nonDomainDestination != null) nonDomainDestination.close();
   }
 
   protected void doSetup() throws Exception {
