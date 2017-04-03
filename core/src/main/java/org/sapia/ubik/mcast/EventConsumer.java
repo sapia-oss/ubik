@@ -8,13 +8,20 @@ import java.util.UUID;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionHandler;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
+import org.sapia.ubik.concurrent.ConfigurableExecutor;
+import org.sapia.ubik.concurrent.ConfigurableExecutor.ThreadingConfiguration;
 import org.sapia.ubik.concurrent.NamedThreadFactory;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
+import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.util.Chrono;
+import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.SoftReferenceList;
+import org.sapia.ubik.util.TimeValue;
 
 /**
  * Helper class that encasulates {@link AsyncEventListener} s and
@@ -33,20 +40,45 @@ public class EventConsumer {
 
   private Category log = Log.createCategory(getClass());
   private Map<String, SoftReferenceList<AsyncEventListener>> asyncListenersByEvent = new ConcurrentHashMap<String, SoftReferenceList<AsyncEventListener>>();
-  private Map<String, SoftReference<SyncEventListener>> syncListenersByEvent = new ConcurrentHashMap<String, SoftReference<SyncEventListener>>();
-  private Map<Object, String> reverseMap = Collections.synchronizedMap(new WeakHashMap<Object, String>());
+  private Map<String, SoftReference<SyncEventListener>>      syncListenersByEvent  = new ConcurrentHashMap<String, SoftReference<SyncEventListener>>();
+  private Map<Object, String>                                reverseMap            = Collections.synchronizedMap(new WeakHashMap<Object, String>());
+  
   private volatile DomainName domain;
-  private String node;
-  private ExecutorService executor;
+  private String              node;
+  private ExecutorService     executor;
 
   /**
    * Creates an instance of this class, with the given node identifier, and the
    * given domain.
    */
-  public EventConsumer(String node, String domain, int threadCount) {
+  public EventConsumer(String node, String domain, Conf conf) {
     this.domain = DomainName.parse(domain);
     this.node = node;
-    this.executor = Executors.newFixedThreadPool(threadCount, NamedThreadFactory.createWith("Ubik.EventConsumer.Consumer").setDaemon(true));
+    
+    int minThreads = conf.getIntProperty(Consts.MCAST_CONSUMER_MIN_COUNT, Defaults.DEFAULT_CONSUMER_MIN_COUNT);
+    int maxThreads = conf.getIntProperty(Consts.MCAST_CONSUMER_MAX_COUNT, Defaults.DEFAULT_CONSUMER_MAX_COUNT);
+    long idleTime  = conf.getLongProperty(Consts.MCAST_CONSUMER_IDLE_TIME, Defaults.DEFAULT_CONSUMER_IDLE_TIME);
+    int queueSize  = conf.getIntProperty(Consts.MCAST_CONSUMER_QUEUE_SIZE, Defaults.DEFAULT_CONSUMER_QUEUE_SIZE);
+    
+    log.info("Creating event consumer (%s) for domain %s with the following threading configuration: ", node, domain);
+    log.info(" -> min threads... %s", minThreads);
+    log.info(" -> max threads:.. %s", maxThreads);
+    log.info(" -> idle time:.... %s millis", idleTime);
+    log.info(" -> queueSize:.... %s", queueSize);
+    
+    ThreadingConfiguration threading = ThreadingConfiguration.newInstance()
+        .setCorePoolSize(minThreads)
+        .setMaxPoolSize(maxThreads)
+        .setKeepAlive(new TimeValue(idleTime, TimeUnit.MILLISECONDS))
+        .setQueueSize(queueSize)
+        .setRejectionHandler(new RejectedExecutionHandler() {
+          @Override
+          public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
+            log.warning("Ignoring task for incoming event: %s", r);
+          }
+        }
+    );
+    this.executor = new ConfigurableExecutor(threading, NamedThreadFactory.createWith("Ubik.EventConsumer.Consumer").setDaemon(true));
     log.debug("Starting node: %s@%s", node, domain);
   }
   
@@ -54,8 +86,8 @@ public class EventConsumer {
    * Creates an instance of this class with the given domain. Internally creates
    * a globally unique node identifier.
    */
-  public EventConsumer(String domain, int threadCount) throws UnknownHostException {
-    this(UUID.randomUUID().toString().replace("-", ""), domain, threadCount);
+  public EventConsumer(String domain, Conf conf) throws UnknownHostException {
+    this(UUID.randomUUID().toString().replace("-", ""), domain, conf);
   }
 
   public void stop() {

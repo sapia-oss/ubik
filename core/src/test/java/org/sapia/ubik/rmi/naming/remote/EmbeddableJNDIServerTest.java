@@ -36,15 +36,20 @@ public class EmbeddableJNDIServerTest  {
   public void setUp() throws Exception {
     Log.setDebug();
     EventChannel.disableReuse();
-    EventConsumer cons1 = new EventConsumer("test", 1);
     
+    Properties props = new Properties();
+    props.setProperty(Consts.MCAST_CONSUMER_MIN_COUNT, "1");
+    props.setProperty(Consts.MCAST_CONSUMER_MAX_COUNT, "1");
+    Conf conf = Conf.newInstance().addProperties(props);
+    
+    EventConsumer cons1 = new EventConsumer("test", conf);
     
     channel1 = new EventChannel(
         cons1, 
         createUnicastDispatcher(cons1), createBroadcastDispatcher(cons1)
     );
 
-    EventConsumer cons2 = new EventConsumer("test", 1);
+    EventConsumer cons2 = new EventConsumer("test", conf);
     channel2 = new EventChannel(
         cons2, 
         createUnicastDispatcher(cons2), createBroadcastDispatcher(cons2)

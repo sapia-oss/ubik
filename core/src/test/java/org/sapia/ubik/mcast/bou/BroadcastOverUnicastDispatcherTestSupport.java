@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
 import org.junit.After;
@@ -21,6 +22,8 @@ import org.sapia.ubik.mcast.RemoteEvent;
 import org.sapia.ubik.mcast.bou.BroadcastOverUnicastDispatcher.ViewCallback;
 import org.sapia.ubik.mcast.memory.InMemoryUnicastDispatcher;
 import org.sapia.ubik.net.ServerAddress;
+import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.util.Conf;
 
 public abstract class BroadcastOverUnicastDispatcherTestSupport {
 
@@ -41,10 +44,15 @@ public abstract class BroadcastOverUnicastDispatcherTestSupport {
   public void setUp() throws Exception {
     addressesByNode = new HashMap<>();
     doSetup();
+    
+    Properties props = new Properties();
+    props.setProperty(Consts.MCAST_CONSUMER_MIN_COUNT, "1");
+    props.setProperty(Consts.MCAST_CONSUMER_MAX_COUNT, "1");
+    Conf conf = Conf.newInstance().addProperties(props);
   
-    sourceConsumer = new EventConsumer("broadcast/01", 1);
-    domainConsumer = new EventConsumer("broadcast/01", 1);
-    nonDomainConsumer = new EventConsumer("broadcast/02", 1);
+    sourceConsumer = new EventConsumer("broadcast/01", conf);
+    domainConsumer = new EventConsumer("broadcast/01", conf);
+    nonDomainConsumer = new EventConsumer("broadcast/02", conf);
     
     source = createDispatcher(sourceConsumer, createViewCallback(sourceConsumer));
     domainDestination = createDispatcher(domainConsumer, createViewCallback(domainConsumer));
@@ -53,6 +61,14 @@ public abstract class BroadcastOverUnicastDispatcherTestSupport {
     source.start();
     domainDestination.start();
     nonDomainDestination.start();
+  }
+  
+  @After
+  public void tearDown() throws Exception {
+    doTearDown();
+    if (source != null) source.close();
+    if (domainDestination != null) domainDestination.close();
+    if (nonDomainDestination != null) nonDomainDestination.close();
   }
   
   private ViewCallback createViewCallback(final EventConsumer consumer) {
@@ -89,14 +105,6 @@ public abstract class BroadcastOverUnicastDispatcherTestSupport {
       }
     };
     
-  }
-
-  @After
-  public void tearDown() throws Exception {
-    doTearDown();
-    if (source != null) source.close();
-    if (domainDestination != null) domainDestination.close();
-    if (nonDomainDestination != null) nonDomainDestination.close();
   }
 
   protected void doSetup() throws Exception {
