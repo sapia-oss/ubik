@@ -9,7 +9,7 @@
   <parent>
     <groupId>org.sapia</groupId>
     <artifactId>sapia_ubik_parent</artifactId>
-    <version>4.5.12</version>
+    <version>feature_socket-SNAPSHOT</version>
     <relativePath>../</relativePath>
   </parent>
 
