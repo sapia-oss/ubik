@@ -388,6 +388,16 @@ public interface Consts {
   public static final String BROADCAST_AVIS_URL = "ubik.rmi.naming.broadcast.avis.url";
 
   /**
+   * Identifies the Nats broadcast provider.
+   */
+  public static final String BROADCAST_PROVIDER_NATS = "nats";
+  
+  /**
+   * Identifies the Nats URL.
+   */
+  public static final String BROADCAST_NATS_URL = "ubik.rmi.naming.broadcast.nats.url";
+  
+  /**
    * Identifies the Camel broadcast provider.
    */
   public static final String BROADCAST_PROVIDER_CAMEL = "camel";

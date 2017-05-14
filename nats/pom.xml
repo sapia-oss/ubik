@@ -1,10 +1,10 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <name>Sapia Ubik Zookeeper Group Membership</name>
-  <description>Ubik group membership implementation over Zookeeper</description>
+  <name>Sapia Ubik Nats Transport</name>
+  <description>A Nats-based broadcast dispatcher for Ubik</description>
   <url>http://www.sapia-oss.org/projects/ubik/index.html</url>
 
-  <artifactId>sapia_ubik_zk</artifactId>
+  <artifactId>sapia_ubik_nats</artifactId>
 
   <parent>
     <groupId>org.sapia</groupId>
@@ -21,9 +21,11 @@
       <artifactId>sapia_ubik</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.apache.curator</groupId>
-      <artifactId>curator-recipes</artifactId>
+      <groupId>io.nats</groupId>
+      <artifactId>jnats</artifactId>
+      <version>1.0</version>
     </dependency>
+    
   </dependencies>
   
 </project>

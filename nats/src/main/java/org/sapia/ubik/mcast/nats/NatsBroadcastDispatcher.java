@@ -1,4 +1,4 @@
-package org.sapia.ubik.mcast.avis;
+package org.sapia.ubik.mcast.nats;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -18,41 +18,38 @@ import org.sapia.ubik.mcast.EventConsumer;
 import org.sapia.ubik.mcast.McastUtil;
 import org.sapia.ubik.mcast.MulticastAddress;
 import org.sapia.ubik.mcast.RemoteEvent;
-import org.sapia.ubik.mcast.avis.client.GeneralNotificationEvent;
-import org.sapia.ubik.mcast.avis.client.GeneralNotificationListener;
-import org.sapia.ubik.mcast.avis.client.Notification;
 import org.sapia.ubik.net.ConnectionMonitor;
 import org.sapia.ubik.net.ConnectionStateListener;
 import org.sapia.ubik.net.ConnectionStateListenerList;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.util.Assertions;
-import org.sapia.ubik.util.Base64;
 import org.sapia.ubik.util.Conf;
 
+import io.nats.client.Message;
+import io.nats.client.MessageHandler;
+
 /**
- * Implements a {@link BroadcastDispatcher} on top of the Avis group
- * communication framework.
+ * Implements a {@link BroadcastDispatcher} over Nats.
  *
  * @author yduchesne
  *
  */
-public class AvisBroadcastDispatcher implements BroadcastDispatcher {
+public class NatsBroadcastDispatcher implements BroadcastDispatcher {
 
   public enum ConnectionState {
     DOWN, UP
   }
 
-  private static final String NOTIF_TYPE = "ubik.broadcast.avis";
-  private static final String ANY_DOMAIN = "*";
-  public static final int DEFAULT_BUFSZ = 1024;
-  public static final int DEFAULT_HANDLER_COUNT = 5;
+  private static final String BASE_NATS_TOPIC = "ubik-broadcast";
+  public static final int DEFAULT_BUFSZ              = 1024;
+  public static final int DEFAULT_HANDLER_COUNT      = 5;
   public static final int DEFAULT_HANDLER_QUEUE_SIZE = 1000;
 
   private Category      log = Log.createCategory(getClass());
   private EventConsumer consumer;
-  private AvisConnector connector;
-  private AvisAddress   address;
+  private NatsConnector connector;
+  private NatsAddress    address;
   private int           bufsize;
   private int           handlerThreadCount;
   private int           maxHandlerQueueSize;
@@ -60,25 +57,27 @@ public class AvisBroadcastDispatcher implements BroadcastDispatcher {
   private volatile ConnectionState    state     = ConnectionState.UP;
   private ConnectionMonitor           monitor;
   private ExecutorService             executor;
+  private String                      fullTopic;
 
-  public AvisBroadcastDispatcher() {
+  public NatsBroadcastDispatcher() {
   }
   
   @Override
   public void initialize(EventConsumer consumer, Conf config) {
-    this.consumer = consumer;
-    bufsize = config.getIntProperty(Consts.MCAST_BUFSIZE_KEY, AvisBroadcastDispatcher.DEFAULT_BUFSZ);
-    handlerThreadCount = config.getIntProperty(Consts.MCAST_HANDLER_COUNT, AvisBroadcastDispatcher.DEFAULT_HANDLER_COUNT);
-    maxHandlerQueueSize = config.getIntProperty(Consts.MCAST_HANDLER_QUEUE_SIZE, AvisBroadcastDispatcher.DEFAULT_HANDLER_QUEUE_SIZE);
-    String avisUrl = config.getNotNullProperty(Consts.BROADCAST_AVIS_URL);
-    connector     = new AvisConnector(avisUrl);
-    address       = new AvisAddress(avisUrl);
+    this.consumer       = consumer;
+    bufsize             = config.getIntProperty(Consts.MCAST_BUFSIZE_KEY, NatsBroadcastDispatcher.DEFAULT_BUFSZ);
+    handlerThreadCount  = config.getIntProperty(Consts.MCAST_HANDLER_COUNT, NatsBroadcastDispatcher.DEFAULT_HANDLER_COUNT);
+    maxHandlerQueueSize = config.getIntProperty(Consts.MCAST_HANDLER_QUEUE_SIZE, NatsBroadcastDispatcher.DEFAULT_HANDLER_QUEUE_SIZE);
+    String natsUrl      = config.getNotNullProperty(Consts.BROADCAST_NATS_URL);
+    connector           = new NatsConnector(natsUrl);
+    address             = new NatsAddress(natsUrl);
+    fullTopic           = topic(consumer.getDomainName().toString());
   }
   
   @Override
   public MulticastAddress getMulticastAddressFrom(Conf props) {
-    String avisUrl = props.getProperty(Consts.BROADCAST_AVIS_URL);
-    return new AvisBroadcastDispatcher.AvisAddress(avisUrl);
+    String natsUrl = props.getProperty(Consts.BROADCAST_NATS_URL);
+    return new NatsAddress(natsUrl);
   }
   
   public void setBufsize(int size) {
@@ -104,12 +103,12 @@ public class AvisBroadcastDispatcher implements BroadcastDispatcher {
         if (alldomains) {
           evt = new RemoteEvent(null, evtType, data).setNode(consumer.getNode());
           evt.setUnicastAddress(unicastAddr);
-          connector.getConnection().send(createNotification(evt, ANY_DOMAIN));
+          connector.getConnection().publish(BASE_NATS_TOPIC, createPayload(evt));
 
         } else {
-          evt = new RemoteEvent(consumer.getDomainName().toString(), evtType, data).setNode(consumer.getNode());
+          evt = new RemoteEvent(fullTopic, evtType, data).setNode(consumer.getNode());
           evt.setUnicastAddress(unicastAddr);
-          connector.getConnection().send(createNotification(evt, consumer.getDomainName().toString()));
+          connector.getConnection().publish(fullTopic, createPayload(evt));
 
         }
       } catch (IOException e) {
@@ -127,7 +126,7 @@ public class AvisBroadcastDispatcher implements BroadcastDispatcher {
       RemoteEvent evt = new RemoteEvent(domain, evtType, data).setNode(consumer.getNode());
       evt.setUnicastAddress(unicastAddr);
       try {
-        connector.getConnection().send(createNotification(evt, domain));
+        connector.getConnection().publish(topic(domain), createPayload(evt));
       } catch (IOException e) {
         watchConnection();
       }
@@ -181,36 +180,23 @@ public class AvisBroadcastDispatcher implements BroadcastDispatcher {
 
   private synchronized void doConnect() throws IOException {
     connector.connect();
-    connector.getConnection().subscribe(String.format("(begins-with(Domain, \"%s\") || Domain == '*') && Type == '%s'", consumer.getDomainName().get(0),
-        NOTIF_TYPE));
-    connector.getConnection().addNotificationListener(new GeneralNotificationListener() {
-      @Override
-      public void notificationReceived(GeneralNotificationEvent event) {
-        try {
-          log.debug("Received GeneralNotificationEvent: %s", event.notification);
-          byte[] bytes = Base64.decode(((String) event.notification.get("Payload")).getBytes());
-          Object data = McastUtil.fromBytes(bytes);
-          if (data instanceof RemoteEvent) {
-            executor.execute(() -> consumer.onAsyncEvent((RemoteEvent) data));
-          }
-        } catch (Exception e) {
-          log.error("Error handling notification received from node " + getValueOr(event.notification, "Node", "?"), e);
-        }
-      }
-    });
-
+    
+    MessageHandler handler = createMessageHandler();
+    connector.getConnection().subscribe(fullTopic, handler);
+    connector.getConnection().subscribe(BASE_NATS_TOPIC, handler);
+ 
     state = ConnectionState.UP;
   }
 
   private synchronized void watchConnection() {
     if (state == ConnectionState.UP) {
       listeners.onDisconnected();
-      monitor = new ConnectionMonitor("AvisBroadcastDispatcher::" + consumer.getDomainName() + "::" + getNode(), 
+      monitor = new ConnectionMonitor("NatsBroadcastDispatcher::" + consumer.getDomainName() + "::" + getNode(), 
         new ConnectionMonitor.ConnectionFacade() {
           @Override
           public void tryConnection() throws IOException {
             doConnect();
-            log.debug("Reconnected to Avis router");
+            log.debug("Reconnected to Nats daemon");
             monitor = null;
           }
         },
@@ -224,40 +210,45 @@ public class AvisBroadcastDispatcher implements BroadcastDispatcher {
     }
   }
 
-  private Notification createNotification(RemoteEvent evt, String domain) throws IOException {
-    Notification notification = new Notification();
-    notification.set("Type", NOTIF_TYPE);
-    notification.set("Payload", Base64.encodeBytes(McastUtil.toBytes(evt, bufsize)));
-    notification.set("Domain", domain);
-    notification.set("Node", consumer.getNode());
-    return notification;
+  private byte[] createPayload(RemoteEvent evt) throws IOException {
+    return McastUtil.toBytes(evt, bufsize);
   }
   
-  private String getValueOr(Notification notification, String name, String defaultValue) {
-    String result = defaultValue;
-    if (notification != null) {
-      Object value = notification.get(name);
-      if (value != null) {
-        result = String.valueOf(value);
+  private String topic(String domain) {
+    return BASE_NATS_TOPIC + "-" + domain;
+  }
+  
+  private MessageHandler createMessageHandler() {
+    return new MessageHandler() {
+      @Override
+      public void onMessage(Message msg) {
+        try {
+          Object data = McastUtil.fromBytes(msg.getData());
+          if (data instanceof RemoteEvent) {
+            RemoteEvent evt = (RemoteEvent) data;
+            log.debug("Received message %s from node %s", evt.getType(), evt.getNode());
+            executor.execute(() -> consumer.onAsyncEvent((RemoteEvent) data));
+          }
+        } catch (Exception e) {
+          log.error("Error handling notification %s" + msg.getSubject());
+        }
       }
-    }
-    
-    return result;
+    };
   }
 
   // --------------------------------------------------------------------------
 
-  public static class AvisAddress implements MulticastAddress {
+  public static class NatsAddress implements MulticastAddress {
 
     static final long serialVersionUID = 1L;
 
-    public static final String TRANSPORT = "avis/broadcast";
+    public static final String TRANSPORT = "nats/broadcast";
 
     private String uuid = UUID.randomUUID().toString();
-    private String avisUrl;
+    private String natUrl;
 
-    public AvisAddress(String avisUrl) {
-      this.avisUrl = avisUrl;
+    public NatsAddress(String natUrl) {
+      this.natUrl = natUrl;
     }
 
     @Override
@@ -276,8 +267,8 @@ public class AvisBroadcastDispatcher implements BroadcastDispatcher {
 
     @Override
     public boolean equals(Object obj) {
-      if (obj instanceof AvisAddress) {
-        AvisAddress other = (AvisAddress) obj;
+      if (obj instanceof NatsAddress) {
+        NatsAddress other = (NatsAddress) obj;
         return other.uuid.equals(uuid);
       }
       return false;
@@ -286,8 +277,8 @@ public class AvisBroadcastDispatcher implements BroadcastDispatcher {
     @Override
     public Map<String, String> toParameters() {
       Map<String, String> params = new HashMap<String, String>();
-      params.put(Consts.BROADCAST_PROVIDER, Consts.BROADCAST_PROVIDER_AVIS);
-      params.put(Consts.BROADCAST_AVIS_URL, avisUrl);
+      params.put(Consts.BROADCAST_PROVIDER, Consts.BROADCAST_PROVIDER_NATS);
+      params.put(Consts.BROADCAST_NATS_URL, natUrl);
       return params;
     }
   }
