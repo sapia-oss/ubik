@@ -3,7 +3,8 @@ package org.sapia.ubik.util;
 import java.util.Properties;
 
 /**
- * Extends the {@link Properties} class by adding convenience methods.
+ * Extends the {@link Properties} class by adding convenience methods that are
+ * type-specific and allow for chained invocations.
  * 
  * @author yduchesne
  *
@@ -30,8 +31,13 @@ public class ExtendedProperties extends Properties {
     return this;
   }
   
+  /**
+   * @return a new {@link Conf} object, with this instance added to it.
+   */
   public Conf toConf() {
-    return Conf.newInstance().addProperties(this);
+    return Conf.newInstance()
+        .addSystemProperties()
+        .addProperties(this);
   }
     
 }
