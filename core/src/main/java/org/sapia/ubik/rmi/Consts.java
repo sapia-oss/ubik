@@ -149,6 +149,35 @@ public interface Consts {
 
   /**
    * This constant corresponds to the
+   * <code>ubik.rmi.naming.mcast.consumer.min-count</code> property. It is used to
+   * set the minimum number of consumer threads used to process remote events. Defaults to 10.
+   */
+  public static final String MCAST_CONSUMER_MIN_COUNT = "ubik.rmi.naming.mcast.consumer.min-count";
+  
+  /**
+   * This constant corresponds to the
+   * <code>ubik.rmi.naming.mcast.consumer.max-count</code> property. It is used to
+   * set the maximum number of consumer threads used to process remote events. Defaults 30.
+   */
+  public static final String MCAST_CONSUMER_MAX_COUNT = "ubik.rmi.naming.mcast.consumer.max-count";
+  
+  /**
+   * This constant corresponds to the
+   * <code>ubik.rmi.naming.mcast.consumer.queue-size</code> property. It is used to
+   * set the size of the queue used to receive remote events. Defaults to 100 - beyond that number, 
+   * incoming remote events are silently discarded.
+   */
+  public static final String MCAST_CONSUMER_QUEUE_SIZE = "ubik.rmi.naming.mcast.consumer.queue-size";
+  
+  /**
+   * This constant corresponds to the
+   * <code>ubik.rmi.naming.mcast.consumer.idle-time</code> property. It is used to
+   * set the number of milliseconds consumer threads can remain idle before being destroyed. Defaults to 15000.
+   */
+  public static final String MCAST_CONSUMER_IDLE_TIME = "ubik.rmi.naming.mcast.consumer.idle-time";
+ 
+  /**
+   * This constant corresponds to the
    * <code>ubik.rmi.naming.mcast.sender.count</code> property. It is used to
    * set the number of sender threads that may be used in
    * {@link UnicastDispatcher} or {@link BroadcastDispatcher} implementations.
@@ -275,16 +304,6 @@ public interface Consts {
    * publishes itself, either upon resync or in the context of master broadcast (defaults to 1000:5000 millis).
    */
   public static final String MCAST_CHANNEL_PUBLISH_INTERVAL = "ubik.rmi.naming.mcast.channel.pub-interval";
-
-  /**
-   * Property to configure the number of consumer thread of the event channel.
-   */
-  public static final String MCAST_CHANNEL_CONSUMER_THREAD_COUNT = "ubik.rmi.naming.mcast.channel.consumer.thread";
-
-  /**
-   * Property to configure the size of the consumer task queue size of the event channel.
-   */
-  public static final String MCAST_CHANNEL_CONSUMER_QUEUE_SIZE = "ubik.rmi.naming.mcast.channel.consumer.queue";
 
   /**
    * Property that corresponds to the number of thread used by the event channel to process outgoing

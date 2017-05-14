@@ -11,12 +11,15 @@ import java.rmi.server.RMIClientSocketFactory;
  * 
  * @author Yanick Duchesne
  */
-public class DefaultRMIClientSocketFactory implements RMIClientSocketFactory {
-  /**
-   * @see java.rmi.server.RMIClientSocketFactory#createSocket(java.lang.String,
-   *      int)
-   */
+public class DefaultRMIClientSocketFactory implements RMIClientSocketFactoryExt {
+
+  @Override
   public Socket createSocket(String host, int port) throws IOException {
     return new Socket(host, port);
+  }
+  
+  @Override
+  public Socket createSocket() {
+    return new Socket();
   }
 }

@@ -36,7 +36,6 @@ import org.sapia.ubik.net.ConnectionStateListener;
 import org.sapia.ubik.net.ConnectionStateListenerList;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
-import org.sapia.ubik.rmi.naming.remote.JndiSyncRequest;
 import org.sapia.ubik.util.Collects;
 import org.sapia.ubik.util.Condition;
 import org.sapia.ubik.util.Conf;
@@ -227,9 +226,7 @@ public class EventChannel {
    */
   public EventChannel(String domain, Conf config) throws IOException {
     config.addSystemProperties();
-    consumer  = new EventConsumer(domain,
-        config.getIntProperty(Consts.MCAST_CHANNEL_CONSUMER_THREAD_COUNT, Defaults.DEFAULT_CHANNEL_CONSUMER_THREAD_COUNT),
-        config.getIntProperty(Consts.MCAST_CHANNEL_CONSUMER_QUEUE_SIZE, Defaults.DEFAULT_CHANNEL_CONSUMER_QUEUE_SIZE));
+    consumer  = new EventConsumer(domain, config);
     unicast   = DispatcherFactory.createUnicastDispatcher(consumer, config);
     broadcast = DispatcherFactory.createBroadcastDispatcher(consumer, config);
     view      = new View(consumer.getNode());

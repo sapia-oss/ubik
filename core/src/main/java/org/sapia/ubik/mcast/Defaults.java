@@ -122,19 +122,33 @@ public class Defaults {
   public static final int DEFAULT_MAX_CONNECTIONS_PER_HOST = 3;
 
   /**
-   * The default number of consumer thread of the channel consumer.
+   * The default min number of consumer threads of the channel consumer.
    * 
-   * @see Consts#MCAST_CHANNEL_CONSUMER_THREAD_COUNT
+   * @see Consts#MCAST_CONSUMER_MIN_COUNT
    */
-  public static final int DEFAULT_CHANNEL_CONSUMER_THREAD_COUNT = 20;
+  public static final int DEFAULT_CONSUMER_MIN_COUNT = 10;
 
   /**
-   * The default size of consumer task queue size of the channel consumer.
+   * The default max number of consumer threads of the channel consumer.
    * 
-   * @see Consts#MCAST_CHANNEL_CONSUMER_QUEUE_SIZE
+   * @see Consts#MCAST_CONSUMER_MAX_COUNT
    */
-  public static final int DEFAULT_CHANNEL_CONSUMER_QUEUE_SIZE = 1000;
+  public static final int DEFAULT_CONSUMER_MAX_COUNT = 30;
+  
+  /**
+   * The size of the task queue used to process remote events.
+   * 
+   * @see Consts#MCAST_CONSUMER_QUEUE_SIZE
+   */
+  public static final int DEFAULT_CONSUMER_QUEUE_SIZE = 100;
 
+  /**
+   * The default consumer thread idle time (in millis).
+   * 
+   * @see Consts#MCAST_CONSUMER_IDLE_TIME
+   */
+  public static final int DEFAULT_CONSUMER_IDLE_TIME = 15000;
+  
   /**
    * The default random time range specifying the interval used by the event channel to publish itself
    * upon either upon resync, or as part of master broadcast.

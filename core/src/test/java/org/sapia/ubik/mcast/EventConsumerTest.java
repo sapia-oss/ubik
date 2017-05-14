@@ -3,18 +3,33 @@ package org.sapia.ubik.mcast;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.sapia.ubik.concurrent.BlockingCompletionQueue;
+import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.util.Conf;
+import org.sapia.ubik.util.ExtendedProperties;
 
-/**
- * @author Yanick Duchesne
- * 
- */
 public class EventConsumerTest {
+  
+  private EventConsumer cons;
+  
+  @Before
+  public void setUp() {
+    Conf conf = new ExtendedProperties()
+        .setInt(Consts.MCAST_CONSUMER_MIN_COUNT, 1)
+        .setInt(Consts.MCAST_CONSUMER_MAX_COUNT, 10).toConf();
+    cons = new EventConsumer("123", "default", conf);
+  }
+  
+  @After
+  public void tearDown() {
+    cons.stop();
+  }
 
   @Test
   public void testMatchesAll() throws Exception {
-    EventConsumer cons = new EventConsumer("123", "default", 1, 10);
     DomainName other = DomainName.parse("local");
     DomainName thisDomain = DomainName.parse("default");
     assertTrue(!cons.matchesAll(other, "456"));
@@ -25,7 +40,6 @@ public class EventConsumerTest {
 
   @Test
   public void testMatchesThis() throws Exception {
-    EventConsumer cons = new EventConsumer("123", "default", 1, 10);
     DomainName other = DomainName.parse("local");
     DomainName thisDomain = DomainName.parse("default");
     assertTrue(!cons.matchesThis(other, "456"));
@@ -35,7 +49,6 @@ public class EventConsumerTest {
 
   @Test
   public void testRegisterAsyncListener() throws Exception {
-    EventConsumer cons = new EventConsumer("node", "domain", 1, 10);
     TestEventListener listener = new TestEventListener();
     cons.registerAsyncListener("test", listener);
     assertTrue("Should contain AsyncEventListener", cons.containsAsyncListener(listener));
@@ -43,7 +56,6 @@ public class EventConsumerTest {
   
   @Test
   public void testUnregisterAsyncListener() throws Exception {
-    EventConsumer cons = new EventConsumer("node", "domain", 1, 10);
     TestEventListener listener = new TestEventListener();
     cons.registerAsyncListener("test", listener);
     cons.unregisterListener((AsyncEventListener) listener);
@@ -52,7 +64,6 @@ public class EventConsumerTest {
 
   @Test
   public void testRegisterSyncListener() throws Exception {
-    EventConsumer cons = new EventConsumer("node", "domain", 1, 10);
     SyncEventListener listener = new TestEventListener();
     cons.registerSyncListener("test", listener);
     assertTrue("Should contain AsyncEventListener", cons.containsSyncListener(listener));
@@ -60,7 +71,6 @@ public class EventConsumerTest {
   
   @Test
   public void testUnregisterSyncListener() throws Exception {
-    EventConsumer cons = new EventConsumer("node", "domain", 1, 10);
     SyncEventListener listener = new TestEventListener();
     cons.registerSyncListener("test", listener);
     cons.unregisterListener(listener);
@@ -70,7 +80,6 @@ public class EventConsumerTest {
 
   @Test
   public void testOnAsyncEvent() throws Exception {
-    EventConsumer cons = new EventConsumer("node", "domain", 1, 10);
     final BlockingCompletionQueue<String> queue = new BlockingCompletionQueue<String>(5);
     for (int i = 0; i < queue.getExpectedCount(); i++) {
       cons.registerAsyncListener("test", new AsyncEventListener() {
@@ -80,13 +89,12 @@ public class EventConsumerTest {
         }
       });
     }
-    cons.onAsyncEvent(new RemoteEvent("test", "TEST").setNode("123"));
+    cons.onAsyncEvent(new RemoteEvent("test", "TEST").setNode("321"));
     assertEquals("Expected " + queue.getExpectedCount() + " listeners to have been notified", queue.getExpectedCount(), queue.await(3000).size());
   }
 
   @Test
   public void testOnSyncEvent() throws Exception {
-    EventConsumer cons = new EventConsumer("node", "domain", 1, 10);
     cons.registerSyncListener("test", new SyncEventListener() {
       @Override
       public Object onSyncEvent(RemoteEvent evt) {
@@ -94,7 +102,7 @@ public class EventConsumerTest {
       }
     });
 
-    Object response = cons.onSyncEvent(new RemoteEvent("test", "TEST").setNode("123"));
+    Object response = cons.onSyncEvent(new RemoteEvent("test", "TEST").setNode("321"));
     assertTrue("SyncEventListener was not notified", response != null);
   }
 }
