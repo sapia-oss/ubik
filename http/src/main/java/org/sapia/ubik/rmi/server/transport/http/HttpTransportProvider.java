@@ -6,17 +6,15 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.sapia.ubik.concurrent.ConfigurableExecutor.ThreadingConfiguration;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.Uri;
 import org.sapia.ubik.net.UriSyntaxException;
-import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.Server;
 import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.TransportProvider;
-import org.sapia.ubik.util.Localhost;
+import org.sapia.ubik.rmi.threads.Threads;
 import org.sapia.ubik.util.Conf;
-import org.sapia.ubik.util.TimeValue;
+import org.sapia.ubik.util.Localhost;
 
 /**
  * An instance of this class creates {@link HttpRmiServer} instances, as well as
@@ -131,15 +129,7 @@ public class HttpTransportProvider implements TransportProvider, HttpConsts {
       throw new RemoteException("Could not acquire local address", e);
     }
 
-    int coreThreads = configProps.getIntProperty(Consts.SERVER_CORE_THREADS, ThreadingConfiguration.DEFAULT_CORE_POOL_SIZE);
-    int maxThreads = configProps.getIntProperty(Consts.SERVER_MAX_THREADS, ThreadingConfiguration.DEFAULT_MAX_POOL_SIZE);
-    int queueSize = configProps.getIntProperty(Consts.SERVER_THREADS_QUEUE_SIZE, ThreadingConfiguration.DEFAULT_QUEUE_SIZE);
-    long keepAlive = configProps.getLongProperty(Consts.SERVER_THREADS_KEEP_ALIVE, ThreadingConfiguration.DEFAULT_KEEP_ALIVE.getValueInSeconds());
-
-    ThreadingConfiguration threadConf = ThreadingConfiguration.newInstance().setCorePoolSize(coreThreads).setMaxPoolSize(maxThreads)
-        .setQueueSize(queueSize).setKeepAlive(TimeValue.createSeconds(keepAlive));
-
-    UbikHttpHandler handler = new UbikHttpHandler(serverUrl, threadConf);
+    UbikHttpHandler handler = new UbikHttpHandler(serverUrl, Threads.createWorkerPool());
     handlers.addHandler(CONTEXT_PATH, handler);
     HttpRmiServer svr = new HttpRmiServer(handlers, serverUrl, port);
     return svr;

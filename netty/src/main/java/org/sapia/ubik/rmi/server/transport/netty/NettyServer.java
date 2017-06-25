@@ -2,6 +2,7 @@ package org.sapia.ubik.rmi.server.transport.netty;
 
 import java.net.InetSocketAddress;
 import java.rmi.RemoteException;
+import java.util.concurrent.ExecutorService;
 
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
@@ -18,9 +19,6 @@ import org.jboss.netty.channel.group.ChannelGroupFutureListener;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.sapia.ubik.concurrent.BlockingRef;
-import org.sapia.ubik.concurrent.ConfigurableExecutor;
-import org.sapia.ubik.concurrent.ConfigurableExecutor.ThreadingConfiguration;
-import org.sapia.ubik.concurrent.NamedThreadFactory;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.ServerAddress;
@@ -39,36 +37,29 @@ class NettyServer implements Server {
 
   private Category log = Log.createCategory(getClass());
 
-  private NettyAddress serverAddress;
+  private NettyAddress    serverAddress;
   private ServerBootstrap bootstrap;
-  private ChannelGroup channels = new DefaultChannelGroup();
-  private ConfigurableExecutor workers;
+  private ChannelGroup    channels = new DefaultChannelGroup();
+  private ExecutorService workerThreads;
 
   /**
    * @param address
    *          the {@link NettyAddress} instance corresponding to the host/port
    *          to which the server should be bound.
-   * @param ioConf
-   *          the {@link ThreadingConfiguration} for the Netty IO processing
-   *          thread pool.
-   * @param workerConf
-   *          the {@link ThreadingConfiguration} for the worker thread pool.
+   * @param selectorThreads the {@link ExecutorService} providing the inbound I/O threads.
+   * @param workerThreads the {@link ExecutorService} providing the worker threads.
    */
-  NettyServer(NettyAddress address, final MultiDispatcher dispatcher, ThreadingConfiguration ioConf, ThreadingConfiguration workerConf) {
-    serverAddress = address;
+  NettyServer(
+      NettyAddress          address, 
+      final MultiDispatcher dispatcher, 
+      ExecutorService       selectorThreads, 
+      ExecutorService       workerThreads) {
+    this.serverAddress = address;
+    this.workerThreads = workerThreads;
 
     log.info("Initializing Netty server %s", serverAddress);
-    log.info("IO thread pool config: %s", ioConf);
-    log.info("Worker thread pool config: %s", workerConf);
 
-    NamedThreadFactory ioThreadFactory = NamedThreadFactory.createWith("ubik.rmi.netty.server.IO").setDaemon(true);
-    NamedThreadFactory bossThreadFactory = NamedThreadFactory.createWith("ubik.rmi.netty.server.Boss").setDaemon(true);
-    NamedThreadFactory workerThreadFactory = NamedThreadFactory.createWith("ubik.rmi.netty.server.Worker").setDaemon(true);
-
-    workers = new ConfigurableExecutor(workerConf, workerThreadFactory);
-
-    ChannelFactory factory = new NioServerSocketChannelFactory(new ConfigurableExecutor(ThreadingConfiguration.newInstance().setCorePoolSize(1)
-        .setMaxPoolSize(Integer.MAX_VALUE), bossThreadFactory), new ConfigurableExecutor(ioConf, ioThreadFactory));
+    ChannelFactory factory = new NioServerSocketChannelFactory(selectorThreads, workerThreads);
 
     bootstrap = new ServerBootstrap(factory);
 
@@ -80,7 +71,7 @@ class NettyServer implements Server {
             channels.add(event.getChannel());
           }
         }, new NettyRequestDecoder(NettyServer.class.getName() + ".Decoder"), new NettyRmiMessageEncoder(NettyServer.class.getName() + ".Encoder"),
-            new NettyServerHandler(dispatcher, serverAddress, workers));
+        new NettyServerHandler(dispatcher, serverAddress));
       }
     });
     bootstrap.setOption("child.tcpNoDelay", true);
@@ -106,7 +97,7 @@ class NettyServer implements Server {
         // noop
       }
     }
-    workers.shutdown();
+    workerThreads.shutdown();
     log.debug("Stopped server: " + serverAddress);
   }
 

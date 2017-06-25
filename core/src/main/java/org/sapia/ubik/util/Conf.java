@@ -266,7 +266,7 @@ public class Conf {
       return defaultValue;
     }
     val = val.toLowerCase();
-    return TimeValue.valueOf(val);
+    return TimeValue.valueOf(val, defaultValue.getUnit());
   }
 
   /**

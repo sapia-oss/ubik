@@ -1,14 +1,12 @@
 package org.sapia.ubik.mcast.tcp;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutorService;
 
-import org.sapia.ubik.concurrent.ConfigurableExecutor;
-import org.sapia.ubik.concurrent.ConfigurableExecutor.ThreadingConfiguration;
 import org.sapia.ubik.concurrent.NamedThreadFactory;
 import org.sapia.ubik.concurrent.ThreadShutdown;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
-import org.sapia.ubik.mcast.Defaults;
 import org.sapia.ubik.mcast.EventConsumer;
 import org.sapia.ubik.mcast.RemoteEvent;
 import org.sapia.ubik.mcast.Response;
@@ -22,9 +20,8 @@ import org.sapia.ubik.net.SocketServer;
 import org.sapia.ubik.net.TCPAddress;
 import org.sapia.ubik.net.Worker;
 import org.sapia.ubik.net.WorkerPool;
-import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.threads.Threads;
 import org.sapia.ubik.util.Assertions;
-import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.Localhost;
 
 /**
@@ -41,18 +38,6 @@ public class TcpUnicastDispatcher extends BaseTcpUnicastDispatcher {
   private TCPUnicastSocketServer socketServer;
   private ServerAddress          address;
   private Thread                 serverThread;
-  private ThreadingConfiguration threadingConfig;
-  
-  // --------------------------------------------------------------------------
-  // Configurable interface
-  
-  @Override
-  public void initialize(EventConsumer consumer, Conf config) {
-    super.initialize(consumer, config);
-    threadingConfig = new ConfigurableExecutor.ThreadingConfiguration();
-    threadingConfig.setMaxPoolSize(config.getIntProperty(Consts.MCAST_HANDLER_COUNT, Defaults.DEFAULT_HANDLER_COUNT));
-    threadingConfig.setCorePoolSize(config.getIntProperty(Consts.MCAST_HANDLER_COUNT, Defaults.DEFAULT_HANDLER_COUNT));
-  }
   
   // --------------------------------------------------------------------------
   // UnicastDispatcher interface
@@ -63,7 +48,7 @@ public class TcpUnicastDispatcher extends BaseTcpUnicastDispatcher {
       Assertions.illegalState(socketServer == null, "Socket server not started");
       
       address = new TCPAddress(doGetTransportType(), socketServer.getAddress(), socketServer.getPort());
-      log.debug("Server address for node %s: %s", consumer.getNode(), address);
+      log.debug("Server address for node %s: %s", context().getConsumer().getNode(), address);
     }
     return address;
   }
@@ -74,7 +59,7 @@ public class TcpUnicastDispatcher extends BaseTcpUnicastDispatcher {
   @Override
   protected void doStart() {
     try {
-      socketServer = new TCPUnicastSocketServer(Localhost.getPreferredLocalAddress().getHostAddress(), consumer, threadingConfig);
+      socketServer = new TCPUnicastSocketServer(Localhost.getPreferredLocalAddress().getHostAddress(), context().getConsumer(), Threads.createWorkerPool());
     } catch (IOException e) {
       throw new IllegalStateException("Could not start server", e);
     }
@@ -116,12 +101,12 @@ public class TcpUnicastDispatcher extends BaseTcpUnicastDispatcher {
 
   class TCPUnicastSocketServer extends SocketServer {
 
-    public TCPUnicastSocketServer(String bindAddress, EventConsumer consumer, ConfigurableExecutor.ThreadingConfiguration conf) throws IOException {
-      super(doGetTransportType(), bindAddress, 0, new TCPUnicastThreadPool(consumer, conf), new DefaultUbikServerSocketFactory());
+    public TCPUnicastSocketServer(String bindAddress, EventConsumer consumer, ExecutorService executor) throws IOException {
+      super(doGetTransportType(), bindAddress, 0, new TCPUnicastThreadPool(consumer, executor), new DefaultUbikServerSocketFactory());
     }
 
-    public TCPUnicastSocketServer(EventConsumer consumer, ConfigurableExecutor.ThreadingConfiguration conf) throws IOException {
-      super(doGetTransportType(), 0, new TCPUnicastThreadPool(consumer, conf), new DefaultUbikServerSocketFactory());
+    public TCPUnicastSocketServer(EventConsumer consumer, ExecutorService executor) throws IOException {
+      super(doGetTransportType(), 0, new TCPUnicastThreadPool(consumer, executor), new DefaultUbikServerSocketFactory());
     }
   }
 
@@ -129,8 +114,8 @@ public class TcpUnicastDispatcher extends BaseTcpUnicastDispatcher {
 
   class TCPUnicastThreadPool extends WorkerPool<Request> {
 
-    TCPUnicastThreadPool(EventConsumer consumer, ConfigurableExecutor.ThreadingConfiguration config) {
-      super(consumer.getNode() + "Unicast@" + consumer.getDomainName().toString(), true, config);
+    TCPUnicastThreadPool(EventConsumer consumer, ExecutorService executor) {
+      super(executor);
     }
 
     @Override
@@ -155,9 +140,9 @@ public class TcpUnicastDispatcher extends BaseTcpUnicastDispatcher {
           RemoteEvent evt = (RemoteEvent) o;
 
           if (evt.isSync()) {
-            if (consumer.hasSyncListener(evt.getType())) {
+            if (context().getConsumer().hasSyncListener(evt.getType())) {
               log.debug("Received sync remote event %s from %s, notifying listener", evt.getType(), evt.getNode());
-              Object response = consumer.onSyncEvent(evt);
+              Object response = context().getConsumer().onSyncEvent(evt);
               req.getConnection().send(new Response(req.getServerAddress(), evt.getId(), response));
             } else {
               log.debug("Received sync remote event %s from %s, no listener to notify", evt.getType(), evt.getNode());
@@ -165,7 +150,7 @@ public class TcpUnicastDispatcher extends BaseTcpUnicastDispatcher {
             }
           } else {
             log.debug("Received async remote event %s from %s, notifying listeners", evt.getType(), evt.getNode());
-            consumer.onAsyncEvent(evt);
+            context().getConsumer().onAsyncEvent(evt);
           }
         } else {
           log.error("Object not a remote event: " + o.getClass().getName() + "; " + o);

@@ -1,21 +1,19 @@
 package org.sapia.ubik.mcast.tcp.netty;
 
-import org.sapia.ubik.concurrent.ConfigurableExecutor.ThreadingConfiguration;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
-import org.sapia.ubik.mcast.EventConsumer;
+import org.sapia.ubik.mcast.DispatcherContext;
 import org.sapia.ubik.mcast.UnicastDispatcher;
 import org.sapia.ubik.mcast.tcp.BaseTcpUnicastDispatcher;
 import org.sapia.ubik.net.ConnectionFactory;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.TcpPortSelector;
 import org.sapia.ubik.rmi.Consts;
-import org.sapia.ubik.util.Conf;
+import org.sapia.ubik.rmi.Defaults;
 import org.sapia.ubik.util.Localhost;
-import org.sapia.ubik.util.TimeValue;
 
 /**
- * Netty-based implementationf of the {@link UnicastDispatcher} interface.
+ * Netty-based implementation of the {@link UnicastDispatcher} interface.
  *
  * @author yduchesne
  *
@@ -27,25 +25,12 @@ public class NettyTcpUnicastDispatcher extends BaseTcpUnicastDispatcher implemen
   private NettyTcpUnicastAddress address;
   private NettyTcpUnicastServer  server;
   private int                    marshallingBufferSize;
-  private ThreadingConfiguration ioConf, workerConf;
   
   @Override
-  public void initialize(EventConsumer consumer, Conf config) {
-    super.initialize(consumer, config);
-    marshallingBufferSize = config.getIntProperty(Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE);
+  public void initialize(DispatcherContext context) {
+    super.initialize(context);
+    marshallingBufferSize = context.getConf().getIntProperty(Consts.MARSHALLING_BUFSIZE, Defaults.DEFAULT_MARSHALLING_BUFSIZE);
 
-    ioConf = ThreadingConfiguration.newInstance()
-        .setCorePoolSize(config.getIntProperty(SERVER_IO_CORE_THREADS_KEY, DEFAULT_SERVER_IO_CORE_THREADS))
-        .setMaxPoolSize(config.getIntProperty(SERVER_IO_MAX_THREADS_KEY, DEFAULT_SERVER_IO_MAX_THREADS))
-        .setQueueSize(config.getIntProperty(SERVER_IO_QUEUE_SIZE_KEY, DEFAULT_SERVER_IO_QUEUE_SIZE))
-        .setKeepAlive(TimeValue.createSeconds(config.getLongProperty(SERVER_IO_KEEP_ALIVE_KEY, DEFAULT_SERVER_IO_KEEP_ALIVE)));
-
-    workerConf = ThreadingConfiguration.newInstance()
-        .setCorePoolSize(config.getIntProperty(SERVER_WORKER_CORE_THREADS_KEY, DEFAULT_SERVER_WORKER_CORE_THREADS))
-        .setMaxPoolSize(config.getIntProperty(SERVER_WORKER_MAX_THREADS_KEY, DEFAULT_SERVER_WORKER_MAX_THREADS))
-        .setQueueSize(config.getIntProperty(SERVER_WORKER_QUEUE_SIZE_KEY, DEFAULT_SERVER_WORKER_QUEUE_SIZE))
-        .setKeepAlive(TimeValue.createSeconds(config.getLongProperty(SERVER_WORKER_KEEP_ALIVE_KEY, DEFAULT_SERVER_WORKER_KEEP_ALIVE)));
-    
     try {
       log.info("Acquiring network address");
       String host = Localhost.getPreferredLocalAddress().getHostAddress();
@@ -66,7 +51,13 @@ public class NettyTcpUnicastDispatcher extends BaseTcpUnicastDispatcher implemen
   protected void doStart() {
     log.info("Starting...");
 
-    server = new NettyTcpUnicastServer(consumer, address, ioConf, workerConf);
+    server = new NettyTcpUnicastServer(
+        context().getConsumer(), 
+        address, 
+        context().getSelectorThreads().getExecutor("unicast.netty"), 
+        context().getWorkerThreads(),
+        context().getConf().getIntProperty(Consts.UNICAST_INBOUND_THREADS, Defaults.DEFAULT_UNICAST_INBOUND_THREADS)
+    );
     server.start();
     log.info("Started");
   }

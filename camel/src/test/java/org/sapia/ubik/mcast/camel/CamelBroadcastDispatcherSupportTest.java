@@ -8,6 +8,7 @@ import org.apache.camel.Message;
 import org.apache.camel.builder.ExchangeBuilder;
 import org.apache.camel.impl.DefaultMessage;
 import org.sapia.ubik.mcast.BroadcastDispatcher;
+import org.sapia.ubik.mcast.DispatcherContext;
 import org.sapia.ubik.mcast.EventConsumer;
 import org.sapia.ubik.mcast.RemoteEvent;
 import org.sapia.ubik.mcast.testing.BroadcastDispatcherTestSupport;
@@ -39,7 +40,7 @@ public class CamelBroadcastDispatcherSupportTest extends BroadcastDispatcherTest
       }
     };
     
-    dispatcher.initialize(consumer, Conf.newInstance().addProperties(Consts.BROADCAST_CAMEL_ENDPOINT_URI, "vm:in?multipleConsumers=true"));
+    dispatcher.initialize(new DispatcherContext(consumer).withConf(Conf.newInstance().addProperties(Consts.BROADCAST_CAMEL_ENDPOINT_URI, "vm:in?multipleConsumers=true")) );
     
     return dispatcher;
   }

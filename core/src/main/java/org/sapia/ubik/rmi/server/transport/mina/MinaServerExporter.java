@@ -4,6 +4,7 @@ import java.rmi.RemoteException;
 import java.util.Properties;
 
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.Defaults;
 import org.sapia.ubik.rmi.server.Hub;
 import org.sapia.ubik.util.Strings;
 
@@ -16,11 +17,11 @@ import org.sapia.ubik.util.Strings;
  */
 public class MinaServerExporter {
 
-  private int port;
-  private String bindAddress;
-  private int bufferSize = Consts.DEFAULT_MARSHALLING_BUFSIZE;
-  private int maxThreads;
-  private Properties props = new Properties();
+  private int        port;
+  private String     bindAddress;
+  private int        bufferSize   = Defaults.DEFAULT_MARSHALLING_BUFSIZE;
+  private int        maxThreads;
+  private Properties props        = new Properties();
 
   /**
    * @return the buffer size to use when performing marshalling/unmarshalling.

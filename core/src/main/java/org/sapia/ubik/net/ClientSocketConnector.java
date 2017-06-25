@@ -10,9 +10,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.sapia.ubik.concurrent.Spawn;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
+import org.sapia.ubik.rmi.threads.Threads;
 import org.sapia.ubik.util.IoUtils;
 
 /**
@@ -22,6 +22,8 @@ import org.sapia.ubik.util.IoUtils;
  *
  */
 public class ClientSocketConnector {
+  
+  private static final int TIMEOUT_BUFFER = 10;
   
   /**
    * Abstracts asynchronous behavior - introduced for unit testing.
@@ -40,7 +42,7 @@ public class ClientSocketConnector {
     this(address, socketFactory, new Submitter() {
       @Override
       public Future<Void> submit(Callable<Void> task) {
-        return Spawn.submit(task);
+        return Threads.getGlobalIoOutboundPool().submit(task);
       }
     });
   }
@@ -58,7 +60,7 @@ public class ClientSocketConnector {
       @Override
       public Void call() throws Exception {
         Socket socket = socketRef.get();
-        socket.connect(address, (int) unit.toMillis(timeout));
+        socket.connect(address, (int) TimeUnit.MILLISECONDS.convert(timeout, unit) + TIMEOUT_BUFFER);
         log.debug("Connection established to %s", address);
         return null;
       }

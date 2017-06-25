@@ -8,12 +8,11 @@ import java.util.Collections;
 import javax.naming.Context;
 import javax.naming.NamingException;
 
-import org.sapia.ubik.concurrent.Spawn;
 import org.sapia.ubik.concurrent.TimeIntervalBarrier;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
-import org.sapia.ubik.mcast.Defaults;
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.Defaults;
 import org.sapia.ubik.rmi.naming.remote.discovery.DiscoveryHelper;
 import org.sapia.ubik.rmi.naming.remote.discovery.ServiceDiscoListener;
 import org.sapia.ubik.rmi.naming.remote.discovery.ServiceDiscoveryEvent;
@@ -21,6 +20,7 @@ import org.sapia.ubik.rmi.server.stub.RemoteRefContext;
 import org.sapia.ubik.rmi.server.stub.StubContainer;
 import org.sapia.ubik.rmi.server.stub.StubInvocationHandler;
 import org.sapia.ubik.rmi.server.stub.Stubs;
+import org.sapia.ubik.rmi.threads.Threads;
 import org.sapia.ubik.util.Assertions;
 import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.Func;
@@ -180,7 +180,7 @@ public class LazyStubInvocationHandler implements StubInvocationHandler, Service
       } catch (RemoteException e) {
         LOG.error("Remote object %s could not be looked up", e, evt.getName());
       }
-      Spawn.run(new Runnable() {
+      Threads.getGlobalWorkerPool().submit(new Runnable() {
         @Override
         public void run() {
           discoveryMatchFunction.call(LazyStubInvocationHandler.this);

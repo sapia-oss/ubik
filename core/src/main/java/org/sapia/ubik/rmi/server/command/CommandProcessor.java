@@ -1,9 +1,18 @@
 package org.sapia.ubik.rmi.server.command;
 
+import java.rmi.dgc.VMID;
+import java.util.concurrent.ExecutorService;
+
+import org.javasimon.Split;
+import org.javasimon.Stopwatch;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.server.VmId;
+import org.sapia.ubik.rmi.server.stats.Stats;
+import org.sapia.ubik.rmi.server.transport.Connections;
+import org.sapia.ubik.rmi.server.transport.RmiConnection;
+import org.sapia.ubik.rmi.server.transport.TransportManager;
 
 /**
  * An instance of this class serves as an entry-point for command objects, which
@@ -11,15 +20,29 @@ import org.sapia.ubik.rmi.server.VmId;
  * asynchronously (
  * {@link #processAsyncCommand(String, VmId, ServerAddress, Command)}).
  * 
- * @author Yanick Duchesne
+ * @author yduchesne
  */
 public class CommandProcessor {
 
   private Category log = Log.createCategory(getClass());
-  private ExecQueue<AsyncCommand> in;
+  
+  private TransportManager      transports;
+  private CallbackResponseQueue localResponseQueue;
+  private ExecutorService       asyncExecutor;
+  private ExecutorService       outboundExecutor;
 
-  CommandProcessor(int maxThreads, OutqueueManager outqueues) {
-    in = new InQueue(maxThreads, outqueues);
+  private Stopwatch commandExecTime         = Stats.createStopwatch(getClass(), "AsyncCommandExecTime", "Async command execution time");
+  private Stopwatch commandResponseSendTime = Stats.createStopwatch(getClass(), "AsyncCommandResponseSendTime", "Async command response send time");
+  
+  CommandProcessor(
+      TransportManager transports, 
+      CallbackResponseQueue localResponseQueue, 
+      ExecutorService asyncExecutor, 
+      ExecutorService outboundExecutor) {
+    this.transports         = transports;
+    this.localResponseQueue = localResponseQueue;
+    this.asyncExecutor      = asyncExecutor;
+    this.outboundExecutor   = outboundExecutor;
   }
 
   /**
@@ -52,21 +75,74 @@ public class CommandProcessor {
    * @see InQueue
    */
   public void processAsyncCommand(long cmdId, VmId caller, ServerAddress from, Command cmd) {
-    in.add(new AsyncCommand(cmdId, caller, from, cmd));
-  }
+    asyncExecutor.submit(new Runnable() {
+      @Override
+      public void run() {
+        AsyncCommand async = new AsyncCommand(cmdId, caller, from, cmd);
+        Object toReturn = null;
 
-  /**
-   * Shuts down this instance. Blocks until no commands are left to execute, or
-   * until the given timeout is reached.
-   * 
-   * @param timeout
-   *          a timout, in millis.
-   * @throws InterruptedException
-   *           if the calling thread is interrupted while blocking within this
-   *           method.
-   */
-  public void shutdown(long timeout) throws InterruptedException {
-    log.info("Shutting down incoming command queue");
-    in.shutdown(timeout);
+        Split split = commandExecTime.start();
+        try {
+          toReturn = async.execute();
+        } catch (Throwable t) {
+          toReturn = t;
+        } finally {
+          split.stop();
+        }
+        
+        if (async.getCallerVmId().equals(VmId.getInstance())) {
+          localResponseQueue.onResponse(new Response(async.getCmdId(), toReturn));
+        } else {
+          doSendResponse(new Destination(async.getFrom(), async.getCallerVmId()), new Response(async.getCmdId(), toReturn));
+        }
+      }
+    });
+  }
+  
+  private void doSendResponse(Destination dest, Response resp) {
+    
+    outboundExecutor.submit(new Runnable() {
+      
+      @Override
+      public void run() {
+        Split split = commandResponseSendTime.start();
+        try {
+          doRun();
+        } finally {
+          split.stop();
+        }
+        
+      }
+      
+      private void doRun() {
+        RmiConnection conn = null;
+        Connections pool = null;
+
+        // sending
+        try {
+          pool = transports.getConnectionsFor(dest.getServerAddress());
+          conn = pool.acquire();
+          conn.send(new CallbackResponseCommand(resp), dest.getVmId(), dest.getServerAddress().getTransportType());
+        } catch (Exception e) {
+          log.error("Error sending command to %s", e, dest.getServerAddress());
+          if (pool != null && conn != null) {
+            pool.invalidate(conn);
+            pool.clear();
+          }
+          return;
+        }
+
+        // receiving ack
+        try {
+          conn.receive();
+          pool.release(conn);
+        } catch (Exception e) {
+          log.info("Error receiving ack from %s", e, dest.getServerAddress());
+          pool.invalidate(conn);
+          pool.clear();
+        }
+      }
+    });
+    
   }
 }

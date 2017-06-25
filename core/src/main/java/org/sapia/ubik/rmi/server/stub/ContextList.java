@@ -6,7 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.sapia.ubik.concurrent.Spawn;
+import org.sapia.ubik.rmi.threads.Threads;
 import org.sapia.ubik.util.Strings;
 
 /**
@@ -167,7 +167,7 @@ class ContextList implements Contexts.UpdateListener {
   }
 
   private void notifyListeners(final RemoteRefContext removed) {
-    Spawn.run(new Runnable() {
+    Threads.getGlobalWorkerPool().submit(new Runnable() {
       @Override
       public void run() {
         List<RemovalListener> toNotify = null;

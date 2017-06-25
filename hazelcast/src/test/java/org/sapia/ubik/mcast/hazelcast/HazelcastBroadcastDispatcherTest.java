@@ -7,6 +7,7 @@ import java.io.IOException;
 
 import org.junit.Test;
 import org.sapia.ubik.mcast.BroadcastDispatcher;
+import org.sapia.ubik.mcast.DispatcherContext;
 import org.sapia.ubik.mcast.DispatcherFactory;
 import org.sapia.ubik.mcast.EventConsumer;
 import org.sapia.ubik.mcast.testing.BroadcastDispatcherTestSupport;
@@ -34,14 +35,15 @@ public class HazelcastBroadcastDispatcherTest extends BroadcastDispatcherTestSup
   
   @Test
   public void testLoadDispatcher() {
-    BroadcastDispatcher dispatcher = DispatcherFactory.loadBroadcastDispatcher(Conf.newInstance().addProperties(Consts.BROADCAST_PROVIDER, Consts.BROADCAST_PROVIDER_HAZELCAST));
+    BroadcastDispatcher dispatcher = DispatcherFactory.loadBroadcastDispatcher(Consts.BROADCAST_PROVIDER_HAZELCAST);
     assertTrue(dispatcher instanceof HazelcastBroadcastDispatcher);
   }
  
   @Override
   protected BroadcastDispatcher createDispatcher(EventConsumer consumer) throws IOException {
     HazelcastBroadcastDispatcher bd = new HazelcastBroadcastDispatcher();
-    bd.initialize(consumer, Conf.newInstance().addProperties(Consts.BROADCAST_HAZELCAST_TOPIC, "unit-test-topic").addSystemProperties());
+    bd.initialize(new DispatcherContext(consumer).withConf(Conf.newInstance()
+        .addProperties(Consts.BROADCAST_HAZELCAST_TOPIC, "unit-test-topic").addSystemProperties()));
     return bd;
   }
 

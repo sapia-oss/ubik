@@ -7,6 +7,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
+import org.sapia.ubik.mcast.DispatcherContext;
 import org.sapia.ubik.mcast.EventConsumer;
 import org.sapia.ubik.mcast.RemoteEvent;
 import org.sapia.ubik.mcast.RespList;
@@ -14,7 +15,6 @@ import org.sapia.ubik.mcast.Response;
 import org.sapia.ubik.mcast.UnicastDispatcher;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.util.Assertions;
-import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.TimeValue;
 
 /**
@@ -37,8 +37,8 @@ public class InMemoryUnicastDispatcher implements UnicastDispatcher {
   }
   
   @Override
-  public void initialize(EventConsumer consumer, Conf config) {
-    this.consumer = consumer;
+  public void initialize(DispatcherContext context) {
+    this.consumer = context.getConsumer();
   }
   
   @Override

@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.sapia.ubik.concurrent.Spawn;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.AsyncEventListener;
@@ -22,6 +21,7 @@ import org.sapia.ubik.module.Module;
 import org.sapia.ubik.module.ModuleContext;
 import org.sapia.ubik.rmi.naming.remote.archie.SyncPutEvent;
 import org.sapia.ubik.rmi.server.EventChannelTable;
+import org.sapia.ubik.rmi.threads.Threads;
 import org.sapia.ubik.util.Collects;
 import org.sapia.ubik.util.Condition;
 
@@ -174,7 +174,7 @@ public class StatelessStubTable implements Module {
             });
           }
           
-          Spawn.run(new Runnable() {
+          Threads.getGlobalIoOutboundPool().submit(new Runnable() {
             @Override
             public void run() {
               try {

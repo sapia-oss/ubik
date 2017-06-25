@@ -3,18 +3,15 @@ package org.sapia.ubik.rmi.server.transport.mina;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.rmi.RemoteException;
+import java.util.concurrent.ExecutorService;
 
-import org.apache.mina.core.session.IdleStatus;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.filter.executor.ExecutorFilter;
 import org.apache.mina.transport.socket.SocketAcceptor;
+import org.apache.mina.transport.socket.nio.NioProcessor;
 import org.apache.mina.transport.socket.nio.NioSocketAcceptor;
-import org.sapia.ubik.concurrent.ConfigurableExecutor;
-import org.sapia.ubik.concurrent.ConfigurableExecutor.ThreadingConfiguration;
-import org.sapia.ubik.concurrent.NamedThreadFactory;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
-import org.sapia.ubik.mcast.Defaults;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.TcpPortSelector;
 import org.sapia.ubik.rmi.server.Hub;
@@ -24,18 +21,17 @@ import org.sapia.ubik.rmi.server.Server;
  * This class implements the {@link Server} interface on top of a
  * {@link SocketAcceptor}.
  *
- * @author Yanick Duchesne
+ * @author yduchesne
  *
  */
 class MinaServer implements Server {
 
   private Category log = Log.createCategory(getClass());
 
-  private SocketAcceptor acceptor;
+  private SocketAcceptor    acceptor;
   private InetSocketAddress inetAddr;
-  private MinaAddress addr;
+  private MinaAddress       addr;
   private MinaServerHandler handler;
-  private ConfigurableExecutor executor;
 
   /**
    * This constructor is called by a {@link MinaTransportProvider} instance. The
@@ -52,20 +48,19 @@ class MinaServer implements Server {
    * @param bufsize
    *          the size of buffers created internally to process data.
    * @param numAcceptorThreads
-   *          the number of acceptor threads (I/O selector threads).
-   * @param conf
-   *          a {@link ThreadingConfiguration}.
+   *          the {@link ExecutorService} providing the NIO selector threads.
+   * @param workerThreads
+   *          the {@link ExecutorService} providing the worker threads.
    *
    * @throws IOException
    *           if a problem occurs while creating this instance.
    */
-  MinaServer(InetSocketAddress inetAddr, int bufsize, int numAcceptorThreads, ThreadingConfiguration threadingConf) throws IOException {
-    this.acceptor = new NioSocketAcceptor(numAcceptorThreads);
-    executor = new ConfigurableExecutor(threadingConf, NamedThreadFactory.createWith("Ubik.NioServer").setDaemon(true));
+  MinaServer(InetSocketAddress inetAddr, int bufsize, ExecutorService acceptorThreads, ExecutorService workerThreads) throws IOException {
+    this.acceptor        = new NioSocketAcceptor(new NioProcessor(acceptorThreads));
     acceptor.getFilterChain().addLast("protocol", new ProtocolCodecFilter(new MinaCodecFactory()));
-    acceptor.getFilterChain().addLast("threads", new ExecutorFilter(executor));
-    acceptor.getSessionConfig().setIdleTime(IdleStatus.BOTH_IDLE, (int) Defaults.DEFAULT_MINA_IDLE_TIME.getValueInSeconds());
+    acceptor.getFilterChain().addLast("threads", new ExecutorFilter(workerThreads));
     acceptor.getSessionConfig().setReadBufferSize(bufsize);
+    acceptor.setReuseAddress(true);
     
     if (inetAddr.getPort() != 0) {
       log.info("Using port %s", inetAddr.getPort());
@@ -116,7 +111,6 @@ class MinaServer implements Server {
   @Override
   public void close() {
     acceptor.dispose();
-    executor.shutdownNow();
   }
   
 }

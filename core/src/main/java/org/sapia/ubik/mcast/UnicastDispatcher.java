@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.List;
 
 import org.sapia.ubik.net.ServerAddress;
-import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.TimeValue;
 
 /**
@@ -13,17 +12,14 @@ import org.sapia.ubik.util.TimeValue;
  * expected to behave in a peer-to-peer fashion - they are at once client and
  * server (for their siblings).
  * 
- * @author Yanick Duchesne
+ * @author yduchesne
  */
 public interface UnicastDispatcher {
   
   /**
-   * @param consumer the {@link EventConsumer} that this instance should
-   * notify when it receives {@link RemoteEvent}s.
-   * @param config the {@link Conf} instance to use for retrieving configuration properties.
+   * @param context the {@link DispatcherContext} holding initialization data meant for this instance.
    */
-  public void initialize(EventConsumer consumer, Conf config);
-  
+  public void initialize(DispatcherContext context);
   
   /**
    * Dispatches the given data to the node whose address is given.

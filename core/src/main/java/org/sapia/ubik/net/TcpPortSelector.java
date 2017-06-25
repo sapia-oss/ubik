@@ -6,6 +6,7 @@ import java.net.ServerSocket;
 import java.util.Random;
 
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.Defaults;
 
 /**
  * An instance of this class is used to perform random port selection on a given
@@ -24,7 +25,7 @@ public class TcpPortSelector {
   // visible for testing
   static PortRange assignDefaultPortRange() {
     defaultPortRange = PortRange.valueOf(
-        System.getProperty(Consts.TCP_PORT_RANGE, Consts.DEFAULT_TCP_PORT_RANGE)
+        System.getProperty(Consts.TCP_PORT_RANGE, Defaults.DEFAULT_TCP_PORT_RANGE)
     );
     return defaultPortRange;
   }

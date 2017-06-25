@@ -27,22 +27,17 @@ public class NettyTcpUnicastServerHandler extends SimpleChannelHandler {
 
   private Category                  log = Log.createCategory(getClass());
   private EventConsumer             consumer;
-  private ExecutorService           workers;
   private Func<ServerAddress, Void> addressSupplier;
 
   /**
    * @param consumer
    *          the {@link EventConsumer} to notify.
-   * @param workers
-   *          the {@link ExecutorService} providing worker threads to this
-   *          instance.
    * @param addressSupplier
    *          the function providing the {@link ServerAddress} of the server in the context of which this instance
    *          is used.
    */
   public NettyTcpUnicastServerHandler(EventConsumer consumer, ExecutorService workers, Func<ServerAddress, Void> addressSupplier) {
     this.consumer        = consumer;
-    this.workers         = workers;
     this.addressSupplier = addressSupplier;
   }
 
@@ -62,36 +57,30 @@ public class NettyTcpUnicastServerHandler extends SimpleChannelHandler {
   }
 
   private void doMessageReceived(final ChannelHandlerContext ctx, final MessageEvent msg) {
-    workers.submit(new Runnable() {
-      @Override
-      public void run() {
-        try {
-          Object incoming = msg.getMessage();
-          if (incoming instanceof RemoteEvent) {
-            RemoteEvent evt = (RemoteEvent) incoming;
+     try {
+        Object incoming = msg.getMessage();
+        if (incoming instanceof RemoteEvent) {
+          RemoteEvent evt = (RemoteEvent) incoming;
 
-            if (evt.isSync()) {
-              if (consumer.hasSyncListener(evt.getType())) {
-                log.debug("Received sync remote event %s from %s, notifying listener", evt.getType(), evt.getNode());
-                Object response = consumer.onSyncEvent(evt);
-                ctx.getChannel().write(new NettyResponse(new Response(addressSupplier.call(null), evt.getId(), response)));
-              } else {
-                log.debug("Received sync remote event %s from %s, no listener to notify", evt.getType(), evt.getNode());
-                ctx.getChannel().write(new NettyResponse(new Response(addressSupplier.call(null), evt.getId(), null).setNone()));
-              }
+          if (evt.isSync()) {
+            if (consumer.hasSyncListener(evt.getType())) {
+              log.debug("Received sync remote event %s from %s, notifying listener", evt.getType(), evt.getNode());
+              Object response = consumer.onSyncEvent(evt);
+              ctx.getChannel().write(new NettyResponse(new Response(addressSupplier.call(null), evt.getId(), response)));
             } else {
-              log.debug("Received async remote event %s from %s, notifying listeners", evt.getType(), evt.getNode());
-              consumer.onAsyncEvent(evt);
+              log.debug("Received sync remote event %s from %s, no listener to notify", evt.getType(), evt.getNode());
+              ctx.getChannel().write(new NettyResponse(new Response(addressSupplier.call(null), evt.getId(), null).setNone()));
             }
           } else {
-            log.error("Object not a remote event: " + incoming.getClass().getName() + "; " + msg);
+            log.debug("Received async remote event %s from %s, notifying listeners", evt.getType(), evt.getNode());
+            consumer.onAsyncEvent(evt);
           }
-        } catch (Exception e) {
-          log.error("Error caught handling request", e);
+        } else {
+          log.error("Object not a remote event: " + incoming.getClass().getName() + "; " + msg);
         }
+      } catch (Exception e) {
+        log.error("Error caught handling request", e);
       }
-    });
-
   }
 
 }

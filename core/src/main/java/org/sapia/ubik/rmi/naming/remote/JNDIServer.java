@@ -9,6 +9,7 @@ import org.apache.log4j.Logger;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.EventChannel;
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.Defaults;
 import org.sapia.ubik.rmi.server.Hub;
 import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.PropUtil;
@@ -69,7 +70,7 @@ public class JNDIServer {
     props.addProperties(argsObj.properties);
     PropUtil.copy(argsObj.properties, System.getProperties());
 
-    EventChannel channel = new EventChannel(props.getProperty(Consts.UBIK_DOMAIN_NAME, Consts.DEFAULT_DOMAIN), props);
+    EventChannel channel = new EventChannel(props.getProperty(Consts.UBIK_DOMAIN_NAME, Defaults.DEFAULT_DOMAIN), props);
     EmbeddableJNDIServer server = new EmbeddableJNDIServer(channel, argsObj.port);
     server.start(false);
     Runtime.getRuntime().addShutdownHook(new ShutdownHook(server));
@@ -120,7 +121,7 @@ public class JNDIServer {
       if (cmd.hasSwitch("d")) {
         props.setProperty(Consts.UBIK_DOMAIN_NAME, cmd.getOpt("d").getTrimmedValueOrBlank());
       } else {
-        props.setProperty(Consts.UBIK_DOMAIN_NAME, Consts.DEFAULT_DOMAIN);
+        props.setProperty(Consts.UBIK_DOMAIN_NAME, Defaults.DEFAULT_DOMAIN);
       }
 
       // ----------------------------------------------------------------------
@@ -166,8 +167,8 @@ public class JNDIServer {
     System.out.println("  <path_to_config>: The path to the Java properties file with which to configure this server.");
     System.out.println("                    The properties in the file will be exported to the JVM's system properties.");
     System.out.println();
-    System.out.println(String.format("This server will use the default IP multicast address (%s) and port (%s)", Consts.DEFAULT_MCAST_ADDR,
-        Consts.DEFAULT_MCAST_PORT));
+    System.out.println(String.format("This server will use the default IP multicast address (%s) and port (%s)", Defaults.DEFAULT_MCAST_ADDR,
+        Defaults.DEFAULT_MCAST_PORT));
     System.out.println("for group communication. If you wish otherwise, you have to configure the relevant properties");
     System.out.println("in a file and use the -f option to point to that file.");
     System.out.println();

@@ -8,6 +8,7 @@ import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.ProtocolEncoder;
 import org.apache.mina.filter.codec.ProtocolEncoderOutput;
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.Defaults;
 import org.sapia.ubik.serialization.SerializationStreams;
 import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.MinaByteBufferOutputStream;
@@ -20,7 +21,7 @@ import org.sapia.ubik.util.MinaByteBufferOutputStream;
  */
 public class MinaTcpUnicastResponseEncoder implements ProtocolEncoder {
 
-  private static final int BUFSIZE = Conf.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE);
+  private static final int BUFSIZE = Conf.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Defaults.DEFAULT_MARSHALLING_BUFSIZE);
 
   private static final String ENCODER_STATE = "ENCODER_STATE";
 

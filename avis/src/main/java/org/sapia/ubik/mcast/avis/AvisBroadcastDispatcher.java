@@ -5,16 +5,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
-import org.sapia.ubik.concurrent.NamedThreadFactory;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.BroadcastDispatcher;
-import org.sapia.ubik.mcast.Defaults;
+import org.sapia.ubik.mcast.DispatcherContext;
 import org.sapia.ubik.mcast.EventConsumer;
 import org.sapia.ubik.mcast.McastUtil;
 import org.sapia.ubik.mcast.MulticastAddress;
@@ -27,6 +22,7 @@ import org.sapia.ubik.net.ConnectionStateListener;
 import org.sapia.ubik.net.ConnectionStateListenerList;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.Defaults;
 import org.sapia.ubik.util.Assertions;
 import org.sapia.ubik.util.Base64;
 import org.sapia.ubik.util.Conf;
@@ -51,29 +47,28 @@ public class AvisBroadcastDispatcher implements BroadcastDispatcher {
   public static final int DEFAULT_HANDLER_QUEUE_SIZE = 1000;
 
   private Category      log = Log.createCategory(getClass());
-  private EventConsumer consumer;
-  private AvisConnector connector;
-  private AvisAddress   address;
-  private int           bufsize;
-  private int           handlerThreadCount;
-  private int           maxHandlerQueueSize;
+  private EventConsumer               consumer;
+  private AvisConnector               connector;
+  private AvisAddress                 address;
+  private int                         bufsize;
   private ConnectionStateListenerList listeners = new ConnectionStateListenerList();
   private volatile ConnectionState    state     = ConnectionState.UP;
   private ConnectionMonitor           monitor;
-  private ExecutorService             executor;
+  private ExecutorService             workers;
+  private ExecutorService             senders;
 
   public AvisBroadcastDispatcher() {
   }
   
   @Override
-  public void initialize(EventConsumer consumer, Conf config) {
-    this.consumer = consumer;
-    bufsize = config.getIntProperty(Consts.MCAST_BUFSIZE_KEY, AvisBroadcastDispatcher.DEFAULT_BUFSZ);
-    handlerThreadCount = config.getIntProperty(Consts.MCAST_HANDLER_COUNT, AvisBroadcastDispatcher.DEFAULT_HANDLER_COUNT);
-    maxHandlerQueueSize = config.getIntProperty(Consts.MCAST_HANDLER_QUEUE_SIZE, AvisBroadcastDispatcher.DEFAULT_HANDLER_QUEUE_SIZE);
-    String avisUrl = config.getNotNullProperty(Consts.BROADCAST_AVIS_URL);
-    connector     = new AvisConnector(avisUrl);
-    address       = new AvisAddress(avisUrl);
+  public void initialize(DispatcherContext context) {
+    this.consumer  = context.getConsumer();
+    this.workers   = context.getWorkerThreads();
+    this.senders   = context.getIoOutboundThreads();
+    bufsize        = context.getConf().getIntProperty(Consts.MCAST_BUFSIZE_KEY, AvisBroadcastDispatcher.DEFAULT_BUFSZ);
+    String avisUrl = context.getConf().getNotNullProperty(Consts.BROADCAST_AVIS_URL);
+    connector      = new AvisConnector(avisUrl);
+    address        = new AvisAddress(avisUrl);
   }
   
   @Override
@@ -105,12 +100,32 @@ public class AvisBroadcastDispatcher implements BroadcastDispatcher {
         if (alldomains) {
           evt = new RemoteEvent(null, evtType, data).setNode(consumer.getNode());
           evt.setUnicastAddress(unicastAddr);
-          connector.getConnection().send(createNotification(evt, ANY_DOMAIN));
+          senders.submit(new Runnable() {
+            @Override
+            public void run() {
+              try { 
+                connector.getConnection().send(createNotification(evt, ANY_DOMAIN));
+              } catch (IOException e) {
+                log.error("Could not send message to %s", unicastAddr, e);
+                watchConnection();
+              }
+            }
+          });
 
         } else {
           evt = new RemoteEvent(consumer.getDomainName().toString(), evtType, data).setNode(consumer.getNode());
           evt.setUnicastAddress(unicastAddr);
-          connector.getConnection().send(createNotification(evt, consumer.getDomainName().toString()));
+          
+          senders.submit(new Runnable() {
+            public void run() {
+              try {
+                connector.getConnection().send(createNotification(evt, consumer.getDomainName().toString()));
+              } catch (IOException e) {
+                log.error("Could not send message to %s", unicastAddr, e);
+                watchConnection();
+              }              
+            }
+          });
 
         }
       } catch (IOException e) {
@@ -127,11 +142,18 @@ public class AvisBroadcastDispatcher implements BroadcastDispatcher {
       log.debug("Sending event bytes for: %s", evtType);
       RemoteEvent evt = new RemoteEvent(domain, evtType, data).setNode(consumer.getNode());
       evt.setUnicastAddress(unicastAddr);
-      try {
-        connector.getConnection().send(createNotification(evt, domain));
-      } catch (IOException e) {
-        watchConnection();
-      }
+      
+      senders.submit(new Runnable() {
+        @Override
+        public void run() {
+          try {
+            connector.getConnection().send(createNotification(evt, domain));
+          } catch (IOException e) {
+            watchConnection();
+          }          
+        }
+      });
+
     } else {
       log.debug("Connection currently down: cannot dispatch");
     }
@@ -140,17 +162,8 @@ public class AvisBroadcastDispatcher implements BroadcastDispatcher {
   @Override
   public void start() {
     Assertions.illegalState(consumer == null, "EventConsumer not set");
-    Assertions.illegalState(handlerThreadCount <= 0, "Handler thread count must be greater than 0");
-    Assertions.illegalState(maxHandlerQueueSize <= 0, "Maximum handler queue size must be greater than 0");
     
     try {
-      log.info("Creating executor with %s threads and queue of size %s", handlerThreadCount, maxHandlerQueueSize);
-      executor = new ThreadPoolExecutor(
-    		  handlerThreadCount, handlerThreadCount,
-    		  120, TimeUnit.SECONDS,
-    		  new LinkedBlockingQueue<>(maxHandlerQueueSize),
-    		  NamedThreadFactory.createWith("Ubik.AvisBroadcastDispatcher.Handler").setDaemon(true));
-    	
       doConnect();
       listeners.onConnected();
     } catch (IOException e) {
@@ -165,9 +178,7 @@ public class AvisBroadcastDispatcher implements BroadcastDispatcher {
     if (monitor != null) {
       monitor.stop();
     }
-    if (executor != null) {
-    	executor.shutdownNow();
-    }
+    senders.shutdown();
   }
 
   @Override
@@ -192,7 +203,7 @@ public class AvisBroadcastDispatcher implements BroadcastDispatcher {
           byte[] bytes = Base64.decode(((String) event.notification.get("Payload")).getBytes());
           Object data = McastUtil.fromBytes(bytes);
           if (data instanceof RemoteEvent) {
-            executor.execute(() -> consumer.onAsyncEvent((RemoteEvent) data));
+            workers.execute(() -> consumer.onAsyncEvent((RemoteEvent) data));
           }
         } catch (Exception e) {
           log.error("Error handling notification received from node " + getValueOr(event.notification, "Node", "?"), e);

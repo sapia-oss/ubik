@@ -2,8 +2,8 @@ package org.sapia.ubik.rmi.naming.remote;
 
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
-import org.sapia.ubik.mcast.Defaults;
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.Defaults;
 import org.sapia.ubik.rmi.naming.remote.archie.UbikRemoteContext;
 import org.sapia.ubik.taskman.Task;
 import org.sapia.ubik.util.Conf;

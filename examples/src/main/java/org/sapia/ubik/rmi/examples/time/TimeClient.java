@@ -7,14 +7,12 @@ import javax.naming.NamingException;
 
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.Defaults;
 import org.sapia.ubik.rmi.naming.remote.RemoteInitialContextFactory;
 import org.sapia.ubik.rmi.server.Hub;
 import org.sapia.ubik.util.Localhost;
 
 
-/**
- * @
- */
 public class TimeClient {
   private InitialContext _theContext;
   private TimeServiceIF  _theTimeService;
@@ -34,8 +32,7 @@ public class TimeClient {
       props.setProperty(InitialContext.PROVIDER_URL, "ubik://" + Localhost.getPreferredLocalAddress().getHostAddress() + ":1099/");
       props.setProperty(InitialContext.INITIAL_CONTEXT_FACTORY,
         RemoteInitialContextFactory.class.getName());
-      props.setProperty(Consts.UBIK_DOMAIN_NAME,
-        Consts.DEFAULT_DOMAIN);      
+      props.setProperty(Consts.UBIK_DOMAIN_NAME, Defaults.DEFAULT_DOMAIN);      
 
       _theContext = new InitialContext(props);
     } catch (Exception ne) {

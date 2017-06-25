@@ -14,9 +14,6 @@ import org.sapia.ubik.mcast.BroadcastDispatcher;
 import org.sapia.ubik.mcast.EventConsumer;
 import org.sapia.ubik.mcast.RemoteEvent;
 import org.sapia.ubik.mcast.memory.InMemoryUnicastDispatcher;
-import org.sapia.ubik.rmi.Consts;
-import org.sapia.ubik.util.Conf;
-import org.sapia.ubik.util.ExtendedProperties;
 
 public abstract class BroadcastDispatcherTestSupport {
 
@@ -35,11 +32,10 @@ public abstract class BroadcastDispatcherTestSupport {
   @Before
   public void setUp() throws Exception {
     doSetup();
-    Conf conf = new ExtendedProperties().setInt(Consts.MCAST_CONSUMER_MIN_COUNT, 1).setInt(Consts.MCAST_CONSUMER_MAX_COUNT, 10).toConf();
-    source = createDispatcher(sourceConsumer = new EventConsumer("broadcast/01", conf));
-    domainDestination = createDispatcher(domainConsumer = new EventConsumer("broadcast/01", conf));
-    nonDomainDestination = createDispatcher(nonDomainConsumer = new EventConsumer("broadcast/02", conf));
-    allDomainDestination = createDispatcher(allDomainConsumer = new EventConsumer("broadcast", conf));
+    source = createDispatcher(sourceConsumer = new EventConsumer("broadcast/01"));
+    domainDestination = createDispatcher(domainConsumer = new EventConsumer("broadcast/01"));
+    nonDomainDestination = createDispatcher(nonDomainConsumer = new EventConsumer("broadcast/02"));
+    allDomainDestination = createDispatcher(allDomainConsumer = new EventConsumer("broadcast"));
 
     source.start();
     domainDestination.start();

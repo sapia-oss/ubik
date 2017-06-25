@@ -76,10 +76,11 @@ public class EventChannelTest {
     source.addEventChannelStateListener(listener);
 
     source.start();
-    Thread.sleep(1000);
     destination = createEventChannel(1000, 2000);
     destination.start();
 
+    source.getView().awaitPeers(5, TimeUnit.SECONDS);
+    
     Boolean isUp = isUpRef.await(10000);
     assertTrue("Destination not detected as up (event channel listener not called)", isUp != null);
     assertTrue("Destination not detected as up", isUp);
@@ -96,13 +97,18 @@ public class EventChannelTest {
     source      = createEventChannel(1000, 2000);
     destination = createEventChannel(1000, 2000);
     other       = createEventChannel("test2", 1000, 2000);
-
+    
+    System.out.println("source : " + source.getNode());
+    System.out.println("destination : " + destination.getNode());
+    System.out.println("other : " + other.getNode());
+    
     final BlockingRef<Boolean> joinedOtherDomain = new BlockingRef<Boolean>();
     final BlockingRef<Boolean> leftOldDomain     = new BlockingRef<Boolean>();
     
     EventChannelStateListener otherDomainListener = new EventChannelStateListener.Adapter() {
       @Override
       public void onUp(EventChannelEvent event) {
+        System.out.println("Joining!!!!!! " + event.getNode());
         joinedOtherDomain.set(true);
       }
     };
@@ -111,6 +117,7 @@ public class EventChannelTest {
     EventChannelStateListener destinationListener = new EventChannelStateListener.Adapter() {
       @Override
       public void onLeft(EventChannelEvent event) {
+        System.out.println("Leaving!!!!!! " + event.getNode());
         leftOldDomain.set(true);
       }
     };
@@ -119,9 +126,14 @@ public class EventChannelTest {
     source.start();
     other.start();
     destination.start();
-    Thread.sleep(1000);
+    
+    source.getView().awaitPeers(5, TimeUnit.SECONDS);
+    destination.getView().awaitPeers(5, TimeUnit.SECONDS);
     
     source.changeDomain("test2");
+    
+    other.getView().awaitPeers(5, TimeUnit.SECONDS);
+
     Boolean joined = joinedOtherDomain.await(10000);
     assertTrue("Other domain node did not discover new node", joined != null && joined);
     
@@ -152,9 +164,10 @@ public class EventChannelTest {
       }
     });
 
-    Thread.sleep(1000);
     destination = createEventChannel();
     destination.start();
+    
+    source.getView().awaitPeers(5, TimeUnit.SECONDS);
 
     Boolean discovered = discoveryRef.await(3000);
     assertTrue("No discovery occurred", discovered != null);
@@ -177,12 +190,13 @@ public class EventChannelTest {
   public void testDispatchToDomain() throws Exception {
     source = createEventChannel();
     source.start();
-    Thread.sleep(1000);
     destination = createEventChannel();
     destination.start();
-
+    
     EventChannel otherDestination = createEventChannel();
     otherDestination.start();
+    
+    source.getView().awaitPeers(5, TimeUnit.SECONDS, 2);
 
     final BlockingRef<RemoteEvent> eventRef = new BlockingRef<RemoteEvent>();
     final BlockingRef<RemoteEvent> otherEventRef = new BlockingRef<RemoteEvent>();
@@ -216,12 +230,13 @@ public class EventChannelTest {
   public void testDispatchToAllDomains() throws Exception {
     source = createEventChannel();
     source.start();
-    Thread.sleep(1000);
     destination = createEventChannel();
     destination.start();
 
     EventChannel otherDestination = createEventChannel("test2");
     otherDestination.start();
+    
+    source.getView().awaitPeers(5, TimeUnit.SECONDS, 2);
 
     final BlockingRef<RemoteEvent> eventRef = new BlockingRef<RemoteEvent>();
     final BlockingRef<RemoteEvent> otherEventRef = new BlockingRef<RemoteEvent>();
@@ -256,10 +271,11 @@ public class EventChannelTest {
   public void testDispatchPointToPoint() throws Exception {
     source = createEventChannel();
     source.start();
-    Thread.sleep(1000);
     destination = createEventChannel();
     destination.start();
 
+    source.getView().awaitPeers(5, TimeUnit.SECONDS, 2);
+    
     final BlockingRef<RemoteEvent> eventRef = new BlockingRef<RemoteEvent>();
     destination.registerAsyncListener("testEvent", new AsyncEventListener() {
       @Override
@@ -279,17 +295,18 @@ public class EventChannelTest {
   public void testSendToSingleDestination() throws Exception {
     source = createEventChannel();
     source.start();
-    Thread.sleep(1000);
     destination = createEventChannel();
     destination.start();
-
+    
+    source.getView().awaitPeers(3, TimeUnit.SECONDS);
+    
     destination.registerSyncListener("testEvent", new SyncEventListener() {
       @Override
       public Object onSyncEvent(RemoteEvent evt) {
         return "SINGLE_DESTINATION_RESPONSE";
       }
     });
-
+    
     Response response = source.send(destination.getUnicastAddress(), "testEvent", "TEST");
     assertEquals("Response not returned", "SINGLE_DESTINATION_RESPONSE", response.getData());
   }
@@ -298,7 +315,6 @@ public class EventChannelTest {
   public void testSendToAllNodes() throws Exception {
     source = createEventChannel();
     source.start();
-    Thread.sleep(200);
     
     final CountDownLatch latch = new CountDownLatch(5);
 
@@ -308,13 +324,11 @@ public class EventChannelTest {
     final AtomicInteger eventCount = new AtomicInteger();
     for (int i = 0; i < 5; i++) {
       EventChannel destination = createEventChannel();
-      destination.start();
-      Thread.sleep(200);
 
       SyncEventListener syncListener = new SyncEventListener() {
         @Override
         public Object onSyncEvent(RemoteEvent evt) {
-          int count =  eventCount.incrementAndGet();
+          eventCount.incrementAndGet();
           latch.countDown();
           return "ALL_DESTINATIONS_RESPONSE";
         }
@@ -322,10 +336,15 @@ public class EventChannelTest {
       syncListeners.add(syncListener);
       destination.registerSyncListener("testEvent", syncListener);
       destinations.add(destination);
+      destination.start();
     }
     
-    assertEquals("Expected 5 nodes in view", 5, source.getView().getNodeInfos().size());
-
+    source.getView().awaitPeers(5, TimeUnit.SECONDS, 5);
+    
+    for (EventChannel destination : destinations) {
+      destination.getView().awaitPeers(5, TimeUnit.SECONDS);
+    }
+    
     RespList responses = source.send("testEvent", "TEST");
 
     latch.await(10000, TimeUnit.MILLISECONDS);
@@ -347,7 +366,6 @@ public class EventChannelTest {
   public void testSendToSelectedNodes() throws Exception {
     source = createEventChannel();
     source.start();
-    Thread.sleep(1000);
 
     List<EventChannel> destinations = new ArrayList<EventChannel>();
     List<SyncEventListener> syncListeners = new ArrayList<SyncEventListener>();
@@ -365,11 +383,14 @@ public class EventChannelTest {
       };
       syncListeners.add(syncListener);
       destination.registerSyncListener("testEvent", syncListener);
-      Thread.sleep(200);
       destinations.add(destination);
     }
     
-    assertEquals("Expected 5 nodes in view", 5, source.getView().getNodeInfos().size());
+    source.getView().awaitPeers(5, TimeUnit.SECONDS, 5);
+    
+    for (EventChannel dest : destinations) {
+      dest.getView().awaitPeers(5, TimeUnit.SECONDS);
+    }
 
     List<EventChannel> selectedDestinations = destinations.subList(0, 3);
     List<ServerAddress> selectedAddresses = new ArrayList<ServerAddress>();

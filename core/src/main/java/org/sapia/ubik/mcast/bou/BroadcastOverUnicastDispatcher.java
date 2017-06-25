@@ -8,6 +8,7 @@ import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.AsyncEventListener;
 import org.sapia.ubik.mcast.BroadcastDispatcher;
+import org.sapia.ubik.mcast.DispatcherContext;
 import org.sapia.ubik.mcast.DomainName;
 import org.sapia.ubik.mcast.EventConsumer;
 import org.sapia.ubik.mcast.MulticastAddress;
@@ -124,7 +125,7 @@ public class BroadcastOverUnicastDispatcher implements AsyncEventListener, Broad
   }
   
   @Override
-  public void initialize(EventConsumer consumer, Conf config) {
+  public void initialize(DispatcherContext context) {
     // noop
   }
   

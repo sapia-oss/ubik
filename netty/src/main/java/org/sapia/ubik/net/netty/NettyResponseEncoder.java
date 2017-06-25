@@ -14,6 +14,7 @@ import org.jboss.netty.channel.SimpleChannelHandler;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.Defaults;
 import org.sapia.ubik.rmi.server.VmId;
 import org.sapia.ubik.rmi.server.transport.MarshalStreamFactory;
 import org.sapia.ubik.util.Conf;
@@ -27,7 +28,7 @@ import org.sapia.ubik.util.Conf;
  */
 public class NettyResponseEncoder extends SimpleChannelHandler {
 
-  private static final int BUFSIZE = Conf.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE);
+  private static final int BUFSIZE = Conf.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Defaults.DEFAULT_MARSHALLING_BUFSIZE);
 
   private static final int BYTES_PER_INT = 4;
 

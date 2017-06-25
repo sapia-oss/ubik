@@ -9,6 +9,7 @@ import org.sapia.ubik.mcast.tcp.TcpUnicastDispatcher;
 import org.sapia.ubik.mcast.udp.UDPBroadcastDispatcher;
 import org.sapia.ubik.mcast.udp.UDPUnicastDispatcher;
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.Defaults;
 import org.sapia.ubik.util.Conf;
 
 /**
@@ -37,8 +38,8 @@ public class EventChannels {
     Properties properties = new Properties();
     properties.setProperty(Consts.UNICAST_PROVIDER, Consts.UNICAST_PROVIDER_UDP);
     properties.setProperty(Consts.BROADCAST_PROVIDER, Consts.BROADCAST_PROVIDER_UDP);
-    properties.setProperty(Consts.MCAST_ADDR_KEY, Consts.DEFAULT_MCAST_ADDR);
-    properties.setProperty(Consts.MCAST_PORT_KEY, "" + Consts.DEFAULT_MCAST_PORT);
+    properties.setProperty(Consts.MCAST_ADDR_KEY, Defaults.DEFAULT_MCAST_ADDR);
+    properties.setProperty(Consts.MCAST_PORT_KEY, "" + Defaults.DEFAULT_MCAST_PORT);
     return new EventChannel(domain, Conf.newInstance().addProperties(properties).addSystemProperties());
   }
 

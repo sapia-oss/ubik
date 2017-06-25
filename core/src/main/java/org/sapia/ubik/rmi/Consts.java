@@ -4,9 +4,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 import org.sapia.ubik.log.LogOutput;
-import org.sapia.ubik.mcast.BroadcastDispatcher;
 import org.sapia.ubik.mcast.EventChannel;
-import org.sapia.ubik.mcast.UnicastDispatcher;
 import org.sapia.ubik.rmi.server.transport.TransportManager;
 import org.sapia.ubik.rmi.server.transport.TransportProvider;
 
@@ -35,36 +33,6 @@ public interface Consts {
    * Defines the {@link LogOutput} to use.
    */
   public static final String LOG_OUTPUT_CLASS = "ubik.rmi.log.output.class";
-
-  /**
-   * The default multicast address.
-   */
-  public static final String DEFAULT_MCAST_ADDR = "231.173.5.7";
-
-  /**
-   * The default multicast port.
-   */
-  public static final int DEFAULT_MCAST_PORT = 5454;
-
-  /**
-   * The default domain.
-   */
-  public static final String DEFAULT_DOMAIN = "default";
-
-  /**
-   * The default TCP port range, for selecting random ports.
-   */
-  public static final String DEFAULT_TCP_PORT_RANGE = "[1025 - 32000]";
-  
-  /**
-   * The default client socket connection timeout.
-   */
-  public static final int DEFAULT_CLIENT_CONNECTION_TIMEOUT = 200;
-
-  /**
-   * The default client socket connection max retry.
-   */
-  public static final int DEFAULT_CLIENT_CONNECTION_MAX_RETRY = 3;
   
   /**
    * This constant corresponds to the <code>ubik.rmi.address-pattern</code>
@@ -146,59 +114,6 @@ public interface Consts {
    * sent/received. Defaults to 3072 bytes.
    */
   public static final String MCAST_BUFSIZE_KEY = "ubik.rmi.naming.mcast.bufsize";
-
-  /**
-   * This constant corresponds to the
-   * <code>ubik.rmi.naming.mcast.consumer.min-count</code> property. It is used to
-   * set the minimum number of consumer threads used to process remote events. Defaults to 10.
-   */
-  public static final String MCAST_CONSUMER_MIN_COUNT = "ubik.rmi.naming.mcast.consumer.min-count";
-  
-  /**
-   * This constant corresponds to the
-   * <code>ubik.rmi.naming.mcast.consumer.max-count</code> property. It is used to
-   * set the maximum number of consumer threads used to process remote events. Defaults 30.
-   */
-  public static final String MCAST_CONSUMER_MAX_COUNT = "ubik.rmi.naming.mcast.consumer.max-count";
-  
-  /**
-   * This constant corresponds to the
-   * <code>ubik.rmi.naming.mcast.consumer.queue-size</code> property. It is used to
-   * set the size of the queue used to receive remote events. Defaults to 100 - beyond that number, 
-   * incoming remote events are silently discarded.
-   */
-  public static final String MCAST_CONSUMER_QUEUE_SIZE = "ubik.rmi.naming.mcast.consumer.queue-size";
-  
-  /**
-   * This constant corresponds to the
-   * <code>ubik.rmi.naming.mcast.consumer.idle-time</code> property. It is used to
-   * set the number of milliseconds consumer threads can remain idle before being destroyed. Defaults to 15000.
-   */
-  public static final String MCAST_CONSUMER_IDLE_TIME = "ubik.rmi.naming.mcast.consumer.idle-time";
- 
-  /**
-   * This constant corresponds to the
-   * <code>ubik.rmi.naming.mcast.sender.count</code> property. It is used to
-   * set the number of sender threads that may be used in
-   * {@link UnicastDispatcher} or {@link BroadcastDispatcher} implementations.
-   */
-  public static final String MCAST_SENDER_COUNT = "ubik.rmi.naming.mcast.sender.count";
-
-  /**
-   * This constant corresponds to the
-   * <code>ubik.rmi.naming.mcast.handler.count</code> property. It is used
-   * to set the number of worker threads that handler request in
-   * {@link UnicastDispatcher} or {@link BroadcastDispatcher} implementations.
-   */
-  public static final String MCAST_HANDLER_COUNT = "ubik.rmi.naming.mcast.handler.count";
-
-  /**
-   * This constant corresponds to the
-   * <code>ubik.rmi.naming.mcast.handler.queue.size</code> property. It is used
-   * to set the size of the queue that buffers incoming requests in
-   * {@link UnicastDispatcher} or {@link BroadcastDispatcher} implementations.
-   */
-  public static final String MCAST_HANDLER_QUEUE_SIZE = "ubik.rmi.naming.mcast.handler.queue.size";
  
   /**
    * This constant corresponds to the
@@ -306,17 +221,6 @@ public interface Consts {
   public static final String MCAST_CHANNEL_PUBLISH_INTERVAL = "ubik.rmi.naming.mcast.channel.pub-interval";
 
   /**
-   * Property that corresponds to the number of thread used by the event channel to process outgoing
-   * publish tasks.
-   */
-  public static final String MCAST_CHANNEL_PUBLISH_THREAD_COUNT = "ubik.rmi.naming.mcast.channel.publisher.thread";
-
-  /**
-   * Correspond to the queue size of pending outgoing publish task of the event channel. 
-   */
-  public static final String MCAST_CHANNEL_PUBLISH_QUEUE_SIZE = "ubik.rmi.naming.mcast.channel.publisher.queue";
-
-  /**
    * This constant corresponds to the <code>ubik.rmi.naming.mcast.channel.reuse</code>
    * property. It is used in test to indicate if {@link EventChannel} instance reuse should be enabled.
    * <p>
@@ -342,6 +246,13 @@ public interface Consts {
    */
   public static final String MCAST_AUTO_BROADCAST_INTERVAL = "ubik.rmi.naming.mcast.channel.auto-broadcast.interval";
  
+  /**
+   * This constant corresponds to the <code>ubik.rmi.naming.unicast.inbound.threads</code> property, which indicates
+   * how many threads should be allocated to the NIO selector (this property is to be used by implementations for which
+   * it makes sense). Defaults to 1.
+   */
+  public static final String UNICAST_INBOUND_THREADS = "ubik.rmi.naming.unicast.inbound.threads";
+  
   /**
    * Identifies the unicast provider to use as part of {@link EventChannel}s.
    */
@@ -387,6 +298,16 @@ public interface Consts {
    */
   public static final String BROADCAST_AVIS_URL = "ubik.rmi.naming.broadcast.avis.url";
 
+  /**
+   * Identifies the Nats broadcast provider.
+   */
+  public static final String BROADCAST_PROVIDER_NATS = "nats";
+  
+  /**
+   * Identifies the Nats URL.
+   */
+  public static final String BROADCAST_NATS_URL = "ubik.rmi.naming.broadcast.nats.url";
+  
   /**
    * Identifies the Camel broadcast provider.
    */
@@ -465,11 +386,6 @@ public interface Consts {
   public static final String MARSHALLING_BUFSIZE = "ubik.rmi.marshalling.buffer.size";
 
   /**
-   * The default marshalling buffer size (see {@link #MARSHALLING_BUFSIZE}).
-   */
-  public static final int DEFAULT_MARSHALLING_BUFSIZE = 512;
-
-  /**
    * Specifies if call-back should be used (true) or not (false) - system
    * property name: <code>ubik.rmi.callback.enabled</code>. Defaults to "false".
    */
@@ -489,15 +405,26 @@ public interface Consts {
    */
   public static final String SERVER_GC_TIMEOUT = "ubik.rmi.server.gc.timeout";
 
+  // --------------------------------------------------------------------------
+
   /**
    * Specifies the number of core processing server threads - system property
-   * name: <code>ubik.rmi.server.core-threads</code>. Defaults to 5.
+   * name: <code>ubik.rmi.server.inbound.threads</code>. 
+   * Defaults to <code>Runtime.getRuntime().availableProcessors()</code>.
+   */
+  public static final String SERVER_INBOUND_THREADS = "ubik.rmi.server.inbound.threads";
+  
+  // --------------------------------------------------------------------------
+
+  /**
+   * Specifies the number of core processing server threads - system property
+   * name: <code>ubik.rmi.server.core-threads</code>. Defaults to 10.
    */
   public static final String SERVER_CORE_THREADS = "ubik.rmi.server.core-threads";
 
   /**
    * Specifies the maximum number of processing server threads - system property
-   * name: <code>ubik.rmi.server.max-threads</code>. Defaults to 25.
+   * name: <code>ubik.rmi.server.max-threads</code>. Defaults to 50.
    */
   public static final String SERVER_MAX_THREADS = "ubik.rmi.server.max-threads";
 
@@ -510,52 +437,44 @@ public interface Consts {
 
   /**
    * Specifies the size of task processing queue for worker threads:
-   * <code>ubik.rmi.server.threads.queue-size</code>. Defaults to 50.
+   * <code>ubik.rmi.server.threads.queue-size</code>. Defaults to 100.
    *
    * @see #CORE_MAX_THREADS
    * @see #SERVER_MAX_THREADS
    */
   public static final String SERVER_THREADS_QUEUE_SIZE = "ubik.rmi.server.threads.queue-size";
 
-  /**
-   * Specifies the number of core spawned threads - system property
-   * name: <code>ubik.rmi.spawn.core-threads</code>. Defaults to 5.
-   */
-  public static final String SPAWN_CORE_THREADS = "ubik.rmi.spawn.core-threads";
+  // --------------------------------------------------------------------------
 
   /**
-   * Specifies the maximum number of spawned threads - system property
-   * name: <code>ubik.rmi.spawn.max-threads</code>. Defaults to 10.
+   * Specifies the core number of threads that process method invocation
+   * callback responses waiting on the outgoing queue - property name:
+   * <code>ubik.rmi.server.outbound.core-threads</code>. Defaults to 5.
    */
-  public static final String SPAWN_MAX_THREADS = "ubik.rmi.spawn.max-threads";
+  public static final String SERVER_OUTBOUND_CORE_THREADS = "ubik.rmi.server.outbound.core-threads";
+  
+  /**
+   * Specifies the maximum number of threads that process outbound I/O tasks. System property name:
+   * <code>ubik.rmi.server.outbound.max-threads</code>. Defaults to 15.
+   */
+  public static final String SERVER_OUTBOUND_MAX_THREADS = "ubik.rmi.server.outbound.max-threads";
 
   /**
-   * Specifies the duration of the idle period for spawned threads (in seconds).
-   * System property name: <code>ubik.rmi.spawn.threads.keep-alive</code>.
+   * Specifies the duration of the idle period for server threads (in seconds).
+   * Property name: <code>ubik.rmi.server.outbound.threads.keep-alive</code>.
    * Defaults to 30 (seconds).
    */
-  public static final String SPAWN_THREADS_KEEP_ALIVE = "ubik.rmi.spawn.threads.keep-alive";
+  public static final String SERVER_OUTBOUND_THREADS_KEEP_ALIVE = "ubik.rmi.server.outbound.threads.keep-alive";
 
   /**
-   * Specifies the size of task processing queue for spawned threads:
-   * <code>ubik.rmi.spawn.threads.queue-size</code>. Defaults to 100.
+   * Specifies the size of task processing queue for worker threads:
+   * <code>ubik.rmi.server.threads.queue-size</code>. Defaults to 300.
    */
-  public static final String SPAWN_THREADS_QUEUE_SIZE = "ubik.rmi.spawn.threads.queue-size";
+  public static final String SERVER_OUTBOUND_QUEUE_SIZE = "ubik.rmi.server.outbound.threads.queue-size";
+  
+  // --------------------------------------------------------------------------
 
-  /**
-   * Specifies the maximum number of threads that process method invocation
-   * callbacks - system property name:
-   * code>ubik.rmi.server.callback.max-threads</code>. Defaults to 5.
-   */
-  public static final String SERVER_CALLBACK_MAX_THREADS = "ubik.rmi.server.callback.max-threads";
-
-  /**
-   * Specifies the maximum number of threads that process method invocation
-   * callback responses waiting on the outgoing queue. - system property name:
-   * code>ubik.rmi.server.callback.outqueue.max-threads</code>. Defaults to 2.
-   */
-  public static final String SERVER_CALLBACK_OUTQUEUE_THREADS = "ubik.rmi.server.callback.outqueue.threads";
-
+  
   /**
    * This constant corresponds to the
    * <code>ubik.rmi.server.reset-interval</code> system property, which defines

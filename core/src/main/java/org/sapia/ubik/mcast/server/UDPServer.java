@@ -14,7 +14,7 @@ import java.net.UnknownHostException;
 import org.sapia.ubik.concurrent.ThreadStartup;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
-import org.sapia.ubik.mcast.Defaults;
+import org.sapia.ubik.rmi.Defaults;
 import org.sapia.ubik.util.Assertions;
 import org.sapia.ubik.util.Localhost;
 
