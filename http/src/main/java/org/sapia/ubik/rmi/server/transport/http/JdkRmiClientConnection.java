@@ -15,6 +15,7 @@ import org.javasimon.Split;
 import org.javasimon.Stopwatch;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.Defaults;
 import org.sapia.ubik.rmi.server.VmId;
 import org.sapia.ubik.rmi.server.stats.Stats;
 import org.sapia.ubik.rmi.server.transport.MarshalStreamFactory;
@@ -42,7 +43,7 @@ public class JdkRmiClientConnection implements RmiConnection {
   private URL url;
   private volatile boolean closed;
   private HttpURLConnection conn;
-  private int bufsz = Conf.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE);
+  private int bufsz = Conf.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Defaults.DEFAULT_MARSHALLING_BUFSIZE);
 
   public JdkRmiClientConnection() {
   }

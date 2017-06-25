@@ -9,19 +9,18 @@ import javax.naming.Context;
 import org.sapia.archie.Name;
 import org.sapia.archie.NamePart;
 import org.sapia.ubik.concurrent.NamedThreadFactory;
-import org.sapia.ubik.concurrent.Spawn;
 import org.sapia.ubik.concurrent.ThreadShutdown;
 import org.sapia.ubik.concurrent.ThreadStartup;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.AsyncEventListener;
-import org.sapia.ubik.mcast.Defaults;
 import org.sapia.ubik.mcast.EventChannel;
 import org.sapia.ubik.mcast.EventChannelRef;
 import org.sapia.ubik.mcast.EventChannelStateListener;
 import org.sapia.ubik.mcast.RemoteEvent;
 import org.sapia.ubik.net.TCPAddress;
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.Defaults;
 import org.sapia.ubik.rmi.naming.UrlMaker;
 import org.sapia.ubik.rmi.naming.remote.archie.SyncPutEvent;
 import org.sapia.ubik.rmi.naming.remote.archie.UbikRemoteContext;
@@ -30,6 +29,7 @@ import org.sapia.ubik.rmi.server.Hub;
 import org.sapia.ubik.rmi.server.stub.StubContainer;
 import org.sapia.ubik.rmi.server.transport.mina.MinaAddress;
 import org.sapia.ubik.rmi.server.transport.mina.MinaTransportProvider;
+import org.sapia.ubik.rmi.threads.Threads;
 import org.sapia.ubik.taskman.TaskContext;
 import org.sapia.ubik.util.Assertions;
 import org.sapia.ubik.util.Conf;
@@ -49,7 +49,7 @@ import org.sapia.ubik.util.TimeValue;
  * jndi.stop();
  * </pre>
  *
- * @author Yanick Duchesne
+ * @author yduchesne
  *
  */
 public class EmbeddableJNDIServer implements RemoteContextProvider,
@@ -63,7 +63,7 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
   private UbikRemoteContext root;
   private Context           local;
   private ThreadStartup     startBarrier = new ThreadStartup();
-  private TimeValue              syncInterval = Conf.newInstance().getTimeRangeProperty(
+  private TimeValue         syncInterval = Conf.newInstance().getTimeRangeProperty(
       Consts.JNDI_SYNC_INTERVAL, Defaults.DEFAULT_JNDI_SYNC_INTERVAL
   ).getRandomTime();
 
@@ -90,10 +90,10 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
    */
   public EmbeddableJNDIServer() {
     this(
-        JNDIConsts.DEFAULT_DOMAIN,
+        Defaults.DEFAULT_DOMAIN,
         JNDIConsts.DEFAULT_PORT,
-        org.sapia.ubik.rmi.Consts.DEFAULT_MCAST_ADDR,
-        org.sapia.ubik.rmi.Consts.DEFAULT_MCAST_PORT
+        Defaults.DEFAULT_MCAST_ADDR,
+        Defaults.DEFAULT_MCAST_PORT
     );
   }
 
@@ -106,7 +106,7 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
    * @see JNDIConsts#DEFAULT_MCAST_PORT
    */
   public EmbeddableJNDIServer(String domain, int port) {
-    this(domain, port, org.sapia.ubik.rmi.Consts.DEFAULT_MCAST_ADDR, org.sapia.ubik.rmi.Consts.DEFAULT_MCAST_PORT);
+    this(domain, port, Defaults.DEFAULT_MCAST_ADDR, Defaults.DEFAULT_MCAST_PORT);
   }
 
   /**
@@ -117,8 +117,8 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
   public EmbeddableJNDIServer(String domain, int port, String mcastAddress, int mcastPort) {
     this.port = port;
     Properties props = new Properties();
-    props.setProperty(JNDIConsts.MCAST_ADDR_KEY, mcastAddress);
-    props.setProperty(JNDIConsts.MCAST_PORT_KEY, Integer.toString(mcastPort));
+    props.setProperty(Consts.MCAST_ADDR_KEY, mcastAddress);
+    props.setProperty(Consts.MCAST_PORT_KEY, Integer.toString(mcastPort));
     try {
       channel = new EventChannel(domain, new Conf().addProperties(props).addSystemProperties()).getReference();
     } catch (IOException e) {
@@ -165,7 +165,7 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
         log.warning("Could not dispatch JNDI server publishing event", e);
       }
     } else if (evt.getType().equals(JndiSyncRequest.class.getName())) {
-      Spawn.run(new Runnable() {
+      Threads.getGlobalWorkerPool().submit(new Runnable() {
         @Override
         public void run() {
           try {

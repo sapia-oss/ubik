@@ -8,6 +8,7 @@ import java.io.ObjectOutputStream;
 import java.net.SocketTimeoutException;
 
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.Defaults;
 import org.sapia.ubik.rmi.server.VmId;
 import org.sapia.ubik.rmi.server.transport.MarshalStreamFactory;
 import org.sapia.ubik.rmi.server.transport.RmiObjectOutput;
@@ -22,7 +23,7 @@ import org.sapia.ubik.util.Pause;
  */
 class InMemoryRequest {
 
-  private int bufsz = Conf.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE);
+  private int bufsz = Conf.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Defaults.DEFAULT_MARSHALLING_BUFSIZE);
   private boolean useMarshalling;
   private Object data;
   private volatile InMemoryResponse response;

@@ -18,7 +18,7 @@ import org.sapia.ubik.net.ServerAddress;
  */
 public class GossipSyncAckControlEventHandler implements ControlEventHandler {
   
-  private Category log       = Log.createCategory(getClass());
+  private Category log = Log.createCategory(getClass());
   private ControllerContext context;
 
   public GossipSyncAckControlEventHandler(ControllerContext context) {
@@ -28,7 +28,7 @@ public class GossipSyncAckControlEventHandler implements ControlEventHandler {
   @Override
   public void handle(String originNode, ServerAddress originAddress, ControlEvent event) {
     GossipSyncAckControlEvent syncEvent = (GossipSyncAckControlEvent) event;
-    log.debug("Received GossipSyncAckControlEvent from %s @ %s", originNode, originAddress);
+    log.trace("Received GossipSyncAckControlEvent from %s @ %s", originNode, originAddress);
     for (NodeInfo n : syncEvent.getView()) {
       if (!context.getNode().equals(n.getNode())) {
         context.getEventChannel().addNewNode(n.getNode(), n.getAddr());

@@ -1,8 +1,7 @@
 package org.sapia.ubik.rmi.server.transport.http;
 
-import org.sapia.ubik.concurrent.ConfigurableExecutor;
-import org.sapia.ubik.concurrent.ConfigurableExecutor.ThreadingConfiguration;
-import org.sapia.ubik.concurrent.NamedThreadFactory;
+import java.util.concurrent.ExecutorService;
+
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.Uri;
@@ -17,18 +16,18 @@ import org.simpleframework.http.Response;
  * An instance of this class handles incoming requests and delegates them to
  * {@link HttpRmiServerThread}s internally kept in a pool.
  * 
- * @author Yanick Duchesne
+ * @author yduchesne
  */
 class UbikHttpHandler implements Handler {
   private Category log = Log.createCategory(getClass());
-  private HttpAddress addr;
-  private CommandHandler handler;
-  private ConfigurableExecutor threads;
+  private HttpAddress     addr;
+  private CommandHandler  handler;
+  private ExecutorService threads;
 
-  UbikHttpHandler(Uri localHostUri, ThreadingConfiguration threadConf) {
-    addr = new HttpAddress(localHostUri);
+  UbikHttpHandler(Uri localHostUri, ExecutorService executor) {
+    addr    = new HttpAddress(localHostUri);
     handler = new CommandHandler(Hub.getModules().getServerRuntime().getDispatcher(), getClass());
-    threads = new ConfigurableExecutor(threadConf, NamedThreadFactory.createWith("Ubik.HttpHandler").setDaemon(true));
+    threads = executor;
   }
 
   @Override

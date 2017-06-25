@@ -10,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.Defaults;
 import org.sapia.ubik.util.Conf;
 
 /**
@@ -25,9 +26,9 @@ public class SocketConnectionFactory implements ConnectionFactory {
 
   private static final int NO_SO_TIMEOUT = 0;
 
-  protected int bufsize = Conf.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE);
-  protected int connectionTimeout = Conf.getSystemProperties().getIntProperty(Consts.CLIENT_CONNECTION_TIMEOUT, Consts.DEFAULT_CLIENT_CONNECTION_TIMEOUT);
-  protected int connectionMaxRetry = Conf.getSystemProperties().getIntProperty(Consts.CLIENT_CONNECTION_MAX_RETRY, Consts.DEFAULT_CLIENT_CONNECTION_MAX_RETRY);
+  protected int bufsize = Conf.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Defaults.DEFAULT_MARSHALLING_BUFSIZE);
+  protected int connectionTimeout = Conf.getSystemProperties().getIntProperty(Consts.CLIENT_CONNECTION_TIMEOUT, Defaults.DEFAULT_CLIENT_CONNECTION_TIMEOUT);
+  protected int connectionMaxRetry = Conf.getSystemProperties().getIntProperty(Consts.CLIENT_CONNECTION_MAX_RETRY, Defaults.DEFAULT_CLIENT_CONNECTION_MAX_RETRY);
 
   protected String transportType;
   protected ClassLoader loader;

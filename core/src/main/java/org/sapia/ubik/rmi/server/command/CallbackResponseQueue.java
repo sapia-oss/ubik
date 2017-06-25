@@ -1,6 +1,5 @@
 package org.sapia.ubik.rmi.server.command;
 
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -65,19 +64,16 @@ public class CallbackResponseQueue {
   /**
    * This method is called to notify this queue about incoming responses.
    * 
-   * @param responses
-   *          a {@link List} of {@link Response} instances.
+   * @param resp a {@link Response} received asynchronously.
    */
-  public void onResponses(List<Response> expectedResponses) {
+  public void onResponse(Response resp) {
     ResponseLock lock;
-    for (Response resp : expectedResponses) {
-      lock = responseLocks.get(resp.getId());
-      if (lock != null) {
-        log.debug("Received response for response lock %s", lock.getId());
-        lock.setResponse(resp.get());
-      } else {
-        log.debug("Received response for lock %s, but lock is null (probably timed out)", resp.getId());
-      }
+    lock = responseLocks.get(resp.getId());
+    if (lock != null) {
+      log.debug("Received response for response lock %s", lock.getId());
+      lock.setResponse(resp.get());
+    } else {
+      log.debug("Received response for lock %s, but lock is null (probably timed out)", resp.getId());
     }
   }
 

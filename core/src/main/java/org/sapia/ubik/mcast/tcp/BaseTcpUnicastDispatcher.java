@@ -10,18 +10,14 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.javasimon.Split;
 import org.javasimon.Stopwatch;
 import org.sapia.ubik.concurrent.BlockingCompletionQueue;
-import org.sapia.ubik.concurrent.NamedThreadFactory;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
-import org.sapia.ubik.mcast.Defaults;
-import org.sapia.ubik.mcast.EventConsumer;
+import org.sapia.ubik.mcast.DispatcherContext;
 import org.sapia.ubik.mcast.RemoteEvent;
 import org.sapia.ubik.mcast.RespList;
 import org.sapia.ubik.mcast.Response;
@@ -35,9 +31,9 @@ import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.TCPAddress;
 import org.sapia.ubik.net.ThreadInterruptedException;
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.Defaults;
 import org.sapia.ubik.rmi.server.stats.Stats;
 import org.sapia.ubik.util.Assertions;
-import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.TimeValue;
 import org.sapia.ubik.util.exception.RuntimeCheckedException;
 import org.sapia.ubik.util.pool.PooledObjectCreationException;
@@ -57,41 +53,32 @@ public abstract class BaseTcpUnicastDispatcher extends UnicastDispatcherSupport 
       getClass(), "AsyncDispatchTime", "Time required to dispatch asynchronously"
   );
 
-  protected Category log = Log.createCategory(getClass());
-  protected EventConsumer   consumer;
-  protected ConnectionPools connections           = new ConnectionPools();
-  private TimeValue         asyncAckTimeout       = Defaults.DEFAULT_ASYNC_ACK_TIMEOUT;
-  private int               senderCount           = Defaults.DEFAULT_SENDER_COUNT;
-  private int               maxConnectionsPerHost = Defaults.DEFAULT_MAX_CONNECTIONS_PER_HOST;
-  private ExecutorService   senders;
+  protected final Category        log = Log.createCategory(getClass());
+  
+  protected final ConnectionPools connections             = new ConnectionPools();
+  private   TimeValue             asyncAckTimeout         = Defaults.DEFAULT_ASYNC_ACK_TIMEOUT;
+  private   int                   maxConnectionsPerHost;
+  private   DispatcherContext     context;
+  
 
   protected BaseTcpUnicastDispatcher() {
   }
-
+  
   @Override
-  public void initialize(EventConsumer consumer, Conf config) {
-    this.consumer = consumer;
-    setSenderCount(config.getIntProperty(Consts.MCAST_SENDER_COUNT, Defaults.DEFAULT_SENDER_COUNT));
-    setMaxConnectionsPerHost(config.getIntProperty(Consts.MCAST_MAX_CLIENT_CONNECTIONS, Defaults.DEFAULT_MAX_CONNECTIONS_PER_HOST));
-    setAsyncAckTimeout(config.getTimeProperty(Consts.MCAST_ASYNC_ACK_TIMEOUT, Defaults.DEFAULT_ASYNC_ACK_TIMEOUT));
+  public void initialize(DispatcherContext context) {
+    this.context           = context;
+ 
+    setMaxConnectionsPerHost(context.getConf().getIntProperty(Consts.MCAST_MAX_CLIENT_CONNECTIONS, Defaults.DEFAULT_MAX_CONNECTIONS_PER_HOST));
+    setAsyncAckTimeout(context.getConf().getTimeProperty(Consts.MCAST_ASYNC_ACK_TIMEOUT, Defaults.DEFAULT_ASYNC_ACK_TIMEOUT));
   }
-
-  /**
-   * Sets the number of threads used to send remote events.
-   *
-   * @param senderCount
-   *          the number of sender threads.
-   *
-   * @see #send(List, String, Object)
-   */
-  void setSenderCount(int senderCount) {
-    Assertions.isTrue(senderCount > 0, "Sender count must be greater than 0: %s", senderCount);
-    this.senderCount = senderCount;
+  
+  protected DispatcherContext context() {
+    Assertions.illegalState(context == null, "This instance has not been initialized");
+    return context;
   }
-
+ 
   /**
-   * @param maxConnectionsPerHost
-   *          the maximum number of connections to pool, by host.
+   * @param maxConnectionsPerHost the maximum number of connections to pool, by host.
    */
   void setMaxConnectionsPerHost(int maxConnectionsPerHost) {
     Assertions.isTrue(maxConnectionsPerHost > 0, "Max connections per host must be greater than 0: %s", maxConnectionsPerHost);
@@ -108,9 +95,8 @@ public abstract class BaseTcpUnicastDispatcher extends UnicastDispatcherSupport 
 
   @Override
   public void start() {
-    Assertions.illegalState(consumer == null, "EventConsumer not set");
+    Assertions.illegalState(context.getConsumer() == null, "EventConsumer not set");
     log.debug("Starting...");
-    this.senders = Executors.newFixedThreadPool(senderCount, NamedThreadFactory.createWith("tcp.unicast.dispatcher.Sender").setDaemon(true));
     doStart();
     log.debug("Started");
   }
@@ -118,11 +104,8 @@ public abstract class BaseTcpUnicastDispatcher extends UnicastDispatcherSupport 
   @Override
   public void close() {
     log.debug("Closing...");
-    try {
-      doClose();
-    } finally {
-      senders.shutdown();
-    }
+    context.getIoOutboundThreads().shutdown();
+    doClose();
     connections.shutdown();
     log.debug("Closed");
   }
@@ -131,13 +114,13 @@ public abstract class BaseTcpUnicastDispatcher extends UnicastDispatcherSupport 
   public RespList send(List<ServerAddress> addresses, final String type, Object data, final TimeValue timeout) throws IOException, InterruptedException {
 
     final BlockingCompletionQueue<Response> queue = new BlockingCompletionQueue<Response>(addresses.size());
-    final RemoteEvent evt = new RemoteEvent(null, type, data).setNode(consumer.getNode()).setSync();
+    final RemoteEvent evt = new RemoteEvent(null, type, data).setNode(context.getConsumer().getNode()).setSync();
     evt.setUnicastAddress(getAddress());
 
     for (int i = 0; i < addresses.size(); i++) {
       final TCPAddress addr = (TCPAddress) addresses.get(i);
 
-      senders.execute(new Runnable() {
+      context.getIoOutboundThreads().execute(new Runnable() {
 
         @Override
         public void run() {
@@ -166,10 +149,10 @@ public abstract class BaseTcpUnicastDispatcher extends UnicastDispatcherSupport 
 
     for (int i = 0; i < addresses.length; i++) {
       final TCPAddress addr = (TCPAddress) addresses[i];
-      final RemoteEvent evt = new RemoteEvent(null, type, data[i]).setNode(consumer.getNode()).setSync();
+      final RemoteEvent evt = new RemoteEvent(null, type, data[i]).setNode(context.getConsumer().getNode()).setSync();
       evt.setUnicastAddress(getAddress());
       
-      senders.execute(new Runnable() {
+      context.getIoOutboundThreads().execute(new Runnable() {
 
         @Override
         public void run() {
@@ -193,7 +176,7 @@ public abstract class BaseTcpUnicastDispatcher extends UnicastDispatcherSupport 
   @Override
   public Response send(ServerAddress addr, String type, Object data, final TimeValue timeout) throws IOException {
 
-    RemoteEvent evt = new RemoteEvent(null, type, data).setNode(consumer.getNode()).setSync();
+    RemoteEvent evt = new RemoteEvent(null, type, data).setNode(context.getConsumer().getNode()).setSync();
     evt.setUnicastAddress(addr);
 
     Split split = syncSend.start();
@@ -227,7 +210,7 @@ public abstract class BaseTcpUnicastDispatcher extends UnicastDispatcherSupport 
   public boolean dispatch(final ServerAddress addr, final String type, final Object data) throws IOException {
     Split split = asyncDispatch.start();
     try {
-      RemoteEvent evt = new RemoteEvent(null, type, data).setNode(consumer.getNode());
+      RemoteEvent evt = new RemoteEvent(null, type, data).setNode(context.getConsumer().getNode());
       evt.setUnicastAddress(getAddress());
       log.debug("dispatch() to %s, type: %s, data: %s", addr, type, data);
       
@@ -272,7 +255,7 @@ public abstract class BaseTcpUnicastDispatcher extends UnicastDispatcherSupport 
       }
     };
     
-    Future<Object> result = senders.submit(task);
+    Future<Object> result = context.getIoOutboundThreads().submit(task);
     try {
       return result.get(asyncAckTimeout.getValue(), asyncAckTimeout.getUnit());
     } catch (ExecutionException exe) {

@@ -8,13 +8,11 @@ import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import org.sapia.ubik.concurrent.BlockingCompletionQueue;
-import org.sapia.ubik.concurrent.NamedThreadFactory;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
-import org.sapia.ubik.mcast.Defaults;
+import org.sapia.ubik.mcast.DispatcherContext;
 import org.sapia.ubik.mcast.EventConsumer;
 import org.sapia.ubik.mcast.McastUtil;
 import org.sapia.ubik.mcast.RemoteEvent;
@@ -25,16 +23,15 @@ import org.sapia.ubik.mcast.UnicastDispatcher;
 import org.sapia.ubik.mcast.server.UDPServer;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.TcpPortSelector;
-import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.Defaults;
 import org.sapia.ubik.util.Assertions;
-import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.Localhost;
 import org.sapia.ubik.util.TimeValue;
 
 /**
  * Implements the {@link UnicastDispatcher} interface over UDP.
  *
- * @author Yanick Duchesne
+ * @author yduchesne
  */
 public class UDPUnicastDispatcher implements UnicastDispatcher {
 
@@ -43,10 +40,8 @@ public class UDPUnicastDispatcher implements UnicastDispatcher {
   private Category log = Log.createCategory(getClass());
   private EventConsumer     consumer;
   private TimeValue         asyncAckTimeout = Defaults.DEFAULT_ASYNC_ACK_TIMEOUT;
-  private int               senderCount     = Defaults.DEFAULT_SENDER_COUNT;
-  private int               handlerCount    = Defaults.DEFAULT_HANDLER_COUNT;
   private ExecutorService   senders;
-  private ExecutorService   handlers;
+  private ExecutorService   workers;
   private UDPUnicastAddress addr;
   private UDPServer         server;
 
@@ -54,24 +49,22 @@ public class UDPUnicastDispatcher implements UnicastDispatcher {
   }
 
   @Override
-  public void initialize(EventConsumer consumer, Conf config) {
-    this.consumer   = consumer;
-    senderCount     = config.getIntProperty(Consts.MCAST_SENDER_COUNT, Defaults.DEFAULT_SENDER_COUNT);
-    asyncAckTimeout = config.getTimeProperty(Consts.MCAST_ASYNC_ACK_TIMEOUT, Defaults.DEFAULT_ASYNC_ACK_TIMEOUT);
-    handlerCount    = config.getIntProperty(Consts.MCAST_HANDLER_COUNT, Defaults.DEFAULT_HANDLER_COUNT);
+  public void initialize(DispatcherContext context) {
+    this.consumer   = context.getConsumer();
+    this.senders    = context.getIoOutboundThreads();
+    this.workers    = context.getWorkerThreads();
   }
  
   @Override
   public void start()  {
     Assertions.illegalState(consumer == null, "EventConsumer not set");
-    handlers = Executors.newFixedThreadPool(handlerCount, NamedThreadFactory.createWith("udp.unicast.dispatcher.Handler").setDaemon(true));
-
+  
     try {
       server = new UDPServer(consumer.getNode(), new TcpPortSelector().select()) {
         
         @Override
         protected void handle(final DatagramPacket pack, final DatagramSocket sock) {
-          handlers.execute(new Runnable() {
+          workers.execute(new Runnable() {
             @Override
             public void run() {
               doHandle(pack, sock);
@@ -97,8 +90,6 @@ public class UDPUnicastDispatcher implements UnicastDispatcher {
     } catch (Exception e) {
       throw new IllegalStateException("Problem while starting up", e);
     }
-
-    senders = Executors.newFixedThreadPool(senderCount, NamedThreadFactory.createWith("udp.unicast.dispatcher.Sender").setDaemon(true));
 
     InetAddress inetAddr = server.getLocalAddress();
     if (inetAddr == null) {

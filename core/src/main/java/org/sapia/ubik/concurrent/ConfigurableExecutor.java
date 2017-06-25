@@ -4,8 +4,8 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
+import org.sapia.ubik.rmi.Defaults;
 import org.sapia.ubik.util.Strings;
 import org.sapia.ubik.util.TimeValue;
 
@@ -24,15 +24,10 @@ public class ConfigurableExecutor extends ThreadPoolExecutor {
    */
   public static class ThreadingConfiguration {
 
-    public static final int DEFAULT_CORE_POOL_SIZE = 10;
-    public static final int DEFAULT_MAX_POOL_SIZE  = 25;
-    public static final int DEFAULT_QUEUE_SIZE     = 50;
-    public static final TimeValue DEFAULT_KEEP_ALIVE = new TimeValue(30, TimeUnit.SECONDS);
-
-    private int corePoolSize    = DEFAULT_CORE_POOL_SIZE;
-    private int maxPoolSize     = DEFAULT_MAX_POOL_SIZE;
-    private int queueSize       = DEFAULT_QUEUE_SIZE;
-    private TimeValue keepAlive = DEFAULT_KEEP_ALIVE;
+    private int corePoolSize    = Defaults.DEFAULT_WORKER_MAX_POOL_SIZE;
+    private int maxPoolSize     = Defaults.DEFAULT_WORKER_MAX_POOL_SIZE;
+    private int queueSize       = Defaults.DEFAULT_WORKER_QUEUE_SIZE;
+    private TimeValue keepAlive = Defaults.DEFAULT_WORKER_KEEP_ALIVE;
     private RejectedExecutionHandler rejectionHandler = new ThreadPoolExecutor.AbortPolicy();
 
     /**
@@ -98,7 +93,7 @@ public class ConfigurableExecutor extends ThreadPoolExecutor {
   }
 
   // ==========================================================================
-
+  
   /**
    * @param conf
    *          a {@link ThreadingConfiguration}.

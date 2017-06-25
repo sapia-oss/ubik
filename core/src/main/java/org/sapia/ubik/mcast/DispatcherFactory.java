@@ -30,28 +30,26 @@ public final class DispatcherFactory {
    * Creates a {@link UnicastDispatcher}, based on the given {@link Properties},
    * and returns it.
    *
-   * @param consumer
-   *          an {@link EventConsumer}.
-   * @param props
-   *          the {@link Conf} containing configuration values.
-   * @return the {@link BroadcastDispatcher} corresponding to the given
-   *         properties.
+   * @param context a {@link DispatcherContext}.
+
    * @throws IOException
    *           if a problem occurs creating the dispatcher.
    */
-  public static UnicastDispatcher createUnicastDispatcher(EventConsumer consumer, Conf props) throws IOException {
-    UnicastDispatcher dispatcher = loadUnicastDispatcher(props);
-    dispatcher.initialize(consumer, props);
+  public static UnicastDispatcher createUnicastDispatcher(DispatcherContext context) throws IOException {
+    String provider = context.getConf().getProperty(Consts.UNICAST_PROVIDER, Consts.UNICAST_PROVIDER_TCP_NIO);
+
+    UnicastDispatcher dispatcher = loadUnicastDispatcher(provider);
+    dispatcher.initialize(context);
     return dispatcher;
   }
-
+  
   /**
-   * @param props a {@link Conf} instance containing configuration values.
-   * @return the {@link UnicastDispatcher} that is configured.
+   * @param provider the name of the {@link UnicastDispatcher} to load.
+   * 
+   * @return the {@link UnicastDispatcher} that is not yet initialized.
    * @see Consts#UNICAST_PROVIDER
    */
-  public static UnicastDispatcher loadUnicastDispatcher(Conf props) {
-    String provider = props.getProperty(Consts.UNICAST_PROVIDER, Consts.UNICAST_PROVIDER_TCP_NIO);
+  public static UnicastDispatcher loadUnicastDispatcher(String provider) {
     log.info("Creating unicast dispatcher %s", provider);
     return Providers.get().load(UnicastDispatcher.class, provider);
   }
@@ -60,28 +58,26 @@ public final class DispatcherFactory {
    * Creates a {@link BroadcastDispatcher}, based on the given
    * {@link Properties}, and returns it.
    *
-   * @param consumer
-   *          an {@link EventConsumer}.
-   * @param props
-   *          the {@link Conf} containing configuration values.
-   * @return the {@link BroadcastDispatcher} corresponding to the given
-   *         properties.
+   * @param context a {@link DispatcherContext}.
+
    * @throws IOException
    *           if a problem occurs creating the dispatcher.
    */
-  public static BroadcastDispatcher createBroadcastDispatcher(EventConsumer consumer, Conf props) throws IOException {
-    BroadcastDispatcher dispatcher = loadBroadcastDispatcher(props);
-    dispatcher.initialize(consumer, props);
+  public static BroadcastDispatcher createBroadcastDispatcher(DispatcherContext context) throws IOException {
+    String provider = context.getConf().getProperty(Consts.BROADCAST_PROVIDER, Consts.BROADCAST_PROVIDER_UDP);
+
+    BroadcastDispatcher dispatcher = loadBroadcastDispatcher(provider);
+    dispatcher.initialize(context);
     return dispatcher;
   }
   
   /**
-   * @param props a {@link Conf} instance containing configuration values.
-   * @return the {@link BroadcastDispatcher} that is configured.
+   * @param provider the name of the {@link BroadcastDispatcher} to load.
+
+   * @return the {@link BroadcastDispatcher} that is not yet initialized.
    * @see Consts#BROADCAST_PROVIDER
    */
-  public static BroadcastDispatcher loadBroadcastDispatcher(Conf props) {
-    String provider = props.getProperty(Consts.BROADCAST_PROVIDER, Consts.BROADCAST_PROVIDER_UDP);
+  public static BroadcastDispatcher loadBroadcastDispatcher(String provider) {
     log.info("Creating broadcast dispatcher %s", provider);
     return Providers.get().load(BroadcastDispatcher.class, provider);
   }

@@ -4,6 +4,7 @@ import static org.junit.Assert.assertNotNull;
 
 import java.rmi.RemoteException;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 import javax.naming.InitialContext;
 
@@ -14,6 +15,7 @@ import org.mockito.Mockito;
 import org.sapia.ubik.concurrent.BlockingRef;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.BroadcastDispatcher;
+import org.sapia.ubik.mcast.DispatcherContext;
 import org.sapia.ubik.mcast.EventChannel;
 import org.sapia.ubik.mcast.EventConsumer;
 import org.sapia.ubik.mcast.UnicastDispatcher;
@@ -24,8 +26,6 @@ import org.sapia.ubik.rmi.naming.remote.discovery.DiscoveryHelper;
 import org.sapia.ubik.rmi.naming.remote.discovery.ServiceDiscoListener;
 import org.sapia.ubik.rmi.naming.remote.discovery.ServiceDiscoveryEvent;
 import org.sapia.ubik.rmi.server.Hub;
-import org.sapia.ubik.util.Conf;
-import org.sapia.ubik.util.ExtendedProperties;
 import org.sapia.ubik.util.PropUtil;
 
 public class EmbeddableJNDIServerTest  {
@@ -35,21 +35,16 @@ public class EmbeddableJNDIServerTest  {
   
   @Before
   public void setUp() throws Exception {
-    Log.setDebug();
     EventChannel.disableReuse();
     
-    Conf conf = new ExtendedProperties()
-        .setInt(Consts.MCAST_CONSUMER_MIN_COUNT, 1)
-        .setInt(Consts.MCAST_CONSUMER_MAX_COUNT, 10).toConf();
-    
-    EventConsumer cons1 = new EventConsumer("test", conf);
+    EventConsumer cons1 = new EventConsumer("test");
     
     channel1 = new EventChannel(
         cons1, 
         createUnicastDispatcher(cons1), createBroadcastDispatcher(cons1)
     );
 
-    EventConsumer cons2 = new EventConsumer("test", conf);
+    EventConsumer cons2 = new EventConsumer("test");
     channel2 = new EventChannel(
         cons2, 
         createUnicastDispatcher(cons2), createBroadcastDispatcher(cons2)
@@ -70,20 +65,18 @@ public class EmbeddableJNDIServerTest  {
   
   private BroadcastDispatcher createBroadcastDispatcher(EventConsumer cons) {
     InMemoryBroadcastDispatcher bd = new InMemoryBroadcastDispatcher();
-    bd.initialize(cons, Conf.newInstance().addSystemProperties());
+    bd.initialize(new DispatcherContext(cons));
     return bd;
   }
   
   private UnicastDispatcher createUnicastDispatcher(EventConsumer cons) {
     InMemoryUnicastDispatcher ud = new InMemoryUnicastDispatcher();
-    ud.initialize(cons, Conf.newInstance().addSystemProperties());
+    ud.initialize(new DispatcherContext(cons));
     return ud;
   }
 
   @Test
   public void testInMemoryBindServiceDiscovery() throws Exception {
-    jndi.start(true);
-    
     DiscoveryHelper helper = new DiscoveryHelper(channel2.getReference());
     final BlockingRef<TestService> ref = new BlockingRef<>();
     helper.addServiceDiscoListener(new ServiceDiscoListener() {
@@ -97,6 +90,10 @@ public class EmbeddableJNDIServerTest  {
       }
     });
     channel2.start();
+    jndi.start(true);
+
+    channel1.getView().awaitPeers(5, TimeUnit.SECONDS);
+    channel2.getView().awaitPeers(5, TimeUnit.SECONDS);
     
     jndi.getLocalContext().bind("test", Mockito.mock(TestService.class));
     
@@ -107,7 +104,6 @@ public class EmbeddableJNDIServerTest  {
   
   @Test
   public void testInMemoryBindServiceDiscovery_LateStartOfJndi() throws Exception {
-    
     DiscoveryHelper helper = new DiscoveryHelper(channel2.getReference());
     final BlockingRef<TestService> ref = new BlockingRef<>();
     helper.addServiceDiscoListener(new ServiceDiscoListener() {
@@ -121,8 +117,11 @@ public class EmbeddableJNDIServerTest  {
       }
     });
     channel2.start();
-    
     jndi.start(true);
+    
+    channel1.getView().awaitPeers(5, TimeUnit.SECONDS);
+    channel2.getView().awaitPeers(5, TimeUnit.SECONDS);
+    
     jndi.getLocalContext().bind("test", Mockito.mock(TestService.class));
     
     TestService service = ref.await();
@@ -144,10 +143,12 @@ public class EmbeddableJNDIServerTest  {
         }
       }
     });
-    
     jndi.start(true);
     jndi.getLocalContext().bind("test", Mockito.mock(TestService.class));
     channel2.start();
+
+    channel1.getView().awaitPeers(5, TimeUnit.SECONDS);
+    channel2.getView().awaitPeers(5, TimeUnit.SECONDS);
     
     TestService service = ref.await();
     
@@ -156,8 +157,9 @@ public class EmbeddableJNDIServerTest  {
   
   @Test
   public void testRemoteLookup() throws Exception {
+    Log.setInfo();
     jndi.start(true);
-    Thread.sleep(500);
+    Thread.sleep(1000);
     jndi.getLocalContext().bind("test", Mockito.mock(TestService.class));
 
     Properties props = new Properties();

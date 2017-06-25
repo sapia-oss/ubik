@@ -1,6 +1,7 @@
 package org.sapia.ubik.rmi.server.transport.socket;
 
-import org.sapia.ubik.concurrent.ConfigurableExecutor.ThreadingConfiguration;
+import java.util.concurrent.ExecutorService;
+
 import org.sapia.ubik.net.Request;
 import org.sapia.ubik.net.Worker;
 import org.sapia.ubik.net.WorkerPool;
@@ -10,12 +11,12 @@ import org.sapia.ubik.rmi.server.Hub;
  * Implements a pool of {@link SocketRmiServerThread}s in a
  * {@link SocketRmiServer} instance.
  * 
- * @author Yanick Duchesne
+ * @author yduchesne
  */
 public class SocketRmiServerThreadPool extends WorkerPool<Request> {
 
-  public SocketRmiServerThreadPool(String name, boolean daemon, ThreadingConfiguration threadConf) {
-    super(name, daemon, threadConf);
+  public SocketRmiServerThreadPool( ExecutorService executor) {
+    super(executor);
   }
 
   @Override

@@ -9,6 +9,7 @@ import org.sapia.ubik.rmi.server.invocation.InvocationDispatcher;
 import org.sapia.ubik.rmi.server.stats.StatsModule;
 import org.sapia.ubik.rmi.server.stub.StatelessStubTable;
 import org.sapia.ubik.rmi.server.transport.TransportManager;
+import org.sapia.ubik.rmi.threads.ThreadModule;
 import org.sapia.ubik.taskman.MultiThreadedTaskManager;
 import org.sapia.ubik.taskman.TaskManager;
 
@@ -36,9 +37,11 @@ public class Modules {
   private InvocationDispatcher invocationDispatcher;
   private ClientGC clientGC;
   private ServerGC serverGC;
+  private ThreadModule threads;
 
   public Modules() {
     bind(new StatsModule());
+    bind(threads  = new ThreadModule());
     bind(TaskManager.class, taskManager = new MultiThreadedTaskManager());
     bind(transportManager = new TransportManager());
     bind(eventChannelTable = new EventChannelTable());
@@ -137,6 +140,10 @@ public class Modules {
 
   public CommandModule getCommandModule() {
     return callback;
+  }
+  
+  public ThreadModule getThreads() {
+    return threads;
   }
 
 }

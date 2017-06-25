@@ -1,6 +1,6 @@
 package org.sapia.ubik.mcast.control;
 
-import org.sapia.ubik.mcast.Defaults;
+import org.sapia.ubik.rmi.Defaults;
 import org.sapia.ubik.util.TimeValue;
 
 /**

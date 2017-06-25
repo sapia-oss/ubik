@@ -1,6 +1,7 @@
 package org.sapia.ubik.rmi.naming.remote.archie;
 
 import java.io.Serializable;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.After;
 import org.junit.Before;
@@ -20,6 +21,10 @@ public class UbikRemoteContextTest {
     c2 = EventChannelTestSupport.createEventChannel("ubik.test");
     c1.start();
     c2.start();
+    
+    c1.getView().awaitPeers(5, TimeUnit.SECONDS);
+    c2.getView().awaitPeers(5, TimeUnit.SECONDS);
+
     src = UbikRemoteContext.newInstance(c1.getReference());
     target = UbikRemoteContext.newInstance(c2.getReference());
   }
@@ -53,6 +58,7 @@ public class UbikRemoteContextTest {
     src.rebind("service", new SerializableObj());
     EventChannel c3 = EventChannelTestSupport.createEventChannel("ubik.test");
     c3.start();
+    c3.getView().awaitPeers(5, TimeUnit.SECONDS);
     try {
       UbikRemoteContext lateContext = UbikRemoteContext.newInstance(c3.getReference());
       Thread.sleep(2000);

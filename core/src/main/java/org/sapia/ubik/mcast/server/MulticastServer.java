@@ -8,13 +8,10 @@ import java.net.MulticastSocket;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
-import org.sapia.ubik.concurrent.NamedThreadFactory;
-import org.sapia.ubik.concurrent.ThreadShutdown;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
-import org.sapia.ubik.mcast.Defaults;
+import org.sapia.ubik.rmi.Defaults;
 import org.sapia.ubik.util.Assertions;
 import org.sapia.ubik.util.Localhost;
 
@@ -30,15 +27,14 @@ public abstract class MulticastServer {
   static final int DEFAULT_TTL = 7;
 
   protected Category log = Log.createCategory(getClass());
+  
   protected MulticastSocket sock;
-  private String name;
-  private InetAddress group;
-  private String groupStr;
-  private int port;
-  private Thread serverThread;
-  private int handlerThreadCount;
-  private ExecutorService executor;
-  private int bufSize = Defaults.DEFAULT_UDP_PACKET_SIZE;
+  private InetAddress       group;
+  private String            groupStr;
+  private int               port;
+  private ExecutorService   selectorThreads;
+  private ExecutorService   workerThreads;
+  private int               bufSize = Defaults.DEFAULT_UDP_PACKET_SIZE;
 
   private class Acceptor implements Runnable {
 
@@ -52,24 +48,24 @@ public abstract class MulticastServer {
   }
 
   /**
-   * @param name
-   *          the name to use for this instance's server thread.
    * @param mcastAddress
    *          the address of the multicast group on which this instance should
    *          listen.
    * @param mcastPort
    *          the multicast port to which this instance should bind.
-   * @param handlerThreadCount The number of thread for dispatch inbound messages. 
    * @param ttl
    *          the time-to-live of datagram packets that this instance will send.
+   * 
+   * 
    * @throws IOException
    *           if a problem occurs while calling this constructor.
    */
-  protected MulticastServer(String name, String mcastAddress, int mcastPort, int handlerThreadCount, int ttl) throws IOException {
-    this.name = name;
-    serverThread = NamedThreadFactory.createWith(name + ".ServerThread").setDaemon(true).newThread(new Acceptor());
-    group = InetAddress.getByName(mcastAddress);
-    groupStr = mcastAddress;
+  protected MulticastServer(String mcastAddress, int mcastPort, int ttl, ExecutorService selectorThreads, ExecutorService workerThreads) throws IOException {
+    this.selectorThreads = selectorThreads;
+    this.workerThreads   = workerThreads;
+    group                = InetAddress.getByName(mcastAddress);
+    groupStr             = mcastAddress;
+    
     sock = new MulticastSocket(mcastPort);
     if (Localhost.isIpPatternDefined()) {
       sock.setNetworkInterface(NetworkInterface.getByInetAddress(Localhost.getPreferredLocalAddress()));
@@ -77,7 +73,6 @@ public abstract class MulticastServer {
     sock.setTimeToLive(ttl);
     sock.joinGroup(group);
     port = mcastPort;
-    this.handlerThreadCount = handlerThreadCount;
   }
 
   /**
@@ -123,10 +118,7 @@ public abstract class MulticastServer {
    * Starts this instance.
    */
   public synchronized void start() {
-    if (!serverThread.isAlive()) {
-      executor = Executors.newFixedThreadPool(handlerThreadCount, NamedThreadFactory.createWith(name + ".HandlerThread").setDaemon(true));
-      serverThread.start();
-    }
+    selectorThreads.submit(new Acceptor());
   }
 
   /**
@@ -141,10 +133,8 @@ public abstract class MulticastServer {
       }
       sock.close();
     }
-    ThreadShutdown.create(serverThread).shutdownLenient();
-    if (executor != null) {
-      executor.shutdownNow();
-    }
+    selectorThreads.shutdownNow();
+    workerThreads.shutdown();
   }
 
   private void doRun() {
@@ -154,7 +144,12 @@ public abstract class MulticastServer {
       try {
         DatagramPacket pack = new DatagramPacket(bytes, bytes.length);
         sock.receive(pack);
-        executor.submit(() -> handle(pack, sock));
+        workerThreads.submit(new Runnable() {
+          @Override
+          public void run() {
+            handle(pack, sock);
+          }
+        });
       } catch (EOFException e) {
         log.error("EOF: could not read incoming packet bytes. Packet size may be too short: " + bufSize);
       } catch (SocketException e) {
@@ -166,7 +161,9 @@ public abstract class MulticastServer {
           log.error("Socket error caught while reading data", e);
         }
       } catch (Exception e) {
-        log.error("Unexpected exception caught while waiting for incoming packets", e);
+        if (!workerThreads.isShutdown()) {
+          log.error("Unexpected exception caught while waiting for incoming packets", e);
+        }
       }
     }
   }

@@ -11,6 +11,7 @@ import org.sapia.ubik.jmx.JmxHelper;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.module.ModuleContext.State;
+import org.sapia.ubik.util.Func;
 
 /**
  * An instance of this class holds and manages {@link Module}s.
@@ -24,6 +25,7 @@ public class ModuleContainer {
   private Map<String, Module> modulesByName = new HashMap<String, Module>();
   private List<ModuleRef> moduleList = new ArrayList<ModuleRef>();
   private volatile State state = State.CREATED;
+  private Object lock = new Object();
 
   /**
    * Binds the given module to this instance.
@@ -124,58 +126,73 @@ public class ModuleContainer {
   /**
    * Initializes this instance's modules.
    */
-  public synchronized void init() {
+  public void init() {
     if (state == State.CREATED || state == State.STOPPED) {
-      ModuleContext ctx = new ModuleContextImpl();
-      state = State.INITIALIZING;
-      try {
-        for (ModuleRef module : moduleList) {
-          log.info("Initializing module %s", module.module.getClass().getSimpleName());
-          module.init(ctx);
-        }
-      } finally {
-        state = State.INITIALIZED;
-      }
+      state = synchonizedGuard(new Func<ModuleContext.State, State>() {
+        @Override
+        public State call(State current) {
+          if (state == State.CREATED || state == State.STOPPED) {
+            state = State.INITIALIZING;
+            ModuleContext ctx = new ModuleContextImpl();
+            for (ModuleRef module : moduleList) {
+              log.info("Initializing module %s", module.module.getClass().getSimpleName());
+              module.init(ctx);
+            }
+            return State.INITIALIZED;
+          }
+          return current;
+        }     
+      });
     }
   }
-
+  
   /**
    * Starts this instance's modules.
    */
-  public synchronized void start() {
+  public void start() {
     if (state == State.INITIALIZED || state == State.STOPPED) {
-      ModuleContext ctx = new ModuleContextImpl();
-      state = State.STARTING;
-      try {
-        for (ModuleRef module : moduleList) {
-          log.info("Starting module %s", module.module.getClass().getSimpleName());
-          if (module.state == State.STOPPED) {
-            module.init(ctx);
+      state = synchonizedGuard(new Func<ModuleContext.State, ModuleContext.State>() {
+        @Override
+        public State call(State current) {
+          if (state == State.INITIALIZED || state == State.STOPPED) {
+            state = State.STARTING;
+            ModuleContext ctx = new ModuleContextImpl();
+            for (ModuleRef module : moduleList) {
+              log.info("Starting module %s", module.module.getClass().getSimpleName());
+              if (module.state == State.STOPPED) {
+                module.init(ctx);
+              }
+              module.start(ctx);
+            }
+            return State.STARTED;
           }
-          module.start(ctx);
+          return current;
         }
-      } finally {
-        state = State.STARTED;
-      }
+      });
     }
   }
 
   /**
    * Stops this instance's modules.
    */
-  public synchronized void stop() {
+  public void stop() {
     if (state == State.STARTED || state == State.INITIALIZED) {
-      state = State.STOPPING;
-      try {
-        for (int i = moduleList.size() - 1; i >= 0; i--) {
-          ModuleRef module = moduleList.get(i);
-          log.info("Stopping module %s", module.module.getClass().getSimpleName());
-          module.stop();
-          log.info("Stopped module %s", module.module.getClass().getSimpleName());
+      state = synchonizedGuard(new Func<ModuleContext.State, ModuleContext.State>() {
+        @Override
+        public State call(State current) {
+          if (state == State.STARTED || state == State.INITIALIZED) {
+            state = State.STOPPING;
+            for (int i = moduleList.size() - 1; i >= 0; i--) {
+              ModuleRef module = moduleList.get(i);
+              log.info("Stopping module %s", module.module.getClass().getSimpleName());
+              module.stop();
+              log.info("Stopped module %s", module.module.getClass().getSimpleName());
+            }
+            return State.STOPPED;
+          }
+          return current;
         }
-      } finally {
-        state = State.STOPPED;
-      }
+      });
     }
   }
 
@@ -204,10 +221,19 @@ public class ModuleContainer {
   public boolean isStarted() {
     return this.state == State.STARTED;
   }
-
+  
   // --------------------------------------------------------------------------
+  // Restricted
+  
+  private State synchonizedGuard(Func<State, State> func) {
+    synchronized (lock) {
+      return func.call(state);
+    }
+  }
 
+  // ==========================================================================
   // ModuleContext implementation
+  
   public class ModuleContextImpl implements ModuleContext {
 
     @Override

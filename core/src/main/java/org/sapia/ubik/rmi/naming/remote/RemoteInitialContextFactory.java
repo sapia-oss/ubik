@@ -3,6 +3,7 @@ package org.sapia.ubik.rmi.naming.remote;
 import java.io.IOException;
 import java.rmi.RemoteException;
 import java.util.Hashtable;
+import java.util.concurrent.TimeUnit;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -12,7 +13,6 @@ import javax.naming.spi.InitialContextFactory;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.AsyncEventListener;
-import org.sapia.ubik.mcast.Defaults;
 import org.sapia.ubik.mcast.DomainName;
 import org.sapia.ubik.mcast.EventChannel;
 import org.sapia.ubik.mcast.EventChannelRef;
@@ -21,6 +21,7 @@ import org.sapia.ubik.net.TCPAddress;
 import org.sapia.ubik.net.Uri;
 import org.sapia.ubik.net.UriSyntaxException;
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.Defaults;
 import org.sapia.ubik.rmi.naming.ServiceLocator;
 import org.sapia.ubik.rmi.naming.remote.discovery.ServiceDiscoListener;
 import org.sapia.ubik.rmi.naming.remote.proxy.ContextResolver;
@@ -118,8 +119,11 @@ import org.sapia.ubik.util.Pause;
 
 @SuppressWarnings(value = "unchecked")
 public class RemoteInitialContextFactory implements InitialContextFactory, JNDIConsts {
-  private String scheme = ServiceLocator.UBIK_SCHEME;
-  private Category log = Log.createCategory(getClass());
+  
+  private static final long CHANNEL_PEER_DISCO_DELAY = 2;
+  
+  private String   scheme = ServiceLocator.UBIK_SCHEME;
+  private Category log    = Log.createCategory(getClass());
 
   public RemoteInitialContextFactory() {
   }
@@ -157,6 +161,11 @@ public class RemoteInitialContextFactory implements InitialContextFactory, JNDIC
     RemoteContext ctx = null;
     ContextResolver resolver = doGetResolver();
     EventChannelRef channel = getEventChannel(allProps);
+    try {
+      channel.get().getView().tryAwaitPeers(CHANNEL_PEER_DISCO_DELAY, TimeUnit.SECONDS);
+    } catch (InterruptedException e) {
+      throw new IllegalStateException("Calling thread interrupted while performing discovery");
+    }
     try {
       ctx = resolver.resolve(uri.getHost(), uri.getPort());
     } catch (RemoteException e) {
@@ -202,7 +211,7 @@ public class RemoteInitialContextFactory implements InitialContextFactory, JNDIC
   }
 
   private EventChannelRef getEventChannel(Conf props) throws NamingException {
-    final String domain = props.getProperty(UBIK_DOMAIN_NAME, JNDIConsts.DEFAULT_DOMAIN);
+    final String domain = props.getProperty(UBIK_DOMAIN_NAME, Defaults.DEFAULT_DOMAIN);
 
     EventChannelRef ref = EventChannel.selectActiveChannel(new Condition<EventChannel>() {
       DomainName dn = DomainName.parse(domain);

@@ -7,9 +7,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.sapia.ubik.concurrent.BlockingCompletionQueue;
-import org.sapia.ubik.rmi.Consts;
-import org.sapia.ubik.util.Conf;
-import org.sapia.ubik.util.ExtendedProperties;
 
 public class EventConsumerTest {
   
@@ -17,10 +14,7 @@ public class EventConsumerTest {
   
   @Before
   public void setUp() {
-    Conf conf = new ExtendedProperties()
-        .setInt(Consts.MCAST_CONSUMER_MIN_COUNT, 1)
-        .setInt(Consts.MCAST_CONSUMER_MAX_COUNT, 10).toConf();
-    cons = new EventConsumer("123", "default", conf);
+    cons = new EventConsumer("123", "default");
   }
   
   @After

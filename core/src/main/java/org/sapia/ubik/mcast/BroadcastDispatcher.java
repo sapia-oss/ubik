@@ -15,11 +15,9 @@ import org.sapia.ubik.util.Conf;
 public interface BroadcastDispatcher {
   
   /**
-   * @param consumer the {@link EventConsumer} that this instance should
-   * notify when it receives {@link RemoteEvent}s.
-   * @param config the {@link Conf} instance to use for retrieving configuration properties.
+   * @param context the {@link DispatcherContext} holding this instance's initialization data.
    */
-  public void initialize(EventConsumer consumer, Conf config);
+  public void initialize(DispatcherContext context);
   
   /**
    * Dispatches a multicast event holding the given parameters.

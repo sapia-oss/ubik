@@ -3,8 +3,8 @@ package org.sapia.ubik.rmi.server.transport.socket;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.rmi.RemoteException;
+import java.util.concurrent.ExecutorService;
 
-import org.sapia.ubik.concurrent.ConfigurableExecutor.ThreadingConfiguration;
 import org.sapia.ubik.concurrent.NamedThreadFactory;
 import org.sapia.ubik.concurrent.ThreadShutdown;
 import org.sapia.ubik.log.Log;
@@ -18,6 +18,7 @@ import org.sapia.ubik.net.UbikServerSocketFactory;
 import org.sapia.ubik.net.WorkerPool;
 import org.sapia.ubik.rmi.server.Server;
 import org.sapia.ubik.rmi.server.command.RMICommand;
+import org.sapia.ubik.rmi.threads.Threads;
 import org.sapia.ubik.util.Localhost;
 
 /**
@@ -33,16 +34,25 @@ public class SocketRmiServer extends SocketServer implements Server, SocketRmiSe
    */
   public static class Builder {
 
-    private String transportType;
-    private String bindAddress;
-    private int port;
-    private long resetInterval;
-    private ThreadingConfiguration threadConfiguration = new ThreadingConfiguration();
+    private String                 transportType;
+    private String                 bindAddress;
+    private int                    port;
+    private long                   resetInterval;
     private SocketConnectionFactory connectionFactory;;
     private UbikServerSocketFactory serverSocketFactory;
+    private ExecutorService         executor;
 
     private Builder(String transportType) {
       this.transportType = transportType;
+    }
+    
+    /**
+     * @param executor the {@link ExecutorService} to use for worker threads.
+     * @return this instance.
+     */
+    public Builder setExecutor(ExecutorService executor) {
+      this.executor = executor;
+      return this;
     }
 
     /**
@@ -66,17 +76,7 @@ public class SocketRmiServer extends SocketServer implements Server, SocketRmiSe
       this.port = port;
       return this;
     }
-
-    /**
-     * @param threadConf
-     *          the threading {@link ThreadingConfiguration} to use.
-     * @return this instance.
-     */
-    public Builder setThreadingConfig(ThreadingConfiguration threadConf) {
-      this.threadConfiguration = threadConf;
-      return this;
-    }
-
+    
     /**
      * If a {@link #connectionFactory} is explicitely specified, this property
      * will have no effect.
@@ -125,7 +125,7 @@ public class SocketRmiServer extends SocketServer implements Server, SocketRmiSe
 
     public SocketRmiServer build() throws IOException {
 
-      SocketRmiServerThreadPool threadPool = new SocketRmiServerThreadPool("ubik.rmi.tcp.SocketServerThread", true, threadConfiguration);
+      SocketRmiServerThreadPool threadPool = new SocketRmiServerThreadPool(Threads.createWorkerPool());
 
       if (connectionFactory == null) {
         SocketRmiConnectionFactory rmiConnectionFactory = new SocketRmiConnectionFactory(transportType);

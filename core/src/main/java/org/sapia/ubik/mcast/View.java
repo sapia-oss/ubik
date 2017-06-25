@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
@@ -15,6 +16,7 @@ import org.sapia.ubik.util.Assertions;
 import org.sapia.ubik.util.Collects;
 import org.sapia.ubik.util.Condition;
 import org.sapia.ubik.util.Func;
+import org.sapia.ubik.util.Pause;
 import org.sapia.ubik.util.SoftReferenceList;
 import org.sapia.ubik.util.SysClock;
 import org.sapia.ubik.util.SysClock.RealtimeClock;
@@ -27,7 +29,7 @@ import org.sapia.ubik.util.SysClock.RealtimeClock;
  * An instance of this class encapsulates the address of each of the peers of an
  * {@link EventChannel} node.
  * 
- * @author Yanick Duchesne
+ * @author yduchesne
  */
 public class View {
 
@@ -41,6 +43,7 @@ public class View {
   private String node;
   private Map<String, NodeInfo>                        nodeToNodeInfo = new ConcurrentHashMap<String, NodeInfo>();
   private SoftReferenceList<EventChannelStateListener> listeners      = new SoftReferenceList<EventChannelStateListener>();
+  private Object                                       peerWaitLock   = new Object();
   
   /**
    * @param node the node identifier corresponding to the cluster member node to which this instance is associated.
@@ -57,6 +60,60 @@ public class View {
     this.clock = clock;
     this.node = node;
   }
+  
+  /**
+   * @param timeout the maximum amount of time to wait for.
+   * @param unit    the {@link TimeUnit} in which the given timeout is expressed.
+   * @throws InterruptedException if the calling thread is interrupted while waiting.
+   */
+  public void tryAwaitPeers(long timeout, TimeUnit unit) throws InterruptedException {
+    Pause pause = new Pause(unit.toMillis(timeout));
+    while (nodeToNodeInfo.isEmpty() && !pause.isOver()) {
+      synchronized (peerWaitLock) {
+        peerWaitLock.wait(pause.remainingNotZero());
+      }
+    }
+	}
+  
+  /**
+   * @param timeout the maximum amount of time to wait for.
+   * @param unit    the {@link TimeUnit} in which the given timeout is expressed.
+   * @param minimum the minimum number of peers to wait for.
+   * @throws InterruptedException if the calling thread is interrupted while waiting.
+   */
+  public void tryAwaitPeers(long timeout, TimeUnit unit, int minimum) throws InterruptedException {
+    Pause pause = new Pause(unit.toMillis(timeout));
+    while (nodeToNodeInfo.size() < minimum && !pause.isOver()) {
+      synchronized (peerWaitLock) {
+        peerWaitLock.wait(pause.remainingNotZero());
+      }
+    }
+  }
+
+  /**
+   * @param timeout the maximum amount of time to wait for.
+   * @param unit    the {@link TimeUnit} in which the given timeout is expressed.
+   * @throws InterruptedException  if the calling thread is interrupted while waiting.
+   * @throws IllegalStateException if no peers where discovered within the specified timeout.
+   */
+  public void awaitPeers(long timeout, TimeUnit unit) throws InterruptedException, IllegalStateException {
+    tryAwaitPeers(timeout, unit);
+    Assertions.illegalState(nodeToNodeInfo.isEmpty(), "No peers discovered withing the specified timeout");
+  }
+  
+  /**
+   * @param timeout the maximum amount of time to wait for.
+   * @param unit    the {@link TimeUnit} in which the given timeout is expressed.
+   * @param minimum the minimum number of peers to wait for.
+   * @throws InterruptedException  if the calling thread is interrupted while waiting.
+   * @throws IllegalStateException if the minimum number of peers where was not discovered 
+   *                               within the specified timeout.
+   */
+  public void awaitPeers(long timeout, TimeUnit unit, int minimum) throws InterruptedException, IllegalStateException {
+    tryAwaitPeers(timeout, unit, minimum);
+    Assertions.illegalState(nodeToNodeInfo.isEmpty(), "No peers discovered withing the specified timeout");
+  }
+  
   
   /**
    * Adds the given listener to this instance, which will be kept in a
@@ -254,6 +311,9 @@ public class View {
   }
 
   private void notifyListeners(EventChannelEvent event, ViewEventType eventType) {
+    synchronized (peerWaitLock) {
+      peerWaitLock.notifyAll();
+    }
     synchronized (listeners) {
       for (EventChannelStateListener listener : listeners) {
         try {

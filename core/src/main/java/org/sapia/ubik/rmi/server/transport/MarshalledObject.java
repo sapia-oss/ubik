@@ -8,6 +8,7 @@ import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.Defaults;
 import org.sapia.ubik.rmi.server.VmId;
 import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.Serialization;
@@ -19,7 +20,7 @@ import org.sapia.ubik.util.Serialization;
  */
 public class MarshalledObject implements Externalizable {
 
-  private static int bufsize = Conf.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE);
+  private static int bufsize = Conf.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Defaults.DEFAULT_MARSHALLING_BUFSIZE);
 
   private byte[] bytes;
 

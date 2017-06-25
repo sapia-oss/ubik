@@ -6,6 +6,7 @@ import org.sapia.ubik.ioc.BeanLookup;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.BroadcastDispatcher;
+import org.sapia.ubik.mcast.DispatcherContext;
 import org.sapia.ubik.mcast.EventConsumer;
 import org.sapia.ubik.mcast.MulticastAddress;
 import org.sapia.ubik.mcast.RemoteEvent;
@@ -47,9 +48,9 @@ public class HazelcastBroadcastDispatcher implements BroadcastDispatcher {
   }
   
   @Override
-  public void initialize(EventConsumer consumer, Conf config) {
-    this.consumer = consumer;
-    String topicName = config.getNotNullProperty(Consts.BROADCAST_HAZELCAST_TOPIC);
+  public void initialize(DispatcherContext context) {
+    this.consumer    = context.getConsumer();
+    String topicName = context.getConf().getNotNullProperty(Consts.BROADCAST_HAZELCAST_TOPIC);
     HazelcastInstance instance = Hub.getBean(HazelcastInstance.class);
     if (instance == null) {
        instance = Singleton.get();

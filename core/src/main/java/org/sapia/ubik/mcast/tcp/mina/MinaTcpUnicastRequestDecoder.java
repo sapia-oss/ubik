@@ -9,6 +9,7 @@ import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.CumulativeProtocolDecoder;
 import org.apache.mina.filter.codec.ProtocolDecoderOutput;
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.Defaults;
 import org.sapia.ubik.serialization.SerializationStreams;
 import org.sapia.ubik.util.Conf;
 
@@ -63,7 +64,7 @@ public class MinaTcpUnicastRequestDecoder extends CumulativeProtocolDecoder {
   // ==========================================================================
   // class variables
 
-  private static int BUFSIZE = Conf.getSystemProperties().getIntProperty(Consts.MCAST_BUFSIZE_KEY, Consts.DEFAULT_MARSHALLING_BUFSIZE);
+  private static int BUFSIZE = Conf.getSystemProperties().getIntProperty(Consts.MCAST_BUFSIZE_KEY, Defaults.DEFAULT_MARSHALLING_BUFSIZE);
 
   private static final String DECODER_STATE = "DECODER_STATE";
 

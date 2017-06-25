@@ -11,6 +11,7 @@ import java.rmi.RemoteException;
 
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.Defaults;
 import org.sapia.ubik.rmi.server.VmId;
 import org.sapia.ubik.rmi.server.transport.MarshalStreamFactory;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
@@ -31,7 +32,7 @@ import org.simpleframework.http.Response;
  */
 class HttpRmiServerConnection implements RmiConnection {
 
-  private int bufsz = Conf.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE);
+  private int bufsz = Conf.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Defaults.DEFAULT_MARSHALLING_BUFSIZE);
   private Request req;
   private Response res;
   private HttpAddress address;

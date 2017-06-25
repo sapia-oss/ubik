@@ -5,15 +5,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
-import org.sapia.ubik.concurrent.NamedThreadFactory;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.BroadcastDispatcher;
-import org.sapia.ubik.mcast.Defaults;
+import org.sapia.ubik.mcast.DispatcherContext;
 import org.sapia.ubik.mcast.EventConsumer;
 import org.sapia.ubik.mcast.McastUtil;
 import org.sapia.ubik.mcast.MulticastAddress;
@@ -23,6 +19,7 @@ import org.sapia.ubik.net.ConnectionStateListener;
 import org.sapia.ubik.net.ConnectionStateListenerList;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.Defaults;
 import org.sapia.ubik.util.Assertions;
 import org.sapia.ubik.util.Conf;
 
@@ -51,27 +48,26 @@ public class NatsBroadcastDispatcher implements BroadcastDispatcher {
   private NatsConnector connector;
   private NatsAddress    address;
   private int           bufsize;
-  private int           handlerThreadCount;
-  private int           maxHandlerQueueSize;
   private ConnectionStateListenerList listeners = new ConnectionStateListenerList();
   private volatile ConnectionState    state     = ConnectionState.UP;
   private ConnectionMonitor           monitor;
-  private ExecutorService             executor;
+  private ExecutorService             workers;
+  private ExecutorService             senders;
   private String                      fullTopic;
 
   public NatsBroadcastDispatcher() {
   }
   
   @Override
-  public void initialize(EventConsumer consumer, Conf config) {
-    this.consumer       = consumer;
-    bufsize             = config.getIntProperty(Consts.MCAST_BUFSIZE_KEY, NatsBroadcastDispatcher.DEFAULT_BUFSZ);
-    handlerThreadCount  = config.getIntProperty(Consts.MCAST_HANDLER_COUNT, NatsBroadcastDispatcher.DEFAULT_HANDLER_COUNT);
-    maxHandlerQueueSize = config.getIntProperty(Consts.MCAST_HANDLER_QUEUE_SIZE, NatsBroadcastDispatcher.DEFAULT_HANDLER_QUEUE_SIZE);
-    String natsUrl      = config.getNotNullProperty(Consts.BROADCAST_NATS_URL);
-    connector           = new NatsConnector(natsUrl);
-    address             = new NatsAddress(natsUrl);
-    fullTopic           = topic(consumer.getDomainName().toString());
+  public void initialize(DispatcherContext context) {
+    consumer       = context.getConsumer();
+    workers        = context.getWorkerThreads();
+    senders        = context.getIoOutboundThreads();
+    bufsize        = context.getConf().getIntProperty(Consts.MCAST_BUFSIZE_KEY, NatsBroadcastDispatcher.DEFAULT_BUFSZ);
+    String natsUrl = context.getConf().getNotNullProperty(Consts.BROADCAST_NATS_URL);
+    connector      = new NatsConnector(natsUrl);
+    address        = new NatsAddress(natsUrl);
+    fullTopic      = topic(consumer.getDomainName().toString());
   }
   
   @Override
@@ -103,12 +99,32 @@ public class NatsBroadcastDispatcher implements BroadcastDispatcher {
         if (alldomains) {
           evt = new RemoteEvent(null, evtType, data).setNode(consumer.getNode());
           evt.setUnicastAddress(unicastAddr);
-          connector.getConnection().publish(BASE_NATS_TOPIC, createPayload(evt));
-
+          
+          senders.submit(new Runnable() {
+            @Override
+            public void run() {
+              try {
+                connector.getConnection().publish(BASE_NATS_TOPIC, createPayload(evt));
+              } catch (IOException e) {
+                watchConnection();
+              }
+            }
+          });
+          
         } else {
           evt = new RemoteEvent(fullTopic, evtType, data).setNode(consumer.getNode());
           evt.setUnicastAddress(unicastAddr);
-          connector.getConnection().publish(fullTopic, createPayload(evt));
+          
+          senders.submit(new Runnable() {
+            @Override
+            public void run() {
+              try {
+                connector.getConnection().publish(fullTopic, createPayload(evt));
+              } catch (IOException e) {
+                watchConnection();
+              }
+            }
+          });
 
         }
       } catch (IOException e) {
@@ -138,17 +154,9 @@ public class NatsBroadcastDispatcher implements BroadcastDispatcher {
   @Override
   public void start() {
     Assertions.illegalState(consumer == null, "EventConsumer not set");
-    Assertions.illegalState(handlerThreadCount <= 0, "Handler thread count must be greater than 0");
-    Assertions.illegalState(maxHandlerQueueSize <= 0, "Maximum handler queue size must be greater than 0");
     
     try {
-      log.info("Creating executor with %s threads and queue of size %s", handlerThreadCount, maxHandlerQueueSize);
-      executor = new ThreadPoolExecutor(
-    		  handlerThreadCount, handlerThreadCount,
-    		  120, TimeUnit.SECONDS,
-    		  new LinkedBlockingQueue<>(maxHandlerQueueSize),
-    		  NamedThreadFactory.createWith("Ubik.AvisBroadcastDispatcher.Handler").setDaemon(true));
-    	
+
       doConnect();
       listeners.onConnected();
     } catch (IOException e) {
@@ -163,9 +171,8 @@ public class NatsBroadcastDispatcher implements BroadcastDispatcher {
     if (monitor != null) {
       monitor.stop();
     }
-    if (executor != null) {
-    	executor.shutdownNow();
-    }
+    workers.shutdown();
+    senders.shutdown();
   }
 
   @Override
@@ -227,7 +234,12 @@ public class NatsBroadcastDispatcher implements BroadcastDispatcher {
           if (data instanceof RemoteEvent) {
             RemoteEvent evt = (RemoteEvent) data;
             log.debug("Received message %s from node %s", evt.getType(), evt.getNode());
-            executor.execute(() -> consumer.onAsyncEvent((RemoteEvent) data));
+            workers.submit(new Runnable() {
+              @Override
+              public void run() {
+                consumer.onAsyncEvent((RemoteEvent) data);
+              }
+            });
           }
         } catch (Exception e) {
           log.error("Error handling notification %s" + msg.getSubject());

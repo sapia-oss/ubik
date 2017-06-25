@@ -1,12 +1,12 @@
 package org.sapia.ubik.rmi.examples;
 
-import org.sapia.ubik.concurrent.ConfigurableExecutor.ThreadingConfiguration;
 import org.sapia.ubik.net.Connection;
 import org.sapia.ubik.net.DefaultUbikServerSocketFactory;
-import org.sapia.ubik.net.Worker;
 import org.sapia.ubik.net.Request;
 import org.sapia.ubik.net.SocketServer;
+import org.sapia.ubik.net.Worker;
 import org.sapia.ubik.net.WorkerPool;
+import org.sapia.ubik.rmi.threads.Threads;
 
 
 /**
@@ -36,7 +36,7 @@ public class MyServer extends SocketServer {
 
   static class MyThreadPool extends WorkerPool<Request> {
     MyThreadPool() {
-      super("MyThreadPool", true, ThreadingConfiguration.newInstance().setCorePoolSize(5));
+      super(Threads.getGlobalWorkerPool());
     }
 
     @Override

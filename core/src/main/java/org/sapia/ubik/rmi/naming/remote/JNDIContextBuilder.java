@@ -7,6 +7,7 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.Defaults;
 import org.sapia.ubik.util.Assertions;
 
 /**
@@ -19,9 +20,9 @@ public final class JNDIContextBuilder {
 
   private Properties properties = new Properties();
 
-  private String domain = JNDIConsts.DEFAULT_DOMAIN;
+  private String domain = Defaults.DEFAULT_DOMAIN;
   private String host;
-  private int port = JNDIConsts.DEFAULT_PORT;
+  private int    port   = JNDIConsts.DEFAULT_PORT;
 
   /**
    * @param domain

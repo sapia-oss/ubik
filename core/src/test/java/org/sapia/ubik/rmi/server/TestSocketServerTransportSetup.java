@@ -21,13 +21,11 @@ public class TestSocketServerTransportSetup {
     System.setProperty(Consts.COLOCATED_CALLS_ENABLED, "false");
     jndi = new EmbeddableJNDIServer("testDomain", 1099);
     jndi.start(true);
-    Thread.sleep(10000);
     Properties props = new Properties();
     props.setProperty(Consts.UBIK_DOMAIN_NAME, "testDomain");
     props.setProperty(Context.PROVIDER_URL, "ubik://" + Localhost.getPreferredLocalAddress().getHostAddress() + ":1099/");
     props.setProperty(Context.INITIAL_CONTEXT_FACTORY, RemoteInitialContextFactory.class.getName());
     context = new InitialContext(props);
-
   }
 
   public void tearDown() {
