@@ -58,16 +58,17 @@ public class ClientSocketConnector {
       @Override
       public Void call() throws Exception {
         Socket socket = socketRef.get();
-        socket.connect(address);
+        socket.connect(address, (int) unit.toMillis(timeout));
         log.debug("Connection established to %s", address);
         return null;
       }
     });
     
     try {
-      result.get(timeout, TimeUnit.MILLISECONDS);
+      result.get(timeout, unit);
     } catch (ExecutionException e) {
       if (e.getCause() instanceof IOException) {
+        log.error("System error creating socket connection to address " + address);
         throw (IOException) e.getCause();
       } else {
         throw new IllegalStateException("Unexpected error occurred", e);
