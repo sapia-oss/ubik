@@ -3,10 +3,10 @@
 	<modelVersion>4.0.0</modelVersion>
 	<name>Sapia Ubik Parent POM</name>
 	<description>A RMI-like distributed computing framework</description>
-	<url>http://wwiw.sapia-oss.org/projects/ubik/index.html</url>
+	<url>http://www.sapia-oss.org/projects/ubik/index.html</url>
 
 	<artifactId>sapia_ubik_parent</artifactId>
-	<version>develop-nats</version>
+	<version>4.5.16</version>
 
 	<parent>
 		<groupId>org.sapia</groupId>
@@ -39,7 +39,6 @@
 		<module>hazelcast</module>
 		<module>camel</module>
 		<module>amqp</module>
-		<module>nats</module>
 		<module>zookeeper</module>
 		<module>examples</module>
 	</modules>
