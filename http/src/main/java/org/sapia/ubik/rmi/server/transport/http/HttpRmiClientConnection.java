@@ -20,6 +20,7 @@ import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.Defaults;
 import org.sapia.ubik.rmi.server.VmId;
 import org.sapia.ubik.rmi.server.stats.Stats;
 import org.sapia.ubik.rmi.server.transport.MarshalStreamFactory;
@@ -52,7 +53,7 @@ public class HttpRmiClientConnection implements RmiConnection {
   private HttpAddress address;
   private HttpClient client;
   private byte[] responsePayload;
-  private int bufsz = Conf.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE);
+  private int bufsz = Conf.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Defaults.DEFAULT_MARSHALLING_BUFSIZE);
 
   /**
    * Creates an instance of this class with the given HTTP client and uri to

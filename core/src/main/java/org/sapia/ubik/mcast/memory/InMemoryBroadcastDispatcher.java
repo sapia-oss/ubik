@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.BroadcastDispatcher;
+import org.sapia.ubik.mcast.DispatcherContext;
 import org.sapia.ubik.mcast.EventConsumer;
 import org.sapia.ubik.mcast.MulticastAddress;
 import org.sapia.ubik.mcast.RemoteEvent;
@@ -43,8 +44,8 @@ public class InMemoryBroadcastDispatcher implements BroadcastDispatcher {
   }
   
   @Override
-  public void initialize(EventConsumer consumer, Conf config) {
-    this.consumer = consumer;
+  public void initialize(DispatcherContext context) {
+    this.consumer = context.getConsumer();
     this.address  = new InMemoryMulticastAddress(UUID.randomUUID().toString());
   }
   

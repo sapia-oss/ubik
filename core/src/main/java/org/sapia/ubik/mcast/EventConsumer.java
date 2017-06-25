@@ -8,23 +8,15 @@ import java.util.UUID;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.RejectedExecutionHandler;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
-import org.sapia.ubik.concurrent.ConfigurableExecutor;
-import org.sapia.ubik.concurrent.ConfigurableExecutor.ThreadingConfiguration;
-import org.sapia.ubik.concurrent.NamedThreadFactory;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
-import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.threads.Threads;
 import org.sapia.ubik.util.Chrono;
-import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.SoftReferenceList;
-import org.sapia.ubik.util.TimeValue;
 
 /**
- * Helper class that encasulates {@link AsyncEventListener} s and
+ * Helper class that encapsulates {@link AsyncEventListener} s and
  * {@link SyncEventListener}s, grouping them by "event type". This class
  * implements the dispatching of remote events to the encapsulated listeners.
  *
@@ -47,38 +39,27 @@ public class EventConsumer {
   private String              node;
   private ExecutorService     executor;
 
+
   /**
-   * Creates an instance of this class, with the given node identifier, and the
-   * given domain.
+   * @param node   the identifier of this instance.
+   * @param domain the name of the domain to which this instance corresponds.
    */
-  public EventConsumer(String node, String domain, Conf conf) {
+  public EventConsumer(String node, String domain) {
+    this(node, domain, Threads.createWorkerPool());
+  }
+  
+  /**
+   * @param node     the identifier of this instance.
+   * @param domain   the name of the domain to which this instance corresponds.
+   * @param executor the {@link ExecutorService} to use in order to process events asynchronously.
+   */
+  public EventConsumer(String node, String domain, ExecutorService executor) {
     this.domain = DomainName.parse(domain);
     this.node = node;
     
-    int minThreads = conf.getIntProperty(Consts.MCAST_CONSUMER_MIN_COUNT, Defaults.DEFAULT_CONSUMER_MIN_COUNT);
-    int maxThreads = conf.getIntProperty(Consts.MCAST_CONSUMER_MAX_COUNT, Defaults.DEFAULT_CONSUMER_MAX_COUNT);
-    long idleTime  = conf.getLongProperty(Consts.MCAST_CONSUMER_IDLE_TIME, Defaults.DEFAULT_CONSUMER_IDLE_TIME);
-    int queueSize  = conf.getIntProperty(Consts.MCAST_CONSUMER_QUEUE_SIZE, Defaults.DEFAULT_CONSUMER_QUEUE_SIZE);
-    
-    log.info("Creating event consumer (%s) for domain %s with the following threading configuration: ", node, domain);
-    log.info(" -> min threads... %s", minThreads);
-    log.info(" -> max threads:.. %s", maxThreads);
-    log.info(" -> idle time:.... %s millis", idleTime);
-    log.info(" -> queueSize:.... %s", queueSize);
-    
-    ThreadingConfiguration threading = ThreadingConfiguration.newInstance()
-        .setCorePoolSize(minThreads)
-        .setMaxPoolSize(maxThreads)
-        .setKeepAlive(new TimeValue(idleTime, TimeUnit.MILLISECONDS))
-        .setQueueSize(queueSize)
-        .setRejectionHandler(new RejectedExecutionHandler() {
-          @Override
-          public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
-            log.warning("Task queue is full. Ignoring task for incoming event: %s", r);
-          }
-        }
-    );
-    this.executor = new ConfigurableExecutor(threading, NamedThreadFactory.createWith("Ubik.EventConsumer.Consumer").setDaemon(true));
+    log.info("Creating event consumer (%s) for domain %s", node, domain);
+ 
+    this.executor = executor;
     log.debug("Starting node: %s@%s", node, domain);
   }
   
@@ -86,13 +67,13 @@ public class EventConsumer {
    * Creates an instance of this class with the given domain. Internally creates
    * a globally unique node identifier.
    */
-  public EventConsumer(String domain, Conf conf) throws UnknownHostException {
-    this(UUID.randomUUID().toString().replace("-", ""), domain, conf);
+  public EventConsumer(String domain) throws UnknownHostException {
+    this(UUID.randomUUID().toString().replace("-", ""), domain, Threads.createWorkerPool());
   }
 
   public void stop() {
     if (executor != null) {
-      executor.shutdownNow();
+      executor.shutdown();
     }
   }
   

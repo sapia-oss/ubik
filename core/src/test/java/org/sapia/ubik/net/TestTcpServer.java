@@ -1,6 +1,7 @@
 package org.sapia.ubik.net;
 
 import org.sapia.ubik.concurrent.ConfigurableExecutor.ThreadingConfiguration;
+import org.sapia.ubik.rmi.threads.Threads;
 
 
 public class TestTcpServer extends SocketServer {
@@ -30,7 +31,7 @@ public class TestTcpServer extends SocketServer {
 
   static class TestThreadPool extends WorkerPool<Request> {
     TestThreadPool() {
-      super("TestThreadPool", true, ThreadingConfiguration.newInstance().setCorePoolSize(5));
+      super(Threads.createWorkerPool());
     }
 
     @Override

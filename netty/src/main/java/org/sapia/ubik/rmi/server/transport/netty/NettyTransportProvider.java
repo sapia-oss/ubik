@@ -8,20 +8,20 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.sapia.ubik.concurrent.ConfigurableExecutor.ThreadingConfiguration;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.TcpPortSelector;
 import org.sapia.ubik.net.netty.NettyAddress;
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.Defaults;
 import org.sapia.ubik.rmi.server.Hub;
 import org.sapia.ubik.rmi.server.Server;
 import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.TransportProvider;
+import org.sapia.ubik.rmi.threads.Threads;
 import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.Localhost;
-import org.sapia.ubik.util.TimeValue;
 
 /**
  * A {@link TransportProvider} implementation on top of the Netty server
@@ -41,7 +41,7 @@ public class NettyTransportProvider implements TransportProvider, NettyConsts {
 
   private Map<ServerAddress, NettyClientConnectionPool> pools = new ConcurrentHashMap<ServerAddress, NettyClientConnectionPool>();
 
-  private int bufsize = Conf.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE);
+  private int bufsize = Conf.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Defaults.DEFAULT_MARSHALLING_BUFSIZE);
 
   /**
    * @see org.sapia.ubik.rmi.server.transport.TransportProvider#getPoolFor(org.sapia.ubik.net.ServerAddress)
@@ -98,23 +98,15 @@ public class NettyTransportProvider implements TransportProvider, NettyConsts {
     }
 
     log.debug("Server bind address %s", bindAddress);
+    
+    int selectorThreads = config.getIntProperty(Consts.SERVER_INBOUND_THREADS, Defaults.DEFAULT_INBOUND_THREADS);
 
-    ThreadingConfiguration workerConf = ThreadingConfiguration
-        .newInstance()
-        .setCorePoolSize(config.getIntProperty(Consts.SERVER_CORE_THREADS, ThreadingConfiguration.DEFAULT_CORE_POOL_SIZE))
-        .setMaxPoolSize(config.getIntProperty(Consts.SERVER_MAX_THREADS, ThreadingConfiguration.DEFAULT_MAX_POOL_SIZE))
-        .setQueueSize(config.getIntProperty(Consts.SERVER_THREADS_QUEUE_SIZE, ThreadingConfiguration.DEFAULT_QUEUE_SIZE))
-        .setKeepAlive(
-            TimeValue.createSeconds(config.getLongProperty(Consts.SERVER_THREADS_KEEP_ALIVE, ThreadingConfiguration.DEFAULT_KEEP_ALIVE.getValueInSeconds())));
-
-    ThreadingConfiguration ioConf = ThreadingConfiguration.newInstance()
-        .setCorePoolSize(config.getIntProperty(SERVER_IO_CORE_THREADS_KEY, DEFAULT_SERVER_IO_CORE_THREADS))
-        .setMaxPoolSize(config.getIntProperty(SERVER_IO_MAX_THREADS_KEY, DEFAULT_SERVER_IO_MAX_THREADS))
-        .setQueueSize(config.getIntProperty(SERVER_IO_QUEUE_SIZE_KEY, DEFAULT_SERVER_IO_QUEUE_SIZE))
-        .setKeepAlive(TimeValue.createSeconds(config.getLongProperty(SERVER_IO_KEEP_ALIVE_KEY, DEFAULT_SERVER_IO_KEEP_ALIVE)));
-
-    return new NettyServer(new NettyAddress(addr.getAddress().getHostAddress(), addr.getPort()), Hub.getModules().getClientRuntime().getDispatcher(),
-        ioConf, workerConf);
+    return new NettyServer(
+        new NettyAddress(addr.getAddress().getHostAddress(), addr.getPort()), 
+        Hub.getModules().getClientRuntime().getDispatcher(),
+        Threads.createIoInboundPool("netty", selectorThreads), 
+        Threads.createWorkerPool()
+     );
   }
 
   /**

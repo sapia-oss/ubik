@@ -3,10 +3,10 @@ package org.sapia.ubik.mcast.bou;
 import java.io.IOException;
 
 import org.sapia.ubik.mcast.BroadcastDispatcher;
+import org.sapia.ubik.mcast.DispatcherContext;
 import org.sapia.ubik.mcast.EventConsumer;
 import org.sapia.ubik.mcast.bou.BroadcastOverUnicastDispatcher.ViewCallback;
 import org.sapia.ubik.mcast.memory.InMemoryUnicastDispatcher;
-import org.sapia.ubik.util.Conf;
 
 public class BroadcastOverUnicastDispatcherInMemoryTest extends BroadcastOverUnicastDispatcherTestSupport {
   
@@ -20,7 +20,7 @@ public class BroadcastOverUnicastDispatcherInMemoryTest extends BroadcastOverUni
   @Override
   protected BroadcastDispatcher createDispatcher(final EventConsumer consumer, final ViewCallback view) throws IOException {
     ud = new InMemoryUnicastDispatcher();
-    ud.initialize(consumer, Conf.newInstance());
+    ud.initialize(new DispatcherContext(consumer));
     ud.start();
     addressesByNode.put(consumer.getNode(), ud.getAddress());
     BroadcastOverUnicastDispatcher bd = new BroadcastOverUnicastDispatcher(view, ud, 2);

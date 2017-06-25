@@ -12,11 +12,7 @@ import java.util.TimerTask;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
-import org.sapia.ubik.concurrent.NamedThreadFactory;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.control.ControlEvent;
@@ -36,6 +32,9 @@ import org.sapia.ubik.net.ConnectionStateListener;
 import org.sapia.ubik.net.ConnectionStateListenerList;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.Defaults;
+import org.sapia.ubik.rmi.threads.Threads;
+import org.sapia.ubik.util.Assertions;
 import org.sapia.ubik.util.Collects;
 import org.sapia.ubik.util.Condition;
 import org.sapia.ubik.util.Conf;
@@ -57,7 +56,7 @@ import org.sapia.ubik.util.TimeValue;
  * @see org.sapia.ubik.mcast.DomainName
  * @see org.sapia.ubik.mcast.RemoteEvent
  *
- * @author Yanick Duchesne
+ * @author yduchesne
  */
 public class EventChannel {
   
@@ -158,8 +157,6 @@ public class EventChannel {
   
   private static final int       DEFAULT_MAX_PUB_ATTEMPTS     = 3;
   private static final TimeValue DEFAULT_READ_TIMEOUT         = TimeValue.createMillis(10000);
-  private static final int       DEFAULT_PUBLISH_THREAD_COUNT = 20;
-  private static final int       DEFAULT_PUBLISH_QUEUE_SIZE   = 1000;
 
   private static Set<EventChannel> CHANNELS_BY_DOMAIN = Collections.synchronizedSet(new HashSet<EventChannel>());
 
@@ -181,8 +178,6 @@ public class EventChannel {
   private TimeRange                   publishIntervalRange;
   private TimeValue                   defaultReadTimeout     = DEFAULT_READ_TIMEOUT;
   private ConnectionStateListenerList stateListeners         = new ConnectionStateListenerList();
-  private int                         publishThreadCount;
-  private int                         publishQueueSize;
   private ExecutorService             publishExecutor;
   
   private SoftReferenceList<DiscoveryListener> discoListeners = new SoftReferenceList<DiscoveryListener>();
@@ -226,9 +221,17 @@ public class EventChannel {
    */
   public EventChannel(String domain, Conf config) throws IOException {
     config.addSystemProperties();
-    consumer  = new EventConsumer(domain, config);
-    unicast   = DispatcherFactory.createUnicastDispatcher(consumer, config);
-    broadcast = DispatcherFactory.createBroadcastDispatcher(consumer, config);
+    consumer  = new EventConsumer(domain);
+    
+    DispatcherContext context = new DispatcherContext(consumer, new DispatcherContext.SelectorExecutorFactory() {
+      @Override
+      public ExecutorService getExecutor(String name) {
+        return Threads.createIoInboundPool(name);
+      }
+    }).withConf(config);
+    
+    unicast   = DispatcherFactory.createUnicastDispatcher(context);
+    broadcast = DispatcherFactory.createBroadcastDispatcher(context);
     view      = new View(consumer.getNode());
     init(config);
   }
@@ -315,16 +318,23 @@ public class EventChannel {
   public synchronized void start() throws IOException {
     if (state == State.CREATED) {
 
-      publishExecutor = new ThreadPoolExecutor(publishThreadCount, publishThreadCount,
-          60, TimeUnit.SECONDS,
-          new LinkedBlockingQueue<Runnable>(publishQueueSize),
-          NamedThreadFactory.createWith("Ubik.EventChannel.Publish").setDaemon(true));
+      publishExecutor = Threads.createIoOutboundPool();
+      
+      final List<Runnable> pending = new ArrayList<>();
       
       broadcast.addConnectionStateListener(new ConnectionStateListener() {
 
         @Override
         public void onReconnected() {
-          if (doResync()) stateListeners.notifyReconnected();
+          if (state == State.STARTED) {
+            if (doResync()) stateListeners.notifyReconnected();
+          } else {
+            pending.add(new Runnable() {
+              public void run() {
+                if (doResync()) stateListeners.notifyReconnected();
+              }
+            });
+          }
         }
 
         @Override
@@ -334,7 +344,15 @@ public class EventChannel {
 
         @Override
         public void onConnected() {
-          if (doResync()) stateListeners.notifyConnected();
+          if (state == State.STARTED) {
+            if (doResync()) stateListeners.notifyConnected();
+          } else {
+            pending.add(new Runnable() {
+              public void run() {
+                if (doResync()) stateListeners.notifyConnected();
+              }
+            });
+          }
         }
 
         private boolean doResync() {
@@ -348,8 +366,14 @@ public class EventChannel {
       address = unicast.getAddress();
       CHANNELS_BY_DOMAIN.add(this);
       state   = State.STARTED;
+      
+      for (Runnable p : pending) {
+        p.run();
+      }
+      pending.clear();
     }
   }
+  
   
   /**
    * Forces a domain change: this instance will leave the current domain, 
@@ -376,32 +400,12 @@ public class EventChannel {
    * Forces a resync of this instance with the cluster.
    */
   public synchronized void resync() {
+    Assertions.illegalState(state != State.STARTED, "Event channel not started");
     log.info("Performing resync: clearing view and publishing presence to cluster");
     view.clearView();
     
     publishExecutor.execute(
-        doCreateTaskForPublishBraodcastEvent(maxPublishAttempts));
-  }
-  
-  private TimerTask doCreateTaskForPublishBraodcastEvent(final int attemptCount) {
-    return new TimerTask() {
-      @Override
-      public void run() {
-        log.info("Publishing presence of this node (%s) to cluster (attempt count %s)", address, attemptCount);
-        try {
-          broadcast.dispatch(address, false, PUBLISH_EVT, address);
-        } catch (IOException e) {
-          log.warning("Error publishing presence to cluster", e);
-        }
-        
-        int attemptLeft = attemptCount - 1;
-        if (attemptLeft > 0) {
-          heartbeatTimer.schedule(
-              doCreateTaskForPublishBraodcastEvent(attemptLeft),
-              publishIntervalRange.getRandomTime().getValueInMillis());
-        }
-      }
-    };
+        doCreateTaskForPublishBroadcastEvent(maxPublishAttempts));
   }
 
   /**
@@ -416,7 +420,7 @@ public class EventChannel {
         log.info("Could not send shutdown event", e, new Object[] {});
       }
       consumer.stop();
-      publishExecutor.shutdownNow();
+      publishExecutor.shutdown();
       heartbeatTimer.cancel();
       broadcast.close();
       unicast.close();
@@ -478,6 +482,7 @@ public class EventChannel {
    *      Object)
    */
   public Future<Void> dispatch(boolean alldomains, String type, Object data) {
+    Assertions.illegalState(state != State.STARTED, "Event channel not started");
     log.debug("Broadcasting async event %s to all domains - %s", type, data);
      return publishExecutor.<Void>submit(() -> {
         try {
@@ -495,6 +500,7 @@ public class EventChannel {
    *      Object)
    */
   public Future<Void> dispatch(ServerAddress addr, String type, Object data) {
+    Assertions.illegalState(state != State.STARTED, "Event channel not started");
     log.debug("Sending async event %s - %s", type, data);
     return publishExecutor.<Void>submit(() -> {
       try {
@@ -514,6 +520,7 @@ public class EventChannel {
    *      Object)
    */
   public Future<Void> dispatch(String type, Object data) {
+    Assertions.illegalState(state != State.STARTED, "Event channel not started");
     log.debug("Broadcasting async event %s - %s", type, data);
     return publishExecutor.<Void>submit(() -> {
       try {
@@ -534,6 +541,7 @@ public class EventChannel {
    */
   public Response send(ServerAddress addr, String type, Object data) 
       throws IOException, TimeoutException {
+    Assertions.illegalState(state != State.STARTED, "Event channel not started");
     return unicast.send(addr, type, data, defaultReadTimeout);
   }
   
@@ -545,6 +553,7 @@ public class EventChannel {
    */
   public Response send(ServerAddress addr, String type, Object data, TimeValue timeout) 
       throws IOException, TimeoutException {
+    Assertions.illegalState(state != State.STARTED, "Event channel not started");
     return unicast.send(addr, type, data, timeout);
   }
   
@@ -556,6 +565,7 @@ public class EventChannel {
    */
   public RespList send(List<ServerAddress> addresses, String type, Object data) 
       throws IOException, TimeoutException, InterruptedException {
+    Assertions.illegalState(state != State.STARTED, "Event channel not started");
     return unicast.send(addresses, type, data, defaultReadTimeout);
   }
   
@@ -567,6 +577,7 @@ public class EventChannel {
    */
   public RespList send(List<ServerAddress> addresses, String type, Object data, TimeValue timeout) 
       throws IOException, TimeoutException, InterruptedException {
+    Assertions.illegalState(state != State.STARTED, "Event channel not started");
     return unicast.send(addresses, type, data, timeout);
   }
   
@@ -578,6 +589,7 @@ public class EventChannel {
    */
   public RespList send(ServerAddress[] addresses, String type, Object[] data) 
       throws IOException, TimeoutException, InterruptedException {
+    Assertions.illegalState(state != State.STARTED, "Event channel not started");
     return unicast.send(addresses, type, data, defaultReadTimeout);
   }
   
@@ -589,6 +601,7 @@ public class EventChannel {
    */
   public RespList send(ServerAddress[] addresses, String type, Object[] data, TimeValue timeout) 
       throws IOException, TimeoutException, InterruptedException {
+    Assertions.illegalState(state != State.STARTED, "Event channel not started");
     return unicast.send(addresses, type, data, timeout);
   }
 
@@ -600,6 +613,7 @@ public class EventChannel {
    * @see UnicastDispatcher#send(ServerAddress, String, Object, TimeValue)
    */
   public RespList send(String type, Object data) throws IOException, InterruptedException {
+    Assertions.illegalState(state != State.STARTED, "Event channel not started");
     return unicast.send(view.getNodeAddresses(), type, data, defaultReadTimeout);
   }
   
@@ -611,6 +625,7 @@ public class EventChannel {
    */
   public RespList send(String type, Object data, TimeValue timeout) 
       throws IOException, InterruptedException {
+    Assertions.illegalState(state != State.STARTED, "Event channel not started");
     return unicast.send(view.getNodeAddresses(), type, data, timeout);
   }
 
@@ -744,6 +759,70 @@ public class EventChannel {
   public static void enableReuse() {
     eventChannelReuse = true;
   }
+  
+  /**
+   * Closes the statically cached event channels, and clears the cache.
+   */
+  public static void closeCachedChannels() {
+    List<EventChannel> channels = new ArrayList<EventChannel>(CHANNELS_BY_DOMAIN);
+    for (EventChannel ec : channels) {
+      ec.close();
+      CHANNELS_BY_DOMAIN.remove(ec);
+    }
+  }
+
+  /**
+   * This method starts an instance of this class blocks the current thread
+   * until the JVM is terminated.
+   *
+   * @param args
+   *          this class' arguments (the only argument taken is the domain
+   *          name).
+   * @throws Exception
+   *           if an error occurs starting this instance.
+   */
+  public static void main(String[] args) throws Exception {
+
+    String domain = DEFAULT_DOMAIN_NAME;
+    if (args.length > 0) {
+      domain = args[0];
+    }
+    System.out.println("Starting event channel on domain: " + domain + ". Type CTRL-C to terminate.");
+
+    final EventChannel channel = new EventChannel(domain, Conf.getSystemProperties());
+    channel.start();
+
+    Runtime.getRuntime().addShutdownHook(new Thread() {
+      @Override
+      public void run() {
+        channel.close();
+      }
+    });
+
+    try {
+      Thread.sleep(Long.MAX_VALUE);
+    } catch (InterruptedException e) {
+      channel.close();
+    }
+  }
+
+
+  @Override
+  public boolean equals(Object obj) {
+    if (obj instanceof EventChannel) {
+      EventChannel other = (EventChannel) obj;
+      return consumer.getNode().equals(other.getNode());
+    }
+    return false;
+  }
+
+  @Override
+  public int hashCode() {
+    return consumer.getNode().hashCode();
+  }
+
+  // --------------------------------------------------------------------------
+  // Restricted
 
   EventChannelController getController() {
     return controller;
@@ -806,65 +885,27 @@ public class EventChannel {
     });      
   }
   
-  /**
-   * Closes the statically cached event channels, and clears the cache.
-   */
-  public static void closeCachedChannels() {
-    List<EventChannel> channels = new ArrayList<EventChannel>(CHANNELS_BY_DOMAIN);
-    for (EventChannel ec : channels) {
-      ec.close();
-      CHANNELS_BY_DOMAIN.remove(ec);
-    }
-  }
-
-  /**
-   * This method starts an instance of this class blocks the current thread
-   * until the JVM is terminated.
-   *
-   * @param args
-   *          this class' arguments (the only argument taken is the domain
-   *          name).
-   * @throws Exception
-   *           if an error occurs starting this instance.
-   */
-  public static void main(String[] args) throws Exception {
-
-    String domain = DEFAULT_DOMAIN_NAME;
-    if (args.length > 0) {
-      domain = args[0];
-    }
-    System.out.println("Starting event channel on domain: " + domain + ". Type CTRL-C to terminate.");
-
-    final EventChannel channel = new EventChannel(domain, Conf.getSystemProperties());
-    channel.start();
-
-    Runtime.getRuntime().addShutdownHook(new Thread() {
+  
+  private TimerTask doCreateTaskForPublishBroadcastEvent(final int attemptCount) {
+    Assertions.illegalState(state != State.STARTED, "Event channel not started");
+    return new TimerTask() {
       @Override
       public void run() {
-        channel.close();
+        log.info("Publishing presence of this node (%s) to cluster (attempt count %s)", address, attemptCount);
+        try {
+          broadcast.dispatch(address, false, PUBLISH_EVT, address);
+        } catch (IOException e) {
+          log.warning("Error publishing presence to cluster", e);
+        }
+        
+        int attemptLeft = attemptCount - 1;
+        if (attemptLeft > 0) {
+          heartbeatTimer.schedule(
+              doCreateTaskForPublishBroadcastEvent(attemptLeft),
+              publishIntervalRange.getRandomTime().getValueInMillis());
+        }
       }
-    });
-
-    try {
-      Thread.sleep(Long.MAX_VALUE);
-    } catch (InterruptedException e) {
-      channel.close();
-    }
-  }
-
-
-  @Override
-  public boolean equals(Object obj) {
-    if (obj instanceof EventChannel) {
-      EventChannel other = (EventChannel) obj;
-      return consumer.getNode().equals(other.getNode());
-    }
-    return false;
-  }
-
-  @Override
-  public int hashCode() {
-    return consumer.getNode().hashCode();
+    };
   }
 
   // ==========================================================================
@@ -1172,11 +1213,6 @@ public class EventChannel {
       throw new IllegalStateException("Could not register sync event listener", e);
     }
 
-    this.publishThreadCount = props.getIntProperty(
-        Consts.MCAST_CHANNEL_PUBLISH_THREAD_COUNT, DEFAULT_PUBLISH_THREAD_COUNT);
-    this.publishQueueSize = props.getIntProperty(
-        Consts.MCAST_CHANNEL_PUBLISH_QUEUE_SIZE, DEFAULT_PUBLISH_QUEUE_SIZE);
-    
     TimeValue controlThreadInterval      = props.getTimeProperty(
         Consts.MCAST_CONTROL_THREAD_INTERVAL, Defaults.DEFAULT_CONTROL_THREAD_INTERVAL
     );

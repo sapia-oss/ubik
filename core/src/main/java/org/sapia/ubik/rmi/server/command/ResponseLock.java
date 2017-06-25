@@ -8,7 +8,7 @@ import org.sapia.ubik.util.Pause;
  * A client-side lock on which the caller of an asynchronous call-back waits for
  * the corresponding call-back's response.
  * 
- * @author Yanick Duchesne
+ * @author yduchesne
  */
 public class ResponseLock {
 

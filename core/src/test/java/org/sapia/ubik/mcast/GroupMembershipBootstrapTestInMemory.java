@@ -3,7 +3,6 @@ package org.sapia.ubik.mcast;
 import org.sapia.ubik.mcast.group.GroupMembershipService;
 import org.sapia.ubik.mcast.memory.InMemoryGroupMembershipService;
 import org.sapia.ubik.mcast.memory.InMemoryUnicastDispatcher;
-import org.sapia.ubik.util.Conf;
 
 public class GroupMembershipBootstrapTestInMemory extends GroupMembershipBootstrapTestSupport {
 
@@ -15,7 +14,7 @@ public class GroupMembershipBootstrapTestInMemory extends GroupMembershipBootstr
   @Override
   protected UnicastDispatcher createUnicastDispatcher(EventConsumer consumer) {
     InMemoryUnicastDispatcher ud = new InMemoryUnicastDispatcher();
-    ud.initialize(consumer, Conf.newInstance());
+    ud.initialize(new DispatcherContext(consumer));
     return ud;
   }
 

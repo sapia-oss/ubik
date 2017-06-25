@@ -2,6 +2,7 @@ package org.sapia.ubik.rmi.server;
 
 import java.io.IOException;
 import java.rmi.RemoteException;
+import java.util.concurrent.ExecutorService;
 
 import org.javasimon.Split;
 import org.javasimon.Stopwatch;
@@ -18,6 +19,7 @@ import org.sapia.ubik.rmi.server.stats.Stats;
 import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
 import org.sapia.ubik.rmi.server.transport.TransportProvider;
+import org.sapia.ubik.rmi.threads.Threads;
 import org.sapia.ubik.util.TimeValue;
 
 /**
@@ -32,26 +34,18 @@ public class AsyncCommandSender implements Module {
 
   private static Stopwatch sendTime = Stats.createStopwatch(AsyncCommandSender.class, "SendDuration", "Time required to send command");
 
-  private static final int DEFAULT_CORE_POOL_SIZE = 5;
-  private static final int DEFAULT_MAX_POOL_SIZE = 5;
-  private static final int DEFAULT_QUEUE_SIZE = 1000;
-  private static final TimeValue DEFAULT_KEEP_ALIVE = TimeValue.createSeconds(30);
-
   private Category log = Log.createCategory(getClass());
 
-  private ConfigurableExecutor senders;
+  private ExecutorService senders;
 
   @Override
   public void init(ModuleContext context) {
-    ThreadingConfiguration conf = ThreadingConfiguration.newInstance().setCorePoolSize(DEFAULT_CORE_POOL_SIZE).setMaxPoolSize(DEFAULT_MAX_POOL_SIZE)
-        .setQueueSize(DEFAULT_QUEUE_SIZE).setKeepAlive(DEFAULT_KEEP_ALIVE);
-
-    senders = new ConfigurableExecutor(conf, NamedThreadFactory.createWith("ubik.rmi.AsyncSender").setDaemon(true));
 
   }
 
   @Override
   public void start(ModuleContext context) {
+    senders = Threads.createIoOutboundPool();
   }
 
   @Override

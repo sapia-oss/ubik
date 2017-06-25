@@ -1,6 +1,10 @@
-package org.sapia.ubik.mcast;
+package org.sapia.ubik.rmi;
 
-import org.sapia.ubik.rmi.Consts;
+import java.util.concurrent.TimeUnit;
+
+import org.sapia.ubik.mcast.BroadcastDispatcher;
+import org.sapia.ubik.mcast.EventChannel;
+import org.sapia.ubik.mcast.UnicastDispatcher;
 import org.sapia.ubik.util.TimeRange;
 import org.sapia.ubik.util.TimeValue;
 
@@ -13,6 +17,36 @@ import org.sapia.ubik.util.TimeValue;
  *
  */
 public class Defaults {
+  
+  /**
+   * The default multicast address.
+   */
+  public static final String DEFAULT_MCAST_ADDR = "231.173.5.7";
+
+  /**
+   * The default multicast port.
+   */
+  public static final int DEFAULT_MCAST_PORT = 5454;
+
+  /**
+   * The default domain.
+   */
+  public static final String DEFAULT_DOMAIN = "default";
+
+  /**
+   * The default TCP port range, for selecting random ports.
+   */
+  public static final String DEFAULT_TCP_PORT_RANGE = "[1025 - 32000]";
+  
+  /**
+   * The default client socket connection timeout.
+   */
+  public static final int DEFAULT_CLIENT_CONNECTION_TIMEOUT = 50;
+
+  /**
+   * The default client socket connection max retry.
+   */
+  public static final int DEFAULT_CLIENT_CONNECTION_MAX_RETRY = 3;
 
   /**
    * The default value for the batch size when looking up synchronously other JNDI nodes, from a
@@ -38,35 +72,20 @@ public class Defaults {
   public static final int DEFAULT_UDP_PACKET_SIZE = 3072;
 
   /**
+   * The default marshalling buffer size (see {@link Consts#MARSHALLING_BUFSIZE}).
+   */
+  public static final int DEFAULT_MARSHALLING_BUFSIZE = 512;
+  
+  /**
    * The default TTL for UDP multicast packets (see {@link Consts#MCAST_TTL}).
    */
   public static final int DEFAULT_TTL = 32;
 
   /**
-   * The default sender count (see {@link Consts#MCAST_SENDER_COUNT}).
-   */
-  public static final int DEFAULT_SENDER_COUNT = 5;
-
-  /**
-   * The default number of worker threads for unicast and broadcast dispatchers.
-   *
-   * (see {@link Consts#MCAST_HANDLER_COUNT}).
-   */
-  public static final int DEFAULT_HANDLER_COUNT = 10;
-
-  /**
-   * The default queue size for unicast and broadcast dispatchers.
-   *
-   * (see {@link Consts#MCAST_HANDLER_QUEUE_SIZE}).
-   */
-  public static final int DEFAULT_HANDLER_QUEUE_SIZE = 100;
-  
-  /**
    * The default synchronous response timeout (see
    * {@link Consts#MCAST_SYNC_RESPONSE_TIMEOUT}).
    */
   public static final TimeValue DEFAULT_SYNC_RESPONSE_TIMEOUT = TimeValue.createMillis(10000);
-  
   
   /**
    * The default synchronous response timeout (see
@@ -122,34 +141,6 @@ public class Defaults {
   public static final int DEFAULT_MAX_CONNECTIONS_PER_HOST = 3;
 
   /**
-   * The default min number of consumer threads of the channel consumer.
-   * 
-   * @see Consts#MCAST_CONSUMER_MIN_COUNT
-   */
-  public static final int DEFAULT_CONSUMER_MIN_COUNT = 10;
-
-  /**
-   * The default max number of consumer threads of the channel consumer.
-   * 
-   * @see Consts#MCAST_CONSUMER_MAX_COUNT
-   */
-  public static final int DEFAULT_CONSUMER_MAX_COUNT = 30;
-  
-  /**
-   * The size of the task queue used to process remote events.
-   * 
-   * @see Consts#MCAST_CONSUMER_QUEUE_SIZE
-   */
-  public static final int DEFAULT_CONSUMER_QUEUE_SIZE = 100;
-
-  /**
-   * The default consumer thread idle time (in millis).
-   * 
-   * @see Consts#MCAST_CONSUMER_IDLE_TIME
-   */
-  public static final int DEFAULT_CONSUMER_IDLE_TIME = 15000;
-  
-  /**
    * The default random time range specifying the interval used by the event channel to publish itself
    * upon either upon resync, or as part of master broadcast.
    *
@@ -180,18 +171,12 @@ public class Defaults {
    */
   public static final TimeValue DEFAULT_AUTO_BROADCAST_INTERVAL = TimeValue.createMillis(15000);
   
-  
   /**
    * The default auto-broadcast threshold.
    * 
    * @see Consts#MCAST_AUTO_BROADCAST_THRESHOLD
    */
   public static final int DEFAULT_AUTO_BROADCAST_THRESHOLD = 0;
-  
-  /**
-   * The default idle time to set on the IoSessionConfig.
-   */
-  public static final TimeValue DEFAULT_MINA_IDLE_TIME = TimeValue.createSeconds(10);
 
   /**
    * The time range used to determine the default interval at which JNDI servers synchronize their state with others.
@@ -208,33 +193,70 @@ public class Defaults {
   public static final int DEFAULT_JNDI_SYNC_MAX_COUNT = 5;
 
   /**
-   * The time to for which threads should be kept alive in the spawning thread pool.
-   *
-   * @see Consts#SPAWN_THREADS_KEEP_ALIVE
+   * The default core pool size of the worker thread pool.
+   * 
+   * @see Consts#SERVER_CORE_THREADS
    */
-  public static final TimeValue DEFAULT_SPAWN_KEEP_ALIVE = TimeValue.createSeconds(30);
+  public static final int DEFAULT_WORKER_CORE_POOL_SIZE   = 25;
+  
+  /**
+   * The default max pool size of the worker thread pool.
+   * 
+   * @see Consts#SERVER_MAX_THREADS
+   */
+  public static final int DEFAULT_WORKER_MAX_POOL_SIZE    = 40;
 
   /**
-   * The number of core threads in the spawning thread pool.
-   *
-   * @see Consts#SPAWN_CORE_THREADS
-   *
+   * The default queue size of the worker thread pool.
+   * 
+   * @see Consts#SERVER_THREADS_QUEUE_SIZE
    */
-  public static final int  DEFAULT_SPAWN_CORE_POOL_SIZE = 5;
+  public static final int DEFAULT_WORKER_QUEUE_SIZE       = 100;
+  
+  /**
+   * The default idle time assigned to the worker thread pool.
+   * 
+   * @see Consts#SERVER_THREADS_KEEP_ALIVE
+   */
+  public static final TimeValue DEFAULT_WORKER_KEEP_ALIVE = new TimeValue(30, TimeUnit.SECONDS);
+  
+  /**
+   * The default core pool size of the worker thread pool.
+   * 
+   * @see Consts#SERVER_OUTBOUND_CORE_THREADS
+   */
+  public static final int DEFAULT_OUTBOUND_CORE_POOL_SIZE   = 10;
+  
+  /**
+   * The default max pool size of the worker thread pool.
+   * 
+   * @see Consts#SERVER_OUTBOUND_MAX_THREADS
+   */
+  public static final int DEFAULT_OUTBOUND_MAX_POOL_SIZE    = 25;
 
   /**
-   * The max number of threads in the spawning thread pool.
-   *
-   * @see Consts#SPAWN_MAX_THREADS
+   * The default queue size of the worker thread pool.
+   * 
+   * @see Consts#SERVER_OUTBOUND_QUEUE_SIZE
    */
-  public static final int  DEFAULT_SPAWN_MAX_POOL_SIZE  = 10;
-
+  public static final int DEFAULT_OUTBOUND_QUEUE_SIZE       = 1000;
+  
   /**
-   * The queue size of the spawning thread pool.
-   *
-   * @see Consts#SPAWN_THREADS_QUEUE_SIZE
+   * The default idle time assigned to the worker thread pool.
+   * 
+   * @see Consts#SERVER_OUTBOUND_THREADS_KEEP_ALIVE
    */
-  public static final int  DEFAULT_SPAWN_QUEUE_SIZE = 100;
+  public static final TimeValue DEFAULT_OUTBOUND_KEEP_ALIVE = new TimeValue(30, TimeUnit.SECONDS);
+  
+  /**
+   * The default number of threads assigned to the NIO selector pool.
+   */
+  public static final int DEFAULT_INBOUND_THREADS = Runtime.getRuntime().availableProcessors();
+  
+  /**
+   * The default number of threads assigned to the NIO selection.
+   */
+  public static final int DEFAULT_UNICAST_INBOUND_THREADS = 1;
   
   private Defaults() {
   }

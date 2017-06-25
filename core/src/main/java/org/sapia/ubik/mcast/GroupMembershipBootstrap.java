@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
@@ -14,6 +15,8 @@ import org.sapia.ubik.mcast.group.GroupMembershipService;
 import org.sapia.ubik.mcast.group.GroupMembershipServiceFactory;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.Defaults;
+import org.sapia.ubik.rmi.threads.Threads;
 import org.sapia.ubik.util.Assertions;
 import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.Serialization;
@@ -59,7 +62,7 @@ public class GroupMembershipBootstrap {
    * @throws IOException if an I/O error internally occurs.
    */
   public GroupMembershipBootstrap(String domain, Conf config) throws IOException {
-    this(new EventConsumer(domain, config), config);
+    this(new EventConsumer(domain), config);
   }
   
   /**
@@ -83,7 +86,14 @@ public class GroupMembershipBootstrap {
     Assertions.illegalState(started, "Instance already started");
     int controlSplitSize                          = config.getIntProperty(Consts.MCAST_CONTROL_SPLIT_SIZE, Defaults.DEFAULT_CONTROL_SPLIT_SIZE);
     GroupMembershipService groupMembershipService = GroupMembershipServiceFactory.createGroupMemberShipService(config);
-    UnicastDispatcher      unicast                = DispatcherFactory.createUnicastDispatcher(consumer, config);
+    DispatcherContext context = new DispatcherContext(consumer, new DispatcherContext.SelectorExecutorFactory() {
+      @Override
+      public ExecutorService getExecutor(String name) {
+        return Threads.createIoInboundPool(name);
+      }
+    });
+    
+    UnicastDispatcher      unicast                = DispatcherFactory.createUnicastDispatcher(context);
     
     start(initialEvent.getCopy(consumer.getDomainName().toString()), initialEventListener, groupMembershipService, unicast, controlSplitSize);
   }
@@ -276,7 +286,7 @@ public class GroupMembershipBootstrap {
     // lifecycle
 
     @Override
-    public void initialize(EventConsumer consumer, Conf config) {
+    public void initialize(DispatcherContext context) {
       // noop (makes no sense outside of the DispatcherFactory)
     }
     

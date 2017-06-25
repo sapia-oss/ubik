@@ -8,6 +8,7 @@ import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.filter.codec.CumulativeProtocolDecoder;
 import org.apache.mina.filter.codec.ProtocolDecoderOutput;
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.Defaults;
 import org.sapia.ubik.rmi.server.transport.MarshalStreamFactory;
 import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.MinaByteBufferInputStream;
@@ -70,7 +71,7 @@ public class MinaRequestDecoder extends CumulativeProtocolDecoder {
   // ==========================================================================
   // class variables
 
-  private static int BUFSIZE = Conf.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE);
+  private static int BUFSIZE = Conf.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Defaults.DEFAULT_MARSHALLING_BUFSIZE);
 
   private static final String DECODER_STATE = "DECODER_STATE";
 

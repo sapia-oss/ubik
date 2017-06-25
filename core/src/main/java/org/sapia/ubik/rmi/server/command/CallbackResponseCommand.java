@@ -16,21 +16,20 @@ package org.sapia.ubik.rmi.server.command;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.util.List;
 
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.rmi.server.Hub;
 
 /**
- * An instance of this class holds the list of {@link Response}s resulting from
- * the to the execution of
+ * An instance of this class holds a {@link Response} resulting from
+ * the execution of a command.
  * 
  * @author yduchesne
  * 
  */
 public final class CallbackResponseCommand extends RMICommand {
 
-  private List<Response> responses;
+  private Response response;
 
   /**
    * Do not use (meant for serialization)
@@ -38,8 +37,8 @@ public final class CallbackResponseCommand extends RMICommand {
   public CallbackResponseCommand() {
   }
 
-  CallbackResponseCommand(List<Response> responses) {
-    this.responses = responses;
+  CallbackResponseCommand(Response response) {
+    this.response = response;
   }
 
   /**
@@ -50,7 +49,7 @@ public final class CallbackResponseCommand extends RMICommand {
       Log.debug(getClass(), "Processing callback response command");
     }
 
-    Hub.getModules().getCommandModule().getCallbackResponseQueue().onResponses(responses);
+    Hub.getModules().getCommandModule().getCallbackResponseQueue().onResponse(response);
 
     return new Integer(0);
   }
@@ -60,7 +59,7 @@ public final class CallbackResponseCommand extends RMICommand {
    */
   public void writeExternal(ObjectOutput out) throws IOException {
     super.writeExternal(out);
-    out.writeObject(responses);
+    out.writeObject(response);
   }
 
   /**
@@ -69,6 +68,6 @@ public final class CallbackResponseCommand extends RMICommand {
   @SuppressWarnings(value = "unchecked")
   public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
     super.readExternal(in);
-    responses = (List<Response>) in.readObject();
+    response = (Response) in.readObject();
   }
 }

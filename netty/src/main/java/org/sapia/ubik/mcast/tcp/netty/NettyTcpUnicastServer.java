@@ -1,6 +1,7 @@
 package org.sapia.ubik.mcast.tcp.netty;
 
 import java.net.InetSocketAddress;
+import java.util.concurrent.ExecutorService;
 
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
@@ -17,9 +18,6 @@ import org.jboss.netty.channel.group.ChannelGroupFutureListener;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.sapia.ubik.concurrent.BlockingRef;
-import org.sapia.ubik.concurrent.ConfigurableExecutor;
-import org.sapia.ubik.concurrent.ConfigurableExecutor.ThreadingConfiguration;
-import org.sapia.ubik.concurrent.NamedThreadFactory;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.EventConsumer;
@@ -42,7 +40,7 @@ class NettyTcpUnicastServer implements Server {
   private NettyTcpUnicastAddress serverAddress;
   private ServerBootstrap        bootstrap;
   private ChannelGroup           channels = new DefaultChannelGroup();
-  private ConfigurableExecutor   workers;
+  private ExecutorService        workerThreads;
 
   /**
    * @param the
@@ -51,33 +49,31 @@ class NettyTcpUnicastServer implements Server {
    * @param address
    *          the {@link NettyTcpUnicastAddress} instance corresponding to the
    *          host/port to which the server should be bound.
-   * @param bossConf
-   *          the {@link ThreadingConfiguration} for the IO processing thread
-   *          pool.
-   * @param workerConf
-   *          the {@link ThreadingConfiguration} for the worker thread pool.
+   * @param selectorThreads
+   *          the {@link ExecutorService} providing the NIO selector threads.
+   * @param workerThreads
+   *          the {@link ExecutorService} providing the worker threads.
+   * @param nSelectors 
+   *          the actual number of threads to create using the provided selector 
+   *          thread pool.          
    */
-  NettyTcpUnicastServer(EventConsumer consumer, NettyTcpUnicastAddress address, ThreadingConfiguration ioConf, ThreadingConfiguration workerConf) {
+  NettyTcpUnicastServer(
+      EventConsumer consumer, 
+      NettyTcpUnicastAddress address, 
+      ExecutorService selectorThreads, 
+      ExecutorService workerThreads, 
+      int nSelectors) {
     this.serverAddress = address;
-
+    this.workerThreads = workerThreads;
     log.debug("Initializing Netty server %s", serverAddress);
-    log.debug("IO thread pool config: %s", ioConf);
-    log.debug("Worker thread pool config: %s", workerConf);
 
-    NamedThreadFactory ioThreadFactory = NamedThreadFactory.createWith("ubik.netty.unicast.dispatcher.IO").setDaemon(true);
-    NamedThreadFactory bossThreadFactory = NamedThreadFactory.createWith("ubik.netty.unicast.dispatcher.Boss").setDaemon(true);
-    NamedThreadFactory workerThreadFactory = NamedThreadFactory.createWith("ubik.netty.unicast.dispatcher.Worker").setDaemon(true);
-
-    workers = new ConfigurableExecutor(workerConf, workerThreadFactory);
-
-    ChannelFactory factory = new NioServerSocketChannelFactory(new ConfigurableExecutor(ThreadingConfiguration.newInstance().setCorePoolSize(1)
-        .setMaxPoolSize(Integer.MAX_VALUE), bossThreadFactory), new ConfigurableExecutor(ioConf, ioThreadFactory));
+    ChannelFactory factory = new NioServerSocketChannelFactory(selectorThreads, workerThreads, nSelectors);
 
     bootstrap = new ServerBootstrap(factory);
 
     final NettyTcpUnicastServerHandler handler = new NettyTcpUnicastServerHandler(
         consumer, 
-        workers,
+        workerThreads,
         new Func<ServerAddress, Void>() {
           @Override
           public ServerAddress call(Void arg) {
@@ -120,7 +116,7 @@ class NettyTcpUnicastServer implements Server {
         // noop
       }
     }
-    workers.shutdown();
+    workerThreads.shutdown();
     log.debug("Stopped server: " + serverAddress);
   }
 

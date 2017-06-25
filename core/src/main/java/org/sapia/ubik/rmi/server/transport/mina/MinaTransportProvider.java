@@ -8,34 +8,28 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.sapia.ubik.concurrent.ConfigurableExecutor.ThreadingConfiguration;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.Defaults;
 import org.sapia.ubik.rmi.server.Server;
 import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.TransportProvider;
+import org.sapia.ubik.rmi.threads.Threads;
 import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.Localhost;
-import org.sapia.ubik.util.TimeValue;
 
 /**
- * This transport provider is implemented on top of the <a
- * href="http://mina.apache.org">Mina</a> framework.
- * <p>
- * It internally creates {@link MinaServer} instances. Various configuration
+ * This transport provider is implemented on top of the <a href="http://mina.apache.org">Mina</a> 
+ * framework.
+ * <p>It internally creates {@link MinaServer} instances. Various configuration
  * properties are "understood" by this provider (see the doc for the
  * corresponding constants further below). In addition, this provider interprets
- * the <code>ubik.rmi.server.max-threads</code> property as indicating the
- * number of processor threads that should be created by a {@link MinaServer}
+ * the <code>ubik.rmi.server.io.threads</code> property as indicating the
+ * number of NIO selector threads that should be created by a {@link MinaServer}
  * instance.
  * 
- * @see Consts#SERVER_CORE_THREADS
- * @see Consts#SERVER_MAX_THREADS
- * @see Consts#SERVER_THREADS_QUEUE_SIZE
- * @see Consts#SERVER_THREADS_KEEP_ALIVE
- * 
- * @author Yanick Duchesne
+ * @author yduchesne
  * 
  */
 public class MinaTransportProvider implements TransportProvider {
@@ -56,10 +50,11 @@ public class MinaTransportProvider implements TransportProvider {
    * <code>ubik.rmi.transport.nio.mina.port</code> system property.
    */
   public static final String PORT = "ubik.rmi.transport.nio.mina.port";
-
-  private int bufsize = Conf.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Consts.DEFAULT_MARSHALLING_BUFSIZE);
-
+  
   private Map<ServerAddress, MinaRmiClientConnectionPool> pools = new ConcurrentHashMap<ServerAddress, MinaRmiClientConnectionPool>();
+ 
+  private int bufSize  = Conf.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Defaults.DEFAULT_MARSHALLING_BUFSIZE);
+
 
   /**
    * @see org.sapia.ubik.rmi.server.transport.TransportProvider#getPoolFor(org.sapia.ubik.net.ServerAddress)
@@ -68,7 +63,7 @@ public class MinaTransportProvider implements TransportProvider {
     MinaRmiClientConnectionPool pool = (MinaRmiClientConnectionPool) pools.get(address);
 
     if (pool == null) {
-      pool = new MinaRmiClientConnectionPool(((MinaAddress) address).getHost(), ((MinaAddress) address).getPort(), bufsize);
+      pool = new MinaRmiClientConnectionPool(((MinaAddress) address).getHost(), ((MinaAddress) address).getPort(), bufSize);
       pools.put(address, pool);
     }
 
@@ -118,19 +113,11 @@ public class MinaTransportProvider implements TransportProvider {
       }
     }
 
-    int specificBufsize = fullProps.getIntProperty(Consts.MARSHALLING_BUFSIZE, this.bufsize);
-
-    int coreThreads = fullProps.getIntProperty(Consts.SERVER_CORE_THREADS, ThreadingConfiguration.DEFAULT_CORE_POOL_SIZE);
-    int maxThreads = fullProps.getIntProperty(Consts.SERVER_MAX_THREADS, ThreadingConfiguration.DEFAULT_MAX_POOL_SIZE);
-    int queueSize = fullProps.getIntProperty(Consts.SERVER_THREADS_QUEUE_SIZE, ThreadingConfiguration.DEFAULT_QUEUE_SIZE);
-    long keepAlive = fullProps.getLongProperty(Consts.SERVER_THREADS_KEEP_ALIVE, ThreadingConfiguration.DEFAULT_KEEP_ALIVE.getValueInSeconds());
-    int selectorThreads = fullProps.getIntProperty(MinaConsts.SERVER_IO_CORE_THREADS_KEY, Runtime.getRuntime().availableProcessors() + 1);
-
-    ThreadingConfiguration threadConf = ThreadingConfiguration.newInstance().setCorePoolSize(coreThreads).setMaxPoolSize(maxThreads)
-        .setQueueSize(queueSize).setKeepAlive(TimeValue.createSeconds(keepAlive));
+    int selectorThreads = fullProps.getIntProperty(Consts.SERVER_INBOUND_THREADS, Defaults.DEFAULT_INBOUND_THREADS);
+    int specificBufSize = fullProps.getIntProperty(Consts.MARSHALLING_BUFSIZE, Defaults.DEFAULT_MARSHALLING_BUFSIZE);
 
     try {
-      MinaServer server = new MinaServer(addr, specificBufsize, selectorThreads, threadConf);
+      MinaServer server = new MinaServer(addr, specificBufSize, Threads.createIoInboundPool("mina", selectorThreads), Threads.createWorkerPool());
       return server;
     } catch (IOException e) {
       throw new RemoteException("Could not create server", e);

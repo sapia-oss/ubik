@@ -8,12 +8,10 @@ import javax.naming.NamingException;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.log.LogFilter;
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.Defaults;
 import org.sapia.ubik.util.Localhost;
 
 
-/**
- * @
- */
 public class StatelessTimeServer {
   private static TimeServiceIF _theTimeService;
 
@@ -48,7 +46,7 @@ public class StatelessTimeServer {
       Properties props = new Properties();
       props.setProperty(InitialContext.PROVIDER_URL, aJndiUrlProvider);
       props.setProperty(InitialContext.INITIAL_CONTEXT_FACTORY, aJndiInitialContext);
-      props.setProperty(Consts.UBIK_DOMAIN_NAME, Consts.DEFAULT_DOMAIN);
+      props.setProperty(Consts.UBIK_DOMAIN_NAME, Defaults.DEFAULT_DOMAIN);
 
       // Bind the time service to the JNDI service
       InitialContext context = new InitialContext(props);

@@ -9,9 +9,8 @@ import org.apache.camel.impl.PropertyPlaceholderDelegateRegistry;
 import org.apache.camel.impl.SimpleRegistry;
 import org.apache.camel.spi.Registry;
 import org.apache.qpid.amqp_1_0.jms.impl.ConnectionFactoryImpl;
-import org.sapia.ubik.mcast.EventConsumer;
+import org.sapia.ubik.mcast.DispatcherContext;
 import org.sapia.ubik.mcast.camel.DefaultCamelBroadcastDispatcher;
-import org.sapia.ubik.util.Conf;
 
 /**
  * Extends the {@link DefaultCamelBroadcastDispatcher} class by internally creating a {@link ConnectionFactory} and
@@ -27,14 +26,14 @@ public class AmqpBroadcastDispatcher extends DefaultCamelBroadcastDispatcher {
   private ConnectionFactoryImpl connections;
   
   @Override
-  public void initialize(EventConsumer consumer, Conf config) {
-    config.addProperties(AMQP_PROPERTY_PREFIX + ".option.connectionFactory", "#" + REF_CONNECTION_FACTORY);
+  public void initialize(DispatcherContext context) {
+    context.getConf().addProperties(AMQP_PROPERTY_PREFIX + ".option.connectionFactory", "#" + REF_CONNECTION_FACTORY);
     try {
-      connections = ConnectionFactoryImpl.createFromURL(config.getNotNullProperty(AmqpConsts.BROADCAST_AMQP_CONNECTION_URL));
+      connections = ConnectionFactoryImpl.createFromURL(context.getConf().getNotNullProperty(AmqpConsts.BROADCAST_AMQP_CONNECTION_URL));
     } catch (MalformedURLException e) {
       throw new IllegalStateException("Could not create connection factory", e);
     }
-    super.initialize(consumer, config);
+    super.initialize(context);
   }
  
   @Override

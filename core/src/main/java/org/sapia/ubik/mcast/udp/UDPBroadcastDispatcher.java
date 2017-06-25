@@ -10,7 +10,7 @@ import java.util.Map;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.BroadcastDispatcher;
-import org.sapia.ubik.mcast.Defaults;
+import org.sapia.ubik.mcast.DispatcherContext;
 import org.sapia.ubik.mcast.EventConsumer;
 import org.sapia.ubik.mcast.McastUtil;
 import org.sapia.ubik.mcast.MulticastAddress;
@@ -20,21 +20,20 @@ import org.sapia.ubik.net.ConnectionStateListener;
 import org.sapia.ubik.net.ConnectionStateListenerList;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.Defaults;
 import org.sapia.ubik.util.Assertions;
 import org.sapia.ubik.util.Conf;
 
 /**
  * Dispatches objects using a multicast channel.
  *
- * @author Yanick Duchesne
+ * @author yduchesne
  */
 public class UDPBroadcastDispatcher implements BroadcastDispatcher {
-
-  private static final int DEFAULT_MCAST_UDP_HANDLER_COUNT = 3;
   
   private static Category     log       = Log.createCategory(UDPBroadcastDispatcher.class);
   private EventConsumer       consumer;
-  private BroadcastServer     server;
+  private MulticastServer     server;
   private int                 bufsz     = Defaults.DEFAULT_UDP_PACKET_SIZE;
   private UDPMulticastAddress address;
   private ConnectionStateListenerList stateListeners = new ConnectionStateListenerList();
@@ -43,31 +42,42 @@ public class UDPBroadcastDispatcher implements BroadcastDispatcher {
   }
   
   @Override
-  public void initialize(EventConsumer consumer, Conf config) {
-    this.consumer = consumer;
-    String mcastHost = config.getProperty(Consts.MCAST_ADDR_KEY, Consts.DEFAULT_MCAST_ADDR);
-    int    mcastPort = config.getIntProperty(Consts.MCAST_PORT_KEY, Consts.DEFAULT_MCAST_PORT);
+  public void initialize(DispatcherContext context) {
+    this.consumer = context.getConsumer();
+    String mcastHost = context.getConf().getProperty(Consts.MCAST_ADDR_KEY, Defaults.DEFAULT_MCAST_ADDR);
+    int    mcastPort = context.getConf().getIntProperty(Consts.MCAST_PORT_KEY, Defaults.DEFAULT_MCAST_PORT);
+    int    mcastTtl  = context.getConf().getIntProperty(Consts.MCAST_TTL, Defaults.DEFAULT_TTL);
+    int    bufSize   = context.getConf().getIntProperty(Consts.MCAST_BUFSIZE_KEY, Defaults.DEFAULT_UDP_PACKET_SIZE);
     
     try {
-      server   = new BroadcastServer(
-          consumer, 
-          mcastHost, 
-          mcastPort, 
-          config.getIntProperty(Consts.MCAST_HANDLER_COUNT, DEFAULT_MCAST_UDP_HANDLER_COUNT),
-          config.getIntProperty(Consts.MCAST_TTL, Defaults.DEFAULT_TTL)
-      );
+      
+      server = new MulticastServer(mcastHost, mcastPort, mcastTtl, context.getSelectorThreads().getExecutor("multicast.server"), context.getWorkerThreads()) {
+        
+        @Override
+        protected void handle(DatagramPacket pack, MulticastSocket sock) {
+          try {
+            consumer.onAsyncEvent((RemoteEvent) McastUtil.fromDatagram(pack));
+          } catch (EOFException e) {
+            log.warning("Could not deserialize remote event, packet size may be too short " + this.bufSize());
+
+          } catch (Exception e) {
+            log.error("Could not deserialize remote event", e);
+          }
+          
+        }
+      };
     } catch (IOException e) {
       throw new IllegalStateException("Could not create UDP server", e);
     }
-    server.setBufsize(config.getIntProperty(Consts.MCAST_BUFSIZE_KEY, Defaults.DEFAULT_UDP_PACKET_SIZE));
-    address  = new UDPMulticastAddress(mcastHost, mcastPort);
+    server.setBufsize(bufSize);
+    address = new UDPMulticastAddress(mcastHost, mcastPort);
   }
   
   @Override
   public MulticastAddress getMulticastAddressFrom(Conf props) {
     return new UDPBroadcastDispatcher.UDPMulticastAddress(
-        props.getProperty(Consts.MCAST_ADDR_KEY, Consts.DEFAULT_MCAST_ADDR),
-        props.getIntProperty(Consts.MCAST_PORT_KEY, Consts.DEFAULT_MCAST_PORT)
+        props.getProperty(Consts.MCAST_ADDR_KEY, Defaults.DEFAULT_MCAST_ADDR),
+        props.getIntProperty(Consts.MCAST_PORT_KEY, Defaults.DEFAULT_MCAST_PORT)
     );
   }
 
@@ -211,30 +221,5 @@ public class UDPBroadcastDispatcher implements BroadcastDispatcher {
       return params;
     }
 
-  }
-
-  /**
-   * @author Yanick Duchesne
-   */
-  private static class BroadcastServer extends MulticastServer {
-
-    EventConsumer consumer;
-
-    private BroadcastServer(EventConsumer consumer, String mcastAddress, int mcastPort, int threadCount, int ttl) throws IOException {
-      super("mcast.BroadcastServer", mcastAddress, mcastPort, threadCount, ttl);
-      this.consumer = consumer;
-    }
-
-    @Override
-    protected void handle(DatagramPacket pack, MulticastSocket sock) {
-      try {
-        consumer.onAsyncEvent((RemoteEvent) McastUtil.fromDatagram(pack));
-      } catch (EOFException e) {
-        log.warning("Could not deserialize remote event, packet size may be too short " + this.bufSize());
-
-      } catch (Exception e) {
-        log.error("Could not deserialize remote event", e);
-      }
-    }
   }
 }

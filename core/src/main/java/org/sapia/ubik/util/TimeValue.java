@@ -120,6 +120,23 @@ public class TimeValue implements Externalizable {
     return TimeValue.createMillis(Long.parseLong(s));
   }
   
+  /**
+   * @param s a {@link String} corresponding to a {@link TimeValue} literal.
+   * @param defaultUnit the {@link TimeUnit} to use if not is specified in the given literal.
+   * @return a new {@link TimeValue}.
+   */
+  public static TimeValue valueOf(String s, TimeUnit defaultUnit) {
+    for (String n : UNIT_NAMES) {
+      if (s.contains(n)) {
+        int i = s.indexOf(n);
+        TimeUnit unit = UNITS_BY_NAME.get(n);
+        Assertions.notNull(unit, "Could not find time unit for %s", s.substring(i));
+        return new TimeValue(Long.parseLong(s.substring(0, i)), unit);
+      }
+    }
+    return new TimeValue(Long.parseLong(s), defaultUnit);
+  }
+  
   // --------------------------------------------------------------------------
   // Externalizable
   

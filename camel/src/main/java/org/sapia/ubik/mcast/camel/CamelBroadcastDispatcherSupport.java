@@ -19,6 +19,7 @@ import org.apache.camel.impl.SimpleRegistry;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.BroadcastDispatcher;
+import org.sapia.ubik.mcast.DispatcherContext;
 import org.sapia.ubik.mcast.EventConsumer;
 import org.sapia.ubik.mcast.MulticastAddress;
 import org.sapia.ubik.mcast.RemoteEvent;
@@ -44,8 +45,6 @@ public abstract class CamelBroadcastDispatcherSupport implements BroadcastDispat
   
   /**
    * {@link MulticastAddress} implementation.
-   * 
-   * @author yduchesne
    *
    */
   public static final class CamelMulticastAddress implements MulticastAddress, Externalizable {
@@ -121,10 +120,10 @@ public abstract class CamelBroadcastDispatcherSupport implements BroadcastDispat
   // Lifecycle
  
   @Override
-  public void initialize(EventConsumer consumer, final Conf config) {
-    this.consumer = consumer;
+  public void initialize(DispatcherContext initContext) {
+    this.consumer = initContext.getConsumer();
     context = new DefaultCamelContext(new SimpleRegistry());
-    final String endpointUriWithOptions = config.getNotNullProperty(Consts.BROADCAST_CAMEL_ENDPOINT_URI);
+    final String endpointUriWithOptions = initContext.getConf().getNotNullProperty(Consts.BROADCAST_CAMEL_ENDPOINT_URI);
     log.info("Camel endpoint URI (node %s): %s", consumer.getNode(), endpointUriWithOptions);
     
     int i;
@@ -139,15 +138,15 @@ public abstract class CamelBroadcastDispatcherSupport implements BroadcastDispat
     String headerPrefix = PROPERTY_PREFIX + "." + uri.getScheme() + ".header";
     
     Map<String, String> options = new HashMap<String, String>();
-    for (String n : config.propertyNames()) {
+    for (String n : initContext.getConf().propertyNames()) {
       if (n.startsWith(optionPrefix) && n.length() > optionPrefix.length()) {
         String optName  = n.substring(optionPrefix.length() + 1);
-        String optValue = config.getProperty(n);
+        String optValue = initContext.getConf().getProperty(n);
         log.info("Setting option: %s=%s", optName, optValue);
         options.put(optName, optValue);
       } else if (n.startsWith(headerPrefix) && n.length() > headerPrefix.length()) {
         String optName  = n.substring(headerPrefix.length() + 1);
-        String optValue = config.getProperty(n);
+        String optValue = initContext.getConf().getProperty(n);
         log.info("Setting header: %s=%s", optName, optValue);
         headers.put(optName, optValue);
       } 

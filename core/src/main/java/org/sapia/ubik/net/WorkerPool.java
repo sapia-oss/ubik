@@ -1,11 +1,8 @@
 package org.sapia.ubik.net;
 
-import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.sapia.ubik.concurrent.ConfigurableExecutor;
-import org.sapia.ubik.concurrent.ConfigurableExecutor.ThreadingConfiguration;
-import org.sapia.ubik.concurrent.NamedThreadFactory;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 
@@ -21,40 +18,19 @@ import org.sapia.ubik.log.Log;
  */
 public abstract class WorkerPool<W> {
 
-  private Category log = Log.createCategory(getClass());
-  private ConfigurableExecutor delegate;
-  private AtomicInteger threadCount = new AtomicInteger();
+  private Category         log         = Log.createCategory(getClass());
+  private ExecutorService  executor;
+  private AtomicInteger    threadCount = new AtomicInteger();
 
   /**
-   * @param name
-   *          the name of the threads that will be created (to distinguish among
-   *          the different threads, a counter is appended to the name for each
-   *          thread).
-   * @param daemon
-   *          if <code>true</code>, the threads created by this pool will be set
-   *          as daemon.
-   * @param ThreadingConfiguration
-   *          a {@link ThreadingConfiguration}.
+   * @param executor the {@link ExecutorService} to use internally.
    */
-  protected WorkerPool(String name, boolean daemon, ThreadingConfiguration configuration) {
-    this(NamedThreadFactory.createWith(name).setDaemon(true), configuration);
-  }
-
-  /**
-   * @param factory
-   *          the {@link ThreadFactory} to use internally.
-   * @param coreSize
-   *          the number of "core" threads that are created (if <= 0, a default
-   *          of 5 is created).
-   * @param ThreadingConfiguration
-   *          a {@link ThreadingConfiguration}.
-   */
-  protected WorkerPool(ThreadFactory factory, ThreadingConfiguration configuration) {
-    delegate = new ConfigurableExecutor(configuration, factory);
+  protected WorkerPool(ExecutorService executor) {
+    this.executor = executor;
   }
 
   public void submit(final W work) {
-    delegate.execute(new Runnable() {
+    executor.execute(new Runnable() {
       @Override
       public void run() {
         try {
@@ -81,7 +57,7 @@ public abstract class WorkerPool<W> {
    * Shuts down this instance.
    */
   public void shutdown() {
-    delegate.shutdownNow();
+    executor.shutdown();
   }
 
   /**

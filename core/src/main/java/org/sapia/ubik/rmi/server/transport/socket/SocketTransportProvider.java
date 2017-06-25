@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.sapia.ubik.concurrent.ConfigurableExecutor.ThreadingConfiguration;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.ConnectionFactory;
@@ -20,11 +19,11 @@ import org.sapia.ubik.rmi.server.Hub;
 import org.sapia.ubik.rmi.server.Server;
 import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.TransportProvider;
+import org.sapia.ubik.rmi.threads.Threads;
 import org.sapia.ubik.taskman.Task;
 import org.sapia.ubik.taskman.TaskContext;
 import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.Localhost;
-import org.sapia.ubik.util.TimeValue;
 
 /**
  * Implements the {@link TransportProvider} interface over the standard java
@@ -168,14 +167,6 @@ public class SocketTransportProvider implements TransportProvider {
   }
 
   protected Server doNewServer(int port, Conf props) throws RemoteException {
-    int coreThreads = props.getIntProperty(Consts.SERVER_CORE_THREADS, ThreadingConfiguration.DEFAULT_CORE_POOL_SIZE);
-    int maxThreads = props.getIntProperty(Consts.SERVER_MAX_THREADS, ThreadingConfiguration.DEFAULT_MAX_POOL_SIZE);
-    int queueSize = props.getIntProperty(Consts.SERVER_THREADS_QUEUE_SIZE, ThreadingConfiguration.DEFAULT_QUEUE_SIZE);
-    long keepAlive = props.getLongProperty(Consts.SERVER_THREADS_KEEP_ALIVE, ThreadingConfiguration.DEFAULT_KEEP_ALIVE.getValueInSeconds());
-
-    ThreadingConfiguration threadConf = ThreadingConfiguration.newInstance().setCorePoolSize(coreThreads).setMaxPoolSize(maxThreads)
-        .setQueueSize(queueSize).setKeepAlive(TimeValue.createSeconds(keepAlive));
-
     SocketRmiServer server;
     long resetInterval;
     String bindAddress = null;
@@ -216,10 +207,14 @@ public class SocketTransportProvider implements TransportProvider {
 
       log.info("Bind address: %s", bindAddress);
       log.info("Port: %s", port);
-      log.info("Threading conf: %s", threadConf);
 
-      server = SocketRmiServer.Builder.create(transportType).setBindAddress(bindAddress).setThreadingConfig(threadConf)
-          .setResetInterval(resetInterval).setPort(port).setServerSocketFactory(serverSocketFactory).build();
+      server = SocketRmiServer.Builder.create(transportType)
+          .setBindAddress(bindAddress)
+          .setExecutor(Threads.createWorkerPool())
+          .setResetInterval(resetInterval)
+          .setPort(port)
+          .setServerSocketFactory(serverSocketFactory)
+          .build();
     } catch (IOException e) {
       throw new RemoteException("Could not create server", e);
     }

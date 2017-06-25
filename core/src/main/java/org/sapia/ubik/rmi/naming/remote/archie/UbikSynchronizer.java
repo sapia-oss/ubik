@@ -14,7 +14,6 @@ import org.sapia.archie.sync.Synchronizer;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.AsyncEventListener;
-import org.sapia.ubik.mcast.Defaults;
 import org.sapia.ubik.mcast.EventChannel;
 import org.sapia.ubik.mcast.EventChannelRef;
 import org.sapia.ubik.mcast.ListenerAlreadyRegisteredException;
@@ -25,6 +24,7 @@ import org.sapia.ubik.mcast.SyncEventListener;
 import org.sapia.ubik.mcast.TimeoutException;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.Defaults;
 import org.sapia.ubik.util.Collects;
 import org.sapia.ubik.util.Conf;
 

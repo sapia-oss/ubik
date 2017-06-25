@@ -6,7 +6,6 @@ import static org.junit.Assert.assertTrue;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 import java.util.Random;
 
 import org.junit.After;
@@ -21,9 +20,7 @@ import org.sapia.ubik.mcast.Response;
 import org.sapia.ubik.mcast.SyncEventListener;
 import org.sapia.ubik.mcast.UnicastDispatcher;
 import org.sapia.ubik.net.ServerAddress;
-import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.server.Hub;
-import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.TimeValue;
 
 public abstract class UnicastDispatcherTestSupport {
@@ -39,16 +36,11 @@ public abstract class UnicastDispatcherTestSupport {
   public void setUp() throws Exception {
     Hub.start();
     
-    Properties props = new Properties();
-    props.setProperty(Consts.MCAST_CONSUMER_MIN_COUNT, "1");
-    props.setProperty(Consts.MCAST_CONSUMER_MAX_COUNT, "1");
-    Conf conf = Conf.newInstance().addProperties(props);
-    
-    source = createUnicastDispatcher(new EventConsumer("testDomain", conf));
+    source = createUnicastDispatcher(new EventConsumer("testDomain"));
     source.start();
     destinations = new ArrayList<UnicastDispatcher>(5);
     for (int i = 0; i < 5; i++) {
-      EventConsumer consumer = new EventConsumer("testDomain", conf);
+      EventConsumer consumer = new EventConsumer("testDomain");
       UnicastDispatcher dispatcher = createUnicastDispatcher(consumer);
       dispatcher.start();
       consumer.registerAsyncListener(ASYNC_EVENT_TYPE, createAsyncListener("listener" + i));

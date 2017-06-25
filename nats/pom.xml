@@ -9,7 +9,7 @@
   <parent>
     <groupId>org.sapia</groupId>
     <artifactId>sapia_ubik_parent</artifactId>
-    <version>develop-nats</version>
+    <version>5.0</version>
     <relativePath>../</relativePath>
   </parent>
 
