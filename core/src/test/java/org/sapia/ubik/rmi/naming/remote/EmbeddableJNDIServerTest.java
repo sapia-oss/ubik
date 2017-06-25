@@ -124,7 +124,7 @@ public class EmbeddableJNDIServerTest  {
     
     jndi.getLocalContext().bind("test", Mockito.mock(TestService.class));
     
-    TestService service = ref.await();
+    TestService service = ref.awaitNotNull(5, TimeUnit.SECONDS);
     
     assertNotNull(service);
   }

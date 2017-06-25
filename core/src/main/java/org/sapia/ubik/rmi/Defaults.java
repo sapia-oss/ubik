@@ -197,14 +197,14 @@ public class Defaults {
    * 
    * @see Consts#SERVER_CORE_THREADS
    */
-  public static final int DEFAULT_WORKER_CORE_POOL_SIZE   = 10;
+  public static final int DEFAULT_WORKER_CORE_POOL_SIZE   = 25;
   
   /**
    * The default max pool size of the worker thread pool.
    * 
    * @see Consts#SERVER_MAX_THREADS
    */
-  public static final int DEFAULT_WORKER_MAX_POOL_SIZE    = 50;
+  public static final int DEFAULT_WORKER_MAX_POOL_SIZE    = 40;
 
   /**
    * The default queue size of the worker thread pool.
@@ -225,21 +225,21 @@ public class Defaults {
    * 
    * @see Consts#SERVER_OUTBOUND_CORE_THREADS
    */
-  public static final int DEFAULT_OUTBOUND_CORE_POOL_SIZE   = 5;
+  public static final int DEFAULT_OUTBOUND_CORE_POOL_SIZE   = 10;
   
   /**
    * The default max pool size of the worker thread pool.
    * 
    * @see Consts#SERVER_OUTBOUND_MAX_THREADS
    */
-  public static final int DEFAULT_OUTBOUND_MAX_POOL_SIZE    = 15;
+  public static final int DEFAULT_OUTBOUND_MAX_POOL_SIZE    = 25;
 
   /**
    * The default queue size of the worker thread pool.
    * 
    * @see Consts#SERVER_OUTBOUND_QUEUE_SIZE
    */
-  public static final int DEFAULT_OUTBOUND_QUEUE_SIZE       = 300;
+  public static final int DEFAULT_OUTBOUND_QUEUE_SIZE       = 1000;
   
   /**
    * The default idle time assigned to the worker thread pool.
