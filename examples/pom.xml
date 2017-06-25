@@ -7,14 +7,14 @@
 
 	<artifactId>sapia_ubik_example</artifactId>
 
-	<packaging>jar</packaging>
-
 	<parent>
 		<groupId>org.sapia</groupId>
 		<artifactId>sapia_ubik_parent</artifactId>
-		<version>develop-SNAPSHOT</version>
+		<version>5.0rc1</version>
 		<relativePath>../</relativePath>
 	</parent>
+
+	<packaging>jar</packaging>
 
 	<dependencies>
 		<dependency>
