@@ -36,19 +36,19 @@ import org.sapia.ubik.util.TypeCache;
  * This class holds methods pertaining to stub creations, etc.
  * <p>
  *
- * @author Yanick Duchesne
+ * @author yduchesne
  */
 public class ServerTable implements Module {
 
   private Category log = Log.createCategory(ServerTable.class);
-  private TypeCache typeCache = new TypeCache();
+  private TypeCache              typeCache = new TypeCache();
   private Map<String, ServerRef> serversByType = new ConcurrentHashMap<String, ServerRef>();
-  private ObjectTable objectTable;
-  private ServerGC gc;
-  private TransportManager transport;
-  private StubProcessor stubProcessor;
-  private boolean callbackEnabled;
-  private Object serverCreationLock = new Object();
+  private ObjectTable            objectTable;
+  private ServerGC               gc;
+  private TransportManager       transport;
+  private StubProcessor          stubProcessor;
+  private boolean                callbackEnabled;
+  private Object                 serverCreationLock = new Object();
 
   private Stopwatch remoteObjectCreation = Stats.createStopwatch(getClass(), "RemoteObjectCreation", "Remote object creation time");
 

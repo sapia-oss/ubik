@@ -23,11 +23,11 @@ public class ThreadsTest {
   
   @Before
   public void setUp() throws Exception {
-    
   }
 
   @After
   public void tearDown() throws Exception {
+    Threads.shutdown();
     Threads.setJvmShuttown(false);
   }
 

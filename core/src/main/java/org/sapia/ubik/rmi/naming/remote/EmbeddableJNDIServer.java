@@ -335,9 +335,9 @@ public class EmbeddableJNDIServer implements RemoteContextProvider,
         )
       );
 
-      startBarrier.started();
-
       channel.get().dispatch(JNDIConsts.JNDI_SERVER_PUBLISH, address);
+
+      startBarrier.started();
 
       while (true) {
         Thread.sleep(Integer.MAX_VALUE);
