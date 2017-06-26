@@ -13,6 +13,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+import org.apache.mina.util.ConcurrentHashSet;
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
 import org.sapia.ubik.mcast.control.ControlEvent;
@@ -155,10 +156,9 @@ public class EventChannel {
    */
   static final String CONTROL_EVT          = "ubik/mcast/control";
   
-  private static final int       DEFAULT_MAX_PUB_ATTEMPTS     = 3;
-  private static final TimeValue DEFAULT_READ_TIMEOUT         = TimeValue.createMillis(10000);
-
-  private static Set<EventChannel> CHANNELS_BY_DOMAIN = Collections.synchronizedSet(new HashSet<EventChannel>());
+  private static final int               DEFAULT_MAX_PUB_ATTEMPTS = 3;
+  private static final TimeValue         DEFAULT_READ_TIMEOUT     = TimeValue.createMillis(10000);
+  private static final Set<EventChannel> CHANNELS_BY_DOMAIN       = new ConcurrentHashSet<EventChannel>();
 
   private Category log = Log.createCategory(getClass());
   private static boolean              eventChannelReuse = Conf.getSystemProperties()
@@ -364,7 +364,9 @@ public class EventChannel {
       broadcast.start();
       unicast.start();
       address = unicast.getAddress();
-      CHANNELS_BY_DOMAIN.add(this);
+      synchronized (CHANNELS_BY_DOMAIN) {
+        CHANNELS_BY_DOMAIN.add(this);
+      }
       state   = State.STARTED;
       
       for (Runnable p : pending) {
@@ -413,7 +415,9 @@ public class EventChannel {
    */
   public synchronized void close() {
     if (state == State.STARTED) {
-      CHANNELS_BY_DOMAIN.remove(this);
+      synchronized (CHANNELS_BY_DOMAIN) {
+        CHANNELS_BY_DOMAIN.remove(this);
+      }
       try {
         this.broadcast.dispatch(unicast.getAddress(), this.getDomainName().toString(), SHUTDOWN_EVT, "SHUTDOWN");
       } catch (IOException e) {
@@ -433,12 +437,14 @@ public class EventChannel {
    * {@link EventChannel}s.
    */
   public static synchronized Set<EventChannelRef> getActiveChannels() {
-    return Collects.convertAsSet(CHANNELS_BY_DOMAIN, new Func<EventChannelRef, EventChannel>() {
-      @Override
-      public EventChannelRef call(EventChannel c) {
-        return new EventChannelRefImpl(c, false);
-      }
-    });
+    synchronized (CHANNELS_BY_DOMAIN) {
+      return Collects.convertAsSet(CHANNELS_BY_DOMAIN, new Func<EventChannelRef, EventChannel>() {
+        @Override
+        public EventChannelRef call(EventChannel c) {
+          return new EventChannelRefImpl(c, false);
+        }
+      });
+    }
   }
 
   /**
@@ -447,14 +453,16 @@ public class EventChannel {
    * if <code>null</code> if no such match occurs.
    */
   public static synchronized EventChannelRef selectActiveChannel(Condition<EventChannel> condition) {
-    if (eventChannelReuse) {
-      for (EventChannel c : CHANNELS_BY_DOMAIN) {
-        if (condition.apply(c)) {
-          return new EventChannelRefImpl(c, false);
+    synchronized (CHANNELS_BY_DOMAIN) {
+      if (eventChannelReuse) {
+        for (EventChannel c : CHANNELS_BY_DOMAIN) {
+          if (condition.apply(c)) {
+            return new EventChannelRefImpl(c, false);
+          }
         }
       }
+      return null;
     }
-    return null;
   }
 
   /**
@@ -764,11 +772,14 @@ public class EventChannel {
    * Closes the statically cached event channels, and clears the cache.
    */
   public static void closeCachedChannels() {
-    List<EventChannel> channels = new ArrayList<EventChannel>(CHANNELS_BY_DOMAIN);
-    for (EventChannel ec : channels) {
-      ec.close();
-      CHANNELS_BY_DOMAIN.remove(ec);
+    synchronized (CHANNELS_BY_DOMAIN) {
+      List<EventChannel> channels = new ArrayList<EventChannel>(CHANNELS_BY_DOMAIN);
+      for (EventChannel ec : channels) {
+        ec.close();
+        CHANNELS_BY_DOMAIN.remove(ec);
+      }      
     }
+
   }
 
   /**

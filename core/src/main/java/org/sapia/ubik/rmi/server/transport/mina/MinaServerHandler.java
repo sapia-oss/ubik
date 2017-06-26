@@ -41,6 +41,11 @@ public class MinaServerHandler extends IoHandlerAdapter {
   }
 
   public void messageReceived(IoSession sess, Object msg) throws Exception {
+    if (msg == null) {
+      // message can be null upon shutdown
+      return;
+    }
+    
     InetSocketAddress remoteAddr = (InetSocketAddress) sess.getRemoteAddress();
     log.debug(getClass(), "Handling request from %s:%s", remoteAddr.getHostString(), remoteAddr.getPort());
     MinaRmiServerConnection conn = new MinaRmiServerConnection(new MinaAddress(remoteAddr.getHostString(), remoteAddr.getPort()), sess, msg);

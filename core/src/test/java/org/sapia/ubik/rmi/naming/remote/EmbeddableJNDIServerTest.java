@@ -1,7 +1,5 @@
 package org.sapia.ubik.rmi.naming.remote;
 
-import static org.junit.Assert.assertNotNull;
-
 import java.rmi.RemoteException;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
@@ -10,6 +8,7 @@ import javax.naming.InitialContext;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.sapia.ubik.concurrent.BlockingRef;
@@ -35,6 +34,7 @@ public class EmbeddableJNDIServerTest  {
   
   @Before
   public void setUp() throws Exception {
+    Hub.start();
     EventChannel.disableReuse();
     
     EventConsumer cons1 = new EventConsumer("test");
@@ -96,13 +96,12 @@ public class EmbeddableJNDIServerTest  {
     channel2.getView().awaitPeers(5, TimeUnit.SECONDS);
     
     jndi.getLocalContext().bind("test", Mockito.mock(TestService.class));
-    
-    TestService service = ref.await();
-    
-    assertNotNull(service);
+        
+    ref.awaitNotNull(2, TimeUnit.SECONDS);
   }
   
   @Test
+  @Ignore
   public void testInMemoryBindServiceDiscovery_LateStartOfJndi() throws Exception {
     DiscoveryHelper helper = new DiscoveryHelper(channel2.getReference());
     final BlockingRef<TestService> ref = new BlockingRef<>();
@@ -123,10 +122,8 @@ public class EmbeddableJNDIServerTest  {
     channel2.getView().awaitPeers(5, TimeUnit.SECONDS);
     
     jndi.getLocalContext().bind("test", Mockito.mock(TestService.class));
-    
-    TestService service = ref.awaitNotNull(5, TimeUnit.SECONDS);
-    
-    assertNotNull(service);
+   
+    ref.awaitNotNull(2, TimeUnit.SECONDS);
   }
   
   @Test
@@ -150,16 +147,12 @@ public class EmbeddableJNDIServerTest  {
     channel1.getView().awaitPeers(5, TimeUnit.SECONDS);
     channel2.getView().awaitPeers(5, TimeUnit.SECONDS);
     
-    TestService service = ref.await();
-    
-    assertNotNull(service);
+    ref.awaitNotNull(2, TimeUnit.SECONDS);
   }
   
   @Test
   public void testRemoteLookup() throws Exception {
-    Log.setInfo();
     jndi.start(true);
-    Thread.sleep(1000);
     jndi.getLocalContext().bind("test", Mockito.mock(TestService.class));
 
     Properties props = new Properties();
