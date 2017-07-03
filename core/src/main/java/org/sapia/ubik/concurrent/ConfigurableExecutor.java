@@ -76,6 +76,13 @@ public class ConfigurableExecutor extends ThreadPoolExecutor {
     }
     
     /**
+     * @return The queue size of this configuration.
+     */
+    public int getQueueSize() {
+      return this.queueSize;
+    }
+    
+    /**
      * @param handler the {@link RejectedExecutionHandler} to use.
      * @return this instance.
      */
