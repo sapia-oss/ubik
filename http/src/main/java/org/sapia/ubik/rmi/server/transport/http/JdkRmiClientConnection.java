@@ -39,11 +39,22 @@ public class JdkRmiClientConnection implements RmiConnection {
 
   private static final String POST_METHOD = "POST";
   private static final String CONTENT_LENGTH_HEADER = "Content-Length";
-  private HttpAddress address;
-  private URL url;
-  private volatile boolean closed;
+  private HttpAddress       address;
+  private URL               url;
+  private volatile boolean  closed;
   private HttpURLConnection conn;
-  private int bufsz = Conf.getSystemProperties().getIntProperty(Consts.MARSHALLING_BUFSIZE, Defaults.DEFAULT_MARSHALLING_BUFSIZE);
+  private int               bufsz          = Conf.getSystemProperties().getIntProperty(
+                                                 Consts.MARSHALLING_BUFSIZE, 
+                                                 Defaults.DEFAULT_MARSHALLING_BUFSIZE
+                                             );
+  private int               connectTimeOut = Conf.getSystemProperties().getIntProperty(
+                                                 Consts.HTTP_CLIENT_CONNECT_TIMEOUT, 
+                                                 Defaults.DEFAULT_HTTP_CLIENT_CONNECTION_TIMEOUT
+                                             );
+  private int               readTimeout    = Conf.getSystemProperties().getIntProperty(
+                                                 Consts.HTTP_CLIENT_CONNECT_TIMEOUT, 
+                                                 Defaults.DEFAULT_HTTP_CLIENT_CONNECTION_TIMEOUT
+                                             );
 
   public JdkRmiClientConnection() {
   }
@@ -57,8 +68,8 @@ public class JdkRmiClientConnection implements RmiConnection {
     conn.setDoInput(true);
     conn.setDoOutput(true);
     conn.setUseCaches(false);
-    conn.setConnectTimeout(5000);
-    conn.setReadTimeout(15000);
+    conn.setConnectTimeout(connectTimeOut);
+    conn.setReadTimeout(readTimeout);
     conn.setRequestMethod(POST_METHOD);
 
     ByteArrayOutputStream bos = new ByteArrayOutputStream(bufsz);

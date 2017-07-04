@@ -39,6 +39,13 @@ public class ConfigurableExecutor extends ThreadPoolExecutor {
       this.corePoolSize = corePoolSize;
       return this;
     }
+    
+    /**
+     * @return this instance's core pool size.
+     */
+    public int getCorePoolSize() {
+      return corePoolSize;
+    }
 
     /**
      * @param maxPoolSize
@@ -49,6 +56,13 @@ public class ConfigurableExecutor extends ThreadPoolExecutor {
       this.maxPoolSize = maxPoolSize;
       return this;
     }
+    
+    /**
+     * @return this instance's max pool size.
+     */
+    public int getMaxPoolSize() {
+      return maxPoolSize;
+    }
 
     /**
      * @param keepValive
@@ -58,6 +72,13 @@ public class ConfigurableExecutor extends ThreadPoolExecutor {
     public ThreadingConfiguration setKeepAlive(TimeValue keepAlive) {
       this.keepAlive = keepAlive;
       return this;
+    }
+
+    /**
+     * @return this instance keep-alive {@link TimeValue}.
+     */
+    public TimeValue getKeepAlive() {
+      return keepAlive;
     }
 
     /**
