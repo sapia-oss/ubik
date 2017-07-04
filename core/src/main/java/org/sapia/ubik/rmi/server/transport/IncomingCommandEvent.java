@@ -1,6 +1,5 @@
 package org.sapia.ubik.rmi.server.transport;
 
-import org.sapia.ubik.rmi.interceptor.Event;
 import org.sapia.ubik.rmi.server.command.RMICommand;
 
 /**
@@ -10,7 +9,7 @@ import org.sapia.ubik.rmi.server.command.RMICommand;
  * @author yduchesne
  * 
  */
-public class IncomingCommandEvent implements Event {
+public class IncomingCommandEvent {
 
   private RMICommand command;
 

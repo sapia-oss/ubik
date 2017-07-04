@@ -1,6 +1,5 @@
 package org.sapia.ubik.rmi.server.invocation;
 
-import org.sapia.ubik.rmi.interceptor.Event;
 import org.sapia.ubik.rmi.server.command.InvokeCommand;
 
 /**
@@ -17,9 +16,9 @@ import org.sapia.ubik.rmi.server.command.InvokeCommand;
  * ...
  * </pre>
  * 
- * @author Yanick Duchesne
+ * @author yduchesne
  */
-public class ClientPreInvokeEvent implements Event {
+public class ClientPreInvokeEvent {
 
   private InvokeCommand cmd;
 

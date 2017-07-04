@@ -5,13 +5,14 @@ import java.lang.reflect.Method;
 /**
  * This class encapsulates interceptor meta-information.
  * 
- * @author Yanick Duchesne
+ * @author yduchesne
  */
 class InterceptorInfo {
-  Interceptor interceptor;
+  
+  Object interceptor;
   Method method;
 
-  InterceptorInfo(Interceptor it, Method m) {
+  InterceptorInfo(Object it, Method m) {
     interceptor = it;
     method = m;
   }

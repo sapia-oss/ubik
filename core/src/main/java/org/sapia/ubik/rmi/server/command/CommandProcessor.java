@@ -1,6 +1,5 @@
 package org.sapia.ubik.rmi.server.command;
 
-import java.rmi.dgc.VMID;
 import java.util.concurrent.ExecutorService;
 
 import org.javasimon.Split;

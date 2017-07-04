@@ -1,7 +1,6 @@
 package org.sapia.ubik.rmi.server.gc;
 
 import org.sapia.ubik.net.ServerAddress;
-import org.sapia.ubik.rmi.interceptor.Event;
 import org.sapia.ubik.rmi.server.VmId;
 
 /**
@@ -11,12 +10,12 @@ import org.sapia.ubik.rmi.server.VmId;
  * @see org.sapia.ubik.rmi.server.gc.ClientGC
  * @see org.sapia.ubik.rmi.server.gc.ServerGC
  * 
- * @author Yanick
+ * @author yduchesne
  */
-public class GcEvent implements Event {
-  private VmId originId;
+public class GcEvent {
+  private VmId          originId;
   private ServerAddress originAddress;
-  private int count;
+  private int           count;
 
   /**
    * Creates an instance of this class with the given parameters.

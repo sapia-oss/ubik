@@ -2,6 +2,7 @@ package org.sapia.ubik.mcast;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -9,7 +10,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
@@ -497,7 +497,7 @@ public class EventChannel {
           broadcast.dispatch(unicast.getAddress(), alldomains, type, data);
         } catch (Exception e) {
           log.warning("Could not broadcast async event %s to all domains (%s)", e, type, data);
-          throw new ExecutionException("System error dispatching event", e);
+          throw new IllegalStateException("System error dispatching event", e);
         }
         return null;
       });
@@ -515,10 +515,38 @@ public class EventChannel {
         unicast.dispatch(addr, type, data);
       } catch (Exception e) {
         log.warning("Could not send async event %s to %s (%s)", e, type, addr, data);
-        throw new ExecutionException("System error dispatching event", e);
+        throw new IllegalStateException("System error dispatching event", e);
       }
       return null;
     });
+  }
+  
+  /**
+   * @param addresses the {@link Collection} of unicast addresss to which to dispatch the remote
+   *                  event
+   * @param type      a remote event type.
+   * @param data      the event payload.
+   * @return the {@link List} of {@link Future} on which the caller may block.
+   */
+  public List<Future<Void>> dispatch(Collection<ServerAddress> addresses, String type, Object data) {
+    Assertions.illegalState(state != State.STARTED, "Event channel not started");
+    log.debug("Sending async event %s - %s", type, data);
+    List<Future<Void>> results = new ArrayList<>(addresses.size());
+    
+    for (final ServerAddress addr : addresses) {
+      Future<Void> result =  publishExecutor.<Void>submit(() -> {
+        try {
+          unicast.dispatch(addr, type, data);
+        } catch (Exception e) {
+          log.warning("Could not send async event %s to %s (%s)", e, type, addr, data);
+          throw new IllegalStateException("System error dispatching event", e);
+        }
+        return null;
+      });
+      results.add(result);
+    }
+    
+    return results;
   }
 
   /**
@@ -535,7 +563,7 @@ public class EventChannel {
         broadcast.dispatch(unicast.getAddress(), consumer.getDomainName().toString(), type, data);
       } catch (Exception e) {
         log.warning("Could not broadcast async event %s (%s)", e, type, data);
-        throw new ExecutionException("System error dispatching event", e);
+        throw new IllegalStateException("System error dispatching event", e);
       }
       return null;
     });
@@ -995,7 +1023,7 @@ public class EventChannel {
             broadcast.dispatch(getUnicastAddress(), false, CONTROL_EVT, event);
           } catch (Exception e) {
             log.warning("Could not broadcast async control event %s (%s)", e, CONTROL_EVT, event);
-            throw new ExecutionException("System error dispatching control event", e);
+            throw new IllegalStateException("System error dispatching control event", e);
           }
           return null;
         });
@@ -1010,7 +1038,7 @@ public class EventChannel {
             log.error("Could not dispatch control event", e);
           } catch (Exception e) {
             log.warning("Could not send async event %s to %s (%s)", e, CONTROL_EVT, destination, event);
-            throw new ExecutionException("System error dispatching control event", e);
+            throw new IllegalStateException("System error dispatching control event", e);
           }
           return null;
         });

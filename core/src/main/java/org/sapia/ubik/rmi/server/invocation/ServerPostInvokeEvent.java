@@ -1,19 +1,18 @@
 package org.sapia.ubik.rmi.server.invocation;
 
-import org.sapia.ubik.rmi.interceptor.Event;
 import org.sapia.ubik.rmi.server.command.InvokeCommand;
 
 /**
  * An event signaling the completion of a remote method invocation, on the
  * server-side.
  * 
- * @author Yanick
+ * @author yduchesne
  */
-public class ServerPostInvokeEvent implements Event {
-  private long invokeDelay;
+public class ServerPostInvokeEvent {
+  private long          invokeDelay;
   private InvokeCommand cmd;
-  private Object target, result;
-  private Throwable error;
+  private Object        target, result;
+  private Throwable     error;
 
   /**
    * Creates an instance of this class with the given parameters.

@@ -1,14 +1,9 @@
 package org.sapia.ubik.rmi.examples.interceptor;
 
-import org.sapia.ubik.rmi.interceptor.Interceptor;
 import org.sapia.ubik.rmi.server.Hub;
 import org.sapia.ubik.rmi.server.invocation.ServerPreInvokeEvent;
-
-
-/**
- * @author Yanick Duchesne
- */
-public class HitCountInterceptor implements Interceptor {
+  
+public class HitCountInterceptor {
   private int _count;
 
   public synchronized void onServerPreInvokeEvent(ServerPreInvokeEvent evt) {

@@ -41,8 +41,12 @@ public final class Serialization {
    */
   public static Object deserialize(byte[] bytes, ClassLoader loader) throws IOException, ClassNotFoundException {
     ObjectInputStream ois = new ObjectInputStreamEx(new ByteArrayInputStream(bytes), loader);
-    Object o = ois.readObject();
-    return o;
+    try {
+      Object o = ois.readObject();
+      return o;
+    } finally {
+      ois.close();
+    } 
   }
 
   /**

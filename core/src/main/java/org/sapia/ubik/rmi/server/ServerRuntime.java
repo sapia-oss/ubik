@@ -2,15 +2,13 @@ package org.sapia.ubik.rmi.server;
 
 import org.sapia.ubik.module.Module;
 import org.sapia.ubik.module.ModuleContext;
-import org.sapia.ubik.rmi.interceptor.Event;
-import org.sapia.ubik.rmi.interceptor.Interceptor;
 import org.sapia.ubik.rmi.interceptor.InvalidInterceptorException;
 import org.sapia.ubik.rmi.interceptor.MultiDispatcher;
 
 /**
  * Encapsulates a server-side {@link MultiDispatcher}.
  * 
- * @author Yanick Duchesne
+ * @author yduchesne
  */
 public final class ServerRuntime implements Module {
 
@@ -45,18 +43,18 @@ public final class ServerRuntime implements Module {
    * Adds an interceptor of server-side events to this instance.
    * 
    * @see Interceptor
-   * @see MultiDispatcher#addInterceptor(Class, Interceptor)
+   * @see MultiDispatcher#addInterceptor(Class, Object)
    */
-  public synchronized void addInterceptor(Class<?> eventClass, Interceptor it) throws InvalidInterceptorException {
+  public synchronized void addInterceptor(Class<?> eventClass, Object it) throws InvalidInterceptorException {
     dispatcher.addInterceptor(eventClass, it);
   }
 
   /**
    * Dispatches the given event to the underlying server-side interceptors.
    * 
-   * @see MultiDispatcher#dispatch(Event)
+   * @see MultiDispatcher#dispatch(Object)
    */
-  public void dispatchEvent(Event event) {
+  public void dispatchEvent(Object event) {
     dispatcher.dispatch(event);
   }
 }
