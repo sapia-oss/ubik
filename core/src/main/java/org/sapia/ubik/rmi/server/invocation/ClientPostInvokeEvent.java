@@ -1,15 +1,14 @@
 package org.sapia.ubik.rmi.server.invocation;
 
-import org.sapia.ubik.rmi.interceptor.Event;
 import org.sapia.ubik.rmi.server.command.InvokeCommand;
 
 /**
  * This event is generated on the client-side, after a given method has been
  * invoked.
  * 
- * @author Yanick Duchesne
+ * @author yduchesne
  */
-public class ClientPostInvokeEvent implements Event {
+public class ClientPostInvokeEvent {
   private InvokeCommand toInvoke;
   private Object returnValue;
 

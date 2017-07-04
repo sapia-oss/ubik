@@ -1,14 +1,10 @@
 package org.sapia.ubik.rmi.examples.interceptor;
 
-import org.sapia.ubik.rmi.interceptor.Interceptor;
 import org.sapia.ubik.rmi.server.Hub;
 import org.sapia.ubik.rmi.server.invocation.ServerPreInvokeEvent;
 
 
-/**
- * @author Yanick Duchesne
- */
-public class SecurityServiceImpl implements SecurityService, Interceptor {
+public class SecurityServiceImpl implements SecurityService {
   /**
    * @see org.sapia.ubik.rmi.examples.interceptor.SecurityService#call()
    */

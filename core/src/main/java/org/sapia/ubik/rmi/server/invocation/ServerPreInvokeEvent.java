@@ -1,18 +1,17 @@
 package org.sapia.ubik.rmi.server.invocation;
 
-import org.sapia.ubik.rmi.interceptor.Event;
 import org.sapia.ubik.rmi.server.command.InvokeCommand;
 
 /**
  * An event signaling that a remote method call has been received on the
  * server-side.
  * 
- * @author Yanick
+ * @author yduchesne
  */
-public class ServerPreInvokeEvent implements Event {
+public class ServerPreInvokeEvent {
   private InvokeCommand cmd;
-  private Object target;
-  private long start = System.currentTimeMillis();
+  private Object        target;
+  private long          start   = System.currentTimeMillis();
 
   /**
    * @param cmd

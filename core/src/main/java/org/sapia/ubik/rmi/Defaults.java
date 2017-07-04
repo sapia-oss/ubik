@@ -258,6 +258,16 @@ public class Defaults {
    */
   public static final int DEFAULT_UNICAST_INBOUND_THREADS = 1;
   
+  /**
+   * The default connection timeout for HTTP clients.
+   */
+  public static final int DEFAULT_HTTP_CLIENT_CONNECTION_TIMEOUT = 15000;
+  
+  /**
+   * The default read timeout for HTTP clients.
+   */ 
+  public static final int DEFAULT_HTTP_CLIENT_READ_TIMEOUT = 5000;
+  
   private Defaults() {
   }
 }

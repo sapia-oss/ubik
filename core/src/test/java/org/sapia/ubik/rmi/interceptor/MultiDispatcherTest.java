@@ -1,42 +1,72 @@
 package org.sapia.ubik.rmi.interceptor;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.*;
 
-/**
- * @author Yanick Duchesne
- */
-public class MultiDispatcherTest extends TestCase {
-  /**
-   * Constructor for MultiDispatcherTest.
-   * 
-   * @param arg0
-   */
-  public MultiDispatcherTest(String arg0) {
-    super(arg0);
+import org.junit.Before;
+import org.junit.Test;
+
+public class MultiDispatcherTest {
+
+  private MultiDispatcher dispatcher;
+  
+  @Before
+  public void setUp() {
+    dispatcher = new MultiDispatcher();
   }
-
-  public void testAdd() throws Exception {
-    MultiDispatcher d = new MultiDispatcher();
+  
+  @Test(expected = InvalidInterceptorException.class)
+  public void testAddInterceptor_with_wrong_event_class() throws Exception {
     TestInterceptor t = new TestInterceptor();
-    d.addInterceptor(TestEvent.class, t);
+    dispatcher.addInterceptor(String.class, t);
+  }
+  
+  @Test
+  public void testDispatch_with_single_interceptor() throws Exception {
+    TestInterceptor t = new TestInterceptor();
+    dispatcher.addInterceptor(TestEvent.class, t);
+    dispatcher.dispatch(new TestEvent());
+
+    assertEquals(1, t.count);
   }
 
-  public void testMultiAdd() throws Exception {
-    MultiDispatcher d = new MultiDispatcher();
+  @Test
+  public void testDispatch_with_multiple_interceptors() throws Exception {
     TestInterceptor t1 = new TestInterceptor();
     TestInterceptor t2 = new TestInterceptor();
-    d.addInterceptor(TestEvent.class, t1);
-    d.addInterceptor(TestEvent.class, t2);
-  }
+    dispatcher.addInterceptor(TestEvent.class, t1);
+    dispatcher.addInterceptor(TestEvent.class, t2);
+    
+    dispatcher.dispatch(new TestEvent());
 
-  public void testDispatch() throws Exception {
-    MultiDispatcher d = new MultiDispatcher();
-    TestInterceptor t1 = new TestInterceptor();
-    TestInterceptor t2 = new TestInterceptor();
-    d.addInterceptor(TestEvent.class, t1);
-    d.addInterceptor(TestEvent.class, t2);
-    d.dispatch(new TestEvent());
-    super.assertEquals(1, t1.count);
-    super.assertEquals(1, t2.count);
+    assertEquals(1, t1.count);
+    assertEquals(1, t2.count);
+  }
+  
+  @Test
+  public void testDispatch_with_event_subclass() throws Exception {
+    TestInterceptor t = new TestInterceptor();
+    dispatcher.addInterceptor(TestEventSubclass.class, t);
+    dispatcher.dispatch(new TestEvent());
+ 
+    assertEquals(1, t.count);
+  }
+  
+  @Test
+  public void testDispatch_with_unregistered_event_class() throws Exception {
+    TestInterceptor t = new TestInterceptor();
+    dispatcher.addInterceptor(TestEvent.class, t);
+    dispatcher.dispatch(new TestUnregisteredEvent());
+ 
+    assertEquals(1, t.count);
+  }
+  
+  
+  @Test
+  public void testDispatch_with_unrelated_event() throws Exception {
+    TestInterceptor t = new TestInterceptor();
+    dispatcher.addInterceptor(TestEvent.class, t);
+    dispatcher.dispatch(new TestUnrelatedEvent());
+ 
+    assertEquals(0, t.count);
   }
 }

@@ -6,8 +6,6 @@ import org.sapia.ubik.module.Module;
 import org.sapia.ubik.module.ModuleContext;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.rmi.Consts;
-import org.sapia.ubik.rmi.interceptor.Event;
-import org.sapia.ubik.rmi.interceptor.Interceptor;
 import org.sapia.ubik.rmi.interceptor.InvalidInterceptorException;
 import org.sapia.ubik.rmi.interceptor.MultiDispatcher;
 import org.sapia.ubik.rmi.server.gc.ClientGC;
@@ -113,10 +111,9 @@ public class ClientRuntime implements Module {
   /**
    * Adds a client-side interceptor to this client.
    * 
-   * @see Interceptor
-   * @see MultiDispatcher#addInterceptor(Class, Interceptor)
+   * @see MultiDispatcher#addInterceptor(Class, Object)
    */
-  public synchronized void addInterceptor(Class<?> eventClass, Interceptor it) throws InvalidInterceptorException {
+  public synchronized void addInterceptor(Class<?> eventClass, Object it) throws InvalidInterceptorException {
     dispatcher.addInterceptor(eventClass, it);
   }
 
@@ -124,9 +121,9 @@ public class ClientRuntime implements Module {
    * Dispatches the given event to registered interceptors.
    * 
    * @see Interceptor
-   * @see MultiDispatcher#addInterceptor(Class, Interceptor)
+   * @see MultiDispatcher#addInterceptor(Class, Object)
    */
-  public void dispatchEvent(Event event) {
+  public void dispatchEvent(Object event) {
     dispatcher.dispatch(event);
   }
 
