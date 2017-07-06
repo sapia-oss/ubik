@@ -2,6 +2,7 @@ package org.sapia.ubik.rmi.server;
 
 import java.io.IOException;
 import java.net.ConnectException;
+import java.net.SocketTimeoutException;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,42 +16,46 @@ import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.ThreadInterruptedException;
 import org.sapia.ubik.rmi.Consts;
+import org.sapia.ubik.rmi.Defaults;
 import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
 import org.sapia.ubik.rmi.server.transport.TransportManager;
 import org.sapia.ubik.rmi.server.transport.mina.MinaAddress;
 import org.sapia.ubik.rmi.server.transport.mina.MinaTransportProvider;
+import org.sapia.ubik.util.Conf;
 
 /**
  * This class is the single-entry point into Ubik RMI's API.
  *
- * @author Yanick Duchesne
+ * @author yduchesne
  */
 public class Hub {
 
-  public static final String DEFAULT_TRANSPORT_TYPE = MinaTransportProvider.TRANSPORT_TYPE;
+  public static final  String           DEFAULT_TRANSPORT_TYPE   = MinaTransportProvider.TRANSPORT_TYPE;
 
-  private static final long DEFAULT_SHUTDOWN_TIMEOUT = 5000;
-
-  private static final Category log = Log.createCategory(Hub.class);
-  private static final Modules container = new Modules();
-  private static AtomicBoolean shutdown = new AtomicBoolean();
-
-  private static List<BeanLookup> lookups = Collections.synchronizedList(new ArrayList<BeanLookup>());
+  private static final long             DEFAULT_SHUTDOWN_TIMEOUT = 10000;
+  private static final int              MAX_CONNECT_RETRIES      = Conf.getSystemProperties().getIntProperty(
+                                                                        Consts.CLIENT_CONNECTION_MAX_RETRY, 
+                                                                        Defaults.DEFAULT_CLIENT_CONNECTION_MAX_RETRY
+                                                                    );
+  private static final AtomicBoolean    SHUTDOWN                 = new AtomicBoolean();
+  private static final Category         LOG                      = Log.createCategory(Hub.class);
+  private static final Modules          CONTAINER                = new Modules();
+  private static final List<BeanLookup> LOOKUPS                  = Collections.synchronizedList(new ArrayList<BeanLookup>());
 
   /**
    * @param lookup a {@link BeanLookup} to add to this instance.
    * @see BeanLookup
    */
   public static void addBeanLookup(BeanLookup lookup) {
-    lookups.add(lookup);
+    LOOKUPS.add(lookup);
   }
 
   /**
    * @param lookup removes the given {@link BeanLookup} from this instance.
    */
   public static void removeBeanLookup(BeanLookup lookup) {
-    lookups.remove(lookup);
+    LOOKUPS.remove(lookup);
   }
 
   /**
@@ -60,8 +65,8 @@ public class Hub {
    * @see BeanLookup
    */
   public static <T> T getBean(Class<T> typeOf) {
-    synchronized (lookups) {
-      for (BeanLookup b : lookups) {
+    synchronized (LOOKUPS) {
+      for (BeanLookup b : LOOKUPS) {
         T t = b.getBean(typeOf);
         if (t != null) {
           return t;
@@ -87,7 +92,7 @@ public class Hub {
     checkStarted();
     Properties props = new Properties();
     props.setProperty(Consts.TRANSPORT_TYPE, DEFAULT_TRANSPORT_TYPE);
-    return container.getServerTable().exportObject(o, props);
+    return CONTAINER.getServerTable().exportObject(o, props);
   }
 
   /**
@@ -103,7 +108,7 @@ public class Hub {
     Properties props = new Properties();
     props.setProperty(Consts.TRANSPORT_TYPE, DEFAULT_TRANSPORT_TYPE);
     props.setProperty(MinaTransportProvider.PORT, Integer.toString(port));
-    return container.getServerTable().exportObject(o, props);
+    return CONTAINER.getServerTable().exportObject(o, props);
   }
 
   /**
@@ -124,7 +129,7 @@ public class Hub {
    */
   public static Object exportObject(Object object, Properties props) throws RemoteException {
     checkStarted();
-    return container.getServerTable().exportObject(object, props);
+    return CONTAINER.getServerTable().exportObject(object, props);
   }
 
   /**
@@ -147,7 +152,7 @@ public class Hub {
     checkStarted();
     Properties props = new Properties();
     props.setProperty(Consts.TRANSPORT_TYPE, transportType);
-    return container.getServerTable().exportObject(object, props);
+    return CONTAINER.getServerTable().exportObject(object, props);
   }
 
   /**
@@ -166,7 +171,7 @@ public class Hub {
    */
   public static void unexport(Object o) {
     checkStarted();
-    container.getObjectTable().remove(o);
+    CONTAINER.getObjectTable().remove(o);
   }
 
   /**
@@ -178,7 +183,7 @@ public class Hub {
    * NOTE: this method does not stop the server through which the exported
    * instances (that correspond to the given classloader) are receiving remote
    * method calls. To stop the servers that have been started by the
-   * <code>Hub</code>, call the latter's {@link #shutdown} method.
+   * <code>Hub</code>, call the latter's {@link #SHUTDOWN} method.
    *
    * @see #shutdown(long)
    *
@@ -186,7 +191,7 @@ public class Hub {
    */
   public static void unexport(ClassLoader loader) {
     checkStarted();
-    container.getObjectTable().remove(loader);
+    CONTAINER.getObjectTable().remove(loader);
   }
 
   /**
@@ -214,6 +219,136 @@ public class Hub {
    */
   public static Object connect(ServerAddress address) throws RemoteException {
     checkStarted();
+    return tryConnect(address);
+  }
+  
+  /**
+   * Forces the clearing of the connection pool corresponding to the given
+   * address.
+   *
+   * @see Connections#clear()
+   * @param address
+   *          a {@link ServerAddress}
+   */
+  public static void refresh(ServerAddress address) {
+    checkStarted();
+    try {
+      Hub.getModules().getTransportManager().getConnectionsFor(address).clear();
+    } catch (RemoteException e) {
+      // noop
+    }
+  }
+
+  /**
+   * Returns the address of the server for the given transport type.
+   *
+   * @param transportType
+   *          the logical identifier of a "transport type".
+   * @return a <code>ServerAddress</code>,
+   */
+  public static ServerAddress getServerAddressFor(String transportType) {
+    checkStarted();
+    return CONTAINER.getServerTable().getServerAddress(transportType);
+  }
+
+  /**
+   * Returns true if the Hub is shut down.
+   *
+   * @return <code>true</code> if the Hub is shut down.
+   */
+  public static boolean isShutdown() {
+    return SHUTDOWN.get();
+  }
+
+  /**
+   * Shuts down this instance. The calling thread will wait a builtin maximum of
+   * seconds for the shutdown to be completed - after which it will return.
+   */
+  public static synchronized void shutdown() {
+    try {
+      shutdown(DEFAULT_SHUTDOWN_TIMEOUT);
+    } catch (InterruptedException e) {
+      LOG.warning("Thread interrupted during shutdown");
+      throw new ThreadInterruptedException();
+    }
+  }
+
+  /**
+   * Shuts down this instance; some part of the shutdown can be asynchronous. A
+   * timeout must be given in order not to risk the shutdown to last for too
+   * long.
+   *
+   * @param timeout
+   *          a shutdown "timeout", in millis.
+   * @throws InterruptedException
+   */
+  public static synchronized void shutdown(long timeout) throws InterruptedException {
+    if (SHUTDOWN.get()) {
+      return;
+    }
+    LOG.info("Shutting down...");
+    LOOKUPS.clear();
+    CONTAINER.stop();
+    LOG.info("Shutdown completed");
+    SHUTDOWN.set(true);
+  }
+
+  /**
+   * @return this class' {@link Modules}.
+   */
+  public static Modules getModules() {
+    checkStarted();
+    return CONTAINER;
+  }
+
+  /**
+   * Explicitely starts the Hub's modules.
+   */
+  public static void start() {
+    checkStarted();
+  }
+  
+  // --------------------------------------------------------------------------
+  // Restricted
+
+  // this method is not synchronized, since the container's start() method is
+  // itself synchronized
+  private static void checkStarted() {
+    if (!CONTAINER.isStarted()) {
+
+      LOG.info("Performing initialization (VMID = %s)", VmId.getInstance());
+
+      CONTAINER.init();
+      CONTAINER.start();
+
+      SHUTDOWN.set(false);
+    }
+  }
+  
+  private static Object tryConnect(ServerAddress address) throws RemoteException {
+    
+    int             retryCount = 0;
+    RemoteException lastExc    = null;
+    while (retryCount < MAX_CONNECT_RETRIES) {
+      try {
+        return doConnect(address);
+      } catch (RemoteException e) {
+        lastExc = e;
+        if (e.getCause() instanceof SocketTimeoutException) {
+          retryCount++;
+          continue;
+        } else {
+          throw e;
+        }
+      }
+    }
+    if (lastExc != null) {
+      throw lastExc;
+    }
+    throw new RemoteException(String.format("Could not connect to host %s within the specified timeout", address));
+  }
+  
+  private static Object doConnect(ServerAddress address) throws RemoteException {
     RmiConnection conn = null;
     Object toReturn;
 
@@ -255,107 +390,6 @@ public class Hub {
     }
 
     return toReturn;
-  }
-
-  /**
-   * Forces the clearing of the connection pool corresponding to the given
-   * address.
-   *
-   * @see Connections#clear()
-   * @param address
-   *          a {@link ServerAddress}
-   */
-  public static void refresh(ServerAddress address) {
-    checkStarted();
-    try {
-      Hub.getModules().getTransportManager().getConnectionsFor(address).clear();
-    } catch (RemoteException e) {
-      // noop
-    }
-  }
-
-  /**
-   * Returns the address of the server for the given transport type.
-   *
-   * @param transportType
-   *          the logical identifier of a "transport type".
-   * @return a <code>ServerAddress</code>,
-   */
-  public static ServerAddress getServerAddressFor(String transportType) {
-    checkStarted();
-    return container.getServerTable().getServerAddress(transportType);
-  }
-
-  /**
-   * Returns true if the Hub is shut down.
-   *
-   * @return <code>true</code> if the Hub is shut down.
-   */
-  public static boolean isShutdown() {
-    return shutdown.get();
-  }
-
-  /**
-   * Shuts down this instance. The calling thread will wait a builtin maximum of
-   * seconds for the shutdown to be completed - after which it will return.
-   */
-  public static synchronized void shutdown() {
-    try {
-      shutdown(DEFAULT_SHUTDOWN_TIMEOUT);
-    } catch (InterruptedException e) {
-      log.warning("Thread interrupted during shutdown");
-      throw new ThreadInterruptedException();
-    }
-  }
-
-  /**
-   * Shuts down this instance; some part of the shutdown can be asynchronous. A
-   * timeout must be given in order not to risk the shutdown to last for too
-   * long.
-   *
-   * @param timeout
-   *          a shutdown "timeout", in millis.
-   * @throws InterruptedException
-   */
-  public static synchronized void shutdown(long timeout) throws InterruptedException {
-    if (shutdown.get()) {
-      return;
-    }
-    log.info("Shutting down...");
-    lookups.clear();
-    container.stop();
-    log.info("Shutdown completed");
-    shutdown.set(true);
-  }
-
-  /**
-   * @return this class' {@link Modules}.
-   */
-  public static Modules getModules() {
-    checkStarted();
-    return container;
-  }
-
-  /**
-   * Explicitely starts the Hub's modules.
-   */
-  public static void start() {
-    checkStarted();
-  }
-
-  // this method is not synchronized, since the container's start() method is
-  // itself
-  // synchronized
-  private static void checkStarted() {
-    if (!container.isStarted()) {
-
-      log.info("Performing initialization (VMID = %s)", VmId.getInstance());
-
-      container.init();
-      container.start();
-
-      shutdown.set(false);
-    }
   }
 
 }
