@@ -57,7 +57,7 @@ public class JdkRmiClientConnection implements RmiConnection {
     conn.setDoOutput(true);
     conn.setUseCaches(false);
     conn.setConnectTimeout(5000);
-    conn.setReadTimeout(15000);
+    conn.setReadTimeout(60000);
     conn.setRequestMethod(POST_METHOD);
 
     ByteArrayOutputStream bos = new ByteArrayOutputStream(bufsz);
