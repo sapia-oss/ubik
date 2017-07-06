@@ -261,12 +261,12 @@ public class Defaults {
   /**
    * The default connection timeout for HTTP clients.
    */
-  public static final int DEFAULT_HTTP_CLIENT_CONNECTION_TIMEOUT = 15000;
+  public static final int DEFAULT_HTTP_CLIENT_CONNECTION_TIMEOUT = 3000;
   
   /**
    * The default read timeout for HTTP clients.
    */ 
-  public static final int DEFAULT_HTTP_CLIENT_READ_TIMEOUT = 5000;
+  public static final int DEFAULT_HTTP_CLIENT_READ_TIMEOUT       = 3000;
   
   private Defaults() {
   }
