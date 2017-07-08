@@ -52,8 +52,8 @@ public class JdkRmiClientConnection implements RmiConnection {
                                                  Defaults.DEFAULT_HTTP_CLIENT_CONNECTION_TIMEOUT
                                              );
   private int               readTimeout    = Conf.getSystemProperties().getIntProperty(
-                                                 Consts.HTTP_CLIENT_CONNECT_TIMEOUT, 
-                                                 Defaults.DEFAULT_HTTP_CLIENT_CONNECTION_TIMEOUT
+                                                 Consts.HTTP_CLIENT_READ_TIMEOUT, 
+                                                 Defaults.DEFAULT_HTTP_CLIENT_READ_TIMEOUT
                                              );
 
   public JdkRmiClientConnection() {

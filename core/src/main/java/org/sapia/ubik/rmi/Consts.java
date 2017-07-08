@@ -477,13 +477,13 @@ public interface Consts {
   
   /**
    * Specifies the number of milliseconds to wait for the establishment of HTTP connections.
-   * Property name: <code>ubik.rmi.client.http.connect.timeout</code>. Defaults to 15000 millis.
+   * Property name: <code>ubik.rmi.client.http.connect.timeout</code>. Defaults to 5000 millis.
    */
   public static final String HTTP_CLIENT_CONNECT_TIMEOUT = "ubik.rmi.client.http.connect.timeout";
 
   /**
    * Specifies the number of milliseconds to wait for the incoming bytes on HTTP connections.
-   * Property name: <code>ubik.rmi.client.http.read.timeout</code>. Defaults to 5000 millis.
+   * Property name: <code>ubik.rmi.client.http.read.timeout</code>. Defaults to 60000 millis.
    */
   public static final String HTTP_CLIENT_READ_TIMEOUT    = "ubik.rmi.client.http.read.timeout";
 
