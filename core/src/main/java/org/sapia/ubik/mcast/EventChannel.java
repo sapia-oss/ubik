@@ -4,10 +4,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.Timer;
@@ -167,7 +165,6 @@ public class EventChannel {
   private static boolean              eventChannelReuse = Conf.getSystemProperties()
       .getBooleanProperty(Consts.MCAST_REUSE_EXISTINC_CHANNELS, true);
   private Timer                       heartbeatTimer = new Timer("Ubik.EventChannel.Timer", true);
-  private Timer                       metricsTimer   = new Timer("Ubik.EventChannel.MetricsTimer", true);
   private BroadcastDispatcher         broadcast;
   private UnicastDispatcher           unicast;
   private EventConsumer               consumer;
@@ -433,7 +430,6 @@ public class EventChannel {
       consumer.stop();
       publishExecutor.shutdown();
       heartbeatTimer.cancel();
-      metricsTimer.cancel();
       broadcast.close();
       unicast.close();
       state = State.CLOSED;
@@ -957,23 +953,6 @@ public class EventChannel {
     };
   }
   
-  private Category metricsLog = Log.createCategory("UbikMetrics");
-  private Map<String, Long> previousMetrics = new HashMap<>();
-  private void doLogMetrics() {
-    Map<String, Long> current = metrics.makeSnapshot();
-    
-    StringBuilder logLine = new StringBuilder();
-    current.entrySet().forEach(e -> {
-      long deltaValue = e.getValue();
-      if (previousMetrics.containsKey(e.getKey())) {
-        deltaValue -= previousMetrics.get(e.getKey());
-      }
-      logLine.append(e.getKey()).append("=").append(deltaValue).append(" ");
-    });
-    
-    metricsLog.report(logLine.toString());
-  }
-
   // ==========================================================================
 
   private class ChannelCallbackImpl implements EventChannelFacade {
@@ -1340,10 +1319,10 @@ public class EventChannel {
     
     controller = new EventChannelController(createClock(), config, new ChannelCallbackImpl(), metrics);
 
-    startTimer(controlThreadInterval, TimeValue.createMillis(20000));
+    startTimer(controlThreadInterval);
   }
 
-  protected void startTimer(TimeValue controlThreadInterval, TimeValue logMetricsInterval) {
+  protected void startTimer(TimeValue controlThreadInterval) {
     heartbeatTimer.schedule(new TimerTask() {
       @Override
       public void run() {
@@ -1352,15 +1331,6 @@ public class EventChannel {
         }
       }
     }, startDelayRange.getRandomTime().getValueInMillis(), controlThreadInterval.getValueInMillis());
-    
-    metricsTimer.schedule(new TimerTask() {
-      @Override
-      public void run() {
-        if (state == State.STARTED) {
-          doLogMetrics();
-        }
-      }
-    }, logMetricsInterval.getValueInMillis(), logMetricsInterval.getValueInMillis());
   }
 
   protected SysClock createClock() {

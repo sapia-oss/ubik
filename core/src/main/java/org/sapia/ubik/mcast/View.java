@@ -295,12 +295,13 @@ public class View {
    *          a node identifier. 
    */
   void removeDeadNode(String node) {
-    NodeInfo removed = nodeToNodeInfo.remove(node);
-    if (removed != null) {
-      removed.down(clock);
-      deadNodes.put(node, removed);
+    NodeInfo toRemoved = nodeToNodeInfo.get(node);
+    if (toRemoved != null) {
+      deadNodes.put(node, toRemoved);
+      nodeToNodeInfo.remove(node);
+      toRemoved.down(clock);      
       log.info("Removed dead node %s", node);
-      notifyListeners(new EventChannelEvent(removed.getNode(), removed.getAddr()), ViewEventType.REMOVED);
+      notifyListeners(new EventChannelEvent(toRemoved.getNode(), toRemoved.getAddr()), ViewEventType.REMOVED);
     }
   }
   
