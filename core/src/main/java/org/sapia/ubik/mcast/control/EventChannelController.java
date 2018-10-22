@@ -25,6 +25,7 @@ import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.util.Collects;
 import org.sapia.ubik.util.Pause;
 import org.sapia.ubik.util.SysClock;
+import org.sapia.ubik.util.UbikMetrics;
 
 /**
  * Controls the state of an {@link EventChannel} and behaves accordingly. It is
@@ -49,14 +50,14 @@ public class EventChannelController {
   private Map<String, ControlNotificationHandler> notificationHandlers = new HashMap<String, ControlNotificationHandler>();
   private Map<String, SynchronousControlRequestHandler> syncRequestHandlers = new HashMap<String, SynchronousControlRequestHandler>();
   private Pause controlInterval, gossipInterval, autoBroadcastInterval;
-
-  public EventChannelController(ControllerConfiguration config, EventChannelFacade callback) {
-    this(SysClock.RealtimeClock.getInstance(), config, callback);
+  
+  public EventChannelController(ControllerConfiguration config, EventChannelFacade callback, UbikMetrics metrics) {
+    this(SysClock.RealtimeClock.getInstance(), config, callback, metrics);
   }
 
-  public EventChannelController(SysClock clock, ControllerConfiguration config, EventChannelFacade callback) {
+  public EventChannelController(SysClock clock, ControllerConfiguration config, EventChannelFacade callback, UbikMetrics metrics) {
     this.config = config;
-    context = new ControllerContext(callback, clock, config);
+    context = new ControllerContext(callback, clock, config, metrics);
 
     syncRequestHandlers.put(SynchronousHealthCheckRequest.class.getName(), new SynchronousHealthCheckRequestHandler(context));
     gossipHandlers.put(GossipSyncNotification.class.getName(), new GossipSyncNotificationHandler(context));
@@ -142,6 +143,7 @@ public class EventChannelController {
       log.report("Node identifier: %s", context.getEventChannel().getNode());
     }
     doHealth();
+    context.getEventChannel().cleanDeadNodes(DEFAULT_CTRL_INTERVAL*3);
   }
 
   // --------------------------------------------------------------------------
@@ -182,6 +184,7 @@ public class EventChannelController {
       log.info("Node %s is suspect: performing healthcheck", suspect);
       
       try {
+        context.getMetrics().incrementCounter("eventChannelController.suspectHealthCheck");
         Set<SynchronousControlResponse> responses = context.getEventChannel().sendSynchronousRequest(
             Collects.arrayToSet(suspect.getNode()), 
             new SynchronousHealthCheckRequest(), 
@@ -201,6 +204,7 @@ public class EventChannelController {
       log.info("Node %s is suspect: delegating healthcheck", suspect);
       DelegatedHealthCheckControlEvent event = new DelegatedHealthCheckControlEvent(suspect);
       for (NodeInfo d : delegates) {
+        context.getMetrics().incrementCounter("eventChannelController.suspectDelegatedHealthCheck");
         context.getEventChannel().sendUnicastEvent(d.getAddr(), event);
       }
     }

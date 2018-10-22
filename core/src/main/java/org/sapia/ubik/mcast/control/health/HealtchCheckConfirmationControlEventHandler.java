@@ -35,6 +35,7 @@ public class HealtchCheckConfirmationControlEventHandler implements ControlEvent
     HealthCheckConfirmationControlEvent confirmation = (HealthCheckConfirmationControlEvent) event;
     NodeInfo                            suspect      = context.getEventChannel().getNodeInfoFor(confirmation.getSuspect().getNode());
     
+    context.getMetrics().incrementCounter("eventController.onDelegatedHealthCheckConfirmation");
     context.getEventChannel().heartbeat(originNode, originAddress);
 
     // might have been removed already

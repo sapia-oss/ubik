@@ -52,4 +52,12 @@ public class LocalhostTest {
     assertFalse("Expected non-loopback address, got: " + addr.getHostAddress(), addr.getHostAddress().startsWith("127.0"));
   }
 
+  @Test
+  public void testDoSelect__() throws Exception {
+    Localhost.setAddressPattern("\\d{3}\\.\\d{3}\\.44\\.\\d+");
+    InetAddress addr = Localhost.doGetPreferredLocalAddress(Collects.arrayToSet(InetAddress.getByName("192.168.1.1"),
+        InetAddress.getByName("192.168.44.105")));
+    assertTrue("Expected non-loopback address, got: " + addr.getHostAddress(), addr.getHostAddress().startsWith("192.168.44"));
+  }
+
 }

@@ -2,6 +2,7 @@ package org.sapia.ubik.mcast.control;
 
 import org.sapia.ubik.mcast.EventChannel;
 import org.sapia.ubik.util.SysClock;
+import org.sapia.ubik.util.UbikMetrics;
 
 /**
  * An instance of this class holds an {@link EventChannelController} contextual
@@ -15,6 +16,7 @@ public class ControllerContext {
   private EventChannelFacade      channelFacade;
   private SysClock                clock;
   private ControllerConfiguration config;
+  private UbikMetrics             metrics;
 
   /**
    * Creates an instance of this class with the given objects.
@@ -27,11 +29,13 @@ public class ControllerContext {
    *          the {@link SysClock} instance to use.
    * @param conf
    *          the {@link ControllerConfiguration} to use.
+   * @param metrics The ubik metrics aggregator to use. 
    */
-  public ControllerContext(EventChannelFacade channelFacade, SysClock clock, ControllerConfiguration conf) {
+  public ControllerContext(EventChannelFacade channelFacade, SysClock clock, ControllerConfiguration conf, UbikMetrics metrics) {
     this.channelFacade = channelFacade;
     this.clock         = clock;
     this.config        = conf;
+    this.metrics       = metrics;
   }
   
   /**
@@ -64,4 +68,11 @@ public class ControllerContext {
     return clock;
   }
 
+  /**
+   * @return the {@link UbikMetrics} of this context.
+   */
+  public UbikMetrics getMetrics() {
+    return metrics;
+  }
+  
 }

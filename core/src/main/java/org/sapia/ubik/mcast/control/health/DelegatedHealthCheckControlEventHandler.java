@@ -36,6 +36,7 @@ public class DelegatedHealthCheckControlEventHandler implements ControlEventHand
   public void handle(String originNode, ServerAddress originAddress, ControlEvent event) {
     DelegatedHealthCheckControlEvent healtchCheckEvent = (DelegatedHealthCheckControlEvent) event;
     log.info("Received event for suspect node: %s", healtchCheckEvent.getTarget());
+    context.getMetrics().incrementCounter("eventController.onDelegatedHealthCheck");
     context.getEventChannel().heartbeat(originNode, originAddress);
     try {
       Set<SynchronousControlResponse> responses = context.getEventChannel().sendSynchronousRequest(

@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.sapia.ubik.log.Category;
 import org.sapia.ubik.log.Log;
@@ -42,6 +43,7 @@ public class View {
   private SysClock clock;
   private String node;
   private Map<String, NodeInfo>                        nodeToNodeInfo = new ConcurrentHashMap<String, NodeInfo>();
+  private Map<String, NodeInfo>                        deadNodes      = new ConcurrentHashMap<String, NodeInfo>();
   private SoftReferenceList<EventChannelStateListener> listeners      = new SoftReferenceList<EventChannelStateListener>();
   private Object                                       peerWaitLock   = new Object();
   
@@ -224,6 +226,10 @@ public class View {
   boolean containsNode(String node) {
     return nodeToNodeInfo.containsKey(node);
   }
+  
+  boolean isNodeDead(String node) {
+    return deadNodes.containsKey(node);
+  }
 
   /**
    * Adds the given address to this instance.
@@ -238,12 +244,17 @@ public class View {
     Assertions.illegalState(node.equals(this.node), "Cannot add self as member node: %s", node);
     NodeInfo info = nodeToNodeInfo.get(node);
     if (info == null) {
-      info = new NodeInfo(addr, node);
-      info.touch(clock);
-      nodeToNodeInfo.put(node, info);
-      log.debug("Adding node %s at address %s to view", node, addr);
-      notifyListeners(new EventChannelEvent(node, addr), ViewEventType.ADDED);
-      return true;
+      if (deadNodes.containsKey(node)) {
+        log.warning("Not adding node %s at address %s because it exist in dead node list", node, addr);
+        return false;
+      } else {
+        info = new NodeInfo(addr, node);
+        info.touch(clock);
+        nodeToNodeInfo.put(node, info);
+        log.info("Added node %s at address %s to view", node, addr);
+        notifyListeners(new EventChannelEvent(node, addr), ViewEventType.ADDED);
+        return true;
+      }
     } else {
       return false;
     }
@@ -266,10 +277,14 @@ public class View {
     Assertions.illegalState(node.equals(this.node), "Cannot add self as member node: %s", node);
     NodeInfo info = nodeToNodeInfo.get(node);
     if (info == null) {
+      if (deadNodes.containsKey(node)) {
+        log.warning("Got hearthbeat from dead node %s at address %s, removing in from dead node list", node, addr);
+        deadNodes.remove(node);
+      }
       info = new NodeInfo(addr, node);
       info.touch(clock);
       nodeToNodeInfo.put(node, info);
-      log.debug("Adding node %s at address %s to view", node, addr);
+      log.info("Added node %s (on heartbeat) at address %s to view", node, addr);
       notifyListeners(new EventChannelEvent(node, addr), ViewEventType.ADDED);
     }
     info.touch(clock);
@@ -282,9 +297,24 @@ public class View {
   void removeDeadNode(String node) {
     NodeInfo removed = nodeToNodeInfo.remove(node);
     if (removed != null) {
-      log.debug("Removing dead node %s", node);
+      removed.down(clock);
+      deadNodes.put(node, removed);
+      log.info("Removed dead node %s", node);
       notifyListeners(new EventChannelEvent(removed.getNode(), removed.getAddr()), ViewEventType.REMOVED);
     }
+  }
+  
+  void cleanupDeadNodeList(long gracePeriodMillis) {
+    long now = clock.currentTimeMillis();
+    List<String> nodesToDelete = deadNodes.entrySet().stream().
+        filter(e -> (e.getValue().getTimestamp() + gracePeriodMillis) < now).
+        map(e -> e.getKey()).
+        collect(Collectors.toList());
+    
+    nodesToDelete.forEach(n -> {
+      log.info("removing expired node %s from dead node list", n);
+      deadNodes.remove(n);
+    });
   }
 
   /**
@@ -304,6 +334,7 @@ public class View {
    * that leaves the domain.
    */
   void clearView() {
+    log.info("Clearing view, removing all nodes");
     for (NodeInfo removed : nodeToNodeInfo.values()) {
       log.debug("Removing node %s from view", removed.getNode());
       notifyListeners(new EventChannelEvent(removed.getNode(), removed.getAddr()), ViewEventType.LEFT);
@@ -318,12 +349,13 @@ public class View {
       for (EventChannelStateListener listener : listeners) {
         try {
           if (eventType == ViewEventType.ADDED) {
-            log.debug("Node %s is up", event.getNode());
+            log.info("Node %s is up, notify listeners", event.getNode());
             listener.onUp(event);
           } else if (eventType == ViewEventType.REMOVED) {
-            log.debug("Node %s is down", event.getNode());
+            log.info("Node %s is down, notify listeners", event.getNode());
             listener.onDown(event);
           } else if (eventType == ViewEventType.LEFT) {
+            log.info("Node %s left cluster, notify listeners", event.getNode());
             listener.onLeft(event);
           } else {
             log.error("Unknown view event type: %s", eventType);

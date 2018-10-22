@@ -17,6 +17,7 @@ import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.util.Condition;
 import org.sapia.ubik.util.SysClock;
 import org.sapia.ubik.util.TimeValue;
+import org.sapia.ubik.util.UbikMetrics;
 
 public class TestChannelCallback implements EventChannelFacade {
 
@@ -37,9 +38,9 @@ public class TestChannelCallback implements EventChannelFacade {
   private volatile boolean down;
   private volatile Set<String> forceResync;
 
-  public TestChannelCallback(String node, SysClock clock, ControllerConfiguration config) {
+  public TestChannelCallback(String node, SysClock clock, ControllerConfiguration config, UbikMetrics metrics) {
     this.node = node;
-    this.controller = new EventChannelController(clock, config, this);
+    this.controller = new EventChannelController(clock, config, this, metrics);
   }
 
   public TestChannelCallback addSibling(TestChannelCallback sibling) {
@@ -223,6 +224,10 @@ public class TestChannelCallback implements EventChannelFacade {
     public String getTransportType() {
       return getClass().getName();
     }
+  }
+
+  @Override
+  public void cleanDeadNodes(long gracePeriodMillis) {
   }
 
 }

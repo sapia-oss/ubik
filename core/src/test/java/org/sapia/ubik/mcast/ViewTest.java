@@ -57,12 +57,25 @@ public class ViewTest {
     assertTrue(view.containsNode("123"));
     assertEquals(100L, view.getNodeInfo("123").getTimestamp());
   }
+  
+  @Test
+  public void testHeartbeat_fromDeadNode() {
+    view.addHost(new TCPAddress("test", "test", 1), "123");    
+    view.removeDeadNode("123");
+    assertFalse(view.containsNode("123"));
+    assertTrue(view.isNodeDead("123"));
+
+    view.heartbeat(new TCPAddress("test", "test", 1), "123", clock);
+    assertTrue(view.containsNode("123"));
+    assertFalse(view.isNodeDead("123"));
+  }
 
   @Test
   public void testRemoveDeadNode() {
     view.addHost(new TCPAddress("test", "test", 1), "123");    
     view.removeDeadNode("123");
     assertFalse(view.containsNode("123"));
+    assertTrue(view.isNodeDead("123"));
   }
   
   @Test
@@ -138,5 +151,42 @@ public class ViewTest {
     view.addHost(addr, "123");
     assertEquals("No address found for node", addr, view.getAddressFor("123"));
   }
+  
+  @Test
+  public void testAddingDeadNode() {
+    view.addHost(new TCPAddress("test", "test", 1), "123");    
+    view.removeDeadNode("123");
+    assertFalse(view.containsNode("123"));
+    assertTrue(view.isNodeDead("123"));
 
+    boolean actual = view.addHost(new TCPAddress("test", "test", 1), "123");
+    assertFalse(actual);
+    assertFalse(view.containsNode("123"));
+    assertTrue(view.isNodeDead("123"));
+  }
+
+  @Test
+  public void testCleanupDeadNodeList_inGracePeriod() {
+    view.addHost(new TCPAddress("test", "test", 1), "123");    
+    clock.increaseCurrentTimeMillis(100);
+    view.removeDeadNode("123");
+    assertTrue(view.isNodeDead("123"));
+    
+    clock.increaseCurrentTimeMillis(100);
+    view.cleanupDeadNodeList(5000);
+    assertTrue(view.isNodeDead("123"));
+  }
+
+  @Test
+  public void testCleanupDeadNodeList_afterGracePeriod() {
+    view.addHost(new TCPAddress("test", "test", 1), "123");    
+    clock.increaseCurrentTimeMillis(100);
+    view.removeDeadNode("123");
+    assertTrue(view.isNodeDead("123"));
+    
+    clock.increaseCurrentTimeMillis(10000);
+    view.cleanupDeadNodeList(5000);
+    assertFalse(view.isNodeDead("123"));
+  }
+  
 }
