@@ -16,6 +16,7 @@ import org.sapia.ubik.mcast.control.EventChannelFacade;
 import org.sapia.ubik.net.TCPAddress;
 import org.sapia.ubik.util.Func;
 import org.sapia.ubik.util.IntRange;
+import org.sapia.ubik.util.UbikMetrics;
 import org.sapia.ubik.util.SysClock.MutableClock;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -37,7 +38,7 @@ public class GossipSyncAckControlEventHandlerTest {
   @Before
   public void setUp() throws Exception {
     clock = MutableClock.getInstance();
-    context = new ControllerContext(facade, clock, new ControllerConfiguration());
+    context = new ControllerContext(facade, clock, new ControllerConfiguration(), new UbikMetrics());
     handler = new GossipSyncAckControlEventHandler(context);
     
     originNode = new NodeInfo(new TCPAddress("test", "host", 0), "origin-node");

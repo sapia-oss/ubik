@@ -29,6 +29,8 @@ public class GossipSyncAckControlEventHandler implements ControlEventHandler {
   public void handle(String originNode, ServerAddress originAddress, ControlEvent event) {
     GossipSyncAckControlEvent syncEvent = (GossipSyncAckControlEvent) event;
     log.trace("Received GossipSyncAckControlEvent from %s @ %s", originNode, originAddress);
+    context.getMetrics().incrementCounter("eventController.onSyncGossipAck");
+
     for (NodeInfo n : syncEvent.getView()) {
       if (!context.getNode().equals(n.getNode())) {
         context.getEventChannel().addNewNode(n.getNode(), n.getAddr());

@@ -24,6 +24,7 @@ public class SynchronousHealthCheckRequestHandler implements SynchronousControlR
   public SynchronousControlResponse handle(String originNode, ServerAddress originAddress,
       SynchronousControlRequest request) {
     context.getEventChannel().heartbeat(originNode, originAddress);
+    context.getMetrics().incrementCounter("eventController.onSyncHealthCheck");
     return new SynchronousHealthCheckResponse(
       context.getEventChannel().getNode(), context.getEventChannel().getAddress()
     );

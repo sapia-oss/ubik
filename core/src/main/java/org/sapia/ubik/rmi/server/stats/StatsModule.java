@@ -4,6 +4,8 @@ import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.javasimon.Counter;
@@ -19,6 +21,7 @@ import org.sapia.ubik.taskman.Task;
 import org.sapia.ubik.taskman.TaskContext;
 import org.sapia.ubik.taskman.TaskManager;
 import org.sapia.ubik.util.Conf;
+import org.sapia.ubik.util.UbikMetrics;
 
 /**
  * Clears all statistics at startup and shutdown. Also creates a task that dumps
@@ -30,13 +33,16 @@ import org.sapia.ubik.util.Conf;
  */
 public class StatsModule implements Module {
 
-  private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy/mm/dd hh:mm:ss:SSS");
+  private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-mm-dd HH:mm:ss:SSS");
   private static final double NANOS_IN_MILLI = 1000000;
   private static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("############.############");
 
   private Category log = Log.createCategory(getClass());
   private StatsLogOutput statsLog;
   private long lastDumpTime = System.currentTimeMillis();
+
+  private UbikMetrics metrics = UbikMetrics.globalMetrics();
+  private Map<String, Long> previousMetrics = new HashMap<>();
 
   @Override
   public void init(ModuleContext context) {
@@ -58,10 +64,8 @@ public class StatsModule implements Module {
             String startTime = dateFor(lastDumpTime);
             String endTime = dateFor(currentTime);
 
-            for (Simon stat : Stats.getStats()) {
-              statsLog.log(format(stat, startTime, endTime));
-              Stats.reset(stat);
-            }
+            doLogSimonStats(startTime, endTime);
+            doLogUbikMetrics(endTime);
 
             lastDumpTime = currentTime;
           }
@@ -71,17 +75,21 @@ public class StatsModule implements Module {
         log.info("Stats dump interval set to %s seconds. Stats will NOT be collected", dumpInterval);
       }
     }
-
   }
-
-  private String format(Simon stat, String startTime, String endTime) {
-    String statValue = statValue(stat);
-
+  
+  private void doLogSimonStats(String startTime, String endTime) {
     StringBuilder formatted = new StringBuilder();
-    formatted.append(field(startTime)).append(",").append(field(endTime)).append(",").append(field(stat.getName())).append(",")
-        .append(field(Stats.getDescription(stat))).append(",").append(field(statValue));
+    formatted.append(field(endTime)).append(" source=simonStats ");
 
-    return formatted.toString();
+    for (Simon stat : Stats.getStats()) {
+      String statValue = statValue(stat);
+      if (!"0".equals(statValue)) {
+        formatted.append(stat.getName()).append("=").append(statValue).append(" ");
+      }
+      Stats.reset(stat);
+    }
+    
+    statsLog.log(formatted.toString());
   }
 
   private String statValue(Simon stat) {
@@ -103,7 +111,25 @@ public class StatsModule implements Module {
     cal.setTimeInMillis(millis);
     return DATE_FORMAT.format(cal.getTime());
   }
-
+  
+  private void doLogUbikMetrics(String endTime) {
+    Map<String, Long> current = metrics.makeSnapshot();
+    
+    StringBuilder logLine = new StringBuilder();
+    logLine.append(field(endTime)).append(" source=ubikMetrics ");
+    
+    current.entrySet().forEach(e -> {
+      long deltaValue = e.getValue();
+      if (previousMetrics.containsKey(e.getKey())) {
+        deltaValue -= previousMetrics.get(e.getKey());
+      }
+      logLine.append(e.getKey()).append("=").append(deltaValue).append(" ");
+    });
+    
+    statsLog.log(logLine.toString());
+    previousMetrics = current;
+  }
+  
   @Override
   public void stop() {
     if (statsLog != null) {

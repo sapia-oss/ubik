@@ -44,6 +44,7 @@ import org.sapia.ubik.util.SoftReferenceList;
 import org.sapia.ubik.util.SysClock;
 import org.sapia.ubik.util.TimeRange;
 import org.sapia.ubik.util.TimeValue;
+import org.sapia.ubik.util.UbikMetrics;
 
 /**
  * An instance of this class represents a node in a given logical event channel.
@@ -173,6 +174,7 @@ public class EventChannel {
   private int                         controlBatchSize;
   private ServerAddress               address;
   private volatile State              state                  = State.CREATED;
+  private UbikMetrics                 metrics                = UbikMetrics.globalMetrics();  
   private int                         maxPublishAttempts     = DEFAULT_MAX_PUB_ATTEMPTS;
   private TimeRange                   startDelayRange;
   private TimeRange                   publishIntervalRange;
@@ -405,6 +407,8 @@ public class EventChannel {
     Assertions.illegalState(state != State.STARTED, "Event channel not started");
     log.info("Performing resync: clearing view and publishing presence to cluster");
     view.clearView();
+    metrics.incrementCounter("eventChannel.resync");
+
     
     publishExecutor.execute(
         doCreateTaskForPublishBroadcastEvent(maxPublishAttempts));
@@ -907,6 +911,7 @@ public class EventChannel {
       for (NodeInfo c : candidates) {
         try {
           log.debug("Sending to : %s", c);
+          metrics.incrementCounter("eventChannel.gossipMessage");
           if (unicast.dispatch(c.getAddr(), CONTROL_EVT, msg)) {
             counter++;
             if(counter == controller.getContext().getConfig().getGossipNodeCount()) {
@@ -932,6 +937,7 @@ public class EventChannel {
       public void run() {
         log.info("Publishing presence of this node (%s) to cluster (attempt count %s)", address, attemptCount);
         try {
+          metrics.incrementCounter("eventChannelController.publishPresence");
           broadcast.dispatch(address, false, PUBLISH_EVT, address);
         } catch (IOException e) {
           log.warning("Error publishing presence to cluster", e);
@@ -946,7 +952,7 @@ public class EventChannel {
       }
     };
   }
-
+  
   // ==========================================================================
 
   private class ChannelCallbackImpl implements EventChannelFacade {
@@ -1004,6 +1010,11 @@ public class EventChannel {
     @Override
     public void down(String node) {
       view.removeDeadNode(node);
+    }
+    
+    @Override
+    public void cleanDeadNodes(long gracePeriodMillis) {
+      view.cleanupDeadNodeList(gracePeriodMillis);
     }
 
     @Override
@@ -1135,8 +1146,10 @@ public class EventChannel {
         try {
           Object data = evt.getData();
           if (data instanceof SynchronousControlRequest) {
+            metrics.incrementCounter("eventChannel.syncEvent.onControlRequest");
             return controller.onSynchronousRequest(evt.getNode(), evt.getUnicastAddress(), (SynchronousControlRequest) data);
           } else if (data instanceof ControlEvent) {
+            metrics.incrementCounter("eventChannel.syncEvent.onControlEvent");
             controller.onEvent(evt.getNode(), evt.getUnicastAddress(), (ControlEvent) data);
           }
           
@@ -1162,6 +1175,7 @@ public class EventChannel {
             return;
           }
 
+          metrics.incrementCounter("eventChannel.asyncEvent.onPublish");
           view.addHost(addr, evt.getNode());
           unicast.dispatch(addr, DISCOVER_EVT, address);
           notifyDiscoListeners(addr, evt);
@@ -1174,6 +1188,7 @@ public class EventChannel {
       } else if (evt.getType().equals(FORCE_RESYNC_EVT)) {
         try {
           Set<String> targetedNodes = (Set<String>) evt.getData();
+          metrics.incrementCounter("eventChannel.asyncEvent.onForceResync");
           if (targetedNodes == null || targetedNodes.contains(EventChannel.this.broadcast.getNode())) {
             log.info("Received force resync event: proceeding to resync");
             resync();
@@ -1192,6 +1207,7 @@ public class EventChannel {
           if (addr == null) {
             return;
           }
+          metrics.incrementCounter("eventChannel.asyncEvent.onDiscovery");
           if (view.addHost(addr, evt.getNode())) {
             notifyDiscoListeners(addr, evt);
           }
@@ -1202,11 +1218,13 @@ public class EventChannel {
         // ----------------------------------------------------------------------
 
       } else if (evt.getType().equals(SHUTDOWN_EVT)) {
+        metrics.incrementCounter("eventChannel.asyncEvent.onShutdown");
         view.removeDeadNode(evt.getNode());
 
         // ----------------------------------------------------------------------
         
       } else if (evt.getType().equals(LEAVE_EVT)) {
+        metrics.incrementCounter("eventChannel.asyncEvent.onLeave");
         view.removeLeavingNode(evt.getNode());
 
         // ----------------------------------------------------------------------
@@ -1215,10 +1233,13 @@ public class EventChannel {
         try {
           Object data = evt.getData();
           if (data instanceof ControlNotification) {
+            metrics.incrementCounter("eventChannel.asyncEvent.onControlNotif");
             controller.onNotification(evt.getNode(), evt.getUnicastAddress(), (ControlNotification) data);
           } else if (data instanceof GossipNotification) {
+            metrics.incrementCounter("eventChannel.asyncEvent.onGossipNotif");
             controller.onGossipNotification(evt.getNode(), evt.getUnicastAddress(), (GossipNotification) data);
           } else if (data instanceof ControlEvent) {
+            metrics.incrementCounter("eventChannel.asyncEvent.onControlEvent");
             controller.onEvent(evt.getNode(), evt.getUnicastAddress(), (ControlEvent) data);
           } else {
             log.warning("Undnown event type: %s", data.getClass().getName());
@@ -1296,7 +1317,7 @@ public class EventChannel {
     config.setAutoBroadcastEnabled(props.getBooleanProperty(Consts.MCAST_AUTO_BROADCAST_ENABLED, true));
     config.setAutoBroadcastThreshold(props.getIntProperty(Consts.MCAST_AUTO_BROADCAST_THRESHOLD, Defaults.DEFAULT_AUTO_BROADCAST_THRESHOLD));
     
-    controller = new EventChannelController(createClock(), config, new ChannelCallbackImpl());
+    controller = new EventChannelController(createClock(), config, new ChannelCallbackImpl(), metrics);
 
     startTimer(controlThreadInterval);
   }

@@ -44,7 +44,7 @@ public class PoolTest {
           try {
             latch.countDown();
             String s = pool.acquire();
-            Thread.sleep(1000);
+            Thread.sleep(800);
             pool.release(s);
           } catch (InterruptedException e) {
 

@@ -28,6 +28,7 @@ import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.TCPAddress;
 import org.sapia.ubik.util.SysClock.MutableClock;
 import org.sapia.ubik.util.TimeValue;
+import org.sapia.ubik.util.UbikMetrics;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DelegatedHealthCheckControlEventHandlerTest {
@@ -49,7 +50,7 @@ public class DelegatedHealthCheckControlEventHandlerTest {
   @Before
   public void setUp() throws Exception {
     clock = MutableClock.getInstance();
-    context = new ControllerContext(facade, clock, new ControllerConfiguration());
+    context = new ControllerContext(facade, clock, new ControllerConfiguration(), new UbikMetrics());
     handler = new DelegatedHealthCheckControlEventHandler(context);
     
     originNode = new NodeInfo(new TCPAddress("test", "host", 0), "origin-node");

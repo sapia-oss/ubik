@@ -136,6 +136,12 @@ public interface EventChannelFacade {
    */
   public void down(String node);
   
+  
+  /**
+   * Method to request curation of the dead nodes list of this event channel.
+   */
+  public void cleanDeadNodes(long gracePeriodMillis);
+  
   /**
    * @param node 
    *          a {@link String} corresponding to the identifier of the node that

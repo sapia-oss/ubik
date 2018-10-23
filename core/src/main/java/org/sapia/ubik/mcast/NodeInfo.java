@@ -24,7 +24,7 @@ public class NodeInfo implements Externalizable, Comparable<NodeInfo> {
   static final long serialVersionUID = 1L;
 
   public enum State {
-    NORMAL, SUSPECT;
+    NORMAL, SUSPECT, DOWN;
     
     public boolean isNormal() {
       return this == NORMAL;
@@ -32,6 +32,10 @@ public class NodeInfo implements Externalizable, Comparable<NodeInfo> {
     
     public boolean isSuspect() {
       return this == SUSPECT;
+    }
+    
+    public boolean isDown() {
+      return this == DOWN;
     }
   }
   
@@ -102,6 +106,16 @@ public class NodeInfo implements Externalizable, Comparable<NodeInfo> {
    */
   public synchronized NodeInfo suspect() {
     state = State.SUSPECT;
+    return this;
+  }
+  
+  /**
+   * Sets this instance's state to {@link State#DOWN}.
+   * @return this instance.
+   */
+  public synchronized NodeInfo down(SysClock clock) {
+    state = State.DOWN;
+    timestamp = clock.currentTimeMillis();
     return this;
   }
   

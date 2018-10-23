@@ -33,6 +33,8 @@ public class GossipSyncNotificationHandler implements GossipNotificationHandler 
   public void handle(String originNode, ServerAddress originAddress, GossipNotification notif) {
     GossipSyncNotification syncNotif = (GossipSyncNotification) notif;
     log.trace("Received GossipSyncNotification from %s @ %s", originNode, originAddress);
+    context.getMetrics().incrementCounter("eventController.onSyncGossipNotif");
+
     Set<NodeInfo> received = new HashSet<>(syncNotif.getView().size() + 1);
     for (NodeInfo n : syncNotif.getView()) {
       if (!n.getNode().equals(context.getNode())) {

@@ -14,6 +14,7 @@ import org.sapia.ubik.mcast.control.ControllerConfiguration;
 import org.sapia.ubik.mcast.control.ControllerContext;
 import org.sapia.ubik.mcast.control.EventChannelFacade;
 import org.sapia.ubik.net.TCPAddress;
+import org.sapia.ubik.util.UbikMetrics;
 import org.sapia.ubik.util.SysClock.MutableClock;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -36,7 +37,7 @@ public class HealtchCheckConfirmationControlEventHandlerTest {
   public void setUp() throws Exception {
     clock = MutableClock.getInstance();
 
-    context = new ControllerContext(facade, clock, new ControllerConfiguration());
+    context = new ControllerContext(facade, clock, new ControllerConfiguration(), new UbikMetrics());
     
     originNode = new NodeInfo(new TCPAddress("test", "host", 0), "origin-node");
     suspectNode = new NodeInfo(new TCPAddress("test", "host", 1), "suspect-node").suspect().touch(clock);

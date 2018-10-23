@@ -12,6 +12,7 @@ import org.sapia.ubik.mcast.control.ControllerConfiguration;
 import org.sapia.ubik.mcast.control.ControllerContext;
 import org.sapia.ubik.mcast.control.EventChannelFacade;
 import org.sapia.ubik.net.TCPAddress;
+import org.sapia.ubik.util.UbikMetrics;
 import org.sapia.ubik.util.SysClock.MutableClock;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -34,7 +35,7 @@ public class SynchronousHealthCheckRequestHandlerTest {
     
     originNode = new NodeInfo(new TCPAddress("test", "host", 0), "origin-node");
 
-    context = new ControllerContext(facade, clock, new ControllerConfiguration());
+    context = new ControllerContext(facade, clock, new ControllerConfiguration(), new UbikMetrics());
     
     handler = new SynchronousHealthCheckRequestHandler(context);
   }
