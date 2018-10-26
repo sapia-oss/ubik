@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
-import java.net.ConnectException;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.rmi.RemoteException;
@@ -134,7 +133,7 @@ class HttpRmiServerConnection implements RmiConnection {
       os.write(data);
       os.flush();
       
-    } catch (java.net.SocketException e) {
+    } catch (SocketException | SocketTimeoutException e) {
       throw new RemoteException("Error writing response payload", e);
     } catch (Exception e) {
       throw new IOException(e);

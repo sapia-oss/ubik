@@ -6,6 +6,7 @@
 *.exe
 *.o
 *.so
+bin/
 
 # Packages #
 ############
@@ -35,13 +36,26 @@
 .Trashes
 ehthumbs.db
 Thumbs.db
+*.*~
 
 # Dev resources #
 #################
-.project
 .classpath
+.project
+pom.xml.versionsBackup
 .settings/
-*.versionsBackup
 target/
 lib/
-bin/
+extra-lib/
+archive/
+deploy/
+files/
+db/
+tmp/
+test-output/
+
+# Intellij #
+############
+*.iml
+.idea/
+
