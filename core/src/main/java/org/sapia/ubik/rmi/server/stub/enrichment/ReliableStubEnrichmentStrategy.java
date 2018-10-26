@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import org.sapia.ubik.module.ModuleContext;
+import org.sapia.ubik.net.QueryString;
 import org.sapia.ubik.net.Uri;
 import org.sapia.ubik.rmi.Consts;
 import org.sapia.ubik.rmi.naming.remote.RemoteInitialContextFactory;
@@ -54,7 +55,7 @@ public class ReliableStubEnrichmentStrategy implements StubEnrichmentStrategy {
    *          bind the stub to Ubik's JNDI.
    * 
    * @see RemoteRefReliable
-   * @see RemoteRef
+   * @see org.sapia.ubik.rmi.server.stub.RemoteRef
    * 
    * @return a "reliable" stub for the given {@link Object}.
    */
@@ -72,12 +73,16 @@ public class ReliableStubEnrichmentStrategy implements StubEnrichmentStrategy {
     newUri.append('/').append(info.getName());
 
     Uri newUriObj = Uri.parse(newUri.toString());
-    newUriObj.getQueryString().addParameter(RemoteInitialContextFactory.UBIK_DOMAIN_NAME, info.getDomainName().toString());
+    QueryString.Builder qsBuilder = QueryString.builder();
+
+
+    qsBuilder.param(RemoteInitialContextFactory.UBIK_DOMAIN_NAME, info.getDomainName().toString());
 
     Map<String, String> mcastParams = info.getMcastAddress().toParameters();
     for (String paramName : mcastParams.keySet()) {
-      newUriObj.getQueryString().addParameter(paramName, mcastParams.get(paramName));
+      qsBuilder.param(paramName, mcastParams.get(paramName));
     }
+    newUriObj = newUriObj.append(qsBuilder.build());
 
     if (!Stubs.isStub(stub)) {
       Properties props = new Properties();

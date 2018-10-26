@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<name>Sapia Ubik Parent POM</name>
 	<description>A RMI-like distributed computing framework</description>
-	<url>http://wwiw.sapia-oss.org/projects/ubik/index.html</url>
+	<url>http://www.sapia-oss.org/projects/ubik/index.html</url>
 
 	<artifactId>sapia_ubik_parent</artifactId>
 	<version>develop-SNAPSHOT</version>
@@ -65,6 +65,15 @@
 					</excludes>
 				</configuration>
 			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.6.2</version>
+				<configuration>
+					<source>1.8</source>
+					<target>1.8</target>
+				</configuration>
+			</plugin>
 		</plugins>
 
 		<pluginManagement>
@@ -72,7 +81,7 @@
 				<plugin>
 					<groupId>org.sapia</groupId>
 					<artifactId>sapia_site_doc_plugin</artifactId>
-					<version>1.23</version>
+					<version>1.22</version>
 					<executions>
 						<execution>
 							<phase>site</phase>
