@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="MavenProjectsManager">
+    <option name="originalFiles">
+      <list>
+        <option value="$PROJECT_DIR$/amqp/target/maven-archiver/pom.properties" />
+        <option value="$PROJECT_DIR$/avis/target/maven-archiver/pom.properties" />
+        <option value="$PROJECT_DIR$/http/target/maven-archiver/pom.properties" />
+        <option value="$PROJECT_DIR$/load/pom.xml" />
+        <option value="$PROJECT_DIR$/nats/target/maven-archiver/pom.properties" />
+        <option value="$PROJECT_DIR$/camel/target/maven-archiver/pom.properties" />
+        <option value="$PROJECT_DIR$/netty/target/maven-archiver/pom.properties" />
+        <option value="$PROJECT_DIR$/pom.xml" />
+        <option value="$PROJECT_DIR$/examples/target/maven-archiver/pom.properties" />
+        <option value="$PROJECT_DIR$/pom.xml~" />
+        <option value="$PROJECT_DIR$/hazelcast/target/maven-archiver/pom.properties" />
+        <option value="$PROJECT_DIR$/zookeeper/target/maven-archiver/pom.properties" />
+      </list>
+    </option>
+  </component>
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_1_8" project-jdk-name="1.8" project-jdk-type="JavaSDK">
+    <output url="file://$PROJECT_DIR$/out" />
+  </component>
+</project>

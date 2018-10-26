@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/amqp/target/maven-archiver/maven-archiver (1).iml" filepath="$PROJECT_DIR$/amqp/target/maven-archiver/maven-archiver (1).iml" />
+      <module fileurl="file://$PROJECT_DIR$/avis/target/maven-archiver/maven-archiver (2).iml" filepath="$PROJECT_DIR$/avis/target/maven-archiver/maven-archiver (2).iml" />
+      <module fileurl="file://$PROJECT_DIR$/camel/target/maven-archiver/maven-archiver (3).iml" filepath="$PROJECT_DIR$/camel/target/maven-archiver/maven-archiver (3).iml" />
+      <module fileurl="file://$PROJECT_DIR$/examples/target/maven-archiver/maven-archiver (4).iml" filepath="$PROJECT_DIR$/examples/target/maven-archiver/maven-archiver (4).iml" />
+      <module fileurl="file://$PROJECT_DIR$/hazelcast/target/maven-archiver/maven-archiver (5).iml" filepath="$PROJECT_DIR$/hazelcast/target/maven-archiver/maven-archiver (5).iml" />
+      <module fileurl="file://$PROJECT_DIR$/http/target/maven-archiver/maven-archiver (6).iml" filepath="$PROJECT_DIR$/http/target/maven-archiver/maven-archiver (6).iml" />
+      <module fileurl="file://$PROJECT_DIR$/nats/target/maven-archiver/maven-archiver (7).iml" filepath="$PROJECT_DIR$/nats/target/maven-archiver/maven-archiver (7).iml" />
+      <module fileurl="file://$PROJECT_DIR$/netty/target/maven-archiver/maven-archiver (8).iml" filepath="$PROJECT_DIR$/netty/target/maven-archiver/maven-archiver (8).iml" />
+      <module fileurl="file://$PROJECT_DIR$/zookeeper/target/maven-archiver/maven-archiver (9).iml" filepath="$PROJECT_DIR$/zookeeper/target/maven-archiver/maven-archiver (9).iml" />
+      <module fileurl="file://$PROJECT_DIR$/core/sapia_ubik.iml" filepath="$PROJECT_DIR$/core/sapia_ubik.iml" group="sapia_ubik_parent (1) and modules" />
+      <module fileurl="file://$PROJECT_DIR$/amqp/sapia_ubik_amqp.iml" filepath="$PROJECT_DIR$/amqp/sapia_ubik_amqp.iml" group="sapia_ubik_parent (1) and modules" />
+      <module fileurl="file://$PROJECT_DIR$/avis/sapia_ubik_avis.iml" filepath="$PROJECT_DIR$/avis/sapia_ubik_avis.iml" group="sapia_ubik_parent (1) and modules" />
+      <module fileurl="file://$PROJECT_DIR$/camel/sapia_ubik_camel.iml" filepath="$PROJECT_DIR$/camel/sapia_ubik_camel.iml" group="sapia_ubik_parent (1) and modules" />
+      <module fileurl="file://$PROJECT_DIR$/examples/sapia_ubik_example.iml" filepath="$PROJECT_DIR$/examples/sapia_ubik_example.iml" group="sapia_ubik_parent (1) and modules" />
+      <module fileurl="file://$PROJECT_DIR$/hazelcast/sapia_ubik_hazelcast.iml" filepath="$PROJECT_DIR$/hazelcast/sapia_ubik_hazelcast.iml" group="sapia_ubik_parent (1) and modules" />
+      <module fileurl="file://$PROJECT_DIR$/http/sapia_ubik_http.iml" filepath="$PROJECT_DIR$/http/sapia_ubik_http.iml" group="sapia_ubik_parent (1) and modules" />
+      <module fileurl="file://$PROJECT_DIR$/load/sapia_ubik_load.iml" filepath="$PROJECT_DIR$/load/sapia_ubik_load.iml" />
+      <module fileurl="file://$PROJECT_DIR$/nats/sapia_ubik_nats.iml" filepath="$PROJECT_DIR$/nats/sapia_ubik_nats.iml" group="sapia_ubik_parent (1) and modules" />
+      <module fileurl="file://$PROJECT_DIR$/zookeeper/sapia_ubik_netty.iml" filepath="$PROJECT_DIR$/zookeeper/sapia_ubik_netty.iml" group="sapia_ubik_parent (2) and modules" />
+      <module fileurl="file://$PROJECT_DIR$/netty/sapia_ubik_netty (1).iml" filepath="$PROJECT_DIR$/netty/sapia_ubik_netty (1).iml" group="sapia_ubik_parent (1) and modules" />
+      <module fileurl="file://$PROJECT_DIR$/sapia_ubik_parent (1).iml" filepath="$PROJECT_DIR$/sapia_ubik_parent (1).iml" group="sapia_ubik_parent (1) and modules" />
+      <module fileurl="file://$PROJECT_DIR$/sapia_ubik_parent (2).iml" filepath="$PROJECT_DIR$/sapia_ubik_parent (2).iml" group="sapia_ubik_parent (2) and modules" />
+      <module fileurl="file://$PROJECT_DIR$/zookeeper/sapia_ubik_zk.iml" filepath="$PROJECT_DIR$/zookeeper/sapia_ubik_zk.iml" group="sapia_ubik_parent (1) and modules" />
+    </modules>
+  </component>
+</project>

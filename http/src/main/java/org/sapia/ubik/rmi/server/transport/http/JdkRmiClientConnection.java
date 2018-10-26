@@ -1,12 +1,14 @@
 package org.sapia.ubik.rmi.server.transport.http;
 
 import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.rmi.RemoteException;
@@ -23,6 +25,7 @@ import org.sapia.ubik.rmi.server.transport.RmiConnection;
 import org.sapia.ubik.rmi.server.transport.RmiObjectOutput;
 import org.sapia.ubik.util.Assertions;
 import org.sapia.ubik.util.Conf;
+import org.sapia.ubik.util.IoUtils;
 
 /**
  * Implements the {@link RmiConnection} over the JDK's {@link URL} class.
@@ -64,41 +67,45 @@ public class JdkRmiClientConnection implements RmiConnection {
    *      org.sapia.ubik.rmi.server.VmId, java.lang.String)
    */
   public void send(Object o, VmId associated, String transportType) throws IOException, RemoteException {
-    conn = (HttpURLConnection) url.openConnection();
-    conn.setDoInput(true);
-    conn.setDoOutput(true);
-    conn.setUseCaches(false);
-    conn.setConnectTimeout(connectTimeOut);
-    conn.setReadTimeout(readTimeout);
-    conn.setRequestMethod(POST_METHOD);
-
-    ByteArrayOutputStream bos = new ByteArrayOutputStream(bufsz);
-    ObjectOutputStream mos = MarshalStreamFactory.createOutputStream(bos);
-
-    if ((associated != null) && (transportType != null)) {
-      ((RmiObjectOutput) mos).setUp(associated, transportType);
-    }
-
-    Split split = serializationTime.start();
-    mos.writeObject(o);
-    mos.flush();
-    mos.close();
-    split.stop();
-
-    split = sendTime.start();
-    byte[] data = bos.toByteArray();
-
-    if (data.length > bufsz) {
-      bufsz = data.length;
-    }
-
-    conn.setRequestProperty(CONTENT_LENGTH_HEADER, "" + data.length);
-
-    OutputStream os = conn.getOutputStream();
-    os.write(data);
-    os.flush();
-    os.close();
-    split.stop();
+  	try {
+      conn = (HttpURLConnection) url.openConnection();
+      conn.setDoInput(true);
+      conn.setDoOutput(true);
+      conn.setUseCaches(false);
+      conn.setConnectTimeout(connectTimeOut);
+      conn.setReadTimeout(readTimeout);
+      conn.setRequestMethod(POST_METHOD);
+  
+      ByteArrayOutputStream bos = new ByteArrayOutputStream(bufsz);
+      ObjectOutputStream mos = MarshalStreamFactory.createOutputStream(bos);
+  
+      if ((associated != null) && (transportType != null)) {
+        ((RmiObjectOutput) mos).setUp(associated, transportType);
+      }
+  
+      Split split = serializationTime.start();
+      mos.writeObject(o);
+      mos.flush();
+      mos.close();
+      split.stop();
+  
+      split = sendTime.start();
+      byte[] data = bos.toByteArray();
+  
+      if (data.length > bufsz) {
+        bufsz = data.length;
+      }
+  
+      conn.setRequestProperty(CONTENT_LENGTH_HEADER, "" + data.length);
+  
+      OutputStream os = conn.getOutputStream();
+      os.write(data);
+      os.flush();
+      os.close();
+      split.stop();
+  	} catch (SocketException | SocketTimeoutException e) {
+  	  throw new RemoteException("Network issue trying to send request to " + url, e);
+  	}
   }
 
   /**
@@ -124,12 +131,14 @@ public class JdkRmiClientConnection implements RmiConnection {
   public Object receive() throws IOException, ClassNotFoundException, RemoteException {
     Assertions.illegalState(conn == null, "Cannot receive; data was not posted");
 
-    ObjectInputStream is = MarshalStreamFactory.createInputStream(conn.getInputStream());
-
+    ObjectInputStream is = null;
     try {
+      is = MarshalStreamFactory.createInputStream(conn.getInputStream());
       return is.readObject();
+    } catch (SocketException | SocketTimeoutException | EOFException e) {
+      throw new RemoteException("Network issue trying to receive response from " + url, e);
     } finally {
-      is.close();
+      IoUtils.closeSilently(is);
     }
   }
   
@@ -139,12 +148,15 @@ public class JdkRmiClientConnection implements RmiConnection {
     Assertions.illegalState(conn == null, "Cannot receive; data was not posted");
     
     conn.setConnectTimeout((int) timeout);
-    ObjectInputStream is = MarshalStreamFactory.createInputStream(conn.getInputStream());
+    ObjectInputStream is = null;
 
     try {
+      is = MarshalStreamFactory.createInputStream(conn.getInputStream());
       return is.readObject();
+    } catch (SocketException | SocketTimeoutException | EOFException e) {
+      throw new RemoteException("Network issue trying to receive response from " + url, e);
     } finally {
-      is.close();
+      IoUtils.closeSilently(is);
     }
   }
 
