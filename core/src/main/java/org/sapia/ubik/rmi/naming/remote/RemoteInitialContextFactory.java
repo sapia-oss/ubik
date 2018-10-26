@@ -156,7 +156,7 @@ public class RemoteInitialContextFactory implements InitialContextFactory, JNDIC
       throw ne;
     }
 
-    uri.setScheme(scheme);
+    uri = uri.withScheme(scheme);
 
     RemoteContext ctx = null;
     ContextResolver resolver = doGetResolver();

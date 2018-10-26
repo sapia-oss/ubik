@@ -42,10 +42,14 @@ Thumbs.db
 #################
 .classpath
 .project
-pom.xml.versionsBackup
 .settings/
+*.versionsBackup
+*.iml
+*.*~
+.idea/
 target/
 lib/
+bin/
 extra-lib/
 archive/
 deploy/

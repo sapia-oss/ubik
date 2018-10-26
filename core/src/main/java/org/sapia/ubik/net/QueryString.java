@@ -1,126 +1,260 @@
 package org.sapia.ubik.net;
 
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * This class models a query string. A query string has a format similar to the
  * following:
  * 
  * <pre>
- *   /some/path?name1=value1&name2=value2
+ *   name1=value1&name2=value2...&name-N=value-N
  * </pre>
  * 
- * @author Yanick Duchesne
+ * @author yduchesne
  */
-public class QueryString {
-  private String path = "/";
-  private Map<String, String> properties = new HashMap<String, String>();
+public class QueryString implements Externalizable {
 
-  /**
-   * Constructor for QueryString.
-   */
-  QueryString() {
+  private Map<String, List<String>> parameters;
+
+  private QueryString(Map<String, List<String>> parameters) {
+    this.parameters = parameters;
+  }
+
+  public QueryString() {
+    this(new HashMap<>());
   }
 
   /**
-   * Constructor for QueryString.
-   * 
-   * This constructor takes the path of the query string.
-   * 
-   * @param path
-   *          a path
+   * @return a {@link QueryString} {@link Builder}.
    */
-  public QueryString(String path) {
-    this.path = path;
-  }
-
-  /**
-   * Returns this instance's path.
-   * 
-   * @return a path.
-   */
-  public String getPath() {
-    return this.path;
+  public static Builder builder() {
+    return new Builder();
   }
 
   /**
    * Returns this instance's parameters.
    * 
-   * @return a {@link Map} containing name/value pairs.
+   * @return a {@link Map} containing this instance's parameters.
    */
-  public Map<String, String> getParameters() {
-    return properties;
+  public Map<String, List<String>> getParameters() {
+    return Collections.unmodifiableMap(parameters);
   }
 
   /**
-   * Adds the passed in name/value pair as parameter.
-   * 
-   * @param name
-   *          an object attribute name
-   * @param value
-   *          an object attribute value.
+   * @return a {@link Map} of unique parameters.
    */
-  public void addParameter(String name, String value) {
-    properties.put(name, value);
+  public Map<String, String> getUniqueParameters() {
+    Map<String, String> toReturn = new HashMap<>();
+    parameters.entrySet().forEach(e -> {
+      if (e.getValue().isEmpty()) {
+        toReturn.put(e.getKey(), "");
+      } else {
+        toReturn.put(e.getKey(), e.getValue().get(0));
+      }
+    });
+    return toReturn;
   }
 
   /**
-   * Returns the value for the parameter with the passed in name.
-   * 
    * @param name
    *          the name of the parameter whose value should be returned.
    * @return the value of the given parameter, or <code>null</code> if no such
    *         value exists.
    */
-  public String getParameter(String name) {
-    return (String) properties.get(name);
+  public String getParameterValue(String name) {
+    List<String> values = parameters.get(name);
+    if (values == null || values.isEmpty()) {
+      return null;
+    }
+    return values.get(0);
   }
 
   /**
-   * Sets this instance's path.
-   * 
-   * @param path
-   *          a path.
+   * @param name the name of the parameter for which to return the values.
+   * @return the {@link List} of values corresponding to the given parameter name.
    */
-  void setPath(String path) {
-    this.path = path;
+  public List<String> getParameterValues(String name) {
+    List<String> values = parameters.get(name);
+    if (values == null) {
+      return Collections.emptyList();
+    }
+    return values;
   }
 
   /**
-   * Parses a query string and returns its object representation.
-   * 
-   * @return a <code>QueryString</code>
+   * @param toAppend a {@link Map} of parameters to append to this instance's parameters.
+   * @return a new instance of this class, containing this instance's parameters plus the ones
+   * given.
    */
-  public static QueryString parse(String queryStr) {
-    QueryStringParser p = new QueryStringParser();
-
-    return p.parseQueryString(queryStr);
+  public QueryString append(Map<String, String> toAppend) {
+    QueryString qs = new QueryString();
+    qs.parameters.putAll(this.parameters);
+    toAppend.entrySet().forEach(p -> qs.getOrCreateParameterValues(p.getKey()).add(p.getValue()));
+    return qs;
   }
 
+  /**
+   * @param toAppend a {@link QueryString} of parameters to append.
+   * @return a new instance of this class, containing this instance's parameters plus the ones
+   * given.
+   */
+  public QueryString append(QueryString toAppend) {
+    QueryString qs = new QueryString();
+    qs.parameters.putAll(this.parameters);
+    qs.parameters.putAll(toAppend.parameters);
+    return  qs;
+  }
+
+  /**
+   * @return <code>true</code> if this instance has no parameters.
+   */
+  public boolean isEmpty() {
+    return parameters.isEmpty();
+  }
+
+  /**
+   * @return this instance's string representation, with the parameters ordered by name.
+   */
+  public String toOrderedString() {
+    return doToString(new TreeMap<>(parameters));
+  }
+
+  @Override
   public String toString() {
-    StringBuffer buf = new StringBuffer(path);
+    return doToString(parameters);
+  }
+  
+  @Override
+  public boolean equals(Object obj) {
+    if (obj instanceof QueryString) {
+      QueryString other = (QueryString) obj;
+      if (parameters.size() == other.parameters.size()) {
+    	for (String n : parameters.keySet()) {
+    	  List<String> values      = parameters.get(n);
+    	  List<String> otherValues = other.parameters.get(n);
+    	  if (values != null && otherValues != null) {
+    		if(!doEquals(values, otherValues)) {
+    		  return false;
+    		}
+    	  } else if (values == null && otherValues != null){
+    		return false;
+    	  } else if (values != null && otherValues == null) {
+    		return false;
+    	  }  
+    	}
+    	return true;
+      }
+      return false;
+    } 
+    return false;
+  }
+  
+  private boolean doEquals(List<String> l1, List<String> l2) {
+    if (l1.size() == l2.size()) {
+	  for (int i = 0; i < l1.size(); i++) {
+		  if(!l2.contains(l1.get(i))) {
+			  return false;
+		  }
+	  }
+	  return true;
+    }
+	return false;
+  }
 
-    if (properties.size() > 0) {
-      Map.Entry<String, String> entry;
-      buf.append(QueryStringParser.QMARK);
+  // --------------------------------------------------------------------------
 
-      Iterator<Map.Entry<String, String>> itr = properties.entrySet().iterator();
-      int count = 0;
+  @Override
+  public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+    parameters = (Map<String, List<String>>) in.readObject();
+  }
 
-      while (itr.hasNext()) {
-        entry = (Map.Entry<String, String>) itr.next();
+  @Override
+  public void writeExternal(ObjectOutput out) throws IOException {
+    out.writeObject(parameters);
+  }
 
-        if (count > 0) {
-          buf.append(QueryStringParser.AMP);
+  // --------------------------------------------------------------------------
+  // Restricted
+
+  // Visible fo testing
+  List<String> getOrCreateParameterValues(String name) {
+    List<String> values = parameters.get(name);
+    if (values == null) {
+      values = new ArrayList<>();
+      parameters.put(name, values);
+    }
+    return values;
+  }
+
+  private static String doToString(Map<String, List<String>> parameters) {
+    StringBuffer buf = new StringBuffer();
+    if (!parameters.isEmpty()) {
+
+      final AtomicInteger count = new AtomicInteger(0);
+
+      parameters.entrySet().forEach(entry -> {
+        if (count.get() > 0) {
+          buf.append('&');
         }
 
-        buf.append(entry.getKey().toString()).append(QueryStringParser.EQ).append(entry.getValue());
-        count++;
-      }
+        String       name   = entry.getKey();
+        List<String> values = entry.getValue();
+        values.forEach(v -> {
+          buf.append(name).append('=').append(v);
+          count.incrementAndGet();
+        });
+
+      });
+    }
+    return buf.toString();
+  }
+
+  // ==========================================================================
+  // Builder
+
+  public final static class Builder {
+
+    private Map<String, List<String>> parameters = new HashMap<>();
+
+    private Builder() {
+
     }
 
-    return buf.toString();
+    /**
+     * @param name a parameter name.
+     * @param value a parameter value.
+     * @return this instance.
+     */
+    public Builder param(String name, String value) {
+      getOrCreateParameterValues(name).add(value);
+      return this;
+    }
+
+    /**
+     * @return a new {@link QueryString}, containing the configured parameters.
+     */
+    public QueryString build() {
+      return new QueryString(parameters);
+    }
+
+    private List<String> getOrCreateParameterValues(String name) {
+      List<String> values = parameters.get(name);
+      if (values == null) {
+        values = new ArrayList<>();
+        parameters.put(name, values);
+      }
+      return values;
+    }
+
   }
 }

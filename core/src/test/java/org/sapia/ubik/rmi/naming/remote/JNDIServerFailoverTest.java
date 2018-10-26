@@ -48,7 +48,6 @@ public class JNDIServerFailoverTest {
 
   @Test
   public void testFailover() throws Exception {
-
     Hashtable props = new Hashtable();
     props.put(InitialContext.PROVIDER_URL, "ubik://" + Localhost.getPreferredLocalAddress().getHostAddress() + ":1099/");
     props.put(InitialContext.INITIAL_CONTEXT_FACTORY, RemoteInitialContextFactory.class.getName());
@@ -82,11 +81,4 @@ public class JNDIServerFailoverTest {
 
   }
 
-  public class TestFailoverService implements FailoverService {
-    public void invoke() throws RemoteException {
-      if (counter.incrementAndGet() == 2) {
-        throw new RemoteException();
-      }
-    }
-  }
 }

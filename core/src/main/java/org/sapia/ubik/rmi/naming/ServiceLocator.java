@@ -147,7 +147,7 @@ public class ServiceLocator {
     LOG.debug("Delegating lookup to handler: %s", handler);
 
     try {
-      Object obj = handler.handleLookup(uri.getHost(), uri.getPort(), uri.getQueryString().getPath(), uri.getQueryString().getParameters());
+      Object obj = handler.handleLookup(uri.getHost(), uri.getPort(), uri.getPath(), uri.getQueryString().getUniqueParameters());
 
       LOG.debug("Lookup finished");
 

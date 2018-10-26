@@ -82,13 +82,31 @@ public final class Strings {
   /**
    * @param s
    *          a {@link String}
-   * @return <code>true</code> if the given string is <code>null</code>, or if
-   *         it consists of only whitespaces.
+   * @return <code>true</code> if the given string is <code>null</code>, empty, or containing
+   *          only whitespaces.
    */
   public static boolean isBlank(String s) {
-    return s == null || s.trim().length() == 0;
+    if (s == null || s.length() == 0) {
+      return true;
+    }
+    for (int i = 0; i < s.length(); i++) {
+      if (!Character.isWhitespace(s.charAt(i))) {
+        return false;
+      }
+    }
+    return true;
   }
-  
+
+  /**
+   * @param s
+   *          a {@link String}
+   * @return <code>true</code> if the given string is NOT <code>null</code>, empty, or containing
+   *          only whitespace.
+   */
+  public static boolean isNotBlank(String s) {
+    return !isBlank(s);
+  }
+
   /**
    * @param toSplit a {@link String} to split.
    * @param delim the delimiter character to use.
@@ -120,16 +138,64 @@ public final class Strings {
       } if (Character.isWhitespace(c) && ignoreWhiteSpace) {
         continue;
       } else if (c == delim) {
-        parts.add(part.toString());
-        part.delete(0, part.length());
+        if (part.length() > 0 || (part.length() == 0 && !ignoreWhiteSpace)) {
+          parts.add(part.toString());
+          part.delete(0, part.length());
+        }
       } else {
         part.append(c);
       }
     }
-    if (part.length() > 0) {
+    if (part.length() > 0 || (part.length() == 0 && !ignoreWhiteSpace)) {
       parts.add(part.toString());
     }
     return parts.toArray(new String[parts.size()]);
   }
 
+  /**
+   * Joins the objects in the given array into a single string. The following are equivalent:
+   * <pre>
+   *   Strings.join('/', toConcat);
+   *   Strings.join('/', 0, toConcat.length, toConcat);
+   * </pre>
+   *
+   * @param delim
+   * @param toConcat
+   * @return the result of the join operation on the given strings.
+   *
+   * @see #joinAt(char, int, int, Object...)
+   */
+  public static String join(char delim, Object...toConcat) {
+    return joinAt(delim, 0, toConcat.length, toConcat);
+  }
+
+  /**
+   * Joins the objects in the given array into a single string, starting at the given <code>startIndex</code>,
+   * up to the given <code>endIndex</code> (that is, it will stop at <code>endIndex - 1</code>).
+   * The following are equivalent:
+   * <pre>
+   *   Strings.join('/', toConcat);
+   *   Strings.join('/', 0, toConcat.length, toConcat);
+   * </pre>
+   *
+   * @param delim the character corresponding to the delimiter to use.
+   * @param startIndex the index (inclusive) of the first string to start at, in the given array.
+   * @param endIndex the index (exclusive) of the last string to join.
+   * @param toConcat one or more strings to concatenate.
+   * @return the string resulting from the concatenation.
+   */
+  public static String joinAt(char delim, int startIndex, int endIndex, Object...toConcat) {
+    Assertions.isFalse(startIndex < 0, "Invalid start index: must be positive");
+    Assertions.isFalse(startIndex >= toConcat.length, "Invalid start index: cannot be greater than or equal to input length");
+    Assertions.isFalse(endIndex < startIndex, "Invalid end index: cannot be smaller than start index");
+    Assertions.isFalse(endIndex > toConcat.length, "Invalid end index: cannot be greater than or equal to input length");
+    StringBuilder result = new StringBuilder();
+    for (int i = startIndex; i < endIndex; i++) {
+      if (i > startIndex) {
+        result.append(delim);
+      }
+      result.append(toConcat[i]);
+    }
+    return result.toString();
+  }
 }

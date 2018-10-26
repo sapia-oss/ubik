@@ -40,7 +40,7 @@ public class CamelBroadcastDispatcherSupportTest extends BroadcastDispatcherTest
       }
     };
     
-    dispatcher.initialize(new DispatcherContext(consumer).withConf(Conf.newInstance().addProperties(Consts.BROADCAST_CAMEL_ENDPOINT_URI, "vm:in?multipleConsumers=true")) );
+    dispatcher.initialize(new DispatcherContext(consumer).withConf(Conf.newInstance().addProperties(Consts.BROADCAST_CAMEL_ENDPOINT_URI, "vm://in?multipleConsumers=true")) );
     
     return dispatcher;
   }
