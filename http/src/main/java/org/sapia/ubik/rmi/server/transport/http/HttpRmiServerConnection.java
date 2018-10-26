@@ -1,6 +1,7 @@
 package org.sapia.ubik.rmi.server.transport.http;
 
 import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -101,7 +102,7 @@ class HttpRmiServerConnection implements RmiConnection {
     try {
       ObjectInputStream is = MarshalStreamFactory.createInputStream(req.getInputStream());
       return is.readObject();
-    } catch (SocketException | SocketTimeoutException e) {
+    } catch (SocketException | SocketTimeoutException | EOFException e) {
       throw new RemoteException("Error reading request payload", e);
     } catch (Exception e) {
       throw new IOException(e);
