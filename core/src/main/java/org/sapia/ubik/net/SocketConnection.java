@@ -16,6 +16,7 @@ import java.net.SocketTimeoutException;
 import java.rmi.RemoteException;
 
 import org.sapia.ubik.serialization.SerializationStreams;
+import org.sapia.ubik.util.IoUtils;
 
 /**
  * A {@link Connection} implemented through a {@link Socket}.
@@ -76,6 +77,8 @@ public class SocketConnection implements Connection {
       sock.setSoTimeout(0);
       readHeader(sock.getInputStream(), loader);
       return is.readObject();
+    } catch (SocketTimeoutException e) {
+      throw new RemoteException("Could not send/receive within allocated timeout", e);
     } catch (EOFException e) {
       throw new RemoteException("Communication with server interrupted; server probably disappeared", e);
     } catch (SocketException e) {
@@ -90,6 +93,8 @@ public class SocketConnection implements Connection {
       sock.setSoTimeout((int) timeout);
       readHeader(sock.getInputStream(), loader);
       return is.readObject();
+    } catch (SocketTimeoutException e) {
+      throw new RemoteException("Could not send/receive within allocated timeout", e);
     } catch (EOFException e) {
       throw new RemoteException("Communication with server interrupted; server probably disappeared", e);
     } catch (SocketException e) {
@@ -101,22 +106,9 @@ public class SocketConnection implements Connection {
    * @see org.sapia.ubik.net.Connection#close()
    */
   public void close() {
-    try {
-      if (os != null) {
-        os.reset();
-        os.close();
-        os = null;
-      }
-
-      if (is != null) {
-        is.close();
-        is = null;
-      }
-
-      sock.close();
-    } catch (Throwable t) {
-      // noop
-    }
+    IoUtils.closeSilently(os);
+    IoUtils.closeSilently(is);
+    IoUtils.closeSilently(sock);
   }
 
   /**
@@ -180,12 +172,13 @@ public class SocketConnection implements Connection {
     return SerializationStreams.createObjectInputStream(is);
   }
 
-  protected void doSend(Object toSend, ObjectOutputStream mos) throws IOException {
+  protected void doSend(Object toSend, ObjectOutputStream mos) throws RemoteException, IOException {
     try {
       mos.writeObject(toSend);
       mos.flush();
-
-    } catch (java.net.SocketException e) {
+    } catch (SocketTimeoutException e) {
+      throw new RemoteException("Could not send/receive within allocated timeout", e);
+    } catch (SocketException e) {
       throw new RemoteException("Communication with server interrupted; server probably disappeared", e);
     } catch (EOFException e) {
       throw new RemoteException("Communication with server interrupted; server probably disappeared", e);

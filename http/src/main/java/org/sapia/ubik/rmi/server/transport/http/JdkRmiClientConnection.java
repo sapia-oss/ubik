@@ -30,7 +30,7 @@ import org.sapia.ubik.util.IoUtils;
 /**
  * Implements the {@link RmiConnection} over the JDK's {@link URL} class.
  * 
- * @author Yanick Duchesne
+ * @author yduchesne
  */
 public class JdkRmiClientConnection implements RmiConnection {
 
@@ -103,7 +103,7 @@ public class JdkRmiClientConnection implements RmiConnection {
       os.flush();
       os.close();
       split.stop();
-  	} catch (SocketException | SocketTimeoutException e) {
+  	} catch (SocketException | SocketTimeoutException | EOFException e) {
   	  throw new RemoteException("Network issue trying to send request to " + url, e);
   	}
   }

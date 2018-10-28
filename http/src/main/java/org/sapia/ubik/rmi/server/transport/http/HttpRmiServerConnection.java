@@ -134,7 +134,7 @@ class HttpRmiServerConnection implements RmiConnection {
       os.write(data);
       os.flush();
       
-    } catch (SocketException | SocketTimeoutException e) {
+    } catch (SocketException | SocketTimeoutException | EOFException e) {
       throw new RemoteException("Error writing response payload", e);
     } catch (Exception e) {
       throw new IOException(e);

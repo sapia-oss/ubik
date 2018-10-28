@@ -36,13 +36,9 @@ public class SocketRmiConnection extends SocketConnection implements RmiConnecti
    *      String)
    */
   public void send(Object o, VmId vmId, String tranportType) throws IOException, RemoteException {
-    try {
-      writeHeader(sock.getOutputStream(), loader);
-      ((RmiObjectOutput) os).setUp(vmId, tranportType);
-      super.doSend(o, os);
-    } catch (java.net.SocketException e) {
-      throw new RemoteException("communication with server interrupted; server probably disappeared", e);
-    }
+    writeHeader(sock.getOutputStream(), loader);
+    ((RmiObjectOutput) os).setUp(vmId, tranportType);
+    super.doSend(o, os);
   }
 
   /**

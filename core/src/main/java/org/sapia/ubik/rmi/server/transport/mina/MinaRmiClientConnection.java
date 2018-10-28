@@ -24,6 +24,7 @@ import org.sapia.ubik.rmi.server.transport.MarshalOutputStream;
 import org.sapia.ubik.rmi.server.transport.MarshalStreamFactory;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
 import org.sapia.ubik.rmi.server.transport.RmiObjectOutput;
+import org.sapia.ubik.util.IoUtils;
 import org.sapia.ubik.util.MinaByteBufferOutputStream;
 
 /**
@@ -78,7 +79,9 @@ public class MinaRmiClientConnection implements RmiConnection {
 
     try {
       doSend();
-    } catch (java.net.SocketException e) {
+    } catch (SocketTimeoutException e) {
+      throw new RemoteException("Could not send/receive within allocated timeout", e);
+    } catch (SocketException | EOFException e) {
       throw new RemoteException("Communication with server interrupted; server probably disappeared", e);
     }
   }
@@ -99,7 +102,9 @@ public class MinaRmiClientConnection implements RmiConnection {
 
     try {
       doSend();
-    } catch (java.net.SocketException e) {
+    } catch (SocketTimeoutException e) {
+      throw new RemoteException("Could not send/receive within allocated timeout", e);
+    } catch (SocketException | EOFException e) {
       throw new RemoteException("Communication with server interrupted; server probably disappeared", e);
     }
   }
@@ -116,6 +121,8 @@ public class MinaRmiClientConnection implements RmiConnection {
         ois = MarshalStreamFactory.createInputStream(new BufferedInputStream(sock.getInputStream(), bufsize));
       }
       return ois.readObject();
+    } catch (SocketTimeoutException e) {
+      throw new RemoteException("Could not send/receive within allocated timeout", e);
     } catch (EOFException e) {
       throw new RemoteException("Communication with server interrupted; server probably disappeared", e);
     } catch (SocketException e) {
@@ -127,7 +134,7 @@ public class MinaRmiClientConnection implements RmiConnection {
    * @see org.sapia.ubik.net.Connection#receive(long)
    */
   public Object receive(long timeout) throws IOException,
-      ClassNotFoundException, RemoteException, SocketTimeoutException {
+      ClassNotFoundException, RemoteException {
     try {
       sock.setSoTimeout((int) timeout);
       DataInputStream dis = new DataInputStream(sock.getInputStream());
@@ -136,6 +143,8 @@ public class MinaRmiClientConnection implements RmiConnection {
         ois = MarshalStreamFactory.createInputStream(new BufferedInputStream(sock.getInputStream(), bufsize));
       }
       return ois.readObject();
+    } catch (SocketTimeoutException e) {
+      throw new RemoteException("Could not send/receive within allocated timeout", e);
     } catch (EOFException e) {
       throw new RemoteException("Communication with server interrupted; server probably disappeared", e);
     } catch (SocketException e) {
@@ -148,11 +157,7 @@ public class MinaRmiClientConnection implements RmiConnection {
    * @see org.sapia.ubik.net.Connection#close()
    */
   public void close() {
-    try {
-      sock.close();
-    } catch (Throwable t) {
-      // noop
-    }
+    IoUtils.closeSilently(sock);
     byteBuffer.free();
   }
 
