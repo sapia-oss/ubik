@@ -73,7 +73,7 @@ public class DelegatedHealthCheckControlEventHandler implements ControlEventHand
                 false
             )
         );
-     }
+     }  
   }
 
 }
