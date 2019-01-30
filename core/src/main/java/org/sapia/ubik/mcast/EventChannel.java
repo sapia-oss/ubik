@@ -958,6 +958,11 @@ public class EventChannel {
   private class ChannelCallbackImpl implements EventChannelFacade {
 
     @Override
+    public ExecutorService getAsyncIoExecutor() {
+      return publishExecutor;
+    }
+      
+    @Override
     public ServerAddress getAddress() {
       return EventChannel.this.getUnicastAddress();
     }

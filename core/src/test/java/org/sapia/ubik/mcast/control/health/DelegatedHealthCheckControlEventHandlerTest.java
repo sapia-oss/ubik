@@ -8,17 +8,21 @@ import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doAnswer;
 
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.stubbing.Answer;
 import org.sapia.ubik.mcast.NodeInfo;
 import org.sapia.ubik.mcast.control.ControllerConfiguration;
 import org.sapia.ubik.mcast.control.ControllerContext;
@@ -34,7 +38,11 @@ import org.sapia.ubik.util.UbikMetrics;
 public class DelegatedHealthCheckControlEventHandlerTest {
 
   @Mock
+  private ExecutorService executor;
+    
+  @Mock
   private EventChannelFacade facade;
+  
   
   private MutableClock clock;
   
@@ -56,8 +64,16 @@ public class DelegatedHealthCheckControlEventHandlerTest {
     originNode = new NodeInfo(new TCPAddress("test", "host", 0), "origin-node");
     
     event = new DelegatedHealthCheckControlEvent(new NodeInfo(new TCPAddress("test", "test-host", 1), "test-node"));
-    
+ 
+    when(facade.getAsyncIoExecutor()).thenReturn(executor);
     when(facade.getNode()).thenReturn("local-node");
+    doAnswer(new Answer<Void>() {
+        @Override
+        public Void answer(InvocationOnMock invocation) throws Throwable {
+            invocation.getArgumentAt(0,  Runnable.class).run();
+            return null;
+        }
+    }).when(executor).submit(any(Runnable.class));
   }
 
   @Test
