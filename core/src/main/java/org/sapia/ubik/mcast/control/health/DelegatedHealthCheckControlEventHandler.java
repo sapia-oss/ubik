@@ -38,42 +38,44 @@ public class DelegatedHealthCheckControlEventHandler implements ControlEventHand
     log.info("Received event for suspect node: %s", healtchCheckEvent.getTarget());
     context.getMetrics().incrementCounter("eventController.onDelegatedHealthCheck");
     context.getEventChannel().heartbeat(originNode, originAddress);
-    try {
-      Set<SynchronousControlResponse> responses = context.getEventChannel().sendSynchronousRequest(
-          Collects.arrayToSet(healtchCheckEvent.getTarget().getNode()), 
-          new SynchronousHealthCheckRequest(), 
-          context.getConfig().getHealthCheckDelegateTimeout()
-      );
-      if (responses.isEmpty()) {
-        log.info("Received no response for health check on %s. Sending confirmation", healtchCheckEvent.getTarget());
-        context.getEventChannel().sendUnicastEvent(
-            originAddress, 
-            new HealthCheckConfirmationControlEvent(
-                healtchCheckEvent.getTarget(), 
-                false
-            )
-        );
-      } else {
-        log.info("Health check successful for %s. Sending confirmation", healtchCheckEvent.getTarget());
-        context.getEventChannel().sendUnicastEvent(
-            originAddress, 
-            new HealthCheckConfirmationControlEvent(
-                healtchCheckEvent.getTarget(), 
-                true
-            )
-        );
-      }
-    } catch (Exception e) {
-      log.error("Unexpected error caught during health check of %s (%s). Sending confirmation", 
-          healtchCheckEvent.getTarget(), e.getMessage());
-      context.getEventChannel().sendUnicastEvent(
-          originAddress, 
-          new HealthCheckConfirmationControlEvent(
-              healtchCheckEvent.getTarget(), 
-              false
-          )
-      );
-    }
+    context.getEventChannel().getAsyncIoExecutor().submit(() -> {
+        try {
+            Set<SynchronousControlResponse> responses = context.getEventChannel().sendSynchronousRequest(
+                Collects.arrayToSet(healtchCheckEvent.getTarget().getNode()), 
+                new SynchronousHealthCheckRequest(), 
+                context.getConfig().getHealthCheckDelegateTimeout()
+            );
+            if (responses.isEmpty()) {
+              log.info("Received no response for health check on %s. Sending confirmation", healtchCheckEvent.getTarget());
+              context.getEventChannel().sendUnicastEvent(
+                  originAddress, 
+                  new HealthCheckConfirmationControlEvent(
+                      healtchCheckEvent.getTarget(), 
+                      false
+                  )
+              );
+            } else {
+              log.info("Health check successful for %s. Sending confirmation", healtchCheckEvent.getTarget());
+              context.getEventChannel().sendUnicastEvent(
+                  originAddress, 
+                  new HealthCheckConfirmationControlEvent(
+                      healtchCheckEvent.getTarget(), 
+                      true
+                  )
+              );
+            }
+          } catch (Exception e) {
+            log.error("Unexpected error caught during health check of %s (%s). Sending confirmation", 
+                healtchCheckEvent.getTarget(), e.getMessage());
+            context.getEventChannel().sendUnicastEvent(
+                originAddress, 
+                new HealthCheckConfirmationControlEvent(
+                    healtchCheckEvent.getTarget(), 
+                    false
+                )
+            );
+          }        
+    });
   }
 
 }

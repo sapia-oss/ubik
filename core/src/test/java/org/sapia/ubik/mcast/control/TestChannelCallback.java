@@ -1,5 +1,7 @@
 package org.sapia.ubik.mcast.control;
 
+import static org.mockito.Mockito.mock;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -10,6 +12,7 @@ import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 import org.sapia.ubik.mcast.NodeInfo;
@@ -30,6 +33,7 @@ public class TestChannelCallback implements EventChannelFacade {
     }
   }
 
+  private ExecutorService asyncExecutor = mock(ExecutorService.class);
   private String node;
   private TestCallbackAddress address = new TestCallbackAddress();
   private EventChannelController controller;
@@ -193,6 +197,11 @@ public class TestChannelCallback implements EventChannelFacade {
       }
     }
     return responses;
+  }
+  
+  @Override
+  public ExecutorService getAsyncIoExecutor() {
+    return asyncExecutor;
   }
   
   public EventChannelController getController() {
