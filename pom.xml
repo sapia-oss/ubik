@@ -6,7 +6,7 @@
 	<url>http://www.sapia-oss.org/projects/ubik/index.html</url>
 
 	<artifactId>sapia_ubik_parent</artifactId>
-	<version>5.1-rc5</version>
+	<version>5.1-rc6</version>
 
 	<parent>
 		<groupId>org.sapia</groupId>

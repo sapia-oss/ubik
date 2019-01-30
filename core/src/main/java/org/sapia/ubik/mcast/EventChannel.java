@@ -8,10 +8,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.mina.util.ConcurrentHashSet;
 import org.sapia.ubik.log.Category;
@@ -164,7 +165,6 @@ public class EventChannel {
   private Category log = Log.createCategory(getClass());
   private static boolean              eventChannelReuse = Conf.getSystemProperties()
       .getBooleanProperty(Consts.MCAST_REUSE_EXISTINC_CHANNELS, true);
-  private Timer                       heartbeatTimer = new Timer("Ubik.EventChannel.Timer", true);
   private BroadcastDispatcher         broadcast;
   private UnicastDispatcher           unicast;
   private EventConsumer               consumer;
@@ -180,6 +180,8 @@ public class EventChannel {
   private TimeRange                   publishIntervalRange;
   private TimeValue                   defaultReadTimeout     = DEFAULT_READ_TIMEOUT;
   private ConnectionStateListenerList stateListeners         = new ConnectionStateListenerList();
+  private ScheduledExecutorService    scheduledExecutor;
+  private ExecutorService             asyncExecutor;
   private ExecutorService             publishExecutor;
   
   private SoftReferenceList<DiscoveryListener> discoListeners = new SoftReferenceList<DiscoveryListener>();
@@ -320,7 +322,7 @@ public class EventChannel {
   public synchronized void start() throws IOException {
     if (state == State.CREATED) {
 
-      publishExecutor = Threads.createIoOutboundPool();
+      asyncExecutor = Threads.createIoOutboundPool();
       
       final List<Runnable> pending = new ArrayList<>();
       
@@ -408,10 +410,9 @@ public class EventChannel {
     log.info("Performing resync: clearing view and publishing presence to cluster");
     view.clearView();
     metrics.incrementCounter("eventChannel.resync");
-
-    
     publishExecutor.execute(
-        doCreateTaskForPublishBroadcastEvent(maxPublishAttempts));
+        doCreateTaskForPublishBroadcastEvent(maxPublishAttempts)
+    );
   }
 
   /**
@@ -428,8 +429,9 @@ public class EventChannel {
         log.info("Could not send shutdown event", e, new Object[] {});
       }
       consumer.stop();
-      publishExecutor.shutdown();
-      heartbeatTimer.cancel();
+      asyncExecutor.shutdown();
+      publishExecutor.shutdownNow();
+      scheduledExecutor.shutdownNow();
       broadcast.close();
       unicast.close();
       state = State.CLOSED;
@@ -496,7 +498,7 @@ public class EventChannel {
   public Future<Void> dispatch(boolean alldomains, String type, Object data) {
     Assertions.illegalState(state != State.STARTED, "Event channel not started");
     log.debug("Broadcasting async event %s to all domains - %s", type, data);
-     return publishExecutor.<Void>submit(() -> {
+     return asyncExecutor.<Void>submit(() -> {
         try {
           broadcast.dispatch(unicast.getAddress(), alldomains, type, data);
         } catch (Exception e) {
@@ -514,7 +516,7 @@ public class EventChannel {
   public Future<Void> dispatch(ServerAddress addr, String type, Object data) {
     Assertions.illegalState(state != State.STARTED, "Event channel not started");
     log.debug("Sending async event %s - %s", type, data);
-    return publishExecutor.<Void>submit(() -> {
+    return asyncExecutor.<Void>submit(() -> {
       try {
         unicast.dispatch(addr, type, data);
       } catch (Exception e) {
@@ -538,7 +540,7 @@ public class EventChannel {
     List<Future<Void>> results = new ArrayList<>(addresses.size());
     
     for (final ServerAddress addr : addresses) {
-      Future<Void> result =  publishExecutor.<Void>submit(() -> {
+      Future<Void> result =  asyncExecutor.<Void>submit(() -> {
         try {
           unicast.dispatch(addr, type, data);
         } catch (Exception e) {
@@ -562,7 +564,7 @@ public class EventChannel {
   public Future<Void> dispatch(String type, Object data) {
     Assertions.illegalState(state != State.STARTED, "Event channel not started");
     log.debug("Broadcasting async event %s - %s", type, data);
-    return publishExecutor.<Void>submit(() -> {
+    return asyncExecutor.<Void>submit(() -> {
       try {
         broadcast.dispatch(unicast.getAddress(), consumer.getDomainName().toString(), type, data);
       } catch (Exception e) {
@@ -872,7 +874,7 @@ public class EventChannel {
   }
 
   void sendControlMessage(SplitteableMessage msg) {
-    publishExecutor.execute(() -> {
+    asyncExecutor.execute(() -> {
         msg.getTargetedNodes().remove(getNode());
         if (!msg.getTargetedNodes().isEmpty()) {
           log.debug("Sending control message %s to nodes: %s", msg.getClass().getSimpleName(), msg.getTargetedNodes());
@@ -902,7 +904,7 @@ public class EventChannel {
   }
   
   void sendGossipMessage(final GossipMessage msg) {
-    publishExecutor.execute(() -> {
+    asyncExecutor.execute(() -> {
       List<NodeInfo> candidates = controller.getContext().getEventChannel().getView(GossipSyncNotification.NON_SUSPECT_NODES_FILTER);        
       Collections.shuffle(candidates);
       
@@ -929,25 +931,27 @@ public class EventChannel {
     });      
   }
   
-  
-  private TimerTask doCreateTaskForPublishBroadcastEvent(final int attemptCount) {
+  private Runnable doCreateTaskForPublishBroadcastEvent(final int attemptCount) {
     Assertions.illegalState(state != State.STARTED, "Event channel not started");
-    return new TimerTask() {
+    return new Runnable() {
       @Override
       public void run() {
-        log.info("Publishing presence of this node (%s) to cluster (attempt count %s)", address, attemptCount);
-        try {
-          metrics.incrementCounter("eventChannelController.publishPresence");
-          broadcast.dispatch(address, false, PUBLISH_EVT, address);
-        } catch (IOException e) {
-          log.warning("Error publishing presence to cluster", e);
-        }
-        
-        int attemptLeft = attemptCount - 1;
-        if (attemptLeft > 0) {
-          heartbeatTimer.schedule(
-              doCreateTaskForPublishBroadcastEvent(attemptLeft),
-              publishIntervalRange.getRandomTime().getValueInMillis());
+        int attempt = 0;
+        while (attempt < attemptCount) {
+          log.info("Publishing presence of this node (%s) to cluster (attempt count %s)", address, attemptCount);
+          try {
+            metrics.incrementCounter("eventChannelController.publishPresence");
+            broadcast.dispatch(address, false, PUBLISH_EVT, address);
+            break;
+          } catch (Exception e) {
+            attempt++;
+            log.warning("Error publishing presence to cluster", e);
+          }
+          try {
+            Thread.sleep(publishIntervalRange.getRandomTime().getValueInMillis());
+          } catch (InterruptedException e) {
+            break;
+          }
         }
       }
     };
@@ -1029,30 +1033,30 @@ public class EventChannel {
 
     @Override
     public Future<Void> sendBroadcastEvent(final ControlEvent event) {
-      return publishExecutor.<Void>submit(() -> {
-          try {
-            broadcast.dispatch(getUnicastAddress(), false, CONTROL_EVT, event);
-          } catch (Exception e) {
-            log.warning("Could not broadcast async control event %s (%s)", e, CONTROL_EVT, event);
-            throw new IllegalStateException("System error dispatching control event", e);
-          }
-          return null;
-        });
+      return asyncExecutor.<Void>submit(() -> {
+        try {
+          broadcast.dispatch(getUnicastAddress(), false, CONTROL_EVT, event);
+        } catch (Exception e) {
+          log.warning("Could not broadcast async control event %s (%s)", e, CONTROL_EVT, event);
+          throw new IllegalStateException("System error dispatching control event", e);
+        }
+        return null;
+      });
     }
     
     @Override
     public Future<Void> sendUnicastEvent(final ServerAddress destination, final ControlEvent event) {
-      return publishExecutor.<Void>submit(() -> {
-          try {
-            unicast.dispatch(destination, CONTROL_EVT, event);
-          } catch (IOException e) {
-            log.error("Could not dispatch control event", e);
-          } catch (Exception e) {
-            log.warning("Could not send async event %s to %s (%s)", e, CONTROL_EVT, destination, event);
-            throw new IllegalStateException("System error dispatching control event", e);
-          }
-          return null;
-        });
+      return asyncExecutor.<Void>submit(() -> {
+        try {
+          unicast.dispatch(destination, CONTROL_EVT, event);
+        } catch (IOException e) {
+          log.error("Could not dispatch control event", e);
+        } catch (Exception e) {
+          log.warning("Could not send async event %s to %s (%s)", e, CONTROL_EVT, destination, event);
+          throw new IllegalStateException("System error dispatching control event", e);
+        }
+        return null;
+      });
     }
     
     @Override
@@ -1258,6 +1262,11 @@ public class EventChannel {
   }
 
   private void init(Conf props) {
+    int schedulerThreadCount = props.getIntProperty(Consts.MCAST_SCHEDULER_THREADS, Defaults.DEFAULT_MCAST_SCHEDULER_THREADS);
+    
+    scheduledExecutor = Executors.newScheduledThreadPool(schedulerThreadCount);
+    publishExecutor   = Executors.newSingleThreadExecutor();
+    
     listener = new ChannelEventListener();
     consumer.registerAsyncListener(PUBLISH_EVT, listener);
     consumer.registerAsyncListener(FORCE_RESYNC_EVT, listener);
@@ -1323,14 +1332,14 @@ public class EventChannel {
   }
 
   protected void startTimer(TimeValue controlThreadInterval) {
-    heartbeatTimer.schedule(new TimerTask() {
+    scheduledExecutor.scheduleAtFixedRate(new Runnable() {
       @Override
       public void run() {
         if (state == State.STARTED) {
           controller.checkStatus();
         }
       }
-    }, startDelayRange.getRandomTime().getValueInMillis(), controlThreadInterval.getValueInMillis());
+    }, startDelayRange.getRandomTime().getValueInMillis(), controlThreadInterval.getValueInMillis(), TimeUnit.MILLISECONDS);
   }
 
   protected SysClock createClock() {

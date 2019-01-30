@@ -125,6 +125,14 @@ public interface Consts {
 
   /**
    * This constant corresponds to the
+   * <code>ubik.rmi.naming.mcast.scheduler.threads</code> property. It is
+   * used to determine the number of threads used for scheduled task execution in the event channel
+   * (defaults to 5).
+   */
+  public static final String MCAST_SCHEDULER_THREADS = "ubik.rmi.naming.mcast.scheduler.threads";
+  
+  /**
+   * This constant corresponds to the
    * <code>ubik.rmi.naming.mcast.heartbeat.timeout</code> property. It is
    * used to determine the interval (in millis) after which nodes that haven't
    * sent a heartbeat are considered down (defaults to 90000).

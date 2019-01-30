@@ -94,6 +94,11 @@ public class Defaults {
   public static final TimeValue DEFAULT_ASYNC_ACK_TIMEOUT = TimeValue.createMillis(500);
   
   /**
+   * The default number of threads used by the event channel's scheduler (see {@link Consts#MCAST_SCHEDULER_THREADS}.
+   */
+  public static final int DEFAULT_MCAST_SCHEDULER_THREADS = 5;
+  
+  /**
    * The default healtcheck delegate timeout (see {@link Consts#MCAST_HEALTHCHECK_DELEGATE_TIMEOUT}).
    */
   public static final TimeValue DEFAULT_HEALTCHCHECK_DELEGATE_TIMEOUT = TimeValue.createMillis(200);
