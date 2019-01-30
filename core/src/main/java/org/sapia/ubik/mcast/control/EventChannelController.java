@@ -45,10 +45,10 @@ public class EventChannelController {
 
   private static final long DEFAULT_CTRL_INTERVAL = 15000;
   
-  private Map<String, ControlEventHandler> eventHandlers = new HashMap<String, ControlEventHandler>();
-  private Map<String, GossipNotificationHandler> gossipHandlers = new HashMap<String, GossipNotificationHandler>();
-  private Map<String, ControlNotificationHandler> notificationHandlers = new HashMap<String, ControlNotificationHandler>();
-  private Map<String, SynchronousControlRequestHandler> syncRequestHandlers = new HashMap<String, SynchronousControlRequestHandler>();
+  private Map<String, ControlEventHandler>              eventHandlers        = new HashMap<String, ControlEventHandler>();
+  private Map<String, GossipNotificationHandler>        gossipHandlers       = new HashMap<String, GossipNotificationHandler>();
+  private Map<String, ControlNotificationHandler>       notificationHandlers = new HashMap<String, ControlNotificationHandler>();
+  private Map<String, SynchronousControlRequestHandler> syncRequestHandlers  = new HashMap<String, SynchronousControlRequestHandler>();
   private Pause controlInterval, gossipInterval, autoBroadcastInterval;
   
   public EventChannelController(ControllerConfiguration config, EventChannelFacade callback, UbikMetrics metrics) {
