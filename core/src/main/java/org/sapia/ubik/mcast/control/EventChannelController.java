@@ -94,7 +94,7 @@ public class EventChannelController {
     }
   }
   
-  public synchronized void onEvent(String originNode, ServerAddress originAddress, ControlEvent event) {
+  public void onEvent(String originNode, ServerAddress originAddress, ControlEvent event) {
     ControlEventHandler handler = eventHandlers.get(event.getClass().getName());
     if (handler != null) {
       handler.handle(originNode, originAddress, event);
@@ -103,7 +103,7 @@ public class EventChannelController {
     }
   }
 
-  public synchronized SynchronousControlResponse onSynchronousRequest(String originNode, ServerAddress originAddress, SynchronousControlRequest request) {
+  public SynchronousControlResponse onSynchronousRequest(String originNode, ServerAddress originAddress, SynchronousControlRequest request) {
     SynchronousControlRequestHandler handler = syncRequestHandlers.get(request.getClass().getName());
     if (handler != null) {
       return handler.handle(originNode, originAddress, request);
@@ -113,7 +113,7 @@ public class EventChannelController {
     }
   }
 
-  public synchronized void onNotification(String originNode, ServerAddress originAddress, ControlNotification notification) {
+  public void onNotification(String originNode, ServerAddress originAddress, ControlNotification notification) {
     ControlNotificationHandler handler = notificationHandlers.get(notification.getClass().getName());
     try {
       if (handler != null) {
@@ -128,7 +128,7 @@ public class EventChannelController {
     }
   }
   
-  public synchronized void onGossipNotification(String originNode, ServerAddress originAddress, GossipNotification notification) {
+  public void onGossipNotification(String originNode, ServerAddress originAddress, GossipNotification notification) {
     GossipNotificationHandler handler = gossipHandlers.get(notification.getClass().getName());
     if (handler != null) {
       handler.handle(originNode, originAddress, notification);

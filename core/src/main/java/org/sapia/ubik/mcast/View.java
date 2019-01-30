@@ -46,6 +46,7 @@ public class View {
   private Map<String, NodeInfo>                        deadNodes      = new ConcurrentHashMap<String, NodeInfo>();
   private SoftReferenceList<EventChannelStateListener> listeners      = new SoftReferenceList<EventChannelStateListener>();
   private Object                                       peerWaitLock   = new Object();
+  private Object                                       mutationLock   = new Object();
   
   /**
    * @param node the node identifier corresponding to the cluster member node to which this instance is associated.
@@ -242,22 +243,27 @@ public class View {
    */
   boolean addHost(ServerAddress addr, String node) {
     Assertions.illegalState(node.equals(this.node), "Cannot add self as member node: %s", node);
-    NodeInfo info = nodeToNodeInfo.get(node);
-    if (info == null) {
-      if (deadNodes.containsKey(node)) {
-        log.warning("Not adding node %s at address %s because it exist in dead node list", node, addr);
-        return false;
-      } else {
-        info = new NodeInfo(addr, node);
-        info.touch(clock);
-        nodeToNodeInfo.put(node, info);
-        log.info("Added node %s at address %s to view", node, addr);
-        notifyListeners(new EventChannelEvent(node, addr), ViewEventType.ADDED);
-        return true;
+    boolean isNodeAdded = false;
+    synchronized (mutationLock) {
+      NodeInfo info = nodeToNodeInfo.get(node);
+      if (info == null) {
+        if (deadNodes.containsKey(node)) {
+          log.warning("Not adding node %s at address %s because it exist in dead node list", node, addr);
+        } else {
+          info = new NodeInfo(addr, node);
+          info.touch(clock);
+          nodeToNodeInfo.put(node, info);
+          isNodeAdded = true;
+          log.info("Added node %s at address %s to view", node, addr);
+        }
       }
-    } else {
-      return false;
     }
+    // Notify listeners outside of the muation lock
+    if (isNodeAdded) {
+      notifyListeners(new EventChannelEvent(node, addr), ViewEventType.ADDED);
+    }
+    
+    return isNodeAdded;
   }
 
   /**
@@ -275,19 +281,27 @@ public class View {
    */
   void heartbeat(ServerAddress addr, String node, SysClock clock) {
     Assertions.illegalState(node.equals(this.node), "Cannot add self as member node: %s", node);
-    NodeInfo info = nodeToNodeInfo.get(node);
-    if (info == null) {
-      if (deadNodes.containsKey(node)) {
-        log.warning("Got hearthbeat from dead node %s at address %s, removing in from dead node list", node, addr);
-        deadNodes.remove(node);
+    boolean isNewNode = false;
+    synchronized (mutationLock) {
+      NodeInfo info = nodeToNodeInfo.get(node);
+      if (info == null) {
+        if (deadNodes.containsKey(node)) {
+          log.warning("Got hearthbeat from dead node %s at address %s, removing in from dead node list", node, addr);
+          deadNodes.remove(node);
+        }
+        info = new NodeInfo(addr, node);
+        info.touch(clock);
+        nodeToNodeInfo.put(node, info);
+        isNewNode = true;
+        log.info("Added node %s (on heartbeat) at address %s to view", node, addr);
+      } else {
+        info.touch(clock);
       }
-      info = new NodeInfo(addr, node);
-      info.touch(clock);
-      nodeToNodeInfo.put(node, info);
-      log.info("Added node %s (on heartbeat) at address %s to view", node, addr);
+    }
+    // Notify listeners outside of the muation lock
+    if (isNewNode) {
       notifyListeners(new EventChannelEvent(node, addr), ViewEventType.ADDED);
     }
-    info.touch(clock);
   }
 
   /**
@@ -295,27 +309,35 @@ public class View {
    *          a node identifier. 
    */
   void removeDeadNode(String node) {
-    NodeInfo toRemoved = nodeToNodeInfo.get(node);
+    NodeInfo toRemoved = null;
+    synchronized (mutationLock) {
+      toRemoved = nodeToNodeInfo.get(node);
+      if (toRemoved != null) {
+        deadNodes.put(node, toRemoved);
+        nodeToNodeInfo.remove(node);
+        toRemoved.down(clock);      
+        log.info("Removed dead node %s", node);
+      }
+    }
+    // Notify listeners outside of the muation lock
     if (toRemoved != null) {
-      deadNodes.put(node, toRemoved);
-      nodeToNodeInfo.remove(node);
-      toRemoved.down(clock);      
-      log.info("Removed dead node %s", node);
       notifyListeners(new EventChannelEvent(toRemoved.getNode(), toRemoved.getAddr()), ViewEventType.REMOVED);
     }
   }
   
   void cleanupDeadNodeList(long gracePeriodMillis) {
-    long now = clock.currentTimeMillis();
-    List<String> nodesToDelete = deadNodes.entrySet().stream().
-        filter(e -> (e.getValue().getTimestamp() + gracePeriodMillis) < now).
-        map(e -> e.getKey()).
-        collect(Collectors.toList());
-    
-    nodesToDelete.forEach(n -> {
-      log.info("removing expired node %s from dead node list", n);
-      deadNodes.remove(n);
-    });
+    synchronized (mutationLock) {
+      long now = clock.currentTimeMillis();
+      List<String> nodesToDelete = deadNodes.entrySet().stream().
+          filter(e -> (e.getValue().getTimestamp() + gracePeriodMillis) < now).
+          map(e -> e.getKey()).
+          collect(Collectors.toList());
+      
+      nodesToDelete.forEach(n -> {
+        log.info("removing expired node %s from dead node list", n);
+        deadNodes.remove(n);
+      });
+    }
   }
 
   /**
@@ -323,7 +345,11 @@ public class View {
    *          a node identifier. 
    */
   void removeLeavingNode(String node) {
-    NodeInfo removed = nodeToNodeInfo.remove(node);
+    NodeInfo removed = null;
+    synchronized (mutationLock) {
+      removed = nodeToNodeInfo.remove(node);
+    }
+    // Notify listeners outside of the muation lock
     if (removed != null) {
       log.debug("Removing leaving node %s", node);
       notifyListeners(new EventChannelEvent(removed.getNode(), removed.getAddr()), ViewEventType.LEFT);
