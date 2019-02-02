@@ -65,7 +65,6 @@ public class DelegatedHealthCheckControlEventHandlerTest {
     
     event = new DelegatedHealthCheckControlEvent(new NodeInfo(new TCPAddress("test", "test-host", 1), "test-node"));
  
-    when(facade.getAsyncIoExecutor()).thenReturn(executor);
     when(facade.getNode()).thenReturn("local-node");
     doAnswer(new Answer<Void>() {
         @Override

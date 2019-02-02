@@ -34,6 +34,7 @@ public class EmbeddableJNDIServerTest  {
   
   @Before
   public void setUp() throws Exception {
+    Log.setDebug();
     Hub.start();
     EventChannel.disableReuse();
     

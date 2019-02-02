@@ -1,14 +1,11 @@
 package org.sapia.ubik.util.tokens;
 
-import org.sapia.ubik.util.Assertions;
-
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
+
+import org.sapia.ubik.util.Assertions;
 
 /**
  * Utility class used to tokenize strings.
@@ -18,7 +15,6 @@ import java.util.Set;
 public class Tokenizer {
 
   private String[]    delims;
-  private Set<String> delimSet;
   private String      input;
   private int         index;
 
@@ -29,7 +25,6 @@ public class Tokenizer {
   public Tokenizer(String input, String...delims) {
     Assertions.isFalse(delims.length == 0, "At least one delimiter must be specified");
     this.delims   = delims;
-    this.delimSet = new HashSet<>(Arrays.asList(delims));
     this.input    = input;
   }
 

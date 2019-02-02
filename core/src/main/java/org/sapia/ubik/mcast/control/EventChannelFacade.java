@@ -3,7 +3,6 @@ package org.sapia.ubik.mcast.control;
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 import org.sapia.ubik.mcast.EventChannel;
@@ -172,10 +171,5 @@ public interface EventChannelFacade {
    * the underlying {@link EventChannel} "sees".
    */
   public List<NodeInfo> getView(Condition<NodeInfo> filter);
-  
-  /**
-   * @return the {@link ExecutorService} used by this instance to perform asynchronous tasks.
-   */
-  public ExecutorService getAsyncIoExecutor();
 
 }

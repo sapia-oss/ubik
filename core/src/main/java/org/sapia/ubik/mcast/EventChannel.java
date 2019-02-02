@@ -8,11 +8,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.mina.util.ConcurrentHashSet;
 import org.sapia.ubik.log.Category;
@@ -180,9 +179,9 @@ public class EventChannel {
   private TimeRange                   publishIntervalRange;
   private TimeValue                   defaultReadTimeout     = DEFAULT_READ_TIMEOUT;
   private ConnectionStateListenerList stateListeners         = new ConnectionStateListenerList();
-  private ScheduledExecutorService    scheduledExecutor;
+  private Timer                       scheduler;
   private ExecutorService             asyncExecutor;
-  private ExecutorService             publishExecutor;
+  private Timer                       publisher;
   
   private SoftReferenceList<DiscoveryListener> discoListeners = new SoftReferenceList<DiscoveryListener>();
 
@@ -410,9 +409,13 @@ public class EventChannel {
     log.info("Performing resync: clearing view and publishing presence to cluster");
     view.clearView();
     metrics.incrementCounter("eventChannel.resync");
-    publishExecutor.execute(
-        doCreateTaskForPublishBroadcastEvent(maxPublishAttempts)
-    );
+    publisher.schedule(new TimerTask() {
+      private Runnable task = doCreateTaskForPublishBroadcastEvent(maxPublishAttempts);
+      @Override
+      public void run() {;
+        task.run();
+      }
+    }, publishIntervalRange.getRandomTime().getValueInMillis());
   }
 
   /**
@@ -429,9 +432,9 @@ public class EventChannel {
         log.info("Could not send shutdown event", e, new Object[] {});
       }
       consumer.stop();
+      scheduler.cancel();
       asyncExecutor.shutdown();
-      publishExecutor.shutdownNow();
-      scheduledExecutor.shutdownNow();
+      publisher.cancel();
       broadcast.close();
       unicast.close();
       state = State.CLOSED;
@@ -931,27 +934,23 @@ public class EventChannel {
     });      
   }
   
-  private Runnable doCreateTaskForPublishBroadcastEvent(final int attemptCount) {
+  private TimerTask doCreateTaskForPublishBroadcastEvent(final int maxAttempts) {
     Assertions.illegalState(state != State.STARTED, "Event channel not started");
-    return new Runnable() {
+    return new TimerTask() {
+      int attempt = 0;
       @Override
       public void run() {
-        int attempt = 0;
-        while (attempt < attemptCount) {
-          log.info("Publishing presence of this node (%s) to cluster (attempt count %s)", address, attemptCount);
+        if (attempt >= maxAttempts) {
+          cancel();
+        } else {
+          log.info("Publishing presence of this node (%s) to cluster (attempt count = %s)", address, attempt);
           try {
             metrics.incrementCounter("eventChannelController.publishPresence");
             broadcast.dispatch(address, false, PUBLISH_EVT, address);
-            break;
           } catch (Exception e) {
-            attempt++;
             log.warning("Error publishing presence to cluster", e);
           }
-          try {
-            Thread.sleep(publishIntervalRange.getRandomTime().getValueInMillis());
-          } catch (InterruptedException e) {
-            break;
-          }
+          attempt++;
         }
       }
     };
@@ -961,11 +960,6 @@ public class EventChannel {
 
   private class ChannelCallbackImpl implements EventChannelFacade {
 
-    @Override
-    public ExecutorService getAsyncIoExecutor() {
-      return publishExecutor;
-    }
-      
     @Override
     public ServerAddress getAddress() {
       return EventChannel.this.getUnicastAddress();
@@ -1267,11 +1261,10 @@ public class EventChannel {
   }
 
   private void init(Conf props) {
-    int schedulerThreadCount = props.getIntProperty(Consts.MCAST_SCHEDULER_THREADS, Defaults.DEFAULT_MCAST_SCHEDULER_THREADS);
     
-    scheduledExecutor = Executors.newScheduledThreadPool(schedulerThreadCount);
-    publishExecutor   = Executors.newSingleThreadExecutor();
-    
+    scheduler = new Timer("EventChannelScheduler");
+    publisher = new Timer("EventChannelPublisher");
+      
     listener = new ChannelEventListener();
     consumer.registerAsyncListener(PUBLISH_EVT, listener);
     consumer.registerAsyncListener(FORCE_RESYNC_EVT, listener);
@@ -1337,14 +1330,14 @@ public class EventChannel {
   }
 
   protected void startTimer(TimeValue controlThreadInterval) {
-    scheduledExecutor.scheduleAtFixedRate(new Runnable() {
+    scheduler.schedule(new TimerTask() {
       @Override
       public void run() {
         if (state == State.STARTED) {
           controller.checkStatus();
-        }
+        }        
       }
-    }, startDelayRange.getRandomTime().getValueInMillis(), controlThreadInterval.getValueInMillis(), TimeUnit.MILLISECONDS);
+    }, startDelayRange.getRandomTime().getValueInMillis(), controlThreadInterval.getValueInMillis());
   }
 
   protected SysClock createClock() {

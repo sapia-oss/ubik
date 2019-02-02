@@ -298,7 +298,7 @@ public class EventChannelTest {
     destination = createEventChannel();
     destination.start();
     
-    source.getView().awaitPeers(3, TimeUnit.SECONDS);
+    source.getView().awaitPeers(5, TimeUnit.SECONDS);
     
     destination.registerSyncListener("testEvent", new SyncEventListener() {
       @Override
