@@ -88,6 +88,13 @@ public class Defaults {
   public static final TimeValue DEFAULT_SYNC_RESPONSE_TIMEOUT = TimeValue.createMillis(10000);
   
   /**
+   * The default threshold used for throttling control events between event channel nodes.
+   * 
+   * {@link Consts#MCAST_THROTTLE_THRESHOLD}
+   */
+  public static final int DEFAULT_THROTTLE_THRESHOLD = 1;
+  
+  /**
    * The default synchronous response timeout (see
    * {@link Consts#MCAST_ASYNC_ACK_TIMEOUT}).
    */

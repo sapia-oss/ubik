@@ -1,7 +1,6 @@
 package org.sapia.ubik.mcast;
 
 import java.lang.ref.SoftReference;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -34,6 +33,53 @@ import org.sapia.ubik.util.SysClock.RealtimeClock;
  */
 public class View {
 
+  private class NodeInfoSet {
+    
+    private Map<ServerAddress, NodeInfoWrapper> nodesByAddress = new ConcurrentHashMap<ServerAddress, NodeInfoWrapper>();
+    private Map<String, NodeInfoWrapper>        nodesById      = new ConcurrentHashMap<String, NodeInfoWrapper>();
+   
+    void add(NodeInfoWrapper wrapper) {
+      nodesById.put(wrapper.getNodeInfo().getNode(), wrapper);
+      nodesByAddress.put(wrapper.getNodeInfo().getAddr(), wrapper);
+    }
+    
+    NodeInfoWrapper remove(String node) {
+      NodeInfoWrapper existing = nodesById.get(node);
+      if (existing != null) {
+        nodesById.remove(existing.getNodeInfo().getNode());
+        nodesByAddress.remove(existing.getNodeInfo().getAddr());
+      }
+      return existing;
+    }
+
+    NodeInfoWrapper remove(ServerAddress address) {
+      NodeInfoWrapper existing = nodesByAddress.get(address);
+      if (existing != null) {
+        nodesById.remove(existing.getNodeInfo().getNode());
+        nodesByAddress.remove(existing.getNodeInfo().getAddr());
+      }
+      return existing;
+    }
+    
+    NodeInfoWrapper get(ServerAddress address) {
+      return nodesByAddress.get(address);
+    }
+    
+    NodeInfoWrapper get(String node) {
+      return nodesById.get(node);
+    }
+    
+    boolean isEmpty() {
+      return nodesById.isEmpty();
+    }
+    
+    int size() {
+      return nodesById.size();
+    }
+   
+  }
+  
+  
   private enum ViewEventType {
     ADDED, REMOVED, LEFT
   }
@@ -41,27 +87,31 @@ public class View {
   private Category log = Log.createCategory(getClass());
 
   private SysClock clock;
+  private ThrottleFactory throttleFactory;
   private String node;
-  private Map<String, NodeInfo>                        nodeToNodeInfo = new ConcurrentHashMap<String, NodeInfo>();
-  private Map<String, NodeInfo>                        deadNodes      = new ConcurrentHashMap<String, NodeInfo>();
+  private NodeInfoSet                                  liveNodes      = new NodeInfoSet();
+  private NodeInfoSet                                  deadNodes      = new NodeInfoSet();
   private SoftReferenceList<EventChannelStateListener> listeners      = new SoftReferenceList<EventChannelStateListener>();
   private Object                                       peerWaitLock   = new Object();
   private Object                                       mutationLock   = new Object();
   
   /**
    * @param node the node identifier corresponding to the cluster member node to which this instance is associated.
+   * @param throttleFactory the {@link ThrottleFactory} to use.
    */
-  public View(String node) {
-    this(RealtimeClock.getInstance(), node);
+  public View(String node, ThrottleFactory throttleFactory) {
+    this(RealtimeClock.getInstance(), node, throttleFactory);
   }
 
   /**
    * @param clock a {@link SysClock} instance, to internally use for assigning timestamps to {@link NodeInfo} instances.
    * @param node the node identifier corresponding to the cluster member node to which this instance is associated.
+   * @param throttleFactory the {@link ThrottleFactory} to use.
    */
-  public View(SysClock clock, String node) {
+  public View(SysClock clock, String node, ThrottleFactory throttleFactory) {
     this.clock = clock;
     this.node = node;
+    this.throttleFactory = throttleFactory;
   }
   
   /**
@@ -71,7 +121,7 @@ public class View {
    */
   public void tryAwaitPeers(long timeout, TimeUnit unit) throws InterruptedException {
     Pause pause = new Pause(unit.toMillis(timeout));
-    while (nodeToNodeInfo.isEmpty() && !pause.isOver()) {
+    while (liveNodes.isEmpty() && !pause.isOver()) {
       synchronized (peerWaitLock) {
         peerWaitLock.wait(pause.remainingNotZero());
       }
@@ -86,7 +136,7 @@ public class View {
    */
   public void tryAwaitPeers(long timeout, TimeUnit unit, int minimum) throws InterruptedException {
     Pause pause = new Pause(unit.toMillis(timeout));
-    while (nodeToNodeInfo.size() < minimum && !pause.isOver()) {
+    while (liveNodes.size() < minimum && !pause.isOver()) {
       synchronized (peerWaitLock) {
         peerWaitLock.wait(pause.remainingNotZero());
       }
@@ -101,7 +151,7 @@ public class View {
    */
   public void awaitPeers(long timeout, TimeUnit unit) throws InterruptedException, IllegalStateException {
     tryAwaitPeers(timeout, unit);
-    Assertions.illegalState(nodeToNodeInfo.isEmpty(), "No peers discovered withing the specified timeout");
+    Assertions.illegalState(liveNodes.isEmpty(), "No peers discovered withing the specified timeout");
   }
   
   /**
@@ -114,9 +164,8 @@ public class View {
    */
   public void awaitPeers(long timeout, TimeUnit unit, int minimum) throws InterruptedException, IllegalStateException {
     tryAwaitPeers(timeout, unit, minimum);
-    Assertions.illegalState(nodeToNodeInfo.isEmpty(), "No peers discovered withing the specified timeout");
+    Assertions.illegalState(liveNodes.isEmpty(), "No peers discovered withing the specified timeout");
   }
-  
   
   /**
    * Adds the given listener to this instance, which will be kept in a
@@ -144,9 +193,9 @@ public class View {
    * @return a {@link List} of {@link ServerAddress}es.
    */
   public List<ServerAddress> getNodeAddresses() {
-    return Collects.convertAsList(nodeToNodeInfo.values(), new Func<ServerAddress, NodeInfo>() {
-      public ServerAddress call(NodeInfo arg) {
-        return arg.getAddr();
+    return Collects.convertAsList(liveNodes.nodesById.values(), new Func<ServerAddress, NodeInfoWrapper>() {
+      public ServerAddress call(NodeInfoWrapper arg) {
+        return arg.getNodeInfo().getAddr();
       }
     });
   }
@@ -157,9 +206,9 @@ public class View {
    * @return a {@link List} of nodes.
    */
   public List<String> getNodes() {
-    return Collects.convertAsList(nodeToNodeInfo.values(), new Func<String, NodeInfo>() {
-      public String call(NodeInfo arg) {
-        return arg.getNode();
+    return Collects.convertAsList(liveNodes.nodesById.values(), new Func<String, NodeInfoWrapper>() {
+      public String call(NodeInfoWrapper arg) {
+        return arg.getNodeInfo().getNode();
       }
     });
   }
@@ -168,7 +217,7 @@ public class View {
    * @return the number of nodes held by this instance.
    */
   public int getNodeCount() {
-    return nodeToNodeInfo.size();
+    return liveNodes.size();
   }
 
   /**
@@ -177,9 +226,9 @@ public class View {
    * @return a {@link Set} of nodes.
    */
   public Set<String> getNodesAsSet() {
-    return Collects.convertAsSet(nodeToNodeInfo.values(), new Func<String, NodeInfo>() {
-      public String call(NodeInfo arg) {
-        return arg.getNode();
+    return Collects.convertAsSet(liveNodes.nodesById.values(), new Func<String, NodeInfoWrapper>() {
+      public String call(NodeInfoWrapper arg) {
+        return arg.getNodeInfo().getNode();
       }
     });
   }
@@ -188,7 +237,12 @@ public class View {
    * @return a copy of this instance's {@link List} of {@link NodeInfo} instances.
    */
   public List<NodeInfo> getNodeInfos() {
-    return new ArrayList<>(nodeToNodeInfo.values());
+    return Collects.convertAsList(liveNodes.nodesById.values(), new Func<NodeInfo, NodeInfoWrapper>() {
+      @Override
+      public NodeInfo call(NodeInfoWrapper arg) {
+        return arg.getNodeInfo();
+      }
+    });
   }
   
   /**
@@ -196,7 +250,11 @@ public class View {
    * @return a {@link List} of {@link NodeInfo} instances corresponding to the given condition.
    */
   public List<NodeInfo> getNodeInfos(Condition<NodeInfo> filter) {
-    return Collects.filterAsList(nodeToNodeInfo.values(), filter);
+    return liveNodes.nodesById.values()
+        .stream()
+        .filter(n -> filter.apply(n.getNodeInfo()))
+        .map(n -> n.getNodeInfo())
+        .collect(Collectors.toList());
   }
 
   /**
@@ -205,10 +263,11 @@ public class View {
    * @return a {@link ServerAddress}.
    */
   public ServerAddress getAddressFor(String node) {
-    NodeInfo info = (NodeInfo) nodeToNodeInfo.get(node);
-    if (info == null)
+    NodeInfoWrapper info = liveNodes.get(node);
+    if (info == null) {
       return null;
-    return info.getAddr();
+    }
+    return info.getNodeInfo().getAddr();
   }
  
   /**
@@ -217,7 +276,11 @@ public class View {
    * if no such instance was found.
    */
   public NodeInfo getNodeInfo(String node) {
-    return nodeToNodeInfo.get(node);
+    NodeInfoWrapper info = liveNodes.get(node);
+    if (info == null) {
+      return null;
+    }
+    return info.getNodeInfo();
   }
   
   /**
@@ -225,11 +288,15 @@ public class View {
    * @return <code>true</code> if this instance has the corresponding node.
    */
   boolean containsNode(String node) {
-    return nodeToNodeInfo.containsKey(node);
+    return liveNodes.get(node) != null;
   }
   
+  /**
+   * @param node a node identifier.
+   * @return <code>true</code> if the identified node is in this instance's dead set.
+   */
   boolean isNodeDead(String node) {
-    return deadNodes.containsKey(node);
+    return deadNodes.get(node) != null;
   }
 
   /**
@@ -245,14 +312,14 @@ public class View {
     Assertions.illegalState(node.equals(this.node), "Cannot add self as member node: %s", node);
     boolean isNodeAdded = false;
     synchronized (mutationLock) {
-      NodeInfo info = nodeToNodeInfo.get(node);
-      if (info == null) {
-        if (deadNodes.containsKey(node)) {
+      NodeInfoWrapper wrapper = liveNodes.get(node);
+      if (wrapper == null) {
+        if (deadNodes.get(node) != null) {
           log.warning("Not adding node %s at address %s because it exist in dead node list", node, addr);
         } else {
-          info = new NodeInfo(addr, node);
+          NodeInfo info = new NodeInfo(addr, node);
           info.touch(clock);
-          nodeToNodeInfo.put(node, info);
+          liveNodes.add(new NodeInfoWrapper(info, throttleFactory.createThrottle()));
           isNodeAdded = true;
           log.info("Added node %s at address %s to view", node, addr);
         }
@@ -283,22 +350,22 @@ public class View {
     Assertions.illegalState(node.equals(this.node), "Cannot add self as member node: %s", node);
     boolean isNewNode = false;
     synchronized (mutationLock) {
-      NodeInfo info = nodeToNodeInfo.get(node);
-      if (info == null) {
-        if (deadNodes.containsKey(node)) {
+      NodeInfoWrapper wrapper = liveNodes.get(node);
+      if (wrapper == null) {
+        if (deadNodes.get(node) != null) {
           log.warning("Got hearthbeat from dead node %s at address %s, removing in from dead node list", node, addr);
           deadNodes.remove(node);
         }
-        info = new NodeInfo(addr, node);
+        NodeInfo info = new NodeInfo(addr, node);
         info.touch(clock);
-        nodeToNodeInfo.put(node, info);
+        liveNodes.add(new NodeInfoWrapper(info, throttleFactory.createThrottle()));
         isNewNode = true;
         log.info("Added node %s (on heartbeat) at address %s to view", node, addr);
       } else {
-        info.touch(clock);
+        wrapper.getNodeInfo().touch(clock);
       }
     }
-    // Notify listeners outside of the muation lock
+    // Notify listeners outside of the mutation lock
     if (isNewNode) {
       notifyListeners(new EventChannelEvent(node, addr), ViewEventType.ADDED);
     }
@@ -309,29 +376,30 @@ public class View {
    *          a node identifier. 
    */
   void removeDeadNode(String node) {
-    NodeInfo toRemoved = null;
+    NodeInfoWrapper toRemove = null;
     synchronized (mutationLock) {
-      toRemoved = nodeToNodeInfo.get(node);
-      if (toRemoved != null) {
-        deadNodes.put(node, toRemoved);
-        nodeToNodeInfo.remove(node);
-        toRemoved.down(clock);      
+      toRemove = liveNodes.get(node);
+      if (toRemove != null) {
+        deadNodes.add(toRemove);
+        liveNodes.remove(node);
+        toRemove.getNodeInfo().down(clock);      
         log.info("Removed dead node %s", node);
       }
     }
     // Notify listeners outside of the muation lock
-    if (toRemoved != null) {
-      notifyListeners(new EventChannelEvent(toRemoved.getNode(), toRemoved.getAddr()), ViewEventType.REMOVED);
+    if (toRemove != null) {
+      notifyListeners(new EventChannelEvent(toRemove.getNodeInfo().getNode(), toRemove.getNodeInfo().getAddr()), ViewEventType.REMOVED);
     }
   }
   
   void cleanupDeadNodeList(long gracePeriodMillis) {
     synchronized (mutationLock) {
       long now = clock.currentTimeMillis();
-      List<String> nodesToDelete = deadNodes.entrySet().stream().
-          filter(e -> (e.getValue().getTimestamp() + gracePeriodMillis) < now).
-          map(e -> e.getKey()).
-          collect(Collectors.toList());
+      List<String> nodesToDelete = deadNodes.nodesById.values()
+          .stream()
+          .filter(n -> n.getNodeInfo().getTimestamp() + gracePeriodMillis < now)
+          .map(n -> n.getNodeInfo().getNode())
+          .collect(Collectors.toList());
       
       nodesToDelete.forEach(n -> {
         log.info("removing expired node %s from dead node list", n);
@@ -345,14 +413,14 @@ public class View {
    *          a node identifier. 
    */
   void removeLeavingNode(String node) {
-    NodeInfo removed = null;
+    NodeInfoWrapper removed = null;
     synchronized (mutationLock) {
-      removed = nodeToNodeInfo.remove(node);
+      removed = liveNodes.remove(node);
     }
     // Notify listeners outside of the muation lock
     if (removed != null) {
       log.debug("Removing leaving node %s", node);
-      notifyListeners(new EventChannelEvent(removed.getNode(), removed.getAddr()), ViewEventType.LEFT);
+      notifyListeners(new EventChannelEvent(removed.getNodeInfo().getNode(), removed.getNodeInfo().getAddr()), ViewEventType.LEFT);
     }
   }
 
@@ -362,12 +430,30 @@ public class View {
    */
   void clearView() {
     log.info("Clearing view, removing all nodes");
-    for (NodeInfo removed : nodeToNodeInfo.values()) {
-      log.debug("Removing node %s from view", removed.getNode());
-      notifyListeners(new EventChannelEvent(removed.getNode(), removed.getAddr()), ViewEventType.LEFT);
+    for (NodeInfoWrapper removed : liveNodes.nodesById.values()) {
+      log.debug("Removing node %s from view", removed.getNodeInfo().getNode());
+      notifyListeners(new EventChannelEvent(removed.getNodeInfo().getNode(), removed.getNodeInfo().getAddr()), ViewEventType.LEFT);
     }
   }
+  
+  /**
+   * @param addr the {@link ServerAddress} of the desired {@link NodeInfoWrapper}.
+   * @return the {@link NodeInfoWrapper} corresponding to the given address, or <code>null</code> if
+   * no such instance exists.
+   */
+  NodeInfoWrapper getWrapperFor(ServerAddress addr) {
+    return liveNodes.get(addr);
+  }
 
+  /**
+   * @param node the node identifier of the desired {@link NodeInfoWrapper}.
+   * @return the {@link NodeInfoWrapper} corresponding to the given identifier, or <code>null</code> if
+   * no such instance exists.
+   */
+  NodeInfoWrapper getWrapperFor(String node) {
+    return liveNodes.get(node);
+  }
+  
   private void notifyListeners(EventChannelEvent event, ViewEventType eventType) {
     synchronized (peerWaitLock) {
       peerWaitLock.notifyAll();

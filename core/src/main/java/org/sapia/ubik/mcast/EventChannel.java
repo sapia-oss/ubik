@@ -12,6 +12,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.mina.util.ConcurrentHashSet;
 import org.sapia.ubik.log.Category;
@@ -45,6 +46,7 @@ import org.sapia.ubik.util.SysClock;
 import org.sapia.ubik.util.TimeRange;
 import org.sapia.ubik.util.TimeValue;
 import org.sapia.ubik.util.UbikMetrics;
+import org.sapia.ubik.util.throttle.NullThrottle;
 
 /**
  * An instance of this class represents a node in a given logical event channel.
@@ -235,7 +237,6 @@ public class EventChannel {
     
     unicast   = DispatcherFactory.createUnicastDispatcher(context);
     broadcast = DispatcherFactory.createBroadcastDispatcher(context);
-    view      = new View(consumer.getNode());
     init(config);
   }
 
@@ -251,7 +252,6 @@ public class EventChannel {
     this.consumer = consumer;
     this.unicast = unicast;
     this.broadcast = broadcast;
-    view      = new View(consumer.getNode());
     init(new Conf().addSystemProperties());
   }
 
@@ -1047,7 +1047,16 @@ public class EventChannel {
     public Future<Void> sendUnicastEvent(final ServerAddress destination, final ControlEvent event) {
       return asyncExecutor.<Void>submit(() -> {
         try {
-          unicast.dispatch(destination, CONTROL_EVT, event);
+          NodeInfoWrapper wrapper = view.getWrapperFor(destination);
+          if (wrapper != null) {
+            if (wrapper.getThrottle().tryAcquire()) {
+              unicast.dispatch(destination, CONTROL_EVT, event);
+            } else {
+              log.warning("Throttling limit reached, could not contact node %s at %s", wrapper.getNodeInfo().getNode(), destination);
+            }
+          } else {
+            log.warning("Node corresponding to address %s not in view", destination);
+          }
         } catch (IOException e) {
           log.error("Could not dispatch control event", e);
         } catch (Exception e) {
@@ -1071,9 +1080,15 @@ public class EventChannel {
       
       List<ServerAddress> targetAddresses = new ArrayList<ServerAddress>();
       for (String targetedNode : targetedNodes) {
-        ServerAddress addr = view.getAddressFor(targetedNode);
-        if (addr != null) {
-          targetAddresses.add(addr);
+        NodeInfoWrapper wrapper = view.getWrapperFor(targetedNode);
+        if (wrapper != null) {
+          if (wrapper.getThrottle().tryAcquire()) {
+            targetAddresses.add(wrapper.getNodeInfo().getAddr());
+          } else {
+            log.warning("Throttling limit reached, could not contact node %s at %s", 
+                wrapper.getNodeInfo().getNode(), 
+                wrapper.getNodeInfo().getAddr());
+          }
         } else {
           log.info("Could not resolve unicast address for node: %s", targetedNode);
         }
@@ -1105,9 +1120,15 @@ public class EventChannel {
       
       List<ServerAddress> targetAddresses = new ArrayList<ServerAddress>();
       for (String targetedNode : targetedNodes) {
-        ServerAddress addr = view.getAddressFor(targetedNode);
-        if (addr != null) {
-          targetAddresses.add(addr);
+        NodeInfoWrapper wrapper = view.getWrapperFor(targetedNode);
+        if (wrapper != null) {
+          if (wrapper.getThrottle().tryAcquire()) {
+            targetAddresses.add(wrapper.getNodeInfo().getAddr());
+          } else {
+            log.warning("Throttling limit reached, could not contact node %s at %s", 
+                wrapper.getNodeInfo().getNode(), 
+                wrapper.getNodeInfo().getAddr());
+          }
         } else {
           log.info("Could not resolve unicast address for node: %s", targetedNode);
         }
@@ -1261,6 +1282,12 @@ public class EventChannel {
   }
 
   private void init(Conf props) {
+    int throttleThreshold = props.getIntProperty(Consts.MCAST_THROTTLE_THRESHOLD, Defaults.DEFAULT_THROTTLE_THRESHOLD);
+    ThrottleFactory throttleFactory = throttleThreshold <= 0 ? () -> 
+      new NullThrottle() : 
+      new ThrottleFactory.RateThrottleFactory(throttleThreshold, TimeUnit.MILLISECONDS);
+      
+    view = new View(consumer.getNode(), throttleFactory);
     
     scheduler = new Timer("EventChannelScheduler");
     publisher = new Timer("EventChannelPublisher");

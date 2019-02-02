@@ -21,6 +21,7 @@ import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.TCPAddress;
 import org.sapia.ubik.util.Condition;
 import org.sapia.ubik.util.SysClock;
+import org.sapia.ubik.util.throttle.NullThrottle;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ViewTest {
@@ -34,7 +35,7 @@ public class ViewTest {
   @Before
   public void setUp() throws Exception {
     clock = SysClock.MutableClock.getInstance();
-    view = new View(clock, "test");
+    view = new View(clock, "test", () -> new NullThrottle());
   }
   
   @Test

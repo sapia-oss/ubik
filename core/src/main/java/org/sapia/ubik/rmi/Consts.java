@@ -114,7 +114,17 @@ public interface Consts {
    * sent/received. Defaults to 3072 bytes.
    */
   public static final String MCAST_BUFSIZE_KEY = "ubik.rmi.naming.mcast.bufsize";
- 
+
+  /**
+   * This constant corresponds to the
+   * <code>ubik.rmi.naming.mcast.throttle.threshold</code> property. It is
+   * used throttle the sending of messages corresponding to control events between
+   * event channel nodes. The threshold is applied on a per millisecond basis (defaults to 1). A value
+   * of 0 or less disables throttling.
+   */
+  public static final String MCAST_THROTTLE_THRESHOLD = "ubik.rmi.naming.mcast.throttle.threshold";
+
+  
   /**
    * This constant corresponds to the
    * <code>ubik.rmi.naming.mcast.async.ack.timeout</code> property. The value

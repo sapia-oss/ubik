@@ -38,7 +38,6 @@ public class NodeInfo implements Externalizable, Comparable<NodeInfo> {
       return this == DOWN;
     }
   }
-  
   private State         state     = State.NORMAL;
   private long          touches;
   private long          timestamp = System.currentTimeMillis();
