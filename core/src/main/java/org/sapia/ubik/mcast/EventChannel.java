@@ -412,8 +412,12 @@ public class EventChannel {
     publisher.schedule(new TimerTask() {
       private Runnable task = doCreateTaskForPublishBroadcastEvent(maxPublishAttempts);
       @Override
-      public void run() {;
-        task.run();
+      public void run() {
+        try {
+          task.run();
+        } catch (Exception e) {
+          log.warning("System error running broadcast timer task", e);
+        }
       }
     }, publishIntervalRange.getRandomTime().getValueInMillis());
   }
@@ -1360,9 +1364,13 @@ public class EventChannel {
     scheduler.schedule(new TimerTask() {
       @Override
       public void run() {
-        if (state == State.STARTED) {
-          controller.checkStatus();
-        }        
+        try {
+          if (state == State.STARTED) {
+            controller.checkStatus();
+          }
+        } catch (Exception e) {
+          log.warning("System error running scheduler timer task", e);
+        }
       }
     }, startDelayRange.getRandomTime().getValueInMillis(), controlThreadInterval.getValueInMillis());
   }
