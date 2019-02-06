@@ -915,27 +915,33 @@ public class EventChannel {
       List<NodeInfo> candidates = controller.getContext().getEventChannel().getView(GossipSyncNotification.NON_SUSPECT_NODES_FILTER);        
       Collections.shuffle(candidates);
       
+      // Define number of nodes to send gossip to
+      int minNodeCount = controller.getContext().getConfig().getGossipMinNodeCount();
+      int stepLevelNodeCount = (int) Math.round(Math.log(candidates.size()));
+      int gossipNodeCount = Math.max(minNodeCount, stepLevelNodeCount);
+      
       int counter = 0;
-      log.debug("Sending gossip notification: %s (got %s candidates)", msg, candidates.size());
+      log.debug("Sending gossip notification: %s (to %s of %s candidates)", msg, gossipNodeCount, candidates.size());
       for (NodeInfo c : candidates) {
         try {
-          log.debug("Sending to : %s", c);
+          log.debug("Sending gossip message to : %s", c);
           metrics.incrementCounter("eventChannel.gossipMessage");
           if (unicast.dispatch(c.getAddr(), CONTROL_EVT, msg)) {
             counter++;
-            if(counter == controller.getContext().getConfig().getGossipNodeCount()) {
+            if (counter >= gossipNodeCount) {
               break;
             }
           } else {
+            log.warning("Node %s deemed suspect on gossip dispatch failure", c.getAddr());
             c.suspect();
           }
          
         } catch (Exception e) {
-          log.info("Could not send control message to %s", e, c.getAddr());
+          log.warning("System error sending gossip message to node %s", e, c.getAddr());
           c.suspect();
         }
       }
-    });      
+    });
   }
   
   private TimerTask doCreateTaskForPublishBroadcastEvent(final int maxAttempts) {

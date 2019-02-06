@@ -126,9 +126,9 @@ public class Defaults {
   public static final TimeValue DEFAULT_GOSSIP_INTERVAL   = TimeValue.createMillis(1000);
 
   /**
-   * The default gossip interval (see {@link Consts#MCAST_GOSSIP_NODE_COUNT}).
+   * The default gossip interval (see {@link Consts#MCAST_GOSSIP_MIN_NODE_COUNT}).
    */  
-  public static final int DEFAULT_GOSSIP_NODE_COUNT = 3;
+  public static final int DEFAULT_GOSSIP_MIN_NODE_COUNT = 3;
 
   /**
    * The default interval at which the event channel thread should run (see {@link Consts#MCAST_CONTROL_THREAD_INTERVAL}).

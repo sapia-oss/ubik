@@ -185,10 +185,10 @@ public interface Consts {
 
   /**
    * This constant corresponds to the
-   * <code>ubik.rmi.naming.mcast.gossip.count</code> property. 
+   * <code>ubik.rmi.naming.mcast.gossip.min.node-count</code> property. 
    * Indicates the number of random nodes at a time to gossip to.
    */
-  public static final String MCAST_GOSSIP_NODE_COUNT = "ubik.rmi.naming.mcast.gossip.node-count";
+  public static final String MCAST_GOSSIP_MIN_NODE_COUNT = "ubik.rmi.naming.mcast.gossip.min.node-count";
   
   /**
    * This constant corresponds to the
