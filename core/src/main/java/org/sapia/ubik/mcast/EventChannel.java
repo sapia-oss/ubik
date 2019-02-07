@@ -27,7 +27,6 @@ import org.sapia.ubik.mcast.control.GossipNotification;
 import org.sapia.ubik.mcast.control.SplitteableMessage;
 import org.sapia.ubik.mcast.control.SynchronousControlRequest;
 import org.sapia.ubik.mcast.control.SynchronousControlResponse;
-import org.sapia.ubik.mcast.control.gossip.GossipSyncNotification;
 import org.sapia.ubik.mcast.udp.UDPBroadcastDispatcher;
 import org.sapia.ubik.mcast.udp.UDPUnicastDispatcher;
 import org.sapia.ubik.net.ConnectionStateListener;
@@ -912,7 +911,7 @@ public class EventChannel {
   
   void sendGossipMessage(final GossipMessage msg) {
     asyncExecutor.execute(() -> {
-      List<NodeInfo> candidates = controller.getContext().getEventChannel().getView(GossipSyncNotification.NON_SUSPECT_NODES_FILTER);        
+      List<NodeInfo> candidates = controller.getContext().getEventChannel().getView(NodeInfo.NORMAL_NODES_FILTER);        
       Collections.shuffle(candidates);
       
       // Define number of nodes to send gossip to

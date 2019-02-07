@@ -1,5 +1,6 @@
 package org.sapia.ubik.mcast.control;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -152,7 +153,7 @@ public class EventChannelController {
   private void doGossip() {
     if (config.isGossipEnabled()) {
       context.getEventChannel().sendGossipNotification(
-          new GossipSyncNotification(context.getEventChannel().getView(GossipSyncNotification.NON_SUSPECT_NODES_FILTER))
+          new GossipSyncNotification(context.getEventChannel().getView(NodeInfo.NORMAL_NODES_FILTER))
       );
     }
   }
@@ -169,10 +170,11 @@ public class EventChannelController {
   }
   
   private void doSendTriggerHealthCheckFor(NodeInfo suspect) {
-    List<NodeInfo> currentNodes = context.getEventChannel().getView(n -> n.getState() != NodeInfo.State.SUSPECT);
+    List<NodeInfo> activeNodes = context.getEventChannel().getView(NodeInfo.NORMAL_NODES_FILTER);
+    Collections.shuffle(activeNodes);
     Set<NodeInfo>  delegates    = new HashSet<>();
     int counter = 0;
-    for (NodeInfo n : currentNodes) {
+    for (NodeInfo n : activeNodes) {
       delegates.add(n);
       counter++;
       if (counter == context.getConfig().getHealthCheckDelegateCount()) {
@@ -181,7 +183,7 @@ public class EventChannelController {
     }
     
     if (delegates.isEmpty()) {
-      log.info("Node %s is suspect: performing healthcheck", suspect);
+      log.info("Node %s is suspect: performing sync healthcheck as there is no other peers to contact", suspect);
       
       try {
         context.getMetrics().incrementCounter("eventChannelController.suspectHealthCheck");

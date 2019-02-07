@@ -45,7 +45,7 @@ public class GossipSyncNotificationHandler implements GossipNotificationHandler 
     context.getEventChannel().heartbeat(originNode, originAddress);
     
     List<NodeInfo> toSend = new ArrayList<>();
-    for (NodeInfo n : context.getEventChannel().getView(GossipSyncNotification.NON_SUSPECT_NODES_FILTER)) {
+    for (NodeInfo n : context.getEventChannel().getView(NodeInfo.NORMAL_NODES_FILTER)) {
       if (!received.contains(n)) {
         toSend.add(n);
       }

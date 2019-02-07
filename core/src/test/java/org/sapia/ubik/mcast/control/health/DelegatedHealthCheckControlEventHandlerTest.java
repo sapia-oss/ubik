@@ -7,6 +7,7 @@ import static org.mockito.Matchers.anySetOf;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.doAnswer;
 
@@ -20,6 +21,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
@@ -54,6 +56,7 @@ public class DelegatedHealthCheckControlEventHandlerTest {
   
   private DelegatedHealthCheckControlEvent event;
   
+  private static int COUNTER = 1000;
   
   @Before
   public void setUp() throws Exception {
@@ -63,7 +66,8 @@ public class DelegatedHealthCheckControlEventHandlerTest {
     
     originNode = new NodeInfo(new TCPAddress("test", "host", 0), "origin-node");
     
-    event = new DelegatedHealthCheckControlEvent(new NodeInfo(new TCPAddress("test", "test-host", 1), "test-node"));
+    String suspectHostName = "suspect-host-" + (++COUNTER);
+    event = new DelegatedHealthCheckControlEvent(new NodeInfo(new TCPAddress("test", suspectHostName, 1), suspectHostName));
  
     when(facade.getNode()).thenReturn("local-node");
     doAnswer(new Answer<Void>() {
@@ -86,12 +90,54 @@ public class DelegatedHealthCheckControlEventHandlerTest {
     handler.handle(originNode.getNode(), originNode.getAddr(), event);
     
     verify(facade).heartbeat(originNode.getNode(), originNode.getAddr());
+    verify(facade).sendSynchronousRequest(anySetOf(String.class), any(SynchronousHealthCheckRequest.class), any(TimeValue.class));
     
     ArgumentCaptor<HealthCheckConfirmationControlEvent> captor = ArgumentCaptor.forClass(HealthCheckConfirmationControlEvent.class);
     verify(facade).sendUnicastEvent(isA(ServerAddress.class), captor.capture());
    
     HealthCheckConfirmationControlEvent sent = captor.getValue();
     assertTrue(sent.isUp());
+    verifyNoMoreInteractions(facade);
+  }
+
+  @Test
+  public void testHandle_success_response_cached() throws Exception {
+    testHandle_success_response();
+    Mockito.reset(facade);
+    
+    handler.handle(originNode.getNode(), originNode.getAddr(), event);
+    
+    verify(facade).heartbeat(originNode.getNode(), originNode.getAddr());
+    
+    ArgumentCaptor<HealthCheckConfirmationControlEvent> captor = ArgumentCaptor.forClass(HealthCheckConfirmationControlEvent.class);
+    verify(facade).sendUnicastEvent(isA(ServerAddress.class), captor.capture());
+   
+    HealthCheckConfirmationControlEvent sent = captor.getValue();
+    assertTrue(sent.isUp());
+    verifyNoMoreInteractions(facade);
+  }
+
+  @Test
+  public void testHandle_success_response_cacheCleaned() throws Exception {
+    testHandle_success_response();
+    Mockito.reset(facade);
+    clock.increaseCurrentTimeMillis(100000L);
+    
+    handler.handle(originNode.getNode(), originNode.getAddr(), event);
+    
+    verify(facade).heartbeat(originNode.getNode(), originNode.getAddr());
+    
+    ArgumentCaptor<HealthCheckConfirmationControlEvent> captor = ArgumentCaptor.forClass(HealthCheckConfirmationControlEvent.class);
+    verify(facade).sendUnicastEvent(isA(ServerAddress.class), captor.capture());
+   
+    HealthCheckConfirmationControlEvent sent = captor.getValue();
+    assertTrue(sent.isUp());
+    verifyNoMoreInteractions(facade);
+
+    // Should not be cached, previous call would have cleaned the cache
+    Mockito.reset(facade);
+    testHandle_success_response();
+    verify(facade).sendUnicastEvent(isA(ServerAddress.class), captor.capture());
   }
   
   @Test
@@ -102,12 +148,32 @@ public class DelegatedHealthCheckControlEventHandlerTest {
     handler.handle(originNode.getNode(), originNode.getAddr(), event);
     
     verify(facade).heartbeat(originNode.getNode(), originNode.getAddr());
+    verify(facade).sendSynchronousRequest(anySetOf(String.class), any(SynchronousHealthCheckRequest.class), any(TimeValue.class));
     
     ArgumentCaptor<HealthCheckConfirmationControlEvent> captor = ArgumentCaptor.forClass(HealthCheckConfirmationControlEvent.class);
     verify(facade).sendUnicastEvent(isA(ServerAddress.class), captor.capture());
    
     HealthCheckConfirmationControlEvent sent = captor.getValue();
     assertFalse(sent.isUp());
+    verifyNoMoreInteractions(facade);
+  }
+  
+  @Test
+  public void testHandle_empty_response_cached() throws Exception {
+    testHandle_empty_response();
+    Mockito.reset(facade);
+
+    handler.handle(originNode.getNode(), originNode.getAddr(), event);
+
+    verify(facade).heartbeat(originNode.getNode(), originNode.getAddr());
+    
+    ArgumentCaptor<HealthCheckConfirmationControlEvent> captor = ArgumentCaptor.forClass(HealthCheckConfirmationControlEvent.class);
+    verify(facade).sendUnicastEvent(isA(ServerAddress.class), captor.capture());
+   
+    HealthCheckConfirmationControlEvent sent = captor.getValue();
+    assertFalse(sent.isUp());
+
+    verifyNoMoreInteractions(facade);
   }
   
   @Test
@@ -118,12 +184,31 @@ public class DelegatedHealthCheckControlEventHandlerTest {
     handler.handle(originNode.getNode(), originNode.getAddr(), event);
     
     verify(facade).heartbeat(originNode.getNode(), originNode.getAddr());
+    verify(facade).sendSynchronousRequest(anySetOf(String.class), any(SynchronousHealthCheckRequest.class), any(TimeValue.class));
     
     ArgumentCaptor<HealthCheckConfirmationControlEvent> captor = ArgumentCaptor.forClass(HealthCheckConfirmationControlEvent.class);
     verify(facade).sendUnicastEvent(isA(ServerAddress.class), captor.capture());
    
     HealthCheckConfirmationControlEvent sent = captor.getValue();
     assertFalse(sent.isUp());
+    verifyNoMoreInteractions(facade);
+  }
+  
+  @Test
+  public void testHandle_error_response_cached() throws Exception {
+    testHandle_error_response();
+    Mockito.reset(facade);
+    
+    handler.handle(originNode.getNode(), originNode.getAddr(), event);
+    
+    verify(facade).heartbeat(originNode.getNode(), originNode.getAddr());
+    
+    ArgumentCaptor<HealthCheckConfirmationControlEvent> captor = ArgumentCaptor.forClass(HealthCheckConfirmationControlEvent.class);
+    verify(facade).sendUnicastEvent(isA(ServerAddress.class), captor.capture());
+   
+    HealthCheckConfirmationControlEvent sent = captor.getValue();
+    assertFalse(sent.isUp());
+    verifyNoMoreInteractions(facade);
   }
 
 }

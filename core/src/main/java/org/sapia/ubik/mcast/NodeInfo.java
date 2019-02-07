@@ -6,6 +6,7 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
 import org.sapia.ubik.net.ServerAddress;
+import org.sapia.ubik.util.Condition;
 import org.sapia.ubik.util.Strings;
 import org.sapia.ubik.util.SysClock;
 
@@ -38,6 +39,29 @@ public class NodeInfo implements Externalizable, Comparable<NodeInfo> {
       return this == DOWN;
     }
   }
+  
+  public static Condition<NodeInfo> NORMAL_NODES_FILTER = new Condition<NodeInfo>() {
+    @Override
+    public boolean apply(NodeInfo node) {
+       return node.getState().isNormal();
+    }
+  };
+
+  public static Condition<NodeInfo> SUSPECT_NODES_FILTER = new Condition<NodeInfo>() {
+    @Override
+    public boolean apply(NodeInfo node) {
+       return node.getState().isNormal();
+    }
+  };
+
+  public static Condition<NodeInfo> DOWN_NODES_FILTER = new Condition<NodeInfo>() {
+    @Override
+    public boolean apply(NodeInfo node) {
+       return node.getState().isNormal();
+    }
+  };
+  
+  
   private State         state     = State.NORMAL;
   private long          touches;
   private long          timestamp = System.currentTimeMillis();
