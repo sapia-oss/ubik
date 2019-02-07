@@ -26,6 +26,8 @@ import org.sapia.ubik.rmi.server.transport.RmiObjectOutput;
 import org.sapia.ubik.util.Assertions;
 import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.IoUtils;
+import org.sapia.ubik.util.SysClock;
+import org.sapia.ubik.util.SysClock.RealtimeClock;
 
 /**
  * Implements the {@link RmiConnection} over the JDK's {@link URL} class.
@@ -33,6 +35,12 @@ import org.sapia.ubik.util.IoUtils;
  * @author yduchesne
  */
 public class JdkRmiClientConnection implements RmiConnection {
+    
+  private enum State {
+      READ,
+      WRITE,
+      IDLE;
+  }  
 
   private static Stopwatch serializationTime = Stats.createStopwatch(JdkRmiClientConnection.class, "SerializationDuration",
       "Time required to serialize an object");
@@ -42,6 +50,8 @@ public class JdkRmiClientConnection implements RmiConnection {
 
   private static final String POST_METHOD = "POST";
   private static final String CONTENT_LENGTH_HEADER = "Content-Length";
+
+  private SysClock          clock = RealtimeClock.getInstance();
   private HttpAddress       address;
   private URL               url;
   private volatile boolean  closed;
@@ -58,6 +68,10 @@ public class JdkRmiClientConnection implements RmiConnection {
                                                  Consts.HTTP_CLIENT_READ_TIMEOUT, 
                                                  Defaults.DEFAULT_HTTP_CLIENT_READ_TIMEOUT
                                              );
+  
+  
+  private State             state         = State.IDLE;
+  private long              lastReadStart;
 
   public JdkRmiClientConnection() {
   }
@@ -67,6 +81,20 @@ public class JdkRmiClientConnection implements RmiConnection {
    *      org.sapia.ubik.rmi.server.VmId, java.lang.String)
    */
   public void send(Object o, VmId associated, String transportType) throws IOException, RemoteException {
+      try {
+          state = State.WRITE;
+          doSend(o, associated, transportType);
+      } finally {
+          state = State.IDLE;
+      }
+  }
+  
+  // visible for testing
+  void setClock(SysClock clock) {
+    this.clock = clock;
+  }
+  
+  private void doSend(Object o, VmId associated, String transportType) throws IOException, RemoteException {
   	try {
       conn = (HttpURLConnection) url.openConnection();
       conn.setDoInput(true);
@@ -117,6 +145,16 @@ public class JdkRmiClientConnection implements RmiConnection {
       closed = true;
     }
   }
+  
+  /**
+   * Return <code>true</code> if this connection if it has been blocking on read for more than its
+   * configured read timeout.
+   * 
+   * @return <code>true</code> if this connection is deemed timed out.
+   */
+  public boolean isInReadTimeout() {
+      return state == State.READ && clock.currentTimeMillis() - lastReadStart > readTimeout;
+  }
 
   /**
    * @see org.sapia.ubik.net.Connection#getServerAddress()
@@ -129,6 +167,16 @@ public class JdkRmiClientConnection implements RmiConnection {
    * @see org.sapia.ubik.net.Connection#receive()
    */
   public Object receive() throws IOException, ClassNotFoundException, RemoteException {
+      try {
+          lastReadStart = clock.currentTimeMillis();
+          state = State.READ;
+          return doReceive();
+      } finally {
+          state = State.IDLE;
+      }
+  }
+  
+  private Object doReceive() throws IOException, ClassNotFoundException, RemoteException {
     Assertions.illegalState(conn == null, "Cannot receive; data was not posted");
 
     ObjectInputStream is = null;
@@ -145,6 +193,18 @@ public class JdkRmiClientConnection implements RmiConnection {
   @Override
   public Object receive(long timeout) throws IOException,
       ClassNotFoundException, RemoteException, SocketTimeoutException {
+      lastReadStart = clock.currentTimeMillis();
+      state = State.READ;
+      try {
+          return doReceive(timeout);
+      } finally {
+          state = State.IDLE;
+      }
+  }
+  
+  private Object doReceive(long timeout) throws IOException,
+      ClassNotFoundException, RemoteException, SocketTimeoutException {
+      
     Assertions.illegalState(conn == null, "Cannot receive; data was not posted");
     
     conn.setConnectTimeout((int) timeout);

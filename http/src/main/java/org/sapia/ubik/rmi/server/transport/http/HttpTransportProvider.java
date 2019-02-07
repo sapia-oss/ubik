@@ -9,10 +9,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.Uri;
 import org.sapia.ubik.net.UriSyntaxException;
+import org.sapia.ubik.rmi.server.Hub;
 import org.sapia.ubik.rmi.server.Server;
 import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.TransportProvider;
 import org.sapia.ubik.rmi.threads.Threads;
+import org.sapia.ubik.taskman.Task;
+import org.sapia.ubik.taskman.TaskContext;
 import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.Localhost;
 
@@ -90,6 +93,20 @@ public class HttpTransportProvider implements TransportProvider, HttpConsts {
         }
 
         pools.put(address, conns);
+        
+        Hub.getModules().getTaskManager().addTask(new TaskContext("TimedOutHttpConnectionReaper", 
+            HttpConsts.DEFAULT_TIMED_OUT_CONNECTION_CLEANING_INTERVAL), new Task() {
+          @Override
+          public void exec(TaskContext ctx) {
+            pools.values().forEach(pool -> {
+              if (pool instanceof JdkClientConnectionPool) {
+                JdkClientConnectionPool jdkConns = (JdkClientConnectionPool) pool;
+                jdkConns.terminateTimedOutConnections();
+              }
+            });
+          }
+        });
+        
       } catch (UriSyntaxException e) {
         throw new RemoteException("Could not process given address", e);
       }

@@ -60,4 +60,6 @@ public interface HttpConsts {
    * @see #HTTP_CLIENT_MAX_CONNECTIONS_KEY
    */
   public static final int DEFAULT_MAX_CLIENT_CONNECTIONS = 25;
+  
+  public static final long DEFAULT_TIMED_OUT_CONNECTION_CLEANING_INTERVAL = 10000;
 }
