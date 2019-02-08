@@ -1,6 +1,7 @@
 package org.sapia.ubik.mcast;
 
 import java.lang.ref.SoftReference;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -430,7 +431,16 @@ public class View {
    */
   void clearView() {
     log.info("Clearing view, removing all nodes");
-    for (NodeInfoWrapper removed : liveNodes.nodesById.values()) {
+
+    List<NodeInfoWrapper> activeNodes = new ArrayList<>(liveNodes.nodesById.values());
+    synchronized (mutationLock) {
+      activeNodes.addAll(liveNodes.nodesById.values());
+      for (NodeInfoWrapper node: activeNodes) {
+        liveNodes.remove(node.getNodeInfo().getNode());
+      }
+    }
+    // Notify listeners outside of the muation lock
+    for (NodeInfoWrapper removed : activeNodes) {
       log.debug("Removing node %s from view", removed.getNodeInfo().getNode());
       notifyListeners(new EventChannelEvent(removed.getNodeInfo().getNode(), removed.getNodeInfo().getAddr()), ViewEventType.LEFT);
     }
