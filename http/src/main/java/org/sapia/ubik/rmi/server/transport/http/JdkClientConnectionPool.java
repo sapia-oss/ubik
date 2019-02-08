@@ -13,7 +13,7 @@ import org.sapia.ubik.log.Log;
 import org.sapia.ubik.net.Uri;
 import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
-import org.sapia.ubik.util.SysClock;
+import org.sapia.ubik.rmi.server.transport.http.JdkRmiClientConnection.JdkRmiClientConnectionFactory;
 import org.sapia.ubik.util.SysClock.RealtimeClock;
 import org.sapia.ubik.util.pool.Pool;
 
@@ -23,23 +23,37 @@ import org.sapia.ubik.util.pool.Pool;
  * sub-optimal implementation used only if the Jakarta HTTP client classes are
  * not in the classpath.
  * 
- * @author Yanick Duchesne
+ * @author yduchesne
  */
 public class JdkClientConnectionPool implements Connections {
   
-  private Category                    log    = Log.createCategory(getClass());
-  private HttpAddress                 address;
-  private Set<JdkRmiClientConnection> active = Collections.newSetFromMap(new ConcurrentHashMap<>());
-  private InternalPool                pool   = new InternalPool();
-  private SysClock                    clock  = RealtimeClock.getInstance();
+  private Category                      log    = Log.createCategory(getClass());
+  private HttpAddress                   address;
+  private Set<JdkRmiClientConnection>   active = Collections.newSetFromMap(new ConcurrentHashMap<>());
+  private InternalPool                  pool   = new InternalPool();
+  private JdkRmiClientConnectionFactory factory;
+  
+  /**
+   * @param address the address of the target server.
+   * @param factory the {@link JdkRmiClientConnectionFactory} to use.
+   */
+  public JdkClientConnectionPool(HttpAddress address, JdkRmiClientConnectionFactory factory) {
+    this.address = address;
+    this.factory = factory;
+  }
   
   /**
    * @param address
    *          the address of the target server.
    */
   public JdkClientConnectionPool(HttpAddress address) {
-    this.address = address;
+    this(address, () -> { 
+      JdkRmiClientConnection conn =  new JdkRmiClientConnection();
+      conn.setClock(RealtimeClock.getInstance());
+      return conn;
+    });
   }
+ 
  
   /**
    * @param transportType
@@ -49,11 +63,6 @@ public class JdkClientConnectionPool implements Connections {
    */
   public JdkClientConnectionPool(String transportType, Uri serverUri) {
     this(new HttpAddress(serverUri));
-  }
-  
-  // Visible for testing
-  void setClock(SysClock clock) {
-    this.clock = clock;
   }
 
   @Override
@@ -75,6 +84,7 @@ public class JdkClientConnectionPool implements Connections {
 
   @Override
   public void clear() {
+    pool.shrinkTo(0);
   }
 
   @Override
@@ -97,34 +107,53 @@ public class JdkClientConnectionPool implements Connections {
     }
   }
   
+  // --------------------------------------------------------------------------
+  // Visible for testing
+  
+  boolean isActive(RmiConnection conn) {
+    return active.contains(conn);
+  }
+  
+  Pool<JdkRmiClientConnection> getInternalPool() {
+    return pool;
+  }
+  
+  // --------------------------------------------------------------------------
+  // Restricted
+  
   void terminateTimedOutConnections() {
+    Set<JdkRmiClientConnection> toCheck = new HashSet<>(active.size() + 1);
     synchronized (pool) {
-      Set<JdkRmiClientConnection> toCheck = new HashSet<>(active);
-      toCheck.forEach(c -> {
-        if (c.isInReadTimeout()) {
-          log.warning("Invalidating connection to %s since it is deemed in a read timeout situation", c.getServerAddress());
-          doInvalidate(c);
-        }
-      });
+      toCheck.addAll(active);
     }
+    toCheck.forEach(c -> {
+      if (c.isInReadTimeout()) {
+        log.warning("Invalidating connection to %s since it is deemed in a read timeout situation", c.getServerAddress());
+        doInvalidate(c);
+      }
+    });
   }
   
   private void doInvalidate(RmiConnection conn) {
-    pool.invalidate((JdkRmiClientConnection) conn);
-    active.remove(conn);
+    if (active.contains(conn)) {
+      pool.invalidate((JdkRmiClientConnection) conn);
+      active.remove(conn);
+    }
   }
 
-  // /// INNER CLASS
-  // /////////////////////////////////////////////////////////////
+  // ==========================================================================
+  // Inner class
 
   class InternalPool extends Pool<JdkRmiClientConnection> {
-    /**
-     * @see org.sapia.ubik.util.pool.Pool#doNewObject()
-     */
+    @Override
     protected JdkRmiClientConnection doNewObject() throws Exception {
-      JdkRmiClientConnection conn = new JdkRmiClientConnection();
-      conn.setClock(clock);
+      JdkRmiClientConnection conn = factory.newConnection();
       return conn;
+    }
+    
+    @Override
+    protected void cleanup(JdkRmiClientConnection pooled) {
+      pooled.close();
     }
   }
 }

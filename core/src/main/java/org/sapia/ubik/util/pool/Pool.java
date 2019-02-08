@@ -270,11 +270,8 @@ public abstract class Pool<T> {
     }
   }
 
-  /*
-   * ////////////////////////////////////////////////////////////////////
-   * RESTRICTED METHODS
-   * ////////////////////////////////////////////////////////////////////
-   */
+  // --------------------------------------------------------------------------
+  // Restricted
 
   /**
    * This template method should be overridden by inheriting classes to provide
