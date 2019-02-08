@@ -30,28 +30,32 @@ public class JdkClientConnectionPool implements Connections {
   private Category                      log    = Log.createCategory(getClass());
   private HttpAddress                   address;
   private Set<JdkRmiClientConnection>   active = Collections.newSetFromMap(new ConcurrentHashMap<>());
-  private InternalPool                  pool   = new InternalPool();
+  private InternalPool                  pool;
   private JdkRmiClientConnectionFactory factory;
   
   /**
    * @param address the address of the target server.
    * @param factory the {@link JdkRmiClientConnectionFactory} to use.
+   * @param maxSize the pool's maximum size.
    */
-  public JdkClientConnectionPool(HttpAddress address, JdkRmiClientConnectionFactory factory) {
+  public JdkClientConnectionPool(HttpAddress address, JdkRmiClientConnectionFactory factory, int maxSize) {
     this.address = address;
     this.factory = factory;
+    this.pool = new InternalPool(maxSize);
   }
   
   /**
    * @param address
    *          the address of the target server.
+   * @param maxSize
+   *          the pool's maximum size.
    */
-  public JdkClientConnectionPool(HttpAddress address) {
+  public JdkClientConnectionPool(HttpAddress address, int maxSize) {
     this(address, () -> { 
       JdkRmiClientConnection conn =  new JdkRmiClientConnection();
       conn.setClock(RealtimeClock.getInstance());
       return conn;
-    });
+    }, maxSize);
   }
  
  
@@ -60,9 +64,11 @@ public class JdkClientConnectionPool implements Connections {
    *          the "transport type" identifier.
    * @param serverUri
    *          the address of the target server.
+   * @param maxSize
+   *          the pool's maximum size.
    */
-  public JdkClientConnectionPool(String transportType, Uri serverUri) {
-    this(new HttpAddress(serverUri));
+  public JdkClientConnectionPool(String transportType, Uri serverUri, int maxSize) {
+    this(new HttpAddress(serverUri), maxSize);
   }
 
   @Override
@@ -145,6 +151,11 @@ public class JdkClientConnectionPool implements Connections {
   // Inner class
 
   class InternalPool extends Pool<JdkRmiClientConnection> {
+    
+    public InternalPool(int maxSize) {
+      super(maxSize);
+    }
+    
     @Override
     protected JdkRmiClientConnection doNewObject() throws Exception {
       JdkRmiClientConnection conn = factory.newConnection();

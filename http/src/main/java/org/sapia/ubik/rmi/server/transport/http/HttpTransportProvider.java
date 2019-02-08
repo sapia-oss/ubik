@@ -85,11 +85,11 @@ public class HttpTransportProvider implements TransportProvider, HttpConsts {
 
     if ((conns = pools.get(address)) == null) {
       try {
+        int maxConnections = Conf.getSystemProperties().getIntProperty(HTTP_CLIENT_MAX_CONNECTIONS_KEY, DEFAULT_MAX_CLIENT_CONNECTIONS);
         if (usesJakarta) {
-          int maxConnections = Conf.getSystemProperties().getIntProperty(HTTP_CLIENT_MAX_CONNECTIONS_KEY, DEFAULT_MAX_CLIENT_CONNECTIONS);
           conns = new HttpClientConnectionPool((HttpAddress) address, maxConnections);
         } else {
-          conns = new JdkClientConnectionPool((HttpAddress) address);
+          conns = new JdkClientConnectionPool((HttpAddress) address, maxConnections);
         }
 
         pools.put(address, conns);

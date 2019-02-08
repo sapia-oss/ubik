@@ -69,7 +69,7 @@ public class JdkClientConnectionPoolTest {
       return connection;
     };
     
-    pool = new JdkClientConnectionPool(HttpAddress.newDefaultInstance("test", 8888), factory);
+    pool = new JdkClientConnectionPool(HttpAddress.newDefaultInstance("test", 8888), factory, 5);
   }
   
   @After
