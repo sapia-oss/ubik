@@ -17,8 +17,6 @@ import org.sapia.ubik.rmi.server.transport.http.JdkRmiClientConnection.JdkRmiCli
 import org.sapia.ubik.util.SysClock.RealtimeClock;
 import org.sapia.ubik.util.pool.Pool;
 
-import com.sun.rowset.providers.RIXMLProvider;
-
 /**
  * This class implements the <code>Connections</code> interface over the JDK's
  * HTTP support classes ({@link URL}, {@link HttpURLConnection}). It is a
