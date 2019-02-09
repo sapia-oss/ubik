@@ -138,11 +138,13 @@ public class JdkClientConnectionPool implements Connections {
     }
     toCheck.forEach(c -> {
       if (c.isInReadTimeout()) {
-        log.warning("Invalidating connection to %s since it is deemed in a read timeout situation", c.getServerAddress());
-        try {
-          doInvalidate(c);
-        } catch (RuntimeException e) {
-          log.warning("Error caught trying to invalidate connection", e);
+        synchronized (pool) {
+          log.warning("Invalidating connection to %s since it is deemed in a read timeout situation", c.getServerAddress());
+          try {
+            doInvalidate(c);
+          } catch (RuntimeException e) {
+            log.warning("Error caught trying to invalidate connection", e);
+          }
         }
       }
     });
