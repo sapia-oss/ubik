@@ -251,7 +251,7 @@ public class JdkRmiClientConnection implements RmiConnection {
         bufsz = data.length;
       }
   
-      conn.setRequestProperty(CONTENT_LENGTH_HEADER, "" + data.length);
+      conn.setRequestProperty(CONTENT_LENGTH_HEADER, Integer.toString(data.length));
   
       OutputStream os = conn.getOutputStream();
       os.write(data);
