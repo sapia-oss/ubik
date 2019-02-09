@@ -17,6 +17,8 @@ import org.sapia.ubik.rmi.server.transport.http.JdkRmiClientConnection.JdkRmiCli
 import org.sapia.ubik.util.SysClock.RealtimeClock;
 import org.sapia.ubik.util.pool.Pool;
 
+import com.sun.rowset.providers.RIXMLProvider;
+
 /**
  * This class implements the <code>Connections</code> interface over the JDK's
  * HTTP support classes ({@link URL}, {@link HttpURLConnection}). It is a
@@ -74,15 +76,19 @@ public class JdkClientConnectionPool implements Connections {
   @Override
   public RmiConnection acquire() throws RemoteException {
     synchronized (pool) {
+      JdkRmiClientConnection connection = null;
       try {
-        RmiConnection connection =  pool.acquire().setUp(address);
+        connection =  pool.acquire().setUp(address);
         active.add((JdkRmiClientConnection) connection);
         return connection;
       } catch (Exception e) {
+        if (connection != null) {
+          active.remove(connection);
+          pool.invalidate(connection);
+        }
         if (e instanceof RemoteException) {
           throw (RemoteException) e;
         }
-
         throw new RemoteException("Could acquire connection", e);
       }        
     }
