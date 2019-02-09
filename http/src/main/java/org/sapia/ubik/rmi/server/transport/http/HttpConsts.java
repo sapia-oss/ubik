@@ -11,11 +11,6 @@ import org.apache.http.client.HttpClient;
  */
 public interface HttpConsts {
   /**
-   * This constant specifies the default HTTP port: 8080.
-   */
-  public static final int DEFAULT_HTTP_PORT = 8080;
-
-  /**
    * This constant specifies the default HTTP "transport type" identifier: http.
    */
   public static final String TRANSPORT_TYPE = "http";
@@ -52,7 +47,19 @@ public interface HttpConsts {
    * This constant specifies the default context path.
    */
   public static final String CONTEXT_PATH = "/ubik";
+  
+  /**
+   * Corresponds to the <code>ubik.rmi.transport.http.client.connection.state.check-interval</code>: specifies the interval
+   * to observe (in millis) between the checks of HTTP connections. Defaults to 3000. If the value is set to 0 or less, 
+   * it disables that check.
+   */
+  public static final String HTTP_CONNECTION_STATE_CHECK_INTERVAL = "ubik.rmi.transport.http.client.connection.state.check-interval";
 
+  /**
+   * This constant specifies the default HTTP port: 8080.
+   */
+  public static final int DEFAULT_HTTP_PORT = 8080;
+  
   /**
    * This constant specifies the default number of connections that the HTTP
    * client will pool (set to 25).
@@ -61,5 +68,11 @@ public interface HttpConsts {
    */
   public static final int DEFAULT_MAX_CLIENT_CONNECTIONS = 25;
   
-  public static final long DEFAULT_TIMED_OUT_CONNECTION_CLEANING_INTERVAL = 10000;
+  /**
+   * This constant specifies the default number of connections that the HTTP
+   * client will pool (set to 25).
+   * 
+   * @see #HTTP_CONNECTION_STATE_CHECK_INTERVAL
+   */
+  public static final long DEFAULT_CONNECTION_STATE_CHECK_INTERVAL = 3000;
 }

@@ -83,9 +83,11 @@ public class HttpTransportProvider implements TransportProvider, HttpConsts {
   public synchronized Connections getPoolFor(ServerAddress address) throws RemoteException {
     Connections conns;
 
+    Conf conf = Conf.getSystemProperties();
+    
     if ((conns = pools.get(address)) == null) {
       try {
-        int maxConnections = Conf.getSystemProperties().getIntProperty(HTTP_CLIENT_MAX_CONNECTIONS_KEY, DEFAULT_MAX_CLIENT_CONNECTIONS);
+        int maxConnections = conf.getIntProperty(HTTP_CLIENT_MAX_CONNECTIONS_KEY, DEFAULT_MAX_CLIENT_CONNECTIONS);
         if (usesJakarta) {
           conns = new HttpClientConnectionPool((HttpAddress) address, maxConnections);
         } else {
@@ -94,18 +96,23 @@ public class HttpTransportProvider implements TransportProvider, HttpConsts {
 
         pools.put(address, conns);
         
-        Hub.getModules().getTaskManager().addTask(new TaskContext("TimedOutHttpConnectionReaper", 
-            HttpConsts.DEFAULT_TIMED_OUT_CONNECTION_CLEANING_INTERVAL), new Task() {
-          @Override
-          public void exec(TaskContext ctx) {
-            pools.values().forEach(pool -> {
-              if (pool instanceof JdkClientConnectionPool) {
-                JdkClientConnectionPool jdkConns = (JdkClientConnectionPool) pool;
-                jdkConns.terminateTimedOutConnections();
+        long httpConnectionCheckInterval = conf.getLongProperty(HTTP_CONNECTION_STATE_CHECK_INTERVAL, DEFAULT_CONNECTION_STATE_CHECK_INTERVAL);
+        if (httpConnectionCheckInterval > 0) {
+          Hub.getModules().getTaskManager().addTask(
+              new TaskContext("HttpConnectionStateCheck", 
+              httpConnectionCheckInterval),
+              new Task() {
+              @Override
+              public void exec(TaskContext ctx) {
+                pools.values().forEach(pool -> {
+                  if (pool instanceof JdkClientConnectionPool) {
+                    JdkClientConnectionPool jdkConns = (JdkClientConnectionPool) pool;
+                    jdkConns.terminateTimedOutConnections();
+                  }
+                });
               }
-            });
-          }
-        });
+          });
+        }
         
       } catch (UriSyntaxException e) {
         throw new RemoteException("Could not process given address", e);

@@ -14,6 +14,7 @@ import org.sapia.ubik.net.Uri;
 import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.RmiConnection;
 import org.sapia.ubik.rmi.server.transport.http.JdkRmiClientConnection.JdkRmiClientConnectionFactory;
+import org.sapia.ubik.util.Assertions;
 import org.sapia.ubik.util.SysClock.RealtimeClock;
 import org.sapia.ubik.util.pool.Pool;
 
@@ -77,6 +78,7 @@ public class JdkClientConnectionPool implements Connections {
       JdkRmiClientConnection connection = null;
       try {
         connection =  pool.acquire().setUp(address);
+        Assertions.illegalState(connection == null, "Error setting up connection to %s", address);
         active.add((JdkRmiClientConnection) connection);
         return connection;
       } catch (Exception e) {
