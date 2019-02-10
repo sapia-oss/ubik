@@ -77,7 +77,8 @@ public class JdkClientConnectionPool implements Connections {
     synchronized (pool) {
       JdkRmiClientConnection connection = null;
       try {
-        connection =  pool.acquire().setUp(address);
+        connection =  pool.acquire();
+        connection.setUp(address);
         Assertions.illegalState(connection == null, "Error setting up connection to %s", address);
         active.add((JdkRmiClientConnection) connection);
         return connection;
