@@ -9,10 +9,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.sapia.ubik.net.ServerAddress;
 import org.sapia.ubik.net.Uri;
 import org.sapia.ubik.net.UriSyntaxException;
+import org.sapia.ubik.rmi.server.Hub;
 import org.sapia.ubik.rmi.server.Server;
 import org.sapia.ubik.rmi.server.transport.Connections;
 import org.sapia.ubik.rmi.server.transport.TransportProvider;
 import org.sapia.ubik.rmi.threads.Threads;
+import org.sapia.ubik.taskman.Task;
+import org.sapia.ubik.taskman.TaskContext;
 import org.sapia.ubik.util.Conf;
 import org.sapia.ubik.util.Localhost;
 
@@ -80,16 +83,37 @@ public class HttpTransportProvider implements TransportProvider, HttpConsts {
   public synchronized Connections getPoolFor(ServerAddress address) throws RemoteException {
     Connections conns;
 
+    Conf conf = Conf.getSystemProperties();
+    
     if ((conns = pools.get(address)) == null) {
       try {
+        int maxConnections = conf.getIntProperty(HTTP_CLIENT_MAX_CONNECTIONS_KEY, DEFAULT_MAX_CLIENT_CONNECTIONS);
         if (usesJakarta) {
-          int maxConnections = Conf.getSystemProperties().getIntProperty(HTTP_CLIENT_MAX_CONNECTIONS_KEY, DEFAULT_MAX_CLIENT_CONNECTIONS);
           conns = new HttpClientConnectionPool((HttpAddress) address, maxConnections);
         } else {
-          conns = new JdkClientConnectionPool((HttpAddress) address);
+          conns = new JdkClientConnectionPool((HttpAddress) address, maxConnections);
         }
 
         pools.put(address, conns);
+        
+        long httpConnectionCheckInterval = conf.getLongProperty(HTTP_CONNECTION_STATE_CHECK_INTERVAL, DEFAULT_CONNECTION_STATE_CHECK_INTERVAL);
+        if (httpConnectionCheckInterval > 0) {
+          Hub.getModules().getTaskManager().addTask(
+              new TaskContext("HttpConnectionStateCheck", 
+              httpConnectionCheckInterval),
+              new Task() {
+              @Override
+              public void exec(TaskContext ctx) {
+                pools.values().forEach(pool -> {
+                  if (pool instanceof JdkClientConnectionPool) {
+                    JdkClientConnectionPool jdkConns = (JdkClientConnectionPool) pool;
+                    jdkConns.terminateTimedOutConnections();
+                  }
+                });
+              }
+          });
+        }
+        
       } catch (UriSyntaxException e) {
         throw new RemoteException("Could not process given address", e);
       }
