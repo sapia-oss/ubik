@@ -1252,7 +1252,7 @@ public class EventChannel {
 
       } else if (evt.getType().equals(SHUTDOWN_EVT)) {
         metrics.incrementCounter("eventChannel.asyncEvent.onShutdown");
-        view.removeDeadNode(evt.getNode());
+        view.removeLeavingNode(evt.getNode());
 
         // ----------------------------------------------------------------------
         
